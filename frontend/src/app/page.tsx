@@ -1,7 +1,3 @@
-import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import Link from "next/link";
-import Image from "next/image";
-
 export default function RoleSelectionPage() {
   return (
     <div className="flex h-screen w-screen">
