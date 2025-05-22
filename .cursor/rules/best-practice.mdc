@@ -1,0 +1,175 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Best Practices: Stride Social Dashboard
+
+## Overview
+
+This document outlines the best practices for building, scaling, and maintaining the Stride Social Dashboard. These guidelines ensure the platform remains modular, secure, performant, and adaptable as new features are introduced.
+
+All practices reflect the latest standards as of **Next.js 15.3.1** (April 2025) and the updated use of **OAuth for social media data access**.
+
+---
+
+## Project Structure
+
+- Organize by feature using folders like `app/`, `components/`, `lib/`, `db/`, `utils/`, and `hooks/`.
+- Separate portals by route group (`/brand`, `/influencer`, `/admin`).
+- Centralize shared logic in `lib/` and API wrappers in `services/`.
+
+---
+
+## Important info
+
+- images should be hosted on Vercel Blob
+- CDN is cloudfare
+---
+
+## Next.js 15 Practices
+
+### App Router
+- Use the App Router exclusively under `app/`.
+- Apply layouts, loading states, and error boundaries for each role-based area.
+
+### Server Components First
+- Default to Server Components to optimize performance and bundle size.
+- Use `"use client"` only for interactive components like forms, modals, dropdowns.
+
+### Server Actions
+- Use Server Actions for data mutations (create, update, delete).
+- Use API routes only for external service communication (OAuth, webhooks).
+
+### Route Grouping
+- Group role-specific features by domain:
+  - `/brand/`
+  - `/influencer/`
+  - `/admin/`
+
+### SEO & Metadata
+- Use `generateMetadata()` to dynamically inject metadata for SEO and sharing.
+
+### Data Fetching
+- Fetch on the server where possible, using Next.js caching strategies.
+- Use `revalidateTag()` and `cache` headers for smart invalidation.
+
+---
+
+## Frontend Development
+
+### Styling
+- Use **TailwindCSS 3.4+** with utility-first approach.
+- Limit `@apply` usage to `globals.css` for shared layout primitives.
+
+### UI Components
+- Use **shadcn/ui** components for UI consistency.
+- Wrap and extend components with `components/ui/` overrides where necessary.
+
+### Animations
+- Use **Framer Motion** for page transitions and interaction animations.
+- Keep animation logic in isolated components to preserve readability.
+
+### Responsiveness
+- Every screen must be mobile-friendly and testable on common breakpoints (360px 768px).
+
+---
+
+## Backend/API Development
+
+### Authentication & Authorization
+- Use **Clerk** for login, signup, role management, and session validation.
+- Wrap all server actions and API routes with role-based access control middleware.
+
+### OAuth for Social Media Access
+- Trigger OAuth flows from the Influencer Portal post-login (not for authentication).
+- Handle OAuth redirects and token exchange via secure API routes.
+- Store access tokens encrypted in Neon and refresh them automatically as needed.
+
+### API Keys & Secrets
+- Store all sensitive keys (Clerk, Modash, OpenAI) as Vercel environment variables.
+- Do not expose API keys on the frontend or commit secrets to Git.
+
+### Financial Data Handling
+- Encrypt financial details (e.g., PayPal, bank info) at the application layer.
+- Mask values in the UI; store encrypted in Neon.
+
+### Database Design
+- Use **Neon** PostgreSQL with a normalized schema.
+- Index foreign keys and fields used in filters or sorts.
+- Keep influencer data modular — including synced (Modash, OAuth) vs. manual attributes.
+
+---
+
+## CI/CD and Deployment
+
+### Vercel Deployment
+- All deployments are serverless on Vercel.
+- HTTPS, cold start optimization, and scalability handled automatically.
+- Preview deployments on PRs for QA and staging reviews.
+
+### GitHub Actions
+- Set up CI workflows to lint, test, and deploy on PR merge.
+- Only merge into `main` after QA-approved preview.
+- Rollbacks via Vercels dashboard in case of deployment failure.
+
+---
+
+## Security Best Practices
+
+- Use Clerks session, token, and JWT infrastructure.
+- Validate all routes with role-based middlewares.
+- Enforce SSL/TLS between frontend and Neon DB.
+- Store access tokens and sensitive data encrypted.
+- Comply with GDPR — include user data deletion requests and clear data use statements.
+
+---
+
+## Monitoring and Error Handling
+
+- Use Vercel and Neon dashboards for error tracking and uptime monitoring.
+- Handle API and OAuth errors gracefully in the UI (status feedback, retries).
+- Implement backend logging for key actions (influencer connections, campaign changes).
+
+---
+
+## Statement
+
+These best practices ensure the Stride Social Dashboard delivers a clean, secure, and highly usable experience for all user types. Every piece — from social data syncing to role-based workflows — is built for clarity, maintainability, and professional-grade reliability.
+
+---
+
+## Modash API Credit Usage Best Practices
+
+To ensure cost-effective and sustainable use of the Modash Discovery API, adhere to the following best practices regarding credit consumption and influencer data updates:
+
+### 1. **Batch Updates Every 4 Weeks**
+- **Do not update or sync influencer data more frequently than every 4 weeks.**
+- Schedule all full influencer data refreshes (e.g., Modash report pulls, performance data requests) to run in a single batch at a fixed 4-week interval.
+- Avoid ad-hoc or on-demand updates unless absolutely necessary for business-critical needs.
+
+### 2. **Minimize Redundant Requests**
+- Before making a Modash API call, check if the requested data is already up-to-date (i.e., last updated within the past 4 weeks).
+- Only trigger a new API request if the data is stale or missing.
+
+### 3. **Prioritize High-Value Influencers**
+- If credit limits are approached, prioritize updates for influencers who are:
+  - Actively involved in campaigns
+  - Frequently shortlisted by brands
+  - Recently connected or onboarded
+
+### 4. **Monitor Credit Usage**
+- Track monthly and annual credit consumption to avoid exceeding the 3,000/month or 36,000/year limits.
+- Set up alerts or dashboards to monitor API usage and forecast future needs.
+
+### 5. **Leverage Rolling Credits**
+- Take advantage of Modash's rolling credits: unused credits roll over as long as the plan is active. Plan batch updates to maximize rollover benefits.
+
+### 6. **Documentation & Transparency**
+- Document all scheduled update jobs and their frequency in the codebase (e.g., in a README or scheduler config).
+- Communicate the update policy to all team members and stakeholders to prevent accidental overuse.
+
+---
+
+**Summary:**
+> To optimize Modash API costs and ensure platform scalability, always batch influencer data updates every 4 weeks, avoid redundant requests, and monitor credit usage closely. This policy protects both operational budgets and system reliability.

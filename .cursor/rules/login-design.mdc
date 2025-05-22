@@ -1,0 +1,105 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Login Page Design: Stride Social Dashboard
+
+## Overview
+
+This login experience sets the tone for a clean, role-aware dashboard environment. It separates login paths for **Influencers** and **Brands** into visually distinct sections, while offering a discreet entry point for **Staff** and **Admins**. Each user type is funneled into a role-specific experience from the very first click.
+
+---
+
+## 🖼️ Layout Design
+
+### Screen Split
+
+The login screen is divided **50/50 vertically**:
+
+| Left Side (Influencer)                     | Right Side (Brand)                        |
+|--------------------------------------------|-------------------------------------------|
+| Background image of a modern influencer     | Background image of a product campaign     |
+| Text overlay: `Log in as Influencer`       | Text overlay: `Log in as Brand`           |
+| Hoverable button or full section clickable | Hoverable button or full section clickable |
+| Slight image zoom or motion hover effect   | Slight image zoom or motion hover effect  |
+
+---
+
+## 🎨 Visual Style
+
+- **Background Images**: Full height, responsive, minimal overlay
+- **Typography**: Bold sans-serif headline, secondary prompt in subtle color
+- **Button Zones**: Invisible `div` overlays with animation on hover/click
+- **Animation Library**: Framer Motion for transitions between states
+
+---
+
+## 🔄 Interaction Flow
+
+### 1. Initial Page Load
+
+- Center-split screen with animated image reveal (fade-in + subtle zoom)
+- Each side has full-width hover state with slight scale effect
+- CTA copy:
+  - **Left**: “Log in as Influencer”
+  - **Right**: “Log in as Brand”
+
+### 2. User Clicks a Side
+
+- Full-screen animated transition (swipe or fade-to-blur)
+- Reveal the **Clerk login component** dynamically within the selected context
+- Header or form updates dynamically:
+  - "Welcome, Influencer" or "Welcome, Brand"
+  - Influencer login shows icons for Instagram/TikTok
+  - Brand login shows subtle agency tone (clean, calm)
+
+### 3. Clerk Auth Form
+
+- Standard Clerk login via email/password
+- Optional: Toggle between login and signup
+- Fields styled to match portal tone (nude/light for brands, bold/modern for influencers)
+
+---
+
+## 🛠️ Hidden Access (Staff / Admin)
+
+- At the **right bottom footer of the page**, a small clickable icon (e.g., key or cog icon)
+- When hovered: Tooltip reads `Team Access`
+- When clicked:
+  - Overlay prompt appears: “Enter your access code”
+  - Access code field → if correct → redirects to `/staff/login`
+  - Prevents unauthorized discovery while allowing internal login
+
+---
+
+## 🔐 Security Notes
+
+- Clicking a role locks that role into the Clerk login flow
+- Role selection is passed to Clerk as metadata
+- Server actions later validate role against session token
+- Staff/Admin access should be limited by email domain or code validation
+
+---
+
+## 💡 Enhancements & Animation Ideas
+
+- Framer Motion page transition: Zoom-in overlay effect or side-swipe motion
+- Micro-interaction: Button ripple or glow on hover
+- Dark blur glass panel as login form background (overlay on background image)
+
+---
+
+## Responsive Design
+
+- **Mobile**: Stack layout
+  - Influencer on top
+  - Brand below
+  - Admin access moves to corner dropdown or floating icon
+- Maintain accessibility with clear tap targets and alt text on backgrounds
+
+---
+
+## Summary
+
+This login experience reinforces the professional tone of the Stride Social Dashboard while providing intuitive, animated access paths for each role. Influencers and Brands are given distinct, branded entry points, while Staff and Admins have protected, low-visibility access to the backend systems.

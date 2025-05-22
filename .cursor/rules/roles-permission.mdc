@@ -1,0 +1,123 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Roles & Permissions: Stride Social Dashboard
+
+## Overview
+
+This document defines the five user roles within the Stride Social Dashboard and outlines the precise permissions assigned to each. Permissions are enforced via Clerk authentication, session validation, and server-side role-based access control.
+
+Each role has a distinct scope of access designed to protect data integrity, streamline workflows, and support operational clarity.
+
+---
+
+## 🎯 Role Definitions
+
+| Role                   | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| **Brand**              | Clients who log in to browse influencers, shortlist, and track campaigns.   |
+| **Influencer (Signed)**| Creators signed to Stride Social with full access to sync data and participate in campaigns. |
+| **Influencer (Partnered)** | Invited creators not formally signed; limited access to opt-in and submit financial info. |
+| **Stride Social Staff**| Internal team members who manage influencers and campaigns (no system settings). |
+| **Admin**              | Full system control including users, tokens, roles, and infrastructure-level actions. |
+
+---
+
+## 🔐 Authentication & Access
+
+| Action                                   | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| Login via Clerk                          | ✅    | ✅                | ✅                  | ✅    | ✅    |
+| Session validation with role check       | ✅    | ✅                | ✅                  | ✅    | ✅    |
+| View personal dashboard                  | ✅    | ✅                | ✅                  | ✅    | ✅    |
+| View all dashboards                      | ❌    | ❌                | ❌                  | ✅    | ✅    |
+
+---
+
+## 📊 Influencer Data & OAuth
+
+| Action                                   | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| View synced metrics                      | ✅    | ✅ (own)          | ✅ (own)            | ✅    | ✅    |
+| Connect Instagram/TikTok/YouTube         | ❌    | ✅                | ✅                  | ❌    | ✅    |
+| OAuth token refresh & status sync        | ❌    | ✅ (auto)         | ✅ (auto)           | ✅    | ✅    |
+| Scrape/import via Modash                 | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Add self-niche tags                      | ❌    | ✅                | ✅                  | ❌    | ✅    |
+
+---
+
+## 🧾 Financial Handling
+
+| Action                                   | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| Submit encrypted financial info          | ❌    | ✅                | ✅                  | ❌    | ✅    |
+| View submitted financial info            | ❌    | ✅ (own)          | ✅ (own)            | ✅    | ✅    |
+| Edit or delete financial info            | ❌    | ✅ (own)          | ✅ (own)            | ❌    | ✅    |
+| Masked view of sensitive fields          | ✅    | ✅                | ✅                  | ✅    | ✅    |
+
+---
+
+## 🧑‍💼 Brand & Shortlist Operations
+
+| Action                                   | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| Filter influencers by criteria           | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| Save to shortlist                        | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| Add notes, tags to shortlist             | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| Trigger quotation or campaign interest   | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| View performance summaries               | ✅    | ✅ (own)          | ✅ (own)            | ✅    | ✅    |
+
+---
+
+## 📦 Campaign Management
+
+| Action                                   | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| View campaign participation              | ✅    | ✅                | ✅                  | ✅    | ✅    |
+| Accept/decline campaign invite           | ❌    | ✅                | ✅                  | ❌    | ✅    |
+| Track product sent / content posted      | ✅    | ✅                | ✅                  | ✅    | ✅    |
+| Create and edit campaigns                | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Assign influencers to campaigns          | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Monitor payment status                   | ✅    | ✅ (own)          | ✅ (own)            | ✅    | ✅    |
+
+---
+
+## 🛠️ System Tools & Admin
+
+| Feature                                  | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| View Admin Panel                         | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Manage roles & users                     | ❌    | ❌                | ❌                  | ❌    | ✅    |
+| Approve and edit tags/metadata           | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Generate summaries from shortlists       | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Manage Modash scraping and imports       | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Manage system settings and environment   | ❌    | ❌                | ❌                  | ❌    | ✅    |
+
+---
+
+## 🧠 AI Suggestions
+
+| Action                                   | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| Receive AI-powered influencer matches    | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| Trigger new suggestions on filter change | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| View AI scoring in shortlist results     | ✅    | ❌                | ❌                  | ✅    | ✅    |
+
+---
+
+## 📄 Help & Documentation Access
+
+| Resource                                 | Brand | Signed Influencer | Partnered Influencer | Staff | Admin |
+|------------------------------------------|:-----:|:-----------------:|:-------------------:|:-----:|:-----:|
+| Brand onboarding guide                   | ✅    | ❌                | ❌                  | ✅    | ✅    |
+| Influencer help docs                     | ❌    | ✅                | ✅                  | ✅    | ✅    |
+| Internal workflow documentation          | ❌    | ❌                | ❌                  | ✅    | ✅    |
+| Full technical documentation             | ❌    | ❌                | ❌                  | ❌    | ✅    |
+
+---
+
+## Statement
+
+These role permissions form the foundation of Stride Social’s security and operational logic. Roles are strictly enforced on both the frontend and backend. Any cross-role changes or data access must be reviewed and executed through Admin control only.
