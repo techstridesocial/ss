@@ -1,88 +1,36 @@
-# Project Title (To Be Defined)
-
-## Overview
-
-[Brief description of the project, its purpose, and target users.]
-
-This project is an influencer marketing platform connecting brands with influencers. It will feature user authentication, separate dashboards for staff/admins, influencers, and brands, campaign management, and image hosting using blob storage.
-
-## Tech Stack
-
-*   **Framework:** Next.js 15 (App Router, Server Components)
-*   **Hosting:** Vercel (Frontend, API Routes, Image Blob Storage)
-*   **Styling:** TailwindCSS 3.4
-*   **UI Components:** shadcn/ui
-*   **Animation:** Framer Motion
-*   **Database:** Neon (PostgreSQL)
-*   **Authentication:** Clerk
-*   **Primary API Layer:** Next.js API Routes
-*   **External API Integrations:**
-    *   Modash API (Influencer Discovery & Data)
-    *   OpenAI API (AI Suggestions)
-*   **Image Hosting:** Vercel Blob (serving WebP)
-
-## Project Structure
-
-(Refer to `sprint_plan.md` for the detailed initial project folder structure. Note: The `frontend` directory will house the unified Next.js 15 application, including API routes.)
-
-```
-/project-root
-├── .git/
-├── .github/              # CI/CD workflows, issue templates
-├── backend/              # Backend application
-├── frontend/             # Frontend application
-├── docs/                 # Project documentation
-├── scripts/              # Utility scripts
-├── .env.example          # Example environment variables
-├── .gitignore
-├── LICENSE
-├── README.md             # This file
-└── sprint_plan.md        # Detailed sprint plan
-```
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-### Prerequisites
+First, run the development server:
 
-*   Node.js (latest LTS version recommended, compatible with Next.js 15)
-*   npm or yarn or pnpm
-*   Git
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-### Setup
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-1.  Clone the repository:
-    ```bash
-    git clone [repository-url]
-    cd [project-folder]
-    ```
-2.  Application Setup (Frontend & API Routes):
-    ```bash
-    cd frontend
-    # Instructions for installing dependencies (e.g., npm install or yarn install)
-    # Instructions for setting up .env.local file from .env.example (for Clerk, Neon, Modash, OpenAI keys)
-    ```
-3.  Database Setup:
-    *   Set up a Neon PostgreSQL database.
-    *   Add connection details to the environment variables.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Running the Application
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-*   **Development Server (Frontend & API):**
-    ```bash
-    cd frontend
-    npm run dev  # or yarn dev / pnpm dev
-    ```
+## Learn More
 
-Access the application at `http://localhost:3000` (default Next.js port).
+To learn more about Next.js, take a look at the following resources:
 
-## Sprint Plan
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-Refer to `sprint_plan.md` for the detailed development sprints and tasks.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Contributing
+## Deploy on Vercel
 
-[Guidelines for contributing to the project, if applicable. E.g., branching strategy, pull request process.]
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## License
-
-This project is licensed under the [Your License Name] License - see the `LICENSE` file for details.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
