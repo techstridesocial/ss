@@ -1,0 +1,225 @@
+# Features: Stride Social Dashboard
+
+## Overview
+
+The Stride Social Dashboard is a professional-grade platform designed to centralize influencer management, brand collaboration, campaign execution, and performance analytics. It supports five distinct roles — **Brand**, **Influencer (Signed)**, **Influencer (Partnered)**, **Stride Social Staff**, and **Admin** — each with a purpose-built experience tailored to their workflows.
+
+The dashboard integrates directly with third-party services like **Modash** for influencer analytics, **OpenAI** for AI-powered suggestions, and uses **custom OAuth** flows to securely sync live data from social platforms like Instagram, TikTok, and YouTube.
+
+---
+
+## 🔑 Core System Features
+
+- **Unified Multi-Role Dashboard** with Clerk-based authentication and protected route architecture
+- **Custom OAuth Integration** for secure social media data access (non-login)
+- **Real-Time Analytics** from connected influencer accounts and Modash API
+- **End-to-End Campaign Management** with seeding, product tracking, and payment statuses
+- **AI-Powered Influencer Suggestions** tailored to brand filters and historical data
+- **Secure Financial Handling** with encrypted form submissions and GDPR compliance
+- **Modular Admin Control Panel** for full platform oversight and configuration
+
+---
+
+## 🧑‍💼 Brand Features (Client Portal)
+
+> Audience: External brand representatives using the dashboard to discover and evaluate influencers.
+
+- **Secure Login via Clerk**
+- **Advanced Filtering Engine**:
+  - Follower ranges
+  - Engagement rate tiers
+  - Platform: Instagram, TikTok, YouTube
+  - Niche (beauty, fitness, fashion, etc.)
+  - Region/location
+  - and more
+- **Interactive Roster View**:
+  - Real-time influencer table with custom tags, past collaboration notes, and Modash metrics
+  - Initial Influencer Information to be displayed: 
+Profile Picture 
+Name 
+Followers 
+Platforms they have 
+Niche 
+Engagement Rate 
+Average Views 
+
+Information to be displayed once clicked onto: 
+The above information 
+All of their platforms and their engagement rates on the platform 
+Recent content they have posted 
+Followers 
+Location (what country they are in) 
+Audience Demographic breakdowns 
+Audience location breakdown 
+Audience Age Breakdown 
+Audience Gender breakdown 
+Audience Language breakdown 
+Estimated Views from a promotion (could be a simple calculation like take 15% off from what they are currently doing) 
+
+- **AI-Powered Influencer Suggestions**:
+  - Auto-ranked based on relevance, past campaign performance, and audience alignment
+- **Shortlist Builder**:
+  - Save influencers into grouped campaigns
+  - Add internal notes and ratings
+  - Share with talent managers for review
+- **Campaign Tracker**:
+  - Track who's been approached, accepted, and posted content
+  - See deliverables, product shipment, and payment statuses
+
+---
+
+## 👤 Influencer Features (Signed)
+
+> Audience: Influencers signed with Stride Social, granted full access to participate in campaigns and sync their metrics.
+
+- **Secure Login via Clerk**
+- **Onboarding Workflow**:
+  - Add basic info, upload profile image
+  - Assign niche tags (editable by Admin)
+- **Connect Social Accounts via OAuth**:
+  - Instagram, TikTok, YouTube
+  - Token encrypted and auto-refreshed
+  - No need for repeated logins
+- **Real-Time Metrics Dashboard**:
+  - Follower count, engagement, post performance
+  - Audience demographics (via Modash and native APIs)
+- **Campaign Participation Panel**:
+  - View assigned campaigns with CTA to accept or decline
+  - Upload proof of content, confirm deadlines
+  - Track shipping and payment status
+- **Financial Submission Form**:
+  - Submit PayPal or bank info securely
+  - Masked UI, encrypted backend storage
+
+---
+
+## 👤 Influencer Features (Partnered)
+
+> Audience: External influencers invited to campaigns but not yet signed by Stride Social.
+
+- **Clerk Login Access**
+- **Lightweight Onboarding Panel**
+  - Add basic personal and platform info
+  - Self-assign niche tags
+- **Connect Social Profiles via OAuth**
+  - Validate metrics for credibility
+  - Limited token use (metrics only)
+- **Campaign Opt-In Access**:
+  - View campaign offers
+  - Express interest in participation
+  - Await Staff approval
+- **Financial Info Form (Optional)**
+  - Encrypted and masked fields
+  - Required for campaign acceptance
+
+---
+
+## 🧠 AI-Powered Features
+
+> Integrated across the brand and staff portals
+
+- **Smart Suggestion Engine (OpenAI)**:
+  - Uses brand filters + campaign history to generate influencer matches
+  - AI scoring displayed on influencer cards
+- **Regenerates on Filter Change**
+  - Ensures results remain contextual and useful
+
+---
+
+## 🧾 Campaign & Seeding Module
+
+> Shared between Staff and Admin roles
+
+- **Campaign Builder**
+  - Create and name new campaigns
+  - Tag by brand, region, niche
+- **Influencer Assignment**
+  - Pull from connected, signed, or Partnered profiles
+  - Assign with scheduled content deadlines
+- **Status Tracker**
+  - Track each stage:
+    - Invite sent
+    - Accepted
+    - Product shipped
+    - Content posted
+    - Payment released
+- **Consent & Participation Logs**
+  - View opt-ins and signed approvals
+  - Validate content delivery against expectations
+
+---
+
+## 👥 Stride Social Staff Features
+
+> Talent managers and ops users who run day-to-day workflows
+
+- **Manage Brand Shortlists**
+  - Review influencer picks from brands
+  - Annotate, approve, or reject with reasoning
+- **Generate Campaign Summaries**
+  - Export influencer selections to PDF or formatted email for brands
+- **Scrape New Influencers (Modash)**
+  - Run niche-based searches
+  - Auto-tag and import to internal DB
+- **Edit Tags & Metadata**
+  - Control over influencer categorization (region, niche, past collabs)
+
+---
+
+## 🛠️ Admin Features
+
+> Full system access for technical owners or leads
+
+- **User Management**
+  - Add/remove/edit users
+  - Assign/revoke roles
+  - Reset credentials if needed
+- **OAuth Token Health Monitoring**
+  - View connected platforms
+  - Refresh or reconnect manually
+- **Platform Settings**
+  - Toggle AI behavior
+  - Update environment variables (non-UI)
+- **Compliance Tools**
+  - Delete user data on request
+  - Export full user history for GDPR
+- **Audit Logs**
+  - Track all sensitive actions: role changes, payout edits, token failures
+
+---
+
+## 🔐 Security-Integrated Features
+
+- **Clerk Authentication**
+  - Role-based access
+  - Session validation before every server action
+- **OAuth Token Encryption**
+  - Stored in Neon, never exposed to client
+- **Financial Field Masking**
+  - Encrypted at rest, obscured in UI
+- **GDPR-Compliant Export/Delete**
+  - Full user data export available via admin panel
+- **Environment-Based Config**
+  - Secrets managed in Vercel only
+  - Tokens accessed server-side only
+
+---
+
+## 📊 Real-Time Analytics
+
+- **Influencer Performance Panels**
+  - Integrated with Modash + direct OAuth sync
+  - Live metrics: followers, views, CTR, comments, shares
+- **AI Scoring & Historical Tagging**
+  - Tracks past campaign success by influencer
+  - Used for future ranking and suggestions
+- **Multi-Portal Views**
+  - Brands: View only
+  - Influencers: View own
+  - Staff/Admin: Full visibility
+
+---
+
+## Summary
+
+The Stride Social Dashboard is more than a CMS or analytics tool — it's a full operating system for influencer collaboration. It provides a powerful, real-time layer of intelligence, compliance, and control that scales with Stride Social's growing network of creators and clients. 
