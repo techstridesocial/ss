@@ -1,9 +1,28 @@
 import React from 'react'
-import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
+import { redirect } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
+import { getCurrentUserRole } from '../../../lib/auth/roles'
 import StaffNavigation from '../../../components/nav/StaffNavigation'
 import { getInfluencers } from '../../../lib/db/queries/influencers'
 import { Platform } from '../../../types/database'
 import { Search, Filter, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag } from 'lucide-react'
+
+// Server-side protection
+async function checkStaffAccess() {
+  const { userId } = await auth()
+  
+  if (!userId) {
+    redirect('/sign-in')
+  }
+  
+  const userRole = await getCurrentUserRole()
+  
+  if (!userRole || (userRole !== 'STAFF' && userRole !== 'ADMIN')) {
+    redirect('/unauthorized')
+  }
+  
+  return userRole
+}
 
 interface InfluencerTableProps {
   searchParams: {
@@ -252,134 +271,135 @@ async function InfluencerTable({ searchParams }: InfluencerTableProps) {
   )
 }
 
-export default function InfluencerRoosterPage({
+export default async function InfluencerRoosterPage({
   searchParams
 }: {
   searchParams: { search?: string; niche?: string; platform?: Platform; page?: string }
 }) {
+  // Server-side protection
+  await checkStaffAccess()
+
   return (
-    <StaffProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <StaffNavigation />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Influencer Rooster</h1>
-            <p className="text-gray-600 mt-2">
-              Manage and browse all influencers in the network
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      <StaffNavigation />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Influencer Rooster</h1>
+          <p className="text-gray-600 mt-2">
+            Manage and browse all influencers in the network
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
+            {/* Search */}
+            <div className="flex-1">
+              <form method="get" className="relative">
+                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  name="search"
+                  defaultValue={searchParams.search}
+                  placeholder="Search influencers by name..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                {searchParams.niche && (
+                  <input type="hidden" name="niche" value={searchParams.niche} />
+                )}
+                {searchParams.platform && (
+                  <input type="hidden" name="platform" value={searchParams.platform} />
+                )}
+              </form>
+            </div>
+
+            {/* Niche Filter */}
+            <div className="flex items-center space-x-2">
+              <Filter size={16} className="text-gray-400" />
+              <select
+                name="niche"
+                defaultValue={searchParams.niche || ''}
+                onChange={(e) => {
+                  const url = new URL(window.location.href)
+                  if (e.target.value) {
+                    url.searchParams.set('niche', e.target.value)
+                  } else {
+                    url.searchParams.delete('niche')
+                  }
+                  url.searchParams.delete('page')
+                  window.location.href = url.toString()
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Niches</option>
+                <option value="Lifestyle">Lifestyle</option>
+                <option value="Fitness">Fitness</option>
+                <option value="Beauty">Beauty</option>
+                <option value="Fashion">Fashion</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Tech">Tech</option>
+                <option value="Travel">Travel</option>
+                <option value="Food">Food</option>
+              </select>
+            </div>
+
+            {/* Platform Filter */}
+            <div className="flex items-center space-x-2">
+              <select
+                name="platform"
+                defaultValue={searchParams.platform || ''}
+                onChange={(e) => {
+                  const url = new URL(window.location.href)
+                  if (e.target.value) {
+                    url.searchParams.set('platform', e.target.value)
+                  } else {
+                    url.searchParams.delete('platform')
+                  }
+                  url.searchParams.delete('page')
+                  window.location.href = url.toString()
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Platforms</option>
+                <option value="INSTAGRAM">Instagram</option>
+                <option value="TIKTOK">TikTok</option>
+                <option value="YOUTUBE">YouTube</option>
+                <option value="TWITCH">Twitch</option>
+                <option value="TWITTER">Twitter</option>
+                <option value="LINKEDIN">LinkedIn</option>
+              </select>
+            </div>
+
+            {/* Reset Filters */}
+            {(searchParams.search || searchParams.niche || searchParams.platform) && (
+              <a
+                href="/staff/rooster"
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                Clear Filters
+              </a>
+            )}
           </div>
+        </div>
 
-          {/* Filters */}
-          <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
-              {/* Search */}
-              <div className="flex-1">
-                <form method="get" className="relative">
-                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    name="search"
-                    defaultValue={searchParams.search}
-                    placeholder="Search influencers by name..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  {searchParams.niche && (
-                    <input type="hidden" name="niche" value={searchParams.niche} />
-                  )}
-                  {searchParams.platform && (
-                    <input type="hidden" name="platform" value={searchParams.platform} />
-                  )}
-                </form>
+        {/* Influencer Table */}
+        <React.Suspense fallback={
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-4 bg-gray-200 rounded"></div>
+                ))}
               </div>
-
-              {/* Niche Filter */}
-              <div className="flex items-center space-x-2">
-                <Filter size={16} className="text-gray-400" />
-                <select
-                  name="niche"
-                  defaultValue={searchParams.niche || ''}
-                  onChange={(e) => {
-                    const url = new URL(window.location.href)
-                    if (e.target.value) {
-                      url.searchParams.set('niche', e.target.value)
-                    } else {
-                      url.searchParams.delete('niche')
-                    }
-                    url.searchParams.delete('page')
-                    window.location.href = url.toString()
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Niches</option>
-                  <option value="Lifestyle">Lifestyle</option>
-                  <option value="Fitness">Fitness</option>
-                  <option value="Beauty">Beauty</option>
-                  <option value="Fashion">Fashion</option>
-                  <option value="Gaming">Gaming</option>
-                  <option value="Tech">Tech</option>
-                  <option value="Travel">Travel</option>
-                  <option value="Food">Food</option>
-                </select>
-              </div>
-
-              {/* Platform Filter */}
-              <div className="flex items-center space-x-2">
-                <select
-                  name="platform"
-                  defaultValue={searchParams.platform || ''}
-                  onChange={(e) => {
-                    const url = new URL(window.location.href)
-                    if (e.target.value) {
-                      url.searchParams.set('platform', e.target.value)
-                    } else {
-                      url.searchParams.delete('platform')
-                    }
-                    url.searchParams.delete('page')
-                    window.location.href = url.toString()
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Platforms</option>
-                  <option value="INSTAGRAM">Instagram</option>
-                  <option value="TIKTOK">TikTok</option>
-                  <option value="YOUTUBE">YouTube</option>
-                  <option value="TWITCH">Twitch</option>
-                  <option value="TWITTER">Twitter</option>
-                  <option value="LINKEDIN">LinkedIn</option>
-                </select>
-              </div>
-
-              {/* Reset Filters */}
-              {(searchParams.search || searchParams.niche || searchParams.platform) && (
-                <a
-                  href="/staff/rooster"
-                  className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  Clear Filters
-                </a>
-              )}
             </div>
           </div>
-
-          {/* Influencer Table */}
-          <React.Suspense fallback={
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-                <div className="space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-4 bg-gray-200 rounded"></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          }>
-            <InfluencerTable searchParams={searchParams} />
-          </React.Suspense>
-        </main>
-      </div>
-    </StaffProtectedRoute>
+        }>
+          <InfluencerTable searchParams={searchParams} />
+        </React.Suspense>
+      </main>
+    </div>
   )
 } 

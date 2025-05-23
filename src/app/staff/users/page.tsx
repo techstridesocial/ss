@@ -1,5 +1,5 @@
 import React from 'react'
-import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
+import { requireStaffAccess } from '../../../lib/auth/roles'
 import StaffNavigation from '../../../components/nav/StaffNavigation'
 import { getUsers } from '../../../lib/db/queries/users'
 import { UserRole } from '../../../types/database'
@@ -209,101 +209,102 @@ async function UserTable({ searchParams }: UserTableProps) {
   )
 }
 
-export default function UsersPage({
+export default async function UsersPage({
   searchParams
 }: {
   searchParams: { search?: string; role?: UserRole; page?: string }
 }) {
+  // Server-side protection
+  await requireStaffAccess()
+
   return (
-    <StaffProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <StaffNavigation />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600 mt-2">
-              Manage all user accounts and their roles
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      <StaffNavigation />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-2">
+            Manage all user accounts and their roles
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
+            {/* Search */}
+            <div className="flex-1">
+              <form method="get" className="relative">
+                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  name="search"
+                  defaultValue={searchParams.search}
+                  placeholder="Search users by name or email..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                {searchParams.role && (
+                  <input type="hidden" name="role" value={searchParams.role} />
+                )}
+              </form>
+            </div>
+
+            {/* Role Filter */}
+            <div className="flex items-center space-x-2">
+              <Filter size={16} className="text-gray-400" />
+              <select
+                name="role"
+                defaultValue={searchParams.role || ''}
+                onChange={(e) => {
+                  const url = new URL(window.location.href)
+                  if (e.target.value) {
+                    url.searchParams.set('role', e.target.value)
+                  } else {
+                    url.searchParams.delete('role')
+                  }
+                  url.searchParams.delete('page')
+                  window.location.href = url.toString()
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Roles</option>
+                <option value="BRAND">Brand</option>
+                <option value="INFLUENCER_SIGNED">Influencer (Signed)</option>
+                <option value="INFLUENCER_PARTNERED">Influencer (Partnered)</option>
+                <option value="STAFF">Staff</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+
+            {/* Reset Filters */}
+            {(searchParams.search || searchParams.role) && (
+              <a
+                href="/staff/users"
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                Clear Filters
+              </a>
+            )}
           </div>
+        </div>
 
-          {/* Filters */}
-          <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
-              {/* Search */}
-              <div className="flex-1">
-                <form method="get" className="relative">
-                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    name="search"
-                    defaultValue={searchParams.search}
-                    placeholder="Search users by name or email..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  {searchParams.role && (
-                    <input type="hidden" name="role" value={searchParams.role} />
-                  )}
-                </form>
+        {/* User Table */}
+        <React.Suspense fallback={
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-4 bg-gray-200 rounded"></div>
+                ))}
               </div>
-
-              {/* Role Filter */}
-              <div className="flex items-center space-x-2">
-                <Filter size={16} className="text-gray-400" />
-                <select
-                  name="role"
-                  defaultValue={searchParams.role || ''}
-                  onChange={(e) => {
-                    const url = new URL(window.location.href)
-                    if (e.target.value) {
-                      url.searchParams.set('role', e.target.value)
-                    } else {
-                      url.searchParams.delete('role')
-                    }
-                    url.searchParams.delete('page')
-                    window.location.href = url.toString()
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Roles</option>
-                  <option value="BRAND">Brand</option>
-                  <option value="INFLUENCER_SIGNED">Influencer (Signed)</option>
-                  <option value="INFLUENCER_PARTNERED">Influencer (Partnered)</option>
-                  <option value="STAFF">Staff</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-
-              {/* Reset Filters */}
-              {(searchParams.search || searchParams.role) && (
-                <a
-                  href="/staff/users"
-                  className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  Clear Filters
-                </a>
-              )}
             </div>
           </div>
-
-          {/* User Table */}
-          <React.Suspense fallback={
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-                <div className="space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-4 bg-gray-200 rounded"></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          }>
-            <UserTable searchParams={searchParams} />
-          </React.Suspense>
-        </main>
-      </div>
-    </StaffProtectedRoute>
+        }>
+          <UserTable searchParams={searchParams} />
+        </React.Suspense>
+      </main>
+    </div>
   )
 } 

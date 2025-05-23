@@ -2,24 +2,7 @@
 
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-
-// User roles enum matching database schema
-export enum UserRole {
-  BRAND = 'BRAND',
-  INFLUENCER_SIGNED = 'INFLUENCER_SIGNED', 
-  INFLUENCER_PARTNERED = 'INFLUENCER_PARTNERED',
-  STAFF = 'STAFF',
-  ADMIN = 'ADMIN'
-}
-
-// Role hierarchy for permission checking
-const ROLE_HIERARCHY: Record<UserRole, number> = {
-  [UserRole.BRAND]: 1,
-  [UserRole.INFLUENCER_PARTNERED]: 2,
-  [UserRole.INFLUENCER_SIGNED]: 3,
-  [UserRole.STAFF]: 4,
-  [UserRole.ADMIN]: 5
-}
+import { UserRole, ROLE_HIERARCHY, getRoleRedirectPath } from './types'
 
 // Get current user's role from Clerk
 export async function getCurrentUserRole(): Promise<UserRole | null> {
@@ -34,7 +17,7 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
   return role || null
 }
 
-// Check if user has required role or higher
+// Check if user has required role or higher (server-side)
 export async function hasRole(requiredRole: UserRole): Promise<boolean> {
   const currentRole = await getCurrentUserRole()
   
@@ -45,48 +28,82 @@ export async function hasRole(requiredRole: UserRole): Promise<boolean> {
   return ROLE_HIERARCHY[currentRole] >= ROLE_HIERARCHY[requiredRole]
 }
 
-// Check if user has exact role
+// Check if user has exact role (server-side)
 export async function hasExactRole(role: UserRole): Promise<boolean> {
   const currentRole = await getCurrentUserRole()
   return currentRole === role
 }
 
-// Require authentication and redirect if not authenticated
-export async function requireAuth(): Promise<void> {
+// Require authentication and redirect if not logged in
+export async function requireAuth(): Promise<string> {
   const { userId } = await auth()
   
   if (!userId) {
     redirect('/sign-in')
   }
+  
+  return userId
 }
 
-// Require specific role and redirect if insufficient permissions
-export async function requireRole(requiredRole: UserRole): Promise<void> {
+// Require specific role and redirect if unauthorized
+export async function requireRole(requiredRole: UserRole): Promise<UserRole> {
   await requireAuth()
   
-  const hasPermission = await hasRole(requiredRole)
+  const currentRole = await getCurrentUserRole()
   
-  if (!hasPermission) {
+  if (!currentRole) {
+    redirect('/sign-in')
+  }
+  
+  if (!await hasRole(requiredRole)) {
     redirect('/unauthorized')
   }
+  
+  return currentRole
 }
 
-// Get user role redirect path based on role
-export function getRoleRedirectPath(role: UserRole): string {
-  switch (role) {
-    case UserRole.BRAND:
-      return '/brand'
-    case UserRole.INFLUENCER_SIGNED:
-    case UserRole.INFLUENCER_PARTNERED:
-      return '/influencer'
-    case UserRole.STAFF:
-      return '/staff'
-    case UserRole.ADMIN:
-      return '/admin'
-    default:
-      return '/sign-in'
+// Require exact role and redirect if unauthorized
+export async function requireExactRole(role: UserRole): Promise<UserRole> {
+  await requireAuth()
+  
+  const currentRole = await getCurrentUserRole()
+  
+  if (!currentRole || currentRole !== role) {
+    redirect('/unauthorized')
   }
+  
+  return currentRole
 }
+
+// Require staff or admin access
+export async function requireStaffAccess(): Promise<UserRole> {
+  const currentRole = await requireRole(UserRole.STAFF)
+  
+  if (currentRole !== UserRole.STAFF && currentRole !== UserRole.ADMIN) {
+    redirect('/unauthorized')
+  }
+  
+  return currentRole
+}
+
+// Require admin access
+export async function requireAdminAccess(): Promise<UserRole> {
+  return await requireExactRole(UserRole.ADMIN)
+}
+
+// Get redirect path for current user (server-side)
+export async function getCurrentUserRedirectPath(): Promise<string> {
+  const currentRole = await getCurrentUserRole()
+  
+  if (!currentRole) {
+    return '/sign-in'
+  }
+  
+  return getRoleRedirectPath(currentRole)
+}
+
+// Re-export for convenience
+export { UserRole, getRoleRedirectPath } from './types'
 
 // Check if user can access specific portal
 export async function canAccessPortal(portal: 'brand' | 'influencer' | 'staff' | 'admin'): Promise<boolean> {

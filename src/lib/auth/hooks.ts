@@ -3,7 +3,7 @@
 // Client-side authentication hooks for React components
 
 import { useUser } from '@clerk/nextjs'
-import { UserRole } from './roles'
+import { UserRole, ROLE_HIERARCHY, ROLE_DISPLAY_NAMES, getRoleDisplayName, getRoleRedirectPath } from './types'
 
 // Get current user's role on client side
 export function useUserRole(): UserRole | null {
@@ -24,14 +24,6 @@ export function useHasRole(requiredRole: UserRole): boolean {
   
   if (!currentRole) {
     return false
-  }
-
-  const ROLE_HIERARCHY: Record<UserRole, number> = {
-    [UserRole.BRAND]: 1,
-    [UserRole.INFLUENCER_PARTNERED]: 2,
-    [UserRole.INFLUENCER_SIGNED]: 3,
-    [UserRole.STAFF]: 4,
-    [UserRole.ADMIN]: 5
   }
 
   return ROLE_HIERARCHY[currentRole] >= ROLE_HIERARCHY[requiredRole]
@@ -73,31 +65,8 @@ export function useUserRedirectPath(): string {
     return '/sign-in'
   }
 
-  switch (currentRole) {
-    case UserRole.BRAND:
-      return '/brand'
-    case UserRole.INFLUENCER_SIGNED:
-    case UserRole.INFLUENCER_PARTNERED:
-      return '/influencer'
-    case UserRole.STAFF:
-      return '/staff'
-    case UserRole.ADMIN:
-      return '/admin'
-    default:
-      return '/sign-in'
-  }
+  return getRoleRedirectPath(currentRole)
 }
 
-// Role display names for UI
-export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
-  [UserRole.BRAND]: 'Brand',
-  [UserRole.INFLUENCER_SIGNED]: 'Influencer (Signed)',
-  [UserRole.INFLUENCER_PARTNERED]: 'Influencer (Partnered)',
-  [UserRole.STAFF]: 'Staff',
-  [UserRole.ADMIN]: 'Admin'
-}
-
-// Get display name for role
-export function getRoleDisplayName(role: UserRole): string {
-  return ROLE_DISPLAY_NAMES[role]
-} 
+// Export for convenience
+export { getRoleDisplayName, ROLE_DISPLAY_NAMES } 

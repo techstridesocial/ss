@@ -1,5 +1,5 @@
 import React from 'react'
-import { StaffProtectedRoute } from '../../components/auth/ProtectedRoute'
+import { requireStaffAccess } from '../../lib/auth/roles'
 import StaffNavigation from '../../components/nav/StaffNavigation'
 import { getUserStats } from '../../lib/db/queries/users'
 import { getInfluencerStats } from '../../lib/db/queries/influencers'
@@ -116,106 +116,107 @@ async function DashboardStats() {
   )
 }
 
-export default function StaffDashboard() {
+export default async function StaffDashboard() {
+  // Server-side protection
+  await requireStaffAccess()
+
   return (
-    <StaffProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <StaffNavigation />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Staff Dashboard</h1>
-            <p className="text-gray-600 mt-2">
-              Manage users, influencers, and campaigns from your central hub
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      <StaffNavigation />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Staff Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Manage users, influencers, and campaigns from your central hub
+          </p>
+        </div>
+
+        {/* Statistics */}
+        <React.Suspense fallback={
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
           </div>
+        }>
+          <DashboardStats />
+        </React.Suspense>
 
-          {/* Statistics */}
-          <React.Suspense fallback={
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          }>
-            <DashboardStats />
-          </React.Suspense>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <QuickActionCard
+            title="Manage Users"
+            description="View, create, and edit user accounts"
+            href="/staff/users"
+            icon={<Users size={20} className="text-blue-600" />}
+            color="blue"
+          />
+          
+          <QuickActionCard
+            title="Influencer Rooster"
+            description="Browse and manage influencer profiles"
+            href="/staff/rooster"
+            icon={<Eye size={20} className="text-green-600" />}
+            color="green"
+          />
+          
+          <QuickActionCard
+            title="Create Campaign"
+            description="Set up new influencer campaigns"
+            href="/staff/campaigns/new"
+            icon={<UserPlus size={20} className="text-purple-600" />}
+            color="purple"
+          />
+        </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <QuickActionCard
-              title="Manage Users"
-              description="View, create, and edit user accounts"
-              href="/staff/users"
-              icon={<Users size={20} className="text-blue-600" />}
-              color="blue"
-            />
-            
-            <QuickActionCard
-              title="Influencer Rooster"
-              description="Browse and manage influencer profiles"
-              href="/staff/rooster"
-              icon={<Eye size={20} className="text-green-600" />}
-              color="green"
-            />
-            
-            <QuickActionCard
-              title="Create Campaign"
-              description="Set up new influencer campaigns"
-              href="/staff/campaigns/new"
-              icon={<UserPlus size={20} className="text-purple-600" />}
-              color="purple"
-            />
+        {/* Recent Activity */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
           </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">New influencer registered</p>
-                    <p className="text-xs text-gray-500">2 minutes ago</p>
-                  </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">New influencer registered</p>
+                  <p className="text-xs text-gray-500">2 minutes ago</p>
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">Campaign "Summer Collection" created</p>
-                    <p className="text-xs text-gray-500">1 hour ago</p>
-                  </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">Campaign "Summer Collection" created</p>
+                  <p className="text-xs text-gray-500">1 hour ago</p>
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">Brand shortlist reviewed</p>
-                    <p className="text-xs text-gray-500">3 hours ago</p>
-                  </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">Brand shortlist reviewed</p>
+                  <p className="text-xs text-gray-500">3 hours ago</p>
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">Modash sync completed</p>
-                    <p className="text-xs text-gray-500">6 hours ago</p>
-                  </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">Modash sync completed</p>
+                  <p className="text-xs text-gray-500">6 hours ago</p>
                 </div>
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </StaffProtectedRoute>
+        </div>
+      </main>
+    </div>
   )
 } 
