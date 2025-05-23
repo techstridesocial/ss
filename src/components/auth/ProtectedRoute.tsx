@@ -10,14 +10,12 @@ interface ProtectedRouteProps {
   children: React.ReactNode
   requiredRole?: UserRole
   requiredPortal?: 'brand' | 'influencer' | 'staff' | 'admin'
-  fallbackPath?: string
 }
 
 export function ProtectedRoute({ 
   children, 
   requiredRole, 
-  requiredPortal,
-  fallbackPath = '/sign-in' 
+  requiredPortal
 }: ProtectedRouteProps) {
   const { isLoaded, isSignedIn } = useUser()
   const userRole = useUserRole()

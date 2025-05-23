@@ -272,12 +272,15 @@ async function InfluencerTable({ searchParams }: InfluencerTableProps) {
 }
 
 export default async function InfluencerRoosterPage({
-  searchParams
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { search?: string; niche?: string; platform?: Platform; page?: string }
+  searchParams: Promise<{ search?: string; niche?: string; platform?: Platform; page?: string }>
 }) {
   // Server-side protection
   await checkStaffAccess()
+
+  // Await the searchParams Promise
+  const searchParams = await searchParamsPromise
 
   return (
     <div className="min-h-screen bg-gray-50">

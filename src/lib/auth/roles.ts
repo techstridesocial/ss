@@ -13,7 +13,7 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
   }
 
   // Role should be stored in public metadata - accessing via publicMetadata
-  const role = (sessionClaims as any)?.publicMetadata?.role as UserRole
+  const role = (sessionClaims as { publicMetadata?: { role?: UserRole } })?.publicMetadata?.role as UserRole
   return role || null
 }
 

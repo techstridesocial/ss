@@ -210,12 +210,15 @@ async function UserTable({ searchParams }: UserTableProps) {
 }
 
 export default async function UsersPage({
-  searchParams
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { search?: string; role?: UserRole; page?: string }
+  searchParams: Promise<{ search?: string; role?: UserRole; page?: string }>
 }) {
   // Server-side protection
   await requireStaffAccess()
+
+  // Await the searchParams Promise
+  const searchParams = await searchParamsPromise
 
   return (
     <div className="min-h-screen bg-gray-50">

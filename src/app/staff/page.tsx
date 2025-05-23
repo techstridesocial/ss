@@ -193,7 +193,7 @@ export default async function StaffDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-900">Campaign "Summer Collection" created</p>
+                  <p className="text-sm text-gray-900">Campaign &quot;Summer Collection&quot; created</p>
                   <p className="text-xs text-gray-500">1 hour ago</p>
                 </div>
               </div>
