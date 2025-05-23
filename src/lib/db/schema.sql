@@ -84,6 +84,13 @@ CREATE TABLE influencers (
     estimated_promotion_views INTEGER DEFAULT 0, -- 15% calculation
     ready_for_campaigns BOOLEAN DEFAULT FALSE,
     onboarding_completed BOOLEAN DEFAULT FALSE,
+    
+    -- Tier-based update tracking
+    tier VARCHAR(20) DEFAULT 'SILVER' CHECK (tier IN ('GOLD', 'SILVER', 'PARTNERED', 'BRONZE')),
+    modash_last_updated TIMESTAMP WITH TIME ZONE,
+    modash_update_priority INTEGER DEFAULT 50, -- 1-100 priority score
+    auto_update_enabled BOOLEAN DEFAULT TRUE,
+    
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

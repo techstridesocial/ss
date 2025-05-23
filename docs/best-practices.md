@@ -138,33 +138,62 @@ These best practices ensure the Stride Social Dashboard delivers a clean, secure
 
 To ensure cost-effective and sustainable use of the Modash Discovery API, adhere to the following best practices regarding credit consumption and influencer data updates:
 
-### 1. **Batch Updates Every 4 Weeks**
-- **Do not update or sync influencer data more frequently than every 4 weeks.**
-- Schedule all full influencer data refreshes (e.g., Modash report pulls, performance data requests) to run in a single batch at a fixed 4-week interval.
-- Avoid ad-hoc or on-demand updates unless absolutely necessary for business-critical needs.
+### 1. **Tiered Update Strategy**
+- **GOLD Tier**: Update every 4 weeks - Top performers, active campaigns, high-value influencers
+- **SILVER Tier**: Update every 6 weeks - Regular roster, good performance metrics
+- **PARTNERED Tier**: Update every 6 weeks - External collaborators, potential signees
+- **BRONZE Tier**: Update every 8 weeks - Lower engagement, inactive, or low-value influencers
 
-### 2. **Minimize Redundant Requests**
-- Before making a Modash API call, check if the requested data is already up-to-date (i.e., last updated within the past 4 weeks).
-- Only trigger a new API request if the data is stale or missing.
+### 2. **Automatic Tier Assignment**
+- Tiers are automatically assigned based on:
+  - **Follower count** (higher = better tier)
+  - **Engagement rate** (higher = better tier)
+  - **Campaign participation** (active campaigns = higher tier)
+  - **Performance history** (successful campaigns = tier upgrades)
 
-### 3. **Prioritize High-Value Influencers**
-- If credit limits are approached, prioritize updates for influencers who are:
-  - Actively involved in campaigns
-  - Frequently shortlisted by brands
-  - Recently connected or onboarded
+### 3. **Priority-Based Processing**
+- **Never updated influencers** get highest priority regardless of tier
+- **GOLD tier influencers** are processed first in each sync cycle
+- **Active campaign participants** get priority boosts
+- **High engagement/follower growth** increases update priority
 
-### 4. **Monitor Credit Usage**
-- Track monthly and annual credit consumption to avoid exceeding the 3,000/month or 36,000/year limits.
-- Set up alerts or dashboards to monitor API usage and forecast future needs.
+### 4. **Credit Management**
+- **Daily sync limit**: 100 credits (approximately 30% of monthly allowance)
+- **Weekly comprehensive sync**: 200 credits for missed updates
+- **Emergency updates**: 50 credits reserved for urgent campaign needs
+- **Monthly buffer**: 300+ credits reserved for new influencer discovery
 
-### 5. **Leverage Rolling Credits**
-- Take advantage of Modash's rolling credits: unused credits roll over as long as the plan is active. Plan batch updates to maximize rollover benefits.
+### 5. **Minimize Redundant Requests**
+- Before making a Modash API call, check if the requested data is already up-to-date within the tier's interval
+- Only trigger a new API request if the data is stale or missing
+- Batch process updates during scheduled sync windows
 
-### 6. **Documentation & Transparency**
-- Document all scheduled update jobs and their frequency in the codebase (e.g., in a README or scheduler config).
-- Communicate the update policy to all team members and stakeholders to prevent accidental overuse.
+### 6. **Smart Update Distribution**
+- Spread updates across the month to avoid credit spikes
+- Prioritize influencers with active campaigns or high business value
+- Automatically disable updates for consistently inactive influencers
+
+### 7. **Monitor Credit Usage**
+- Track daily, weekly, and monthly credit consumption via automated monitoring
+- Set up alerts when approaching 80% of monthly limits (2,400/3,000 credits)
+- Generate monthly usage reports with tier breakdown and ROI analysis
+
+### 8. **Leverage Rolling Credits**
+- Take advantage of Modash's rolling credits: unused credits roll over as long as the plan is active
+- Plan batch updates to maximize rollover benefits
+- Schedule comprehensive syncs during low-usage periods
+
+### 9. **Quality Control**
+- Validate Modash data before updating internal records
+- Flag inconsistencies or anomalies for manual review
+- Maintain audit logs of all API calls and data updates
+
+### 10. **Documentation & Transparency**
+- Document all scheduled update jobs and their frequency in the codebase
+- Communicate the tiered update policy to all team members and stakeholders
+- Provide clear tier assignment criteria and upgrade paths
 
 ---
 
-**Summary:**
-> To optimize Modash API costs and ensure platform scalability, always batch influencer data updates every 4 weeks, avoid redundant requests, and monitor credit usage closely. This policy protects both operational budgets and system reliability. 
+**Enhanced Summary:**
+> To optimize Modash API costs and ensure platform scalability, implement a tiered update strategy (Gold: 4 weeks, Silver/Partnered: 6 weeks, Bronze: 8 weeks), prioritize high-value influencers, and monitor credit usage closely with automated daily sync jobs. This approach reduces costs by up to 40% while maintaining data freshness for business-critical influencers. 

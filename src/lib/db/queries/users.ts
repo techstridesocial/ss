@@ -10,6 +10,118 @@ import {
 } from '../../../types/database'
 
 // =============================================
+// TEMPORARY MOCK DATA (Remove when DB is ready)
+// =============================================
+
+const MOCK_USERS: UserWithProfile[] = [
+  {
+    id: 'user_1',
+    email: 'staff-test@stridesocial.com',
+    role: 'STAFF' as UserRole,
+    created_at: new Date('2024-01-15T10:00:00Z'),
+    updated_at: new Date('2024-01-15T10:00:00Z'),
+    profile: {
+      user_id: 'user_1',
+      first_name: 'Staff',
+      last_name: 'Member',
+      avatar_url: null,
+      phone: null,
+      location_country: 'United Kingdom',
+      location_city: 'London',
+      bio: null,
+      website_url: null,
+      is_onboarded: true,
+      created_at: new Date('2024-01-15T10:00:00Z'),
+      updated_at: new Date('2024-01-15T10:00:00Z')
+    }
+  },
+  {
+    id: 'user_2',
+    email: 'brand@example.com',
+    role: 'BRAND' as UserRole,
+    created_at: new Date('2024-01-10T14:30:00Z'),
+    updated_at: new Date('2024-01-10T14:30:00Z'),
+    profile: {
+      user_id: 'user_2',
+      first_name: 'Brand',
+      last_name: 'Manager',
+      avatar_url: null,
+      phone: '+44 20 1234 5678',
+      location_country: 'United Kingdom',
+      location_city: 'Manchester',
+      bio: null,
+      website_url: 'https://example.com',
+      is_onboarded: true,
+      created_at: new Date('2024-01-10T14:30:00Z'),
+      updated_at: new Date('2024-01-10T14:30:00Z')
+    }
+  },
+  {
+    id: 'user_3',
+    email: 'sarah.creator@gmail.com',
+    role: 'INFLUENCER_SIGNED' as UserRole,
+    created_at: new Date('2024-01-08T09:15:00Z'),
+    updated_at: new Date('2024-01-08T09:15:00Z'),
+    profile: {
+      user_id: 'user_3',
+      first_name: 'Sarah',
+      last_name: 'Creator',
+      avatar_url: null,
+      phone: null,
+      location_country: 'United Kingdom',
+      location_city: 'Birmingham',
+      bio: 'Lifestyle & Fashion Content Creator',
+      website_url: 'https://sarahcreator.com',
+      is_onboarded: true,
+      created_at: new Date('2024-01-08T09:15:00Z'),
+      updated_at: new Date('2024-01-08T09:15:00Z')
+    }
+  },
+  {
+    id: 'user_4',
+    email: 'mike.partner@outlook.com',
+    role: 'INFLUENCER_PARTNERED' as UserRole,
+    created_at: new Date('2024-01-05T16:45:00Z'),
+    updated_at: new Date('2024-01-05T16:45:00Z'),
+    profile: {
+      user_id: 'user_4',
+      first_name: 'Mike',
+      last_name: 'Content',
+      avatar_url: null,
+      phone: null,
+      location_country: 'United States',
+      location_city: 'New York',
+      bio: 'Tech & Gaming Influencer',
+      website_url: null,
+      is_onboarded: false,
+      created_at: new Date('2024-01-05T16:45:00Z'),
+      updated_at: new Date('2024-01-05T16:45:00Z')
+    }
+  },
+  {
+    id: 'user_5',
+    email: 'admin@stridesocial.com',
+    role: 'ADMIN' as UserRole,
+    created_at: new Date('2024-01-01T12:00:00Z'),
+    updated_at: new Date('2024-01-01T12:00:00Z'),
+    profile: {
+      user_id: 'user_5',
+      first_name: 'System',
+      last_name: 'Admin',
+      avatar_url: null,
+      phone: null,
+      location_country: 'United Kingdom',
+      location_city: 'London',
+      bio: null,
+      website_url: null,
+      is_onboarded: true,
+      created_at: new Date('2024-01-01T12:00:00Z'),
+      updated_at: new Date('2024-01-01T12:00:00Z')
+    }
+  }
+]
+
+// =============================================
 // User Query Functions
 // =============================================
 
@@ -21,108 +133,33 @@ export async function getUsers(
   page: number = 1,
   limit: number = 20
 ): Promise<PaginatedResponse<UserWithProfile>> {
-  const offset = (page - 1) * limit
   
-  let whereConditions: string[] = []
-  let params: any[] = []
-  let paramIndex = 1
-
-  // Build dynamic WHERE conditions
+  // TEMPORARY: Use mock data instead of database
+  console.log('getUsers: Using mock data (database not yet set up)')
+  
+  let filteredUsers = [...MOCK_USERS]
+  
+  // Apply filters
   if (filters.search) {
-    whereConditions.push(`
-      (u.email ILIKE $${paramIndex} 
-       OR up.first_name ILIKE $${paramIndex} 
-       OR up.last_name ILIKE $${paramIndex})
-    `)
-    params.push(`%${filters.search}%`)
-    paramIndex++
+    const searchLower = filters.search.toLowerCase()
+    filteredUsers = filteredUsers.filter(user => 
+      user.email.toLowerCase().includes(searchLower) ||
+      user.profile?.first_name?.toLowerCase().includes(searchLower) ||
+      user.profile?.last_name?.toLowerCase().includes(searchLower)
+    )
   }
-
-  if (filters.roles && filters.roles.length > 0) {
-    whereConditions.push(`u.role = ANY($${paramIndex})`)
-    params.push(filters.roles)
-    paramIndex++
-  }
-
-  if (filters.is_onboarded !== undefined) {
-    whereConditions.push(`up.is_onboarded = $${paramIndex}`)
-    params.push(filters.is_onboarded)
-    paramIndex++
-  }
-
-  if (filters.location_countries && filters.location_countries.length > 0) {
-    whereConditions.push(`up.location_country = ANY($${paramIndex})`)
-    params.push(filters.location_countries)
-    paramIndex++
-  }
-
-  const whereClause = whereConditions.length > 0 
-    ? 'WHERE ' + whereConditions.join(' AND ')
-    : ''
-
-  // Get total count
-  const countQuery = `
-    SELECT COUNT(DISTINCT u.id) as total
-    FROM users u
-    LEFT JOIN user_profiles up ON u.id = up.user_id
-    ${whereClause}
-  `
-  const countResult = await queryOne<{ total: string }>(countQuery, params)
-  const total = parseInt(countResult?.total || '0')
-
-  // Get paginated results
-  const dataQuery = `
-    SELECT 
-      u.id,
-      u.email,
-      u.role,
-      u.created_at,
-      u.updated_at,
-      up.first_name,
-      up.last_name,
-      up.avatar_url,
-      up.phone,
-      up.location_country,
-      up.location_city,
-      up.bio,
-      up.website_url,
-      up.is_onboarded,
-      up.created_at as profile_created_at,
-      up.updated_at as profile_updated_at
-    FROM users u
-    LEFT JOIN user_profiles up ON u.id = up.user_id
-    ${whereClause}
-    ORDER BY u.created_at DESC
-    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-  `
-  params.push(limit, offset)
-
-  const rows = await query<any>(dataQuery, params)
   
-  const users: UserWithProfile[] = rows.map(row => ({
-    id: row.id,
-    email: row.email,
-    role: row.role,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    profile: row.first_name || row.last_name ? {
-      user_id: row.id,
-      first_name: row.first_name,
-      last_name: row.last_name,
-      avatar_url: row.avatar_url,
-      phone: row.phone,
-      location_country: row.location_country,
-      location_city: row.location_city,
-      bio: row.bio,
-      website_url: row.website_url,
-      is_onboarded: row.is_onboarded,
-      created_at: row.profile_created_at,
-      updated_at: row.profile_updated_at
-    } : null
-  }))
-
+  if (filters.roles && filters.roles.length > 0) {
+    filteredUsers = filteredUsers.filter(user => filters.roles!.includes(user.role))
+  }
+  
+  // Apply pagination
+  const total = filteredUsers.length
+  const offset = (page - 1) * limit
+  const paginatedUsers = filteredUsers.slice(offset, offset + limit)
+  
   return {
-    data: users,
+    data: paginatedUsers,
     total,
     page,
     limit,
@@ -389,40 +426,22 @@ export async function getUserStats(): Promise<{
   recentUsers: number;
   onboardedUsers: number;
 }> {
-  const totalUsersResult = await queryOne<{ count: string }>(
-    'SELECT COUNT(*) as count FROM users'
-  )
-
-  const usersByRoleResult = await query<{ role: UserRole; count: string }>(
-    'SELECT role, COUNT(*) as count FROM users GROUP BY role'
-  )
-
-  const recentUsersResult = await queryOne<{ count: string }>(
-    `SELECT COUNT(*) as count FROM users 
-     WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'`
-  )
-
-  const onboardedUsersResult = await queryOne<{ count: string }>(
-    `SELECT COUNT(*) as count FROM user_profiles 
-     WHERE is_onboarded = true`
-  )
-
+  
+  // TEMPORARY: Use mock data instead of database
+  console.log('getUserStats: Using mock data (database not yet set up)')
+  
   const usersByRole: Record<UserRole, number> = {
-    BRAND: 0,
-    INFLUENCER_SIGNED: 0,
-    INFLUENCER_PARTNERED: 0,
-    STAFF: 0,
-    ADMIN: 0
-  }
-
-  for (const row of usersByRoleResult) {
-    usersByRole[row.role] = parseInt(row.count)
+    BRAND: 1,
+    INFLUENCER_SIGNED: 1,
+    INFLUENCER_PARTNERED: 1,
+    STAFF: 1,
+    ADMIN: 1
   }
 
   return {
-    totalUsers: parseInt(totalUsersResult?.count || '0'),
+    totalUsers: MOCK_USERS.length,
     usersByRole,
-    recentUsers: parseInt(recentUsersResult?.count || '0'),
-    onboardedUsers: parseInt(onboardedUsersResult?.count || '0')
+    recentUsers: 2, // Mock recent users in last 7 days
+    onboardedUsers: 4 // Mock onboarded users
   }
 } 

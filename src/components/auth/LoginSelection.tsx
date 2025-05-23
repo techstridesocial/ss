@@ -59,11 +59,7 @@ export default function LoginSelection() {
                   : 'bg-gray-600 hover:bg-gray-700 text-sm normal-case'
               }
             }}
-            afterSignInUrl={
-              mode === 'brand' ? '/brand' : 
-              mode === 'influencer' ? '/influencer' :
-              '/staff'
-            }
+            afterSignInUrl="/dashboard"
           />
           
           <button

@@ -1,9 +1,10 @@
 import React from 'react'
 import { requireStaffAccess } from '../../../lib/auth/roles'
 import StaffNavigation from '../../../components/nav/StaffNavigation'
+import UserFilters from '../../../components/filters/UserFilters'
 import { getUsers } from '../../../lib/db/queries/users'
 import { UserRole } from '../../../types/database'
-import { Search, Filter, Plus, Edit, Trash2, UserCheck, Mail, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, UserCheck, Mail, MapPin } from 'lucide-react'
 
 interface UserTableProps {
   searchParams: {
@@ -234,63 +235,10 @@ export default async function UsersPage({
         </div>
 
         {/* Filters */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
-            {/* Search */}
-            <div className="flex-1">
-              <form method="get" className="relative">
-                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  name="search"
-                  defaultValue={searchParams.search}
-                  placeholder="Search users by name or email..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                {searchParams.role && (
-                  <input type="hidden" name="role" value={searchParams.role} />
-                )}
-              </form>
-            </div>
-
-            {/* Role Filter */}
-            <div className="flex items-center space-x-2">
-              <Filter size={16} className="text-gray-400" />
-              <select
-                name="role"
-                defaultValue={searchParams.role || ''}
-                onChange={(e) => {
-                  const url = new URL(window.location.href)
-                  if (e.target.value) {
-                    url.searchParams.set('role', e.target.value)
-                  } else {
-                    url.searchParams.delete('role')
-                  }
-                  url.searchParams.delete('page')
-                  window.location.href = url.toString()
-                }}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All Roles</option>
-                <option value="BRAND">Brand</option>
-                <option value="INFLUENCER_SIGNED">Influencer (Signed)</option>
-                <option value="INFLUENCER_PARTNERED">Influencer (Partnered)</option>
-                <option value="STAFF">Staff</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
-
-            {/* Reset Filters */}
-            {(searchParams.search || searchParams.role) && (
-              <a
-                href="/staff/users"
-                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
-              >
-                Clear Filters
-              </a>
-            )}
-          </div>
-        </div>
+        <UserFilters 
+          currentSearch={searchParams.search}
+          currentRole={searchParams.role}
+        />
 
         {/* User Table */}
         <React.Suspense fallback={

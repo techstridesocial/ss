@@ -17,6 +17,12 @@ export type Platform =
   | 'TWITTER' 
   | 'LINKEDIN';
 
+export type InfluencerTier = 
+  | 'GOLD' 
+  | 'SILVER' 
+  | 'PARTNERED' 
+  | 'BRONZE';
+
 export type CampaignStatus = 
   | 'DRAFT' 
   | 'ACTIVE' 
@@ -82,6 +88,13 @@ export interface Influencer {
   price_per_post: number | null;
   is_active: boolean;
   last_synced_at: Date | null;
+  
+  // Tier-based update tracking
+  tier: InfluencerTier;
+  modash_last_updated: Date | null;
+  modash_update_priority: number;
+  auto_update_enabled: boolean;
+  
   created_at: Date;
   updated_at: Date;
 }
@@ -365,3 +378,4 @@ export interface DatabaseResponse<T> {
   error?: string;
   message?: string;
 }
+ 

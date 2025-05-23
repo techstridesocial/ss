@@ -1,20 +1,28 @@
 // Role-based authentication utilities for Stride Social Dashboard
 
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { UserRole, ROLE_HIERARCHY, getRoleRedirectPath } from './types'
 
-// Get current user's role from Clerk
+// Get current user's role from Clerk using currentUser() instead of sessionClaims
 export async function getCurrentUserRole(): Promise<UserRole | null> {
-  const { sessionClaims } = await auth()
-  
-  if (!sessionClaims) {
+  try {
+    const user = await currentUser()
+    
+    if (!user) {
+      return null
+    }
+
+    // Role should be stored in public metadata
+    const role = user.publicMetadata?.role as UserRole
+    console.log('getCurrentUserRole: user.publicMetadata =', user.publicMetadata)
+    console.log('getCurrentUserRole: extracted role =', role)
+    
+    return role || null
+  } catch (error) {
+    console.error('Error getting user role:', error)
     return null
   }
-
-  // Role should be stored in public metadata - accessing via publicMetadata
-  const role = (sessionClaims as { publicMetadata?: { role?: UserRole } })?.publicMetadata?.role as UserRole
-  return role || null
 }
 
 // Check if user has required role or higher (server-side)

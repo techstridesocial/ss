@@ -1,8 +1,6 @@
 import React from 'react'
 import { requireStaffAccess } from '../../lib/auth/roles'
 import StaffNavigation from '../../components/nav/StaffNavigation'
-import { getUserStats } from '../../lib/db/queries/users'
-import { getInfluencerStats } from '../../lib/db/queries/influencers'
 import { Users, UserCheck, Activity, TrendingUp, Eye, UserPlus } from 'lucide-react'
 
 interface StatCardProps {
@@ -73,52 +71,23 @@ function QuickActionCard({ title, description, href, icon, color }: QuickActionP
   )
 }
 
-async function DashboardStats() {
-  const [userStats, influencerStats] = await Promise.all([
-    getUserStats(),
-    getInfluencerStats()
-  ])
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <StatCard
-        title="Total Users"
-        value={userStats.totalUsers}
-        icon={<Users size={24} />}
-        trend={`+${userStats.recentUsers} this week`}
-        color="blue"
-      />
-      
-      <StatCard
-        title="Active Influencers"
-        value={influencerStats.activeInfluencers}
-        icon={<UserCheck size={24} />}
-        trend={`${influencerStats.totalInfluencers} total`}
-        color="green"
-      />
-      
-      <StatCard
-        title="Avg. Followers"
-        value={`${(influencerStats.averageFollowers / 1000).toFixed(1)}K`}
-        icon={<TrendingUp size={24} />}
-        trend={`${influencerStats.averageEngagement.toFixed(1)}% engagement`}
-        color="purple"
-      />
-      
-      <StatCard
-        title="Onboarded"
-        value={userStats.onboardedUsers}
-        icon={<Activity size={24} />}
-        trend="Platform ready"
-        color="yellow"
-      />
-    </div>
-  )
-}
-
 export default async function StaffDashboard() {
   // Server-side protection
   await requireStaffAccess()
+
+  // Mock data for testing
+  const mockUserStats = {
+    totalUsers: 247,
+    recentUsers: 12,
+    onboardedUsers: 198
+  }
+
+  const mockInfluencerStats = {
+    activeInfluencers: 145,
+    totalInfluencers: 189,
+    averageFollowers: 125000,
+    averageEngagement: 3.2
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -134,19 +103,39 @@ export default async function StaffDashboard() {
         </div>
 
         {/* Statistics */}
-        <React.Suspense fallback={
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        }>
-          <DashboardStats />
-        </React.Suspense>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Total Users"
+            value={mockUserStats.totalUsers}
+            icon={<Users size={24} />}
+            trend={`+${mockUserStats.recentUsers} this week`}
+            color="blue"
+          />
+          
+          <StatCard
+            title="Active Influencers"
+            value={mockInfluencerStats.activeInfluencers}
+            icon={<UserCheck size={24} />}
+            trend={`${mockInfluencerStats.totalInfluencers} total`}
+            color="green"
+          />
+          
+          <StatCard
+            title="Avg. Followers"
+            value={`${(mockInfluencerStats.averageFollowers / 1000).toFixed(1)}K`}
+            icon={<TrendingUp size={24} />}
+            trend={`${mockInfluencerStats.averageEngagement.toFixed(1)}% engagement`}
+            color="purple"
+          />
+          
+          <StatCard
+            title="Onboarded"
+            value={mockUserStats.onboardedUsers}
+            icon={<Activity size={24} />}
+            trend="Platform ready"
+            color="yellow"
+          />
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
