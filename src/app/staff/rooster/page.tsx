@@ -339,7 +339,7 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       setInfluencers(prev => prev.map(inf => 
         inf.id === data.id 
           ? { 
-              ...inf,
+              ...inf, 
               // Update specific fields only
               display_name: data.display_name || inf.display_name,
               first_name: data.first_name || inf.first_name,
@@ -671,10 +671,10 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center">
+                      <div className="flex items-center">
                       <MapPin size={14} className="mr-1" />
                       {influencer.location_city}, {influencer.location_country}
-                    </div>
+                      </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -733,15 +733,15 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       />
 
       {/* Modals */}
-      <EditInfluencerModal
-        isOpen={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false)
-          setSelectedInfluencer(null)
-        }}
+        <EditInfluencerModal
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false)
+            setSelectedInfluencer(null)
+          }}
         onSave={handleSaveInfluencerEdit}
         influencer={selectedInfluencer}
-      />
+        />
 
       <AddInfluencerModal
         isOpen={addModalOpen}
@@ -770,7 +770,7 @@ function InfluencerRoosterPageClient({
         </div>
 
         <InfluencerTableClient searchParams={searchParams} />
-      </div>
+          </div>
     </div>
   )
 }
