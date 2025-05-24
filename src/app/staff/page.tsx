@@ -1,6 +1,6 @@
 import React from 'react'
 import { requireStaffAccess } from '../../lib/auth/roles'
-import StaffNavigation from '../../components/nav/StaffNavigation'
+import ModernStaffHeader from '../../components/nav/ModernStaffHeader'
 import { Users, UserCheck, Activity, TrendingUp, Eye, UserPlus } from 'lucide-react'
 
 interface StatCardProps {
@@ -21,7 +21,7 @@ function StatCard({ title, value, icon, trend, color }: StatCardProps) {
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -30,7 +30,7 @@ function StatCard({ title, value, icon, trend, color }: StatCardProps) {
             <p className="text-sm text-green-600 mt-1">{trend}</p>
           )}
         </div>
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+        <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
           {icon}
         </div>
       </div>
@@ -56,7 +56,7 @@ function QuickActionCard({ title, description, href, icon, color }: QuickActionP
   return (
     <a
       href={href}
-      className={`block p-4 border-2 border-dashed rounded-lg transition-colors ${colorClasses[color]}`}
+      className={`block p-4 border-2 border-dashed rounded-xl transition-colors ${colorClasses[color]}`}
     >
       <div className="flex items-center space-x-3">
         <div className="flex-shrink-0">
@@ -91,16 +91,9 @@ export default async function StaffDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffNavigation />
+      <ModernStaffHeader />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Staff Dashboard</h1>
-          <p className="text-gray-600 mt-2">
-            Manage users, influencers, and campaigns from your central hub
-          </p>
-        </div>
+      <main className="max-w-[1440px] mx-auto px-4 lg:px-8 pb-8">
 
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -165,7 +158,7 @@ export default async function StaffDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
           </div>
@@ -182,7 +175,7 @@ export default async function StaffDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-900">Campaign &quot;Summer Collection&quot; created</p>
+                  <p className="text-sm text-gray-900">Campaign "Summer Collection" created</p>
                   <p className="text-xs text-gray-500">1 hour ago</p>
                 </div>
               </div>
