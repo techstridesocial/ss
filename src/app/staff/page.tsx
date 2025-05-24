@@ -90,10 +90,10 @@ export default async function StaffDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
       <ModernStaffHeader />
       
-      <main className="max-w-[1440px] mx-auto px-4 lg:px-8 pb-8">
+      <main className="px-4 lg:px-8 pb-8">
 
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

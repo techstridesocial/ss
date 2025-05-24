@@ -787,10 +787,10 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
 
 export default function StaffRoosterPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: "#EEF7FA" }}>
       <ModernStaffHeader />
       
-      <div className="max-w-[1440px] mx-auto px-4 lg:px-8 pb-8">
+      <div className="px-4 lg:px-8 pb-8">
         <InfluencerTableClient searchParams={{}} />
       </div>
     </div>
