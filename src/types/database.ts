@@ -95,6 +95,12 @@ export interface Influencer {
   modash_update_priority: number;
   auto_update_enabled: boolean;
   
+  // CRM & Workflow Management
+  relationship_status: string | null;
+  assigned_to: string | null;
+  labels: string[];
+  notes: string | null;
+  
   created_at: Date;
   updated_at: Date;
 }
@@ -300,6 +306,12 @@ export interface InfluencerWithProfile {
   estimated_promotion_views: number;
   price_per_post: number | null;
   is_active: boolean;
+  
+  // CRM & Workflow Management
+  relationship_status: string | null;
+  assigned_to: string | null;
+  labels: string[];
+  notes: string | null;
   
   // Profile data
   first_name: string | null;

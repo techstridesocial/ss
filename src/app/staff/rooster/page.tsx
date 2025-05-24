@@ -7,6 +7,7 @@ import StaffNavigation from '../../../components/nav/StaffNavigation'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerModal from '../../../components/modals/AddInfluencerModal'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
+import InfluencerManagementPanel from '../../../components/influencer/InfluencerManagementPanel'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { Search, Filter, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw } from 'lucide-react'
 
@@ -28,6 +29,8 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [activeTab, setActiveTab] = useState<'GOLD' | 'SILVER' | 'PARTNERED'>('GOLD')
   const [isLoading, setIsLoading] = useState(false)
+  const [managementPanelOpen, setManagementPanelOpen] = useState(false)
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('')
   const [influencers, setInfluencers] = useState(() => {
     // Initialize with mock data - in real app this would load from API
     const INITIAL_INFLUENCERS = [
@@ -300,9 +303,19 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Generate detailed data
-      const detailedData = generateDetailedInfluencerData(influencer)
+      // Generate detailed data with CRM fields
+      const detailedData = {
+        ...generateDetailedInfluencerData(influencer),
+        // Add CRM fields that might be missing
+        relationship_status: influencer.relationship_status || 'not_started',
+        assigned_to: influencer.assigned_to || null,
+        labels: influencer.labels || [],
+        notes: influencer.notes || ''
+      }
+      
       setSelectedInfluencerDetail(detailedData)
+      setSelectedPlatform(detailedData.platform_details[0]?.platform || '')
+      setManagementPanelOpen(true)
       setDetailPanelOpen(true)
     } catch (error) {
       console.error('Error loading influencer details:', error)
@@ -310,6 +323,24 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleClosePanels = () => {
+    setManagementPanelOpen(false)
+    setDetailPanelOpen(false)
+    setSelectedInfluencerDetail(null)
+    setSelectedPlatform('')
+  }
+
+  const handlePlatformSwitch = (platform: string) => {
+    setSelectedPlatform(platform)
+  }
+
+  const handleSaveManagement = (data: Partial<InfluencerDetailView>) => {
+    console.log('Saving management data:', data)
+    // Here you would typically update the influencer in your database
+    alert('✅ Influencer management data saved successfully!')
+    handleClosePanels()
   }
 
   const handleSaveInfluencer = (influencerId: string) => {
@@ -724,10 +755,7 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       <InfluencerDetailPanel
         influencer={selectedInfluencerDetail}
         isOpen={detailPanelOpen}
-        onClose={() => {
-          setDetailPanelOpen(false)
-          setSelectedInfluencerDetail(null)
-        }}
+        onClose={handleClosePanels}
         onSave={handleSaveInfluencer}
         onAddToShortlist={handleAddToShortlist}
       />
@@ -747,6 +775,16 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onSave={handleAddInfluencer}
+      />
+
+      {/* Management Panel */}
+      <InfluencerManagementPanel
+        influencer={selectedInfluencerDetail}
+        isOpen={managementPanelOpen}
+        onClose={handleClosePanels}
+        onPlatformSwitch={handlePlatformSwitch}
+        onSave={handleSaveManagement}
+        selectedPlatform={selectedPlatform}
       />
     </>
   )
