@@ -258,11 +258,11 @@ export default function InfluencerManagementPanel({
           
           {/* Management Panel */}
           <motion.div
-            initial={{ x: '-100%' }}
+            initial={{ x: '100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed left-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="fixed right-[42rem] top-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
