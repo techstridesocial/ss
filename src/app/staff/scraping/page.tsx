@@ -1,4 +1,4 @@
-'use client'
+// 'use client' removed
 
 import React, { useState } from 'react'
 import { requireStaffAccess } from '../../../lib/auth/roles'

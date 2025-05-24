@@ -1,4 +1,4 @@
-'use client'
+// 'use client' removed
 
 import React, { useState } from 'react'
 import Link from 'next/link'

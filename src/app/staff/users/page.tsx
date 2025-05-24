@@ -1,3 +1,5 @@
+// 'use client' removed if present
+
 import React from 'react'
 import { requireStaffAccess } from '../../../lib/auth/roles'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
