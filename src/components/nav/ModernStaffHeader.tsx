@@ -104,6 +104,42 @@ export default function ModernStaffHeader() {
     return 'there' // Final fallback
   }
 
+  const getPageHeader = () => {
+    // Check current route and return appropriate header content
+    if (pathname === '/staff') {
+      return {
+        title: `${getGreeting()}, ${getUserName()}!`,
+        subtitle: 'Ready to manage your influencer network'
+      }
+    } else if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
+      return {
+        title: 'Brand Management',
+        subtitle: 'Manage brand clients, review shortlists, and generate reports'
+      }
+    } else if (pathname === '/staff/rooster' || pathname.startsWith('/staff/rooster/')) {
+      return {
+        title: 'Influencer Rooster',
+        subtitle: 'Manage and organize your influencer network with detailed analytics and performance metrics.'
+      }
+    } else if (pathname === '/staff/campaigns' || pathname.startsWith('/staff/campaigns/')) {
+      return {
+        title: 'Campaign Management',
+        subtitle: 'Create, manage, and track influencer marketing campaigns'
+      }
+    } else if (pathname === '/staff/scraping' || pathname.startsWith('/staff/scraping/')) {
+      return {
+        title: 'Modash Integration',
+        subtitle: 'Discover, analyze, and import new influencers using Modash API'
+      }
+    } else {
+      // Default fallback
+      return {
+        title: `${getGreeting()}, ${getUserName()}!`,
+        subtitle: 'Ready to manage your influencer network'
+      }
+    }
+  }
+
   return (
     <>
       <div className="p-4 lg:p-6">
@@ -139,7 +175,11 @@ export default function ModernStaffHeader() {
                     key={item.href}
                     href={item.href}
                     label={item.label}
-                    isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
+                    isActive={
+                      item.href === '/staff' 
+                        ? pathname === '/staff'
+                        : pathname === item.href || pathname.startsWith(item.href + '/')
+                    }
                   />
                 ))}
               </nav>
@@ -220,10 +260,10 @@ export default function ModernStaffHeader() {
             <div className="w-full px-4 lg:px-8 pt-12 lg:pt-16 pb-4 lg:pb-6 flex items-end">
               <div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-white mb-2">
-                  {getGreeting()}, {getUserName()}!
+                  {getPageHeader().title}
                 </h1>
                 <p className="text-white text-opacity-90 text-base lg:text-lg">
-                  Ready to manage your influencer network
+                  {getPageHeader().subtitle}
                 </p>
               </div>
             </div>
@@ -247,7 +287,10 @@ export default function ModernStaffHeader() {
                 onClick={closeMobileMenu}
                 className={`
                   block px-3 py-2 text-base font-medium rounded-lg transition-colors
-                  ${pathname === item.href || pathname.startsWith(item.href + '/') 
+                  ${(item.href === '/staff' 
+                      ? pathname === '/staff'
+                      : pathname === item.href || pathname.startsWith(item.href + '/')
+                    ) 
                     ? 'text-white bg-white bg-opacity-20' 
                     : 'text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-10'
                   }

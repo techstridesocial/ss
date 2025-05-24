@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import StaffNavigation from '../../../components/nav/StaffNavigation'
+import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import CreateCampaignModal from '../../../components/modals/CreateCampaignModal'
 import { 
   Megaphone, 
@@ -532,17 +532,9 @@ function CampaignsPageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffNavigation />
+      <ModernStaffHeader />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Campaign Management</h1>
-          <p className="text-gray-600 mt-2">
-            Create, manage, and track influencer marketing campaigns
-          </p>
-        </div>
-
+      <main className="max-w-[1440px] mx-auto px-4 lg:px-8 pb-8">
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard

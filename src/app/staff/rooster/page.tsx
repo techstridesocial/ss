@@ -1,8 +1,7 @@
-// 'use client' removed
+'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { requireStaffAccess } from '../../../lib/auth/roles'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerModal from '../../../components/modals/AddInfluencerModal'
@@ -786,22 +785,14 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
   )
 }
 
-export default async function StaffRoosterPage() {
-  await requireStaffAccess()
+export default function StaffRoosterPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ModernStaffHeader />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Influencer Rooster</h1>
-          <p className="mt-2 text-gray-600">
-            Manage and organize your influencer network with detailed analytics and performance metrics.
-          </p>
-        </div>
-
+      <div className="max-w-[1440px] mx-auto px-4 lg:px-8 pb-8">
         <InfluencerTableClient searchParams={{}} />
-          </div>
+      </div>
     </div>
   )
 } 
