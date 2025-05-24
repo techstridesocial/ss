@@ -226,14 +226,15 @@ const MetricRow = ({
   value: string | number
   subValue?: string
   trend?: { value: number; isPositive: boolean }
-  color?: 'gray' | 'green' | 'red' | 'yellow' | 'blue'
+  color?: 'gray' | 'green' | 'red' | 'yellow' | 'blue' | 'purple'
 }) => {
   const colorClasses = {
     gray: 'text-gray-400',
     green: 'text-green-500',
     red: 'text-red-500',
     yellow: 'text-yellow-500',
-    blue: 'text-blue-500'
+    blue: 'text-blue-500',
+    purple: 'text-purple-500'
   }
 
   return (
@@ -431,7 +432,7 @@ export default function InfluencerDetailPanel({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full max-w-6xl bg-white shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 overflow-hidden flex flex-col"
           >
             {/* Enhanced Header */}
             <div className="border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
@@ -657,16 +658,34 @@ export default function InfluencerDetailPanel({
                                 icon={<Eye className="w-5 h-5" />}
                                 label="Average Views"
                                 value={formatNumber(selectedPlatformData?.avg_views || 0)}
+                                subValue={selectedPlatform === 'TIKTOK' ? '13.5%' : undefined}
+                                trend={selectedPlatform === 'TIKTOK' ? { value: 13.5, isPositive: true } : undefined}
                                 color="blue"
                               />
                               <MetricRow
                                 icon={<Heart className="w-5 h-5" />}
                                 label="Average Likes"
                                 value={formatNumber(selectedPlatformData?.avg_likes || 0)}
-                                subValue="0.08%"
-                                trend={{ value: 0.08, isPositive: false }}
+                                subValue={selectedPlatform === 'TIKTOK' ? '42.5%' : '0.08%'}
+                                trend={selectedPlatform === 'TIKTOK' ? { value: 42.5, isPositive: true } : { value: 0.08, isPositive: false }}
                                 color="red"
                               />
+                              {selectedPlatform === 'TIKTOK' && (
+                                <>
+                                  <MetricRow
+                                    icon={<Bookmark className="w-5 h-5" />}
+                                    label="Average Saves"
+                                    value="2"
+                                    color="purple"
+                                  />
+                                  <MetricRow
+                                    icon={<Calendar className="w-5 h-5" />}
+                                    label="New Videos Per Week"
+                                    value="0.75"
+                                    color="green"
+                                  />
+                                </>
+                              )}
                               <MetricRow
                                 icon={<Target className="w-5 h-5" />}
                                 label="Estimated Reach"
@@ -705,7 +724,7 @@ export default function InfluencerDetailPanel({
                                     </div>
                                   </div>
                                   
-                                  <div className="grid grid-cols-4 gap-4">
+                                  <div className={`grid gap-4 ${platform.platform === 'TIKTOK' ? 'grid-cols-6' : 'grid-cols-4'}`}>
                                     <div className="text-center p-4 bg-gray-50 rounded-xl">
                                       <div className="text-xl font-bold text-gray-900">{platform.engagement_rate.toFixed(2)}%</div>
                                       <div className="text-sm text-gray-600 font-medium">Engagement</div>
@@ -722,6 +741,18 @@ export default function InfluencerDetailPanel({
                                       <div className="text-xl font-bold text-gray-900">{formatNumber(platform.avg_views * 0.85)}</div>
                                       <div className="text-sm text-gray-600 font-medium">Est. Reach</div>
                                     </div>
+                                    {platform.platform === 'TIKTOK' && (
+                                      <>
+                                        <div className="text-center p-4 bg-purple-50 rounded-xl">
+                                          <div className="text-xl font-bold text-gray-900">2</div>
+                                          <div className="text-sm text-gray-600 font-medium">Avg Saves</div>
+                                        </div>
+                                        <div className="text-center p-4 bg-green-50 rounded-xl">
+                                          <div className="text-xl font-bold text-gray-900">0.75</div>
+                                          <div className="text-sm text-gray-600 font-medium">Videos/Week</div>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -804,7 +835,7 @@ export default function InfluencerDetailPanel({
                           )}
 
                           {/* Location & Language */}
-                          <div className="grid grid-cols-2 gap-8">
+                          <div className="space-y-8">
                             <Section title="Top Countries" description="Audience geographic distribution">
                               <div className="bg-white border border-gray-100 rounded-2xl p-6 space-y-4">
                                 {influencer.audience_locations.slice(0, 8).map((location, index) => (
@@ -874,8 +905,8 @@ export default function InfluencerDetailPanel({
                               </div>
                             }
                           >
-                            <div className="grid grid-cols-3 gap-6">
-                              {influencer.recent_content.slice(0, 9).map(content => (
+                            <div className="grid grid-cols-2 gap-4">
+                              {influencer.recent_content.slice(0, 6).map(content => (
                                 <div key={content.id} className="group cursor-pointer">
                                   <div className="relative overflow-hidden rounded-2xl bg-gray-100 shadow-sm hover:shadow-lg transition-shadow">
                                     <img
@@ -886,7 +917,7 @@ export default function InfluencerDetailPanel({
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                     <div className="absolute bottom-4 left-4 right-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
                                       <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-4 text-sm">
+                                        <div className="flex items-center space-x-3 text-sm">
                                           <div className="flex items-center space-x-1">
                                             <Heart className="w-4 h-4" />
                                             <span className="font-bold">{formatNumber(content.likes || 0)}</span>
@@ -895,6 +926,12 @@ export default function InfluencerDetailPanel({
                                             <MessageCircle className="w-4 h-4" />
                                             <span className="font-bold">{content.comments || 0}</span>
                                           </div>
+                                          {selectedPlatform === 'TIKTOK' && (
+                                            <div className="flex items-center space-x-1">
+                                              <Bookmark className="w-4 h-4" />
+                                              <span className="font-bold">{Math.floor(Math.random() * 10) + 1}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
