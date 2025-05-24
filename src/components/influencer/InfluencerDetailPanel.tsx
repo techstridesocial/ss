@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, Share2, MapPin, Calendar, Bookmark, BookmarkPlus, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Star, Shield, AlertTriangle, Target, Zap } from 'lucide-react'
+import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, Share2, MapPin, Calendar, Bookmark, BookmarkPlus, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Star, Shield, AlertTriangle, Target, Zap, Settings } from 'lucide-react'
 import { InfluencerDetailView, Platform } from '@/types/database'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -9,6 +9,8 @@ interface InfluencerDetailPanelProps {
   influencer: InfluencerDetailView | null
   isOpen: boolean
   onClose: () => void
+  selectedPlatform?: string
+  onPlatformSwitch?: (platform: string) => void
   onSave?: (influencerId: string) => void
   onAddToShortlist?: (influencerId: string) => void
 }
@@ -257,7 +259,6 @@ const MetricRow = ({
 
 // Enhanced Contact Info Component
 const ContactInfo = ({ influencer }: { influencer: InfluencerDetailView }) => {
-  // @ts-expect-error - These properties may not exist in current type but will be added from UserProfile join
   const hasContact = influencer.email || influencer.website_url
   
   if (!hasContact) return null
@@ -274,22 +275,18 @@ const ContactInfo = ({ influencer }: { influencer: InfluencerDetailView }) => {
         </div>
       </div>
       <div className="space-y-3">
-        {/* @ts-expect-error - email property will be added from UserProfile join */}
         {influencer.email && (
           <div className="flex items-center space-x-3">
             <Mail className="w-4 h-4 text-gray-400" />
-            {/* @ts-expect-error - email property will be added from UserProfile join */}
             <span className="text-gray-700 font-medium">{influencer.email}</span>
             <Button size="sm" variant="outline">
               Contact
             </Button>
           </div>
         )}
-        {/* @ts-expect-error - website_url property will be added from UserProfile join */}
         {influencer.website_url && (
           <div className="flex items-center space-x-3">
             <Globe className="w-4 h-4 text-gray-400" />
-            {/* @ts-expect-error - website_url property will be added from UserProfile join */}
             <span className="text-gray-700 font-medium">{influencer.website_url}</span>
             <Button size="sm" variant="outline">
               <ExternalLink className="w-3 h-3 mr-1" />
@@ -329,11 +326,13 @@ export default function InfluencerDetailPanel({
   influencer, 
   isOpen, 
   onClose, 
+  selectedPlatform, 
+  onPlatformSwitch,
   onSave, 
-  onAddToShortlist 
-}: InfluencerDetailPanelProps) {
+  onAddToShortlist,
+  onOpenManagement
+}: InfluencerDetailPanelProps & { onOpenManagement?: () => void }) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('')
   const [isSaved, setIsSaved] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -341,7 +340,6 @@ export default function InfluencerDetailPanel({
   useEffect(() => {
     if (isOpen && influencer) {
       setActiveTab('overview')
-      setSelectedPlatform(influencer.platform_details[0]?.platform || '')
       setIsSaved(false)
     }
   }, [isOpen, influencer?.id])
@@ -492,10 +490,8 @@ export default function InfluencerDetailPanel({
                           <span className="text-green-600 font-medium">Active</span>
                         </div>
                       </div>
-                      {/* @ts-expect-error - bio property will be added from UserProfile join */}
                       {influencer.bio && (
                         <p className="text-gray-700 text-sm leading-relaxed max-w-2xl">
-                          {/* @ts-expect-error - bio property will be added from UserProfile join */}
                           {influencer.bio}
                         </p>
                       )}
@@ -537,7 +533,7 @@ export default function InfluencerDetailPanel({
                     {influencer.platform_details.map(platform => (
                       <button
                         key={platform.platform}
-                        onClick={() => setSelectedPlatform(platform.platform)}
+                        onClick={() => onPlatformSwitch?.(platform.platform)}
                         className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
                           selectedPlatform === platform.platform
                             ? 'bg-blue-600 text-white shadow-md'
@@ -970,6 +966,12 @@ export default function InfluencerDetailPanel({
                 <Button variant="outline" onClick={onClose} size="lg">
                   Close
                 </Button>
+                {onOpenManagement && (
+                  <Button variant="outline" onClick={onOpenManagement} size="lg">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Manage
+                  </Button>
+                )}
                 <Button onClick={handleAddToShortlist} size="lg">
                   <Zap className="w-4 h-4 mr-2" />
                   Add to Shortlist

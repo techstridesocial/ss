@@ -319,6 +319,9 @@ export interface InfluencerWithProfile {
   avatar_url: string | null;
   location_country: string | null;
   location_city: string | null;
+  bio: string | null;
+  website_url: string | null;
+  email: string | null;
   
   // Platform data
   platforms: Platform[];

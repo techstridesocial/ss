@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
@@ -17,9 +17,10 @@ interface InfluencerTableProps {
     platform?: Platform
     page?: string
   }
+  onPanelStateChange?: (isAnyPanelOpen: boolean) => void
 }
 
-function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
+function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerTableProps) {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -321,8 +322,10 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       // Set the first platform as default if no platform is selected
       const defaultPlatform = detailedData.platform_details[0]?.platform || ''
       setSelectedPlatform(defaultPlatform)
-      setManagementPanelOpen(true)
+      
+      // Only open detail panel initially, management panel can be opened separately
       setDetailPanelOpen(true)
+      setManagementPanelOpen(false) // Start with management panel closed
     } catch (error) {
       console.error('Error loading influencer details:', error)
       alert('❌ Error loading influencer details. Please try again.')
@@ -336,6 +339,10 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
     setDetailPanelOpen(false)
     setSelectedInfluencerDetail(null)
     setSelectedPlatform('')
+  }
+
+  const handleOpenManagementPanel = () => {
+    setManagementPanelOpen(true)
   }
 
   const handlePlatformSwitch = (platform: string) => {
@@ -362,38 +369,28 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Update the influencer in state
-      setInfluencers(prev => prev.map(inf => 
-        inf.id === data.id 
-          ? { 
-              ...inf, 
-              // Update specific fields only
-              display_name: data.display_name || inf.display_name,
-              first_name: data.first_name || inf.first_name,
-              last_name: data.last_name || inf.last_name,
-              niches: data.niches || inf.niches,
-              bio: data.bio || inf.bio,
-              location_country: data.location_country || inf.location_country,
-              location_city: data.location_city || inf.location_city,
-              website_url: data.website_url || inf.website_url,
-              influencer_type: data.influencer_type || inf.influencer_type,
-              is_active: data.is_active !== undefined ? data.is_active : inf.is_active,
-              // Update calculated fields
-              total_followers: data.estimated_followers || inf.total_followers,
-              total_avg_views: data.average_views || inf.total_avg_views,
-              platforms: [
-                ...(data.instagram_username ? ['INSTAGRAM' as Platform] : []),
-                ...(data.tiktok_username ? ['TIKTOK' as Platform] : []),
-                ...(data.youtube_username ? ['YOUTUBE' as Platform] : [])
-              ],
-              platform_count: [
-                data.instagram_username,
-                data.tiktok_username, 
-                data.youtube_username
-              ].filter(Boolean).length
-            }
-          : inf
-      ))
+      // Update the influencer in state - simplified approach to avoid type issues
+      setInfluencers(prev => prev.map(inf => {
+        if (inf.id === data.id) {
+          // Create a safe update that maintains the original type structure
+          return {
+            ...inf,
+            display_name: data.display_name || inf.display_name,
+            first_name: data.first_name || inf.first_name,
+            last_name: data.last_name || inf.last_name,
+            niches: data.niches || inf.niches,
+            bio: data.bio || inf.bio || '',
+            location_country: data.location_country || inf.location_country,
+            location_city: data.location_city || inf.location_city,
+            website_url: data.website_url || inf.website_url || '',
+            influencer_type: data.influencer_type || inf.influencer_type,
+            is_active: data.is_active !== undefined ? data.is_active : inf.is_active,
+            total_followers: data.estimated_followers || inf.total_followers,
+            total_avg_views: data.average_views || inf.total_avg_views,
+          }
+        }
+        return inf
+      }))
       
       const oldType = selectedInfluencer?.influencer_type
       const newType = data.influencer_type
@@ -520,6 +517,12 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
   const handleImportFromModash = () => {
     alert('Opening Modash import interface...')
   }
+
+  useEffect(() => {
+    if (onPanelStateChange) {
+      onPanelStateChange(detailPanelOpen || managementPanelOpen)
+    }
+  }, [detailPanelOpen, managementPanelOpen, onPanelStateChange])
 
   return (
     <>
@@ -753,6 +756,8 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
         isOpen={detailPanelOpen}
         onClose={handleClosePanels}
         selectedPlatform={selectedPlatform}
+        onPlatformSwitch={handlePlatformSwitch}
+        onOpenManagement={handleOpenManagementPanel}
       />
 
       {/* Modals */}
@@ -786,12 +791,17 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
 }
 
 export default function StaffRoosterPage() {
+  const [isAnyPanelOpen, setIsAnyPanelOpen] = useState(false)
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#EEF7FA" }}>
-      <ModernStaffHeader />
+      {!isAnyPanelOpen && <ModernStaffHeader />}
       
       <div className="px-4 lg:px-8 pb-8">
-        <InfluencerTableClient searchParams={{}} />
+        <InfluencerTableClient 
+          searchParams={{}} 
+          onPanelStateChange={setIsAnyPanelOpen}
+        />
       </div>
     </div>
   )

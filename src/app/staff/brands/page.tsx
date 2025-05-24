@@ -596,80 +596,71 @@ function BrandsPageClient() {
 
                 <div className="space-y-6">
                   {/* Campaign Information */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Left Column - Campaign Information */}
-                      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-                        <h3 className="text-xl font-semibold mb-6 text-gray-900">Campaign Information</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Brand</label>
-                            <p className="text-gray-900">{selectedQuotation.brand_name}</p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Campaign</label>
-                            <p className="text-gray-900">{selectedQuotation.campaign_name}</p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Influencers</label>
-                            <p className="text-gray-900">{selectedQuotation.influencer_count}</p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Duration</label>
-                            <p className="text-gray-900">{selectedQuotation.campaign_duration}</p>
-                          </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Campaign Information */}
+                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
+                      <h3 className="text-xl font-semibold mb-6 text-gray-900">Campaign Information</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Brand</label>
+                          <p className="text-gray-900">{selectedQuotation.brand_name}</p>
                         </div>
-                        <div className="mt-4">
-                          <label className="text-sm font-medium text-gray-500">Description</label>
-                          <p className="text-gray-900">{selectedQuotation.description}</p>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Campaign</label>
+                          <p className="text-gray-900">{selectedQuotation.campaign_name}</p>
                         </div>
-                        <div className="mt-4">
-                          <label className="text-sm font-medium text-gray-500">Budget Range</label>
-                          <p className="text-gray-900">{selectedQuotation.budget_range}</p>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Influencers</label>
+                          <p className="text-gray-900">{selectedQuotation.influencer_count}</p>
                         </div>
-                        <div className="mt-4">
-                          <label className="text-sm font-medium text-gray-500">Deliverables</label>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Duration</label>
+                          <p className="text-gray-900">{selectedQuotation.campaign_duration}</p>
                         </div>
-                        <div className="mt-4">
-                          <label className="text-sm font-medium text-gray-500">Deliverables</label>
-                          <p className="text-gray-900">{selectedQuotation.deliverables.join(", ")}</p>
-                        </div>
-                        <div className="mt-4">
-                          <label className="text-sm font-medium text-gray-500">Target Demographics</label>
-                          <p className="text-gray-900">{selectedQuotation.target_demographics}</p>
-                        </div>
-                        {selectedQuotation.notes && (
-                          <div className="mt-4">
-                            <label className="text-sm font-medium text-gray-500">Brand Notes</label>
-                            <p className="text-gray-900">{selectedQuotation.notes}</p>
-                          </div>
-                        )}
                       </div>
+                      <div className="mt-4">
+                        <label className="text-sm font-medium text-gray-500">Description</label>
+                        <p className="text-gray-900">{selectedQuotation.description}</p>
+                      </div>
+                      <div className="mt-4">
+                        <label className="text-sm font-medium text-gray-500">Budget Range</label>
+                        <p className="text-gray-900">{selectedQuotation.budget_range}</p>
+                      </div>
+                      <div className="mt-4">
+                        <label className="text-sm font-medium text-gray-500">Deliverables</label>
+                        <p className="text-gray-900">{selectedQuotation.deliverables.join(", ")}</p>
+                      </div>
+                      <div className="mt-4">
+                        <label className="text-sm font-medium text-gray-500">Target Demographics</label>
+                        <p className="text-gray-900">{selectedQuotation.target_demographics}</p>
+                      </div>
+                      {selectedQuotation.notes && (
+                        <div className="mt-4">
+                          <label className="text-sm font-medium text-gray-500">Brand Notes</label>
+                          <p className="text-gray-900">{selectedQuotation.notes}</p>
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Right Column - Influencer Information */}
-                      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-                        <h3 className="text-xl font-semibold mb-6 text-gray-900">Influencer Information</h3>
+                    {/* Right Column - Influencer Information */}
+                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
+                      <h3 className="text-xl font-semibold mb-6 text-gray-900">Influencer Information</h3>
 
-                        <div className="space-y-3 max-h-96 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                          <style jsx>{`
-                            div::-webkit-scrollbar {
-                              display: none;
-                            }
-                          `}</style>
-                          {selectedQuotation.influencers.map((influencer: any, index: number) => (
-                            <div key={index} className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-gray-900 text-sm">{influencer.name}</h4>
-                                  <div className="flex items-center space-x-4 mt-1">
-                                    <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">{influencer.platform}</span>
-                                    <span className="text-xs text-gray-500">{influencer.followers} followers</span>
-                                    <span className="text-xs text-gray-500">{influencer.engagement} engagement</span>
-                                  </div>
+                      <div className="space-y-3 max-h-96 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {selectedQuotation.influencers.map((influencer: any, index: number) => (
+                          <div key={index} className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900 text-sm">{influencer.name}</h4>
+                                <div className="flex items-center space-x-4 mt-1">
+                                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">{influencer.platform}</span>
+                                  <span className="text-xs text-gray-500">{influencer.followers} followers</span>
+                                  <span className="text-xs text-gray-500">{influencer.engagement} engagement</span>
                                 </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -700,10 +691,10 @@ function BrandsPageClient() {
                           rows={3}
                           className="w-full px-6 py-4 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
                           placeholder="Add any internal notes about this quote..."
-          />
-        </div>
+                        />
+                      </div>
                     </div>
-        </div>
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex justify-end space-x-4 pt-2">
