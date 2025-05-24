@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { requireStaffAccess } from '../../../lib/auth/roles'
-import StaffNavigation from '../../../components/nav/StaffNavigation'
+import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerModal from '../../../components/modals/AddInfluencerModal'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
@@ -197,6 +197,11 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       price_per_post: Math.floor(basicInfluencer.total_followers * 0.01),
       last_synced_at: new Date(),
       
+      // Add missing profile properties
+      bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${basicInfluencer.niches.join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,
+      website_url: basicInfluencer.website_url,
+      email: `contact@${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
+      
       // Generate platform details
       platform_details: basicInfluencer.platforms.map((platform: Platform, index: number) => ({
         id: `platform_${basicInfluencer.id}_${index}`,
@@ -314,7 +319,9 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
       }
       
       setSelectedInfluencerDetail(detailedData)
-      setSelectedPlatform(detailedData.platform_details[0]?.platform || '')
+      // Set the first platform as default if no platform is selected
+      const defaultPlatform = detailedData.platform_details[0]?.platform || ''
+      setSelectedPlatform(defaultPlatform)
       setManagementPanelOpen(true)
       setDetailPanelOpen(true)
     } catch (error) {
@@ -341,16 +348,6 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
     // Here you would typically update the influencer in your database
     alert('✅ Influencer management data saved successfully!')
     handleClosePanels()
-  }
-
-  const handleSaveInfluencer = (influencerId: string) => {
-    console.log('Saving influencer to favorites:', influencerId)
-    alert('✅ Influencer saved to your favorites!')
-  }
-
-  const handleAddToShortlist = (influencerId: string) => {
-    console.log('Adding influencer to shortlist:', influencerId)
-    alert('✅ Influencer added to shortlist!')
   }
 
   const handleEditInfluencer = (influencer: any) => {
@@ -756,8 +753,7 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
         influencer={selectedInfluencerDetail}
         isOpen={detailPanelOpen}
         onClose={handleClosePanels}
-        onSave={handleSaveInfluencer}
-        onAddToShortlist={handleAddToShortlist}
+        selectedPlatform={selectedPlatform}
       />
 
       {/* Modals */}
@@ -790,14 +786,11 @@ function InfluencerTableClient({ searchParams }: InfluencerTableProps) {
   )
 }
 
-function InfluencerRoosterPageClient({
-  searchParams
-}: {
-  searchParams: { search?: string; niche?: string; platform?: Platform; page?: string }
-}) {
+export default async function StaffRoosterPage() {
+  await requireStaffAccess()
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffNavigation />
+      <ModernStaffHeader />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -807,22 +800,8 @@ function InfluencerRoosterPageClient({
           </p>
         </div>
 
-        <InfluencerTableClient searchParams={searchParams} />
+        <InfluencerTableClient searchParams={{}} />
           </div>
     </div>
   )
-}
-
-export default function InfluencerRoosterPage({
-  searchParams: searchParamsPromise
-}: {
-  searchParams: Promise<{ search?: string; niche?: string; platform?: Platform; page?: string }>
-}) {
-  const [searchParams, setSearchParams] = React.useState<{ search?: string; niche?: string; platform?: Platform; page?: string }>({})
-
-  React.useEffect(() => {
-    searchParamsPromise.then(setSearchParams)
-  }, [searchParamsPromise])
-
-  return <InfluencerRoosterPageClient searchParams={searchParams} />
 } 

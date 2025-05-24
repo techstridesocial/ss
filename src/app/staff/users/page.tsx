@@ -1,6 +1,6 @@
 import React from 'react'
 import { requireStaffAccess } from '../../../lib/auth/roles'
-import StaffNavigation from '../../../components/nav/StaffNavigation'
+import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import UserFilters from '../../../components/filters/UserFilters'
 import { getUsers } from '../../../lib/db/queries/users'
 import { UserRole } from '../../../types/database'
@@ -210,20 +210,12 @@ async function UserTable({ searchParams }: UserTableProps) {
   )
 }
 
-export default async function UsersPage({
-  searchParams: searchParamsPromise
-}: {
-  searchParams: Promise<{ search?: string; role?: UserRole; page?: string }>
-}) {
-  // Server-side protection
+export default async function StaffUsersPage() {
   await requireStaffAccess()
-
-  // Await the searchParams Promise
-  const searchParams = await searchParamsPromise
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffNavigation />
+      <ModernStaffHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

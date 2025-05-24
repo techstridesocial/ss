@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import StaffNavigation from '../../../components/nav/StaffNavigation'
+import { requireStaffAccess } from '../../../lib/auth/roles'
+import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import BulkApproveModal from '../../../components/modals/BulkApproveModal'
 import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle } from 'lucide-react'
 
@@ -416,7 +417,7 @@ function BrandsPageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffNavigation />
+      <ModernStaffHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -470,6 +471,7 @@ function BrandsPageClient() {
 }
 
 // Server component wrapper for authentication
-export default function BrandsPage() {
+export default async function StaffBrandsPage() {
+  await requireStaffAccess()
   return <BrandsPageClient />
 } 

@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import StaffNavigation from '../../../components/nav/StaffNavigation'
+import { requireStaffAccess } from '../../../lib/auth/roles'
+import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { 
   Search, 
   Download, 
@@ -541,7 +542,7 @@ function ScrapingPageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffNavigation />
+      <ModernStaffHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -605,6 +606,7 @@ function ScrapingPageClient() {
   )
 }
 
-export default function ScrapingPage() {
+export default async function StaffScrapingPage() {
+  await requireStaffAccess()
   return <ScrapingPageClient />
 } 
