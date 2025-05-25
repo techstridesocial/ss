@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
-import BulkApproveModal from '../../../components/modals/BulkApproveModal'
-import AddBrandPanel from '../../../components/brands/AddBrandPanel'
-import ViewBrandPanel from '../../../components/brands/ViewBrandPanel'
-import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus } from 'lucide-react'
+import BulkApproveModal from '@/components/modals/BulkApproveModal'
+import AddBrandPanel from '@/components/brands/AddBrandPanel'
+import ViewBrandPanel from '@/components/brands/ViewBrandPanel'
+import QuotationDetailPanel from '@/components/brands/QuotationDetailPanel'
+import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, Filter, ChevronDown } from 'lucide-react'
 
 // Mock data for brands and their shortlists
 const MOCK_BRANDS = [
@@ -229,13 +230,26 @@ function BrandsPageClient() {
   const [activeTab, setActiveTab] = useState<'clients-list' | 'shortlist'>('clients-list')
   const [brandSearchQuery, setBrandSearchQuery] = useState('')
   const [quotationSearchQuery, setQuotationSearchQuery] = useState('')
-  const [quotationDetailModalOpen, setQuotationDetailModalOpen] = useState(false)
+  const [quotationDetailPanelOpen, setQuotationDetailPanelOpen] = useState(false)
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
   const [quotePricing, setQuotePricing] = useState('')
   const [quoteNotes, setQuoteNotes] = useState('')
   const [addBrandPanelOpen, setAddBrandPanelOpen] = useState(false)
   const [viewBrandPanelOpen, setViewBrandPanelOpen] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<any>(null)
+  const [brandFilters, setBrandFilters] = useState({
+    industry: '',
+    status: '',
+    spendRange: '',
+    campaignCount: ''
+  })
+  const [quotationFilters, setQuotationFilters] = useState({
+    status: '',
+    budgetRange: '',
+    influencerCount: ''
+  })
+  const [brandFilterOpen, setBrandFilterOpen] = useState(false)
+  const [quotationFilterOpen, setQuotationFilterOpen] = useState(false)
 
   const handleSelectShortlist = (shortlistId: string) => {
     setSelectedShortlists(prev => 
@@ -275,16 +289,16 @@ function BrandsPageClient() {
     setSelectedQuotation(quotation)
     setQuotePricing(quotation.total_quote || '')
     setQuoteNotes('')
-    setQuotationDetailModalOpen(true)
+    setQuotationDetailPanelOpen(true)
   }
 
-  const handleSendQuote = () => {
-    if (!quotePricing) {
+  const handleSendQuote = (pricing: string, notes: string) => {
+    if (!pricing) {
       alert('Please enter pricing before sending quote')
       return
     }
-    alert(`Sending quote for $${quotePricing} to ${selectedQuotation?.brand_name}`)
-    setQuotationDetailModalOpen(false)
+    alert(`Sending quote for $${pricing} to ${selectedQuotation?.brand_name}`)
+    setQuotationDetailPanelOpen(false)
     setSelectedQuotation(null)
     setQuotePricing('')
     setQuoteNotes('')
@@ -373,16 +387,172 @@ function BrandsPageClient() {
     totalRevenue: MOCK_BRANDS.reduce((sum, brand) => sum + brand.total_spend, 0)
   }
 
-  // Filter brands based on search query
-  const filteredBrands = MOCK_BRANDS.filter(brand =>
-    brand.company_name.toLowerCase().includes(brandSearchQuery.toLowerCase())
-  )
+  // Filter change handlers
+  const handleBrandFilterChange = (key: string, value: string) => {
+    setBrandFilters(prev => ({ ...prev, [key]: value }))
+  }
 
-  // Filter quotations based on search query
-  const filteredQuotations = MOCK_QUOTATION_REQUESTS.filter(quote =>
-    quote.brand_name.toLowerCase().includes(quotationSearchQuery.toLowerCase()) ||
-    quote.campaign_name.toLowerCase().includes(quotationSearchQuery.toLowerCase())
-  )
+  const handleQuotationFilterChange = (key: string, value: string) => {
+    setQuotationFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const clearBrandFilters = () => {
+    setBrandFilters({
+      industry: '',
+      status: '',
+      spendRange: '',
+      campaignCount: ''
+    })
+  }
+
+  const clearQuotationFilters = () => {
+    setQuotationFilters({
+      status: '',
+      budgetRange: '',
+      influencerCount: ''
+    })
+  }
+
+  // Filter options
+  const brandFilterOptions = {
+    industry: [
+      { value: '', label: 'All Industries' },
+      { value: 'Beauty & Cosmetics', label: 'Beauty & Cosmetics' },
+      { value: 'Fitness & Sports', label: 'Fitness & Sports' },
+      { value: 'Technology', label: 'Technology' },
+      { value: 'Fashion', label: 'Fashion' },
+      { value: 'Food & Beverage', label: 'Food & Beverage' },
+      { value: 'Health & Wellness', label: 'Health & Wellness' },
+      { value: 'Travel & Tourism', label: 'Travel & Tourism' },
+      { value: 'Gaming & Entertainment', label: 'Gaming & Entertainment' },
+      { value: 'Home & Garden', label: 'Home & Garden' },
+      { value: 'Automotive', label: 'Automotive' },
+      { value: 'Finance & Insurance', label: 'Finance & Insurance' },
+      { value: 'Education', label: 'Education' },
+      { value: 'Real Estate', label: 'Real Estate' },
+      { value: 'Retail & E-commerce', label: 'Retail & E-commerce' },
+      { value: 'Music & Arts', label: 'Music & Arts' },
+      { value: 'Pet & Animals', label: 'Pet & Animals' },
+      { value: 'Baby & Kids', label: 'Baby & Kids' },
+      { value: 'Lifestyle', label: 'Lifestyle' },
+      { value: 'Photography', label: 'Photography' },
+      { value: 'Non-Profit', label: 'Non-Profit' },
+      { value: 'Other', label: 'Other' }
+    ],
+    status: [
+      { value: '', label: 'All Statuses' },
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' }
+    ],
+    spendRange: [
+      { value: '', label: 'All Spend Ranges' },
+      { value: 'under-5k', label: 'Under $5K' },
+      { value: '5k-15k', label: '$5K - $15K' },
+      { value: '15k-50k', label: '$15K - $50K' },
+      { value: 'over-50k', label: 'Over $50K' }
+    ],
+    campaignCount: [
+      { value: '', label: 'All Campaign Counts' },
+      { value: '0', label: '0 Campaigns' },
+      { value: '1-2', label: '1-2 Campaigns' },
+      { value: '3-5', label: '3-5 Campaigns' },
+      { value: 'over-5', label: '5+ Campaigns' }
+    ]
+  }
+
+  const quotationFilterOptions = {
+    status: [
+      { value: '', label: 'All Statuses' },
+      { value: 'pending_review', label: 'Pending Review' },
+      { value: 'sent', label: 'Sent' },
+      { value: 'approved', label: 'Approved' },
+      { value: 'rejected', label: 'Rejected' }
+    ],
+    budgetRange: [
+      { value: '', label: 'All Budget Ranges' },
+      { value: 'under-5k', label: 'Under $5K' },
+      { value: '5k-15k', label: '$5K - $15K' },
+      { value: '15k-50k', label: '$15K - $50K' },
+      { value: 'over-50k', label: 'Over $50K' }
+    ],
+    influencerCount: [
+      { value: '', label: 'All Influencer Counts' },
+      { value: '1-5', label: '1-5 Influencers' },
+      { value: '6-15', label: '6-15 Influencers' },
+      { value: '16-30', label: '16-30 Influencers' },
+      { value: 'over-30', label: '30+ Influencers' }
+    ]
+  }
+
+  // Filter brands based on search query and filters
+  const filteredBrands = MOCK_BRANDS.filter(brand => {
+    const matchesSearch = brand.company_name.toLowerCase().includes(brandSearchQuery.toLowerCase())
+    const matchesIndustry = !brandFilters.industry || brand.industry === brandFilters.industry
+    const matchesStatus = !brandFilters.status || brand.status === brandFilters.status
+    const matchesSpendRange = !brandFilters.spendRange || checkSpendRange(brand.total_spend, brandFilters.spendRange)
+    const matchesCampaignCount = !brandFilters.campaignCount || checkCampaignCount(brand.active_campaigns, brandFilters.campaignCount)
+    
+    return matchesSearch && matchesIndustry && matchesStatus && matchesSpendRange && matchesCampaignCount
+  })
+
+  // Filter quotations based on search query and filters
+  const filteredQuotations = MOCK_QUOTATION_REQUESTS.filter(quote => {
+    const matchesSearch = quote.brand_name.toLowerCase().includes(quotationSearchQuery.toLowerCase()) ||
+                         quote.campaign_name.toLowerCase().includes(quotationSearchQuery.toLowerCase())
+    const matchesStatus = !quotationFilters.status || quote.status === quotationFilters.status
+    const matchesBudgetRange = !quotationFilters.budgetRange || checkBudgetRange(quote.budget_range, quotationFilters.budgetRange)
+    const matchesInfluencerCount = !quotationFilters.influencerCount || checkInfluencerCount(quote.influencer_count, quotationFilters.influencerCount)
+    
+    return matchesSearch && matchesStatus && matchesBudgetRange && matchesInfluencerCount
+  })
+
+  // Helper functions for range checking
+  function checkSpendRange(spend: number, range: string) {
+    switch (range) {
+      case 'under-5k': return spend < 5000
+      case '5k-15k': return spend >= 5000 && spend <= 15000
+      case '15k-50k': return spend >= 15000 && spend <= 50000
+      case 'over-50k': return spend > 50000
+      default: return true
+    }
+  }
+
+  function checkCampaignCount(count: number, range: string) {
+    switch (range) {
+      case '0': return count === 0
+      case '1-2': return count >= 1 && count <= 2
+      case '3-5': return count >= 3 && count <= 5
+      case 'over-5': return count > 5
+      default: return true
+    }
+  }
+
+  function checkBudgetRange(budgetRange: string, filterRange: string) {
+    const extractBudgetValue = (range: string) => {
+      const numbers = range.match(/\d+,?\d*/g)
+      return numbers ? parseInt(numbers[0].replace(',', '')) : 0
+    }
+    
+    const budgetValue = extractBudgetValue(budgetRange)
+    
+    switch (filterRange) {
+      case 'under-5k': return budgetValue < 5000
+      case '5k-15k': return budgetValue >= 5000 && budgetValue <= 15000
+      case '15k-50k': return budgetValue >= 15000 && budgetValue <= 50000
+      case 'over-50k': return budgetValue > 50000
+      default: return true
+    }
+  }
+
+  function checkInfluencerCount(count: number, range: string) {
+    switch (range) {
+      case '1-5': return count >= 1 && count <= 5
+      case '6-15': return count >= 6 && count <= 15
+      case '16-30': return count >= 16 && count <= 30
+      case 'over-30': return count > 30
+      default: return true
+    }
+  }
 
   // Selected shortlist data for bulk operations
   const selectedShortlistData = MOCK_SHORTLISTS.filter(s => selectedShortlists.includes(s.id))
@@ -579,7 +749,9 @@ function BrandsPageClient() {
       <ModernStaffHeader />
       
       <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
-        addBrandPanelOpen ? 'mr-[32rem]' : viewBrandPanelOpen ? 'mr-[56rem]' : ''
+        addBrandPanelOpen ? 'mr-[32rem]' : 
+        viewBrandPanelOpen ? 'mr-[56rem]' : 
+        quotationDetailPanelOpen ? 'mr-[56rem]' : ''
       }`}>
         {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-200">
@@ -646,6 +818,24 @@ function BrandsPageClient() {
               </div>
 
               <button
+                onClick={() => setBrandFilterOpen(!brandFilterOpen)}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-2xl border transition-all duration-300 font-medium ${
+                  Object.values(brandFilters).filter(value => value !== '').length > 0
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
+                }`}
+              >
+                <Filter size={16} />
+                <span>Filters</span>
+                {Object.values(brandFilters).filter(value => value !== '').length > 0 && (
+                  <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                    {Object.values(brandFilters).filter(value => value !== '').length}
+                  </span>
+                )}
+                <ChevronDown size={14} className={`transition-transform ${brandFilterOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <button
                 onClick={handleAddBrand}
                 className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
               >
@@ -653,6 +843,45 @@ function BrandsPageClient() {
                 Add Brand
               </button>
             </div>
+
+            {/* Filter Panel */}
+            {brandFilterOpen && (
+              <div className="w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 mb-6">
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Object.entries(brandFilterOptions).map(([key, options]) => (
+                      <div key={key} className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </label>
+                        <select
+                          value={brandFilters[key as keyof typeof brandFilters]}
+                          onChange={(e) => handleBrandFilterChange(key, e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20 transition-all duration-300"
+                        >
+                          {(options as any[]).map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  {Object.values(brandFilters).filter(value => value !== '').length > 0 && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={clearBrandFilters}
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <BrandTable />
           </div>
         )}
@@ -676,6 +905,24 @@ function BrandsPageClient() {
               </div>
 
               <button
+                onClick={() => setQuotationFilterOpen(!quotationFilterOpen)}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-2xl border transition-all duration-300 font-medium ${
+                  Object.values(quotationFilters).filter(value => value !== '').length > 0
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
+                }`}
+              >
+                <Filter size={16} />
+                <span>Filters</span>
+                {Object.values(quotationFilters).filter(value => value !== '').length > 0 && (
+                  <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                    {Object.values(quotationFilters).filter(value => value !== '').length}
+                  </span>
+                )}
+                <ChevronDown size={14} className={`transition-transform ${quotationFilterOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <button
                 onClick={handleAddBrand}
                 className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
               >
@@ -683,156 +930,58 @@ function BrandsPageClient() {
                 Add Brand
               </button>
             </div>
+
+            {/* Filter Panel */}
+            {quotationFilterOpen && (
+              <div className="w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 mb-6">
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Object.entries(quotationFilterOptions).map(([key, options]) => (
+                      <div key={key} className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </label>
+                        <select
+                          value={quotationFilters[key as keyof typeof quotationFilters]}
+                          onChange={(e) => handleQuotationFilterChange(key, e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20 transition-all duration-300"
+                        >
+                          {(options as any[]).map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  {Object.values(quotationFilters).filter(value => value !== '').length > 0 && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={clearQuotationFilters}
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <QuotationRequestTable />
           </div>
         )}
       </main>
 
-      {/* Quotation Detail Modal */}
-      {quotationDetailModalOpen && selectedQuotation && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 max-w-5xl w-full max-h-[95vh]">
-            <div className="overflow-hidden rounded-3xl">
-              <div className="p-8 overflow-y-auto max-h-[95vh]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style jsx>{`
-                  div::-webkit-scrollbar {
-                    display: none;
-                  }
-                `}</style>
-                <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Quotation Details</h2>
-                  <button
-                    onClick={() => setQuotationDetailModalOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Campaign Information */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column - Campaign Information */}
-                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900">Campaign Information</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Brand</label>
-                          <p className="text-gray-900">{selectedQuotation.brand_name}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Campaign</label>
-                          <p className="text-gray-900">{selectedQuotation.campaign_name}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Influencers</label>
-                          <p className="text-gray-900">{selectedQuotation.influencer_count}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Duration</label>
-                          <p className="text-gray-900">{selectedQuotation.campaign_duration}</p>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-500">Description</label>
-                        <p className="text-gray-900">{selectedQuotation.description}</p>
-                      </div>
-                      <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-500">Budget Range</label>
-                        <p className="text-gray-900">{selectedQuotation.budget_range}</p>
-                      </div>
-                      <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-500">Deliverables</label>
-                        <p className="text-gray-900">{selectedQuotation.deliverables.join(", ")}</p>
-                      </div>
-                      <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-500">Target Demographics</label>
-                        <p className="text-gray-900">{selectedQuotation.target_demographics}</p>
-                      </div>
-                      {selectedQuotation.notes && (
-                        <div className="mt-4">
-                          <label className="text-sm font-medium text-gray-500">Brand Notes</label>
-                          <p className="text-gray-900">{selectedQuotation.notes}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Column - Influencer Information */}
-                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900">Influencer Information</h3>
-
-                      <div className="space-y-3 max-h-96 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                        {selectedQuotation.influencers.map((influencer: any, index: number) => (
-                          <div key={index} className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 text-sm">{influencer.name}</h4>
-                                <div className="flex items-center space-x-4 mt-1">
-                                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">{influencer.platform}</span>
-                                  <span className="text-xs text-gray-500">{influencer.followers} followers</span>
-                                  <span className="text-xs text-gray-500">{influencer.engagement} engagement</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Pricing Section */}
-                  <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-                    <h3 className="text-xl font-semibold mb-6 text-gray-900">Quote Pricing</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Total Quote Amount ($)
-                        </label>
-                        <input
-                          type="number"
-                          value={quotePricing}
-                          onChange={(e) => setQuotePricing(e.target.value)}
-                          className="w-full px-6 py-4 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
-                          placeholder="Enter total quote amount"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Internal Notes
-                        </label>
-                        <textarea
-                          value={quoteNotes}
-                          onChange={(e) => setQuoteNotes(e.target.value)}
-                          rows={3}
-                          className="w-full px-6 py-4 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
-                          placeholder="Add any internal notes about this quote..."
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-4 pt-2">
-                    <button
-                      onClick={() => setQuotationDetailModalOpen(false)}
-                      className="px-8 py-3 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm hover:bg-white/80 transition-all duration-300 text-gray-700 font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSendQuote}
-                      className="px-8 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg"
-                    >
-                      Send Quote to Brand
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Quotation Detail Panel */}
+      {quotationDetailPanelOpen && selectedQuotation && (
+        <QuotationDetailPanel
+          isOpen={quotationDetailPanelOpen}
+          onClose={() => setQuotationDetailPanelOpen(false)}
+          quotation={selectedQuotation}
+          onSendQuote={handleSendQuote}
+        />
       )}
 
       {/* Bulk Approve Modal */}
