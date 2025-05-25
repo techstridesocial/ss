@@ -500,12 +500,15 @@ function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCE
           </h3>
           <div className="space-y-3">
             {influencer.audience_locations.slice(0, 5).map((location) => (
-              <div key={location.country_code} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-6 h-4 bg-gray-300 rounded mr-3"></div>
-                  <span className="text-sm text-gray-900">{location.country_name}</span>
+              <div key={location.country_code} className="flex items-center">
+                <div className="w-20 text-sm text-gray-600">{location.country_name}</div>
+                <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-green-500 h-2 rounded-full"
+                    style={{ width: `${location.percentage}%` }}
+                  ></div>
                 </div>
-                <span className="text-sm text-gray-600">{location.percentage.toFixed(1)}%</span>
+                <div className="w-12 text-sm text-gray-900 text-right">{location.percentage.toFixed(1)}%</div>
               </div>
             ))}
           </div>
@@ -518,10 +521,16 @@ function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCE
             Top Languages
           </h3>
           <div className="space-y-3">
-            {influencer.audience_languages.slice(0, 5).map((language) => (
-              <div key={language.language_code} className="flex items-center justify-between">
-                <span className="text-sm text-gray-900">{language.language_name}</span>
-                <span className="text-sm text-gray-600">{language.percentage.toFixed(1)}%</span>
+            {influencer.audience_languages.slice(0, 4).map((language) => (
+              <div key={language.language_code} className="flex items-center">
+                <div className="w-20 text-sm text-gray-600">{language.language_name}</div>
+                <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-purple-500 h-2 rounded-full"
+                    style={{ width: `${language.percentage}%` }}
+                  ></div>
+                </div>
+                <div className="w-12 text-sm text-gray-900 text-right">{language.percentage.toFixed(1)}%</div>
               </div>
             ))}
           </div>
@@ -532,84 +541,81 @@ function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCE
 }
 
 function EstimatedReach({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAIL }) {
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
+  }
+
   return (
-    <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
         <BarChart3 size={20} className="mr-2" />
-        Estimated Promotion Performance
+        Estimated Campaign Reach
       </h3>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-green-600 mb-2">
-            {(influencer.estimated_promotion_views / 1000).toFixed(1)}K
-          </div>
+        <div className="text-center p-4 bg-blue-50 rounded-lg">
+          <div className="text-2xl font-bold text-blue-600">{formatNumber(influencer.estimated_promotion_views)}</div>
           <div className="text-sm text-gray-600">Estimated Views</div>
-          <div className="text-xs text-gray-500 mt-1">15% of current avg</div>
+          <div className="text-xs text-gray-500 mt-1">85% of avg views</div>
         </div>
-        
-        <div className="text-center">
-          <div className="text-3xl font-bold text-blue-600 mb-2">
-            {Math.round(influencer.estimated_promotion_views * (influencer.total_engagement_rate / 100))}
-          </div>
+        <div className="text-center p-4 bg-green-50 rounded-lg">
+          <div className="text-2xl font-bold text-green-600">{formatNumber(Math.floor(influencer.estimated_promotion_views * (influencer.total_engagement_rate / 100)))}</div>
           <div className="text-sm text-gray-600">Expected Engagements</div>
-          <div className="text-xs text-gray-500 mt-1">Based on {influencer.total_engagement_rate}% rate</div>
+          <div className="text-xs text-gray-500 mt-1">Based on {influencer.total_engagement_rate.toFixed(1)}% rate</div>
         </div>
-        
-        <div className="text-center">
-          <div className="text-3xl font-bold text-purple-600 mb-2">
-            ${(influencer.estimated_promotion_views / 1000 * 0.02).toFixed(2)}
-          </div>
-          <div className="text-sm text-gray-600">Est. Value/1K Views</div>
-          <div className="text-xs text-gray-500 mt-1">Industry average</div>
+        <div className="text-center p-4 bg-purple-50 rounded-lg">
+          <div className="text-2xl font-bold text-purple-600">${influencer.price_per_post}</div>
+          <div className="text-sm text-gray-600">Cost Per Post</div>
+          <div className="text-xs text-gray-500 mt-1">Estimated pricing</div>
         </div>
+      </div>
+      
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <p className="text-sm text-gray-600">
+          <strong>Note:</strong> These estimates are based on historical performance data and may vary depending on content type, timing, and audience engagement.
+        </p>
       </div>
     </div>
   )
 }
 
 export default async function InfluencerDetailPage({ params }: PageProps) {
+  // Check staff access
   await requireStaffAccess()
   
   const { id } = await params
   
-  // Mock check - in real app, fetch from database
-  if (id !== 'inf_1') {
+  // In a real app, you would fetch the influencer data here
+  // For now, we'll use mock data and validate the ID format
+  if (!id || !id.startsWith('inf_')) {
     notFound()
   }
+
+  const influencer = MOCK_INFLUENCER_DETAIL
 
   return (
     <div className="min-h-screen bg-gray-50">
       <StaffNavigation />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
+      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+        {/* Breadcrumb */}
         <div className="mb-6">
-          <a
-            href="/staff/rooster"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft size={16} className="mr-2" />
-            Back to Influencer Rooster
-          </a>
+          <nav className="flex items-center space-x-2 text-sm text-gray-500">
+            <a href="/staff/roster" className="hover:text-gray-700 flex items-center">
+              <ArrowLeft size={16} className="mr-1" />
+              Back to Influencer Roster
+            </a>
+          </nav>
         </div>
 
-        {/* Header */}
-        <InfluencerHeader influencer={MOCK_INFLUENCER_DETAIL} />
-
-        {/* Platform Tabs */}
-        <div className="mb-8">
-          <PlatformTabs influencer={MOCK_INFLUENCER_DETAIL} />
-        </div>
-
-        {/* Demographics */}
-        <div className="mb-8">
-          <DemographicsSection influencer={MOCK_INFLUENCER_DETAIL} />
-        </div>
-
-        {/* Estimated Reach */}
-        <div className="mb-8">
-          <EstimatedReach influencer={MOCK_INFLUENCER_DETAIL} />
+        {/* Page Content */}
+        <div className="space-y-8">
+          <InfluencerHeader influencer={influencer} />
+          <PlatformTabs influencer={influencer} />
+          <DemographicsSection influencer={influencer} />
+          <EstimatedReach influencer={influencer} />
         </div>
       </main>
     </div>

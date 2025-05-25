@@ -46,7 +46,7 @@ export default function ModernStaffHeader() {
     const baseItems = [
       { href: '/staff', label: 'Overview' },
       { href: '/staff/brands', label: 'Brands' },
-      { href: '/staff/rooster', label: 'Rooster' },
+      { href: '/staff/roster', label: 'Roster' },
       { href: '/staff/campaigns', label: 'Campaigns' },
       { href: '/staff/scraping', label: 'Scraping' }
     ]
@@ -116,9 +116,9 @@ export default function ModernStaffHeader() {
         title: 'Brand Management',
         subtitle: 'Manage brand clients, review shortlists, and generate reports'
       }
-    } else if (pathname === '/staff/rooster' || pathname.startsWith('/staff/rooster/')) {
+    } else if (pathname === '/staff/roster' || pathname.startsWith('/staff/roster/')) {
       return {
-        title: 'Influencer Rooster',
+        title: 'Influencer Roster',
         subtitle: 'Manage and organize your influencer network with detailed analytics and performance metrics.'
       }
     } else if (pathname === '/staff/campaigns' || pathname.startsWith('/staff/campaigns/')) {

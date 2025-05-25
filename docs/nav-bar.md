@@ -56,7 +56,7 @@ This document defines the design for the **top navigation bar** across all user 
 
 ## 🧑‍💼 Staff Navigation
 
-[ OVERVIEW ] [ BRANDS ] [ ROOSTER ] [ CAMPAIGNS ] [ SCRAPING ] [ ACCOUNT ▼ ]
+[ OVERVIEW ] [ BRANDS ] [ ROSTER ] [ CAMPAIGNS ] [ SCRAPING ] [ ACCOUNT ▼ ]
 
 - **DASHBOARD** – Platform-wide analytics, system status
 - **USERS** – View and manage all accounts and roles

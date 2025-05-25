@@ -54,7 +54,7 @@ export default function StaffNavigation() {
     const baseItems = [
       { href: '/staff', label: 'OVERVIEW' },
       { href: '/staff/brands', label: 'BRANDS' },
-      { href: '/staff/rooster', label: 'ROOSTER' },
+      { href: '/staff/roster', label: 'ROSTER' },
       { href: '/staff/campaigns', label: 'CAMPAIGNS' },
       { href: '/staff/scraping', label: 'SCRAPING' }
     ]

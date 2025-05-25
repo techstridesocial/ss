@@ -76,7 +76,7 @@ This document outlines the development sprint plan for the Stride Social Dashboa
   - [x] Overview dashboard with real-time statistics
 
 - [x] **Influencer Management Core**
-  - [x] Influencer rooster with comprehensive filtering
+  - [x] Influencer roster with comprehensive filtering
   - [x] Platform badges, follower counts, engagement rates
   - [x] Niche tags and location display
   - [x] Search and filter by platform, niche, location
@@ -96,7 +96,7 @@ This document outlines the development sprint plan for the Stride Social Dashboa
 - [x] ✅ Staff navigation component (`src/components/nav/StaffNavigation.tsx`)
 - [x] ✅ Staff dashboard overview (`src/app/staff/page.tsx`) - Stats & quick actions
 - [x] ✅ User management page (`src/app/staff/users/page.tsx`) - Table with filters
-- [x] ✅ Influencer rooster page (`src/app/staff/rooster/page.tsx`) - Comprehensive listing
+- [x] ✅ Influencer roster page (`src/app/staff/roster/page.tsx`) - Comprehensive listing
 - [x] ✅ Search, filtering, and pagination across all tables
 - [x] ✅ Professional table layouts with loading states
 - [x] ✅ Role-based access controls throughout
@@ -123,7 +123,7 @@ This document outlines the development sprint plan for the Stride Social Dashboa
 - [x] **Staff Dashboard System**
   - [x] Complete staff dashboard with real-time statistics
   - [x] User management with advanced search and filtering
-  - [x] Influencer rooster with platform-specific badges
+  - [x] Influencer roster with platform-specific badges
   - [x] Professional navigation with Framer Motion animations
 
 - [x] **Code Quality & Stability**
@@ -143,7 +143,7 @@ This document outlines the development sprint plan for the Stride Social Dashboa
 - [x] ✅ **Production URL**: https://dashboard-6dtx1xr34-stridesocial.vercel.app
 - [x] ✅ Complete staff dashboard (`/staff`) with statistics and quick actions
 - [x] ✅ User management system (`/staff/users`) with search, filter, pagination
-- [x] ✅ Influencer rooster (`/staff/rooster`) with platform badges and metrics
+- [x] ✅ Influencer roster (`/staff/roster`) with platform badges and metrics
 - [x] ✅ Unauthorized access page (`/unauthorized`) for security
 - [x] ✅ Role-based navigation with responsive mobile design
 - [x] ✅ Production-ready authentication with Clerk integration
@@ -274,7 +274,7 @@ This document outlines the development sprint plan for the Stride Social Dashboa
 - ✅ **Authentication**: Role-based login with Clerk
 - ✅ **Staff Dashboard**: `/staff` - Statistics and quick actions
 - ✅ **User Management**: `/staff/users` - Search, filter, pagination
-- ✅ **Influencer Rooster**: `/staff/rooster` - Platform badges, metrics
+- ✅ **Influencer Roster**: `/staff/roster` - Platform badges, metrics
 - ✅ **Security**: Role-based access, unauthorized page protection
 - ✅ **Responsive Design**: Mobile-friendly across all devices
 

@@ -141,9 +141,9 @@ export default async function StaffDashboard() {
           />
           
           <QuickActionCard
-            title="Influencer Rooster"
-            description="Browse and manage influencer profiles"
-            href="/staff/rooster"
+            title="Influencer Roster"
+            description="Manage and organize your influencer network with detailed analytics and performance metrics."
+            href="/staff/roster"
             icon={<Eye size={20} className="text-green-600" />}
             color="green"
           />

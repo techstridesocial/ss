@@ -31,6 +31,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [isLoading, setIsLoading] = useState(false)
   const [managementPanelOpen, setManagementPanelOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [influencers, setInfluencers] = useState(() => {
     // Initialize with mock data - in real app this would load from API
     const INITIAL_INFLUENCERS = [
@@ -155,7 +156,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const MOCK_INFLUENCERS = influencers
 
   const page = parseInt(searchParams.page || '1')
-  const search = searchParams.search || ''
+  const search = searchParams.search || searchQuery
   const nicheFilter = searchParams.niche
   const platformFilter = searchParams.platform
   
@@ -444,7 +445,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         is_active: true,
         first_name: data.first_name,
         last_name: data.last_name,
-        avatar_url: null,
+        avatar_url: '', // Set to empty string instead of null
         location_country: data.location_country || '',
         location_city: data.location_city || '',
         bio: data.bio || '',
@@ -500,12 +501,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setIsLoading(true)
     try {
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // In real app, this would refetch data from API
-      // For now, just show a success message
-      alert('✅ Data refreshed successfully!')
-      
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      alert('✅ Influencer data refreshed successfully!')
     } catch (error) {
       console.error('Error refreshing data:', error)
       alert('❌ Error refreshing data. Please try again.')
@@ -514,221 +511,232 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  const handleImportFromModash = () => {
-    alert('Opening Modash import interface...')
-  }
-
+  // Track panel state changes for the parent component
   useEffect(() => {
-    if (onPanelStateChange) {
-      onPanelStateChange(detailPanelOpen || managementPanelOpen)
-    }
+    const isAnyPanelOpen = detailPanelOpen || managementPanelOpen
+    onPanelStateChange?.(isAnyPanelOpen)
   }, [detailPanelOpen, managementPanelOpen, onPanelStateChange])
 
   return (
-    <>
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/20 z-30 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 shadow-lg">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading...</p>
+    <div className="space-y-6">
+      {/* Search Bar and Actions */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder="Search influencers by name, niche, or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
+            <Search className="w-4 h-4 text-gray-400" />
           </div>
         </div>
-      )}
 
-      {/* Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {(['GOLD', 'SILVER', 'PARTNERED'] as const).map((tab) => (
+        <button
+          onClick={() => setAddModalOpen(true)}
+          className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg"
+        >
+          <Users size={16} className="mr-2" />
+          Add Influencer
+        </button>
+        
+        <button
+          onClick={handleRefreshData}
+          disabled={isLoading}
+          className="flex items-center px-6 py-3 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm text-gray-700 hover:bg-white/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium"
+        >
+          <RefreshCw size={16} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </button>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {(['GOLD', 'SILVER', 'PARTNERED'] as const).map((tab) => {
+            const count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
+            const displayName = tab.charAt(0) + tab.slice(1).toLowerCase() // Convert to sentence case
+            return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
+                className={`
+                  flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors
+                  ${activeTab === tab
+                    ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }
+                `}
               >
-                {tab.charAt(0) + tab.slice(1).toLowerCase()} Influencers
-                <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
-                  activeTab === tab
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-100 text-gray-500'
+                {displayName}
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                  activeTab === tab 
+                    ? 'bg-black text-white' 
+                    : 'bg-gray-100 text-gray-600'
                 }`}>
-                  {influencers.filter(inf => inf.influencer_type === tab).length}
+                  {count}
                 </span>
               </button>
-            ))}
-          </nav>
-        </div>
+            )
+          })}
+        </nav>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {/* Table Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Influencer Rooster ({total})
-            </h2>
-            <div className="flex space-x-2">
-              <button 
-                onClick={handleRefreshData}
-                disabled={isLoading}
-                className="px-3 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center space-x-1"
-              >
-                <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-                <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
-              </button>
-              <button 
-                onClick={handleImportFromModash}
-                disabled={isLoading}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-              >
-                {isLoading ? 'Processing...' : 'Import from Modash'}
-              </button>
-              <button 
-                onClick={() => setAddModalOpen(true)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-              >
-                {isLoading ? 'Processing...' : 'Add Influencer'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
+      {/* Influencer Table */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50/60 border-b border-gray-100/60">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Influencer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Platforms
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Followers
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Engagement
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avg Views
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Niches
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Influencer</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Platforms</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Niches</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Followers</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Engagement</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Avg Views</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/50 divide-y divide-gray-100/60">
               {filteredInfluencers.map((influencer) => (
-                <tr key={influencer.id} className="hover:bg-gray-50">
+                <tr key={influencer.id} className="hover:bg-white/70 transition-colors duration-150">
+                  {/* Influencer Info */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="flex-shrink-0 h-12 w-12">
                         {influencer.avatar_url ? (
-                          <img
-                            className="h-10 w-10 rounded-full object-cover"
-                            src={influencer.avatar_url}
-                            alt=""
+                          <img 
+                            className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" 
+                            src={influencer.avatar_url} 
+                            alt={influencer.display_name}
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
-                              {influencer.display_name.charAt(0).toUpperCase()}
-                            </span>
+                          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
+                            <Users size={20} className="text-gray-500" />
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-semibold text-gray-900">
                           {influencer.display_name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {influencer.first_name && influencer.last_name 
-                            ? `${influencer.first_name} ${influencer.last_name}`
-                            : 'No real name set'
-                          }
+                          {influencer.first_name} {influencer.last_name}
                         </div>
                       </div>
                     </div>
                   </td>
+
+                  {/* Platforms */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
                       {influencer.platforms.map((platform) => (
                         <span
                           key={platform}
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPlatformBadgeColor(platform)}`}
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-lg ${getPlatformBadgeColor(platform)}`}
                         >
                           {platform}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="font-semibold">{formatNumber(influencer.total_followers)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="font-semibold">{influencer.total_engagement_rate.toFixed(1)}%</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="font-semibold">{formatNumber(influencer.total_avg_views)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Niches */}
+                  <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {influencer.niches.slice(0, 2).map((niche) => (
                         <span
                           key={niche}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                          className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg"
                         >
                           {niche}
                         </span>
                       ))}
                       {influencer.niches.length > 2 && (
-                        <span className="text-xs text-gray-500">
-                          +{influencer.niches.length - 2} more
+                        <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
+                          +{influencer.niches.length - 2}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center">
-                      <MapPin size={14} className="mr-1" />
-                      {influencer.location_city}, {influencer.location_country}
-                      </div>
+
+                  {/* Followers */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm font-semibold text-gray-900">
+                      <Users size={14} className="mr-1 text-gray-400" />
+                      {formatNumber(influencer.total_followers)}
+                    </div>
                   </td>
+
+                  {/* Engagement */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm font-semibold text-gray-900">
+                      <TrendingUp size={14} className="mr-1 text-gray-400" />
+                      {influencer.total_engagement_rate.toFixed(1)}%
+                    </div>
+                  </td>
+
+                  {/* Average Views */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm font-semibold text-gray-900">
+                      <Eye size={14} className="mr-1 text-gray-400" />
+                      {formatNumber(influencer.total_avg_views)}
+                    </div>
+                  </td>
+
+                  {/* Location */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin size={14} className="mr-1 text-gray-400" />
+                      <div>
+                        <div className="font-medium">{influencer.location_city}</div>
+                        <div className="text-xs text-gray-500">{influencer.location_country}</div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                      influencer.is_active 
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {influencer.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+
+                  {/* Actions */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button 
+                    <div className="flex items-center space-x-3">
+                      <button
                         onClick={() => handleViewInfluencer(influencer)}
                         disabled={isLoading}
-                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title="View Details"
                       >
                         <Eye size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleEditInfluencer(influencer)}
                         disabled={isLoading}
-                        className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Edit"
+                        className="text-green-600 hover:text-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Edit Influencer"
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
-                        onClick={() => handleDeleteInfluencer(influencer)}
+                      <button
+                        onClick={() => {
+                          setSelectedInfluencer(influencer)
+                          setDeleteModalOpen(true)
+                        }}
                         disabled={isLoading}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete"
+                        className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Delete Influencer"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -742,67 +750,131 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
         {/* Empty State */}
         {filteredInfluencers.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No influencers found</h3>
-            <p className="text-gray-500 mt-1">Try adjusting your filters or import from Modash</p>
+          <div className="px-6 py-12 text-center">
+            <Users size={48} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No influencers found</h3>
+            <p className="text-gray-500 mb-4">
+              {search || nicheFilter || platformFilter 
+                ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                : `No ${activeTab.toLowerCase()} influencers available.`
+              }
+            </p>
+            {!search && !nicheFilter && !platformFilter && (
+              <button
+                onClick={() => setAddModalOpen(true)}
+                className="inline-flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg"
+              >
+                <Users size={16} className="mr-2" />
+                Add Your First Influencer
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Detail Panel */}
-      <InfluencerDetailPanel
-        influencer={selectedInfluencerDetail}
-        isOpen={detailPanelOpen}
-        onClose={handleClosePanels}
-        selectedPlatform={selectedPlatform}
-        onPlatformSwitch={handlePlatformSwitch}
-        onOpenManagement={handleOpenManagementPanel}
-      />
-
       {/* Modals */}
+      {editModalOpen && selectedInfluencer && (
         <EditInfluencerModal
           isOpen={editModalOpen}
           onClose={() => {
             setEditModalOpen(false)
             setSelectedInfluencer(null)
           }}
-        onSave={handleSaveInfluencerEdit}
-        influencer={selectedInfluencer}
+          influencer={selectedInfluencer}
+          onSave={handleSaveInfluencerEdit}
         />
+      )}
 
-      <AddInfluencerModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSave={handleAddInfluencer}
-      />
+      {addModalOpen && (
+        <AddInfluencerModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onSave={handleAddInfluencer}
+        />
+      )}
 
-      {/* Management Panel */}
-      <InfluencerManagementPanel
-        influencer={selectedInfluencerDetail}
-        isOpen={managementPanelOpen}
-        onClose={handleClosePanels}
-        onPlatformSwitch={handlePlatformSwitch}
-        onSave={handleSaveManagement}
-        selectedPlatform={selectedPlatform}
-      />
-    </>
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && selectedInfluencer && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 max-w-md w-full">
+            <div className="p-8">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 rounded-full mb-6">
+                <Trash2 size={24} className="text-red-600" />
+              </div>
+              
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Delete Influencer
+                </h3>
+                <p className="text-gray-600">
+                  Are you sure you want to delete <strong>{selectedInfluencer.display_name}</strong>? 
+                  This action cannot be undone.
+                </p>
+              </div>
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => {
+                    setDeleteModalOpen(false)
+                    setSelectedInfluencer(null)
+                  }}
+                  disabled={isLoading}
+                  className="flex-1 px-6 py-3 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm text-gray-700 hover:bg-white/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteInfluencer(selectedInfluencer)}
+                  disabled={isLoading}
+                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-2xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium shadow-lg"
+                >
+                  {isLoading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Side Panels */}
+      {selectedInfluencerDetail && (
+        <>
+          <InfluencerDetailPanel
+            isOpen={detailPanelOpen}
+            onClose={handleClosePanels}
+            influencer={selectedInfluencerDetail}
+            selectedPlatform={selectedPlatform}
+            onPlatformSwitch={handlePlatformSwitch}
+            onOpenManagement={handleOpenManagementPanel}
+          />
+          
+          <InfluencerManagementPanel
+            isOpen={managementPanelOpen}
+            onClose={() => setManagementPanelOpen(false)}
+            influencer={selectedInfluencerDetail}
+            onSave={handleSaveManagement}
+          />
+        </>
+      )}
+    </div>
   )
 }
 
-export default function StaffRoosterPage() {
+export default function StaffRosterPage() {
   const [isAnyPanelOpen, setIsAnyPanelOpen] = useState(false)
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#EEF7FA" }}>
-      {!isAnyPanelOpen && <ModernStaffHeader />}
+    <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+      <ModernStaffHeader />
       
-      <div className="px-4 lg:px-8 pb-8">
+      <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
+        isAnyPanelOpen ? 'mr-[400px]' : ''
+      }`}>
         <InfluencerTableClient 
-          searchParams={{}} 
+          searchParams={{}}
           onPanelStateChange={setIsAnyPanelOpen}
         />
-      </div>
+      </main>
     </div>
   )
 } 

@@ -3,7 +3,9 @@
 import React, { useState } from 'react'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import BulkApproveModal from '../../../components/modals/BulkApproveModal'
-import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle } from 'lucide-react'
+import AddBrandPanel from '../../../components/brands/AddBrandPanel'
+import ViewBrandPanel from '../../../components/brands/ViewBrandPanel'
+import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus } from 'lucide-react'
 
 // Mock data for brands and their shortlists
 const MOCK_BRANDS = [
@@ -231,6 +233,9 @@ function BrandsPageClient() {
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
   const [quotePricing, setQuotePricing] = useState('')
   const [quoteNotes, setQuoteNotes] = useState('')
+  const [addBrandPanelOpen, setAddBrandPanelOpen] = useState(false)
+  const [viewBrandPanelOpen, setViewBrandPanelOpen] = useState(false)
+  const [selectedBrand, setSelectedBrand] = useState<any>(null)
 
   const handleSelectShortlist = (shortlistId: string) => {
     setSelectedShortlists(prev => 
@@ -251,7 +256,11 @@ function BrandsPageClient() {
   }
 
   const handleViewBrand = (brandId: string) => {
-    alert(`Viewing brand details for ${brandId}`)
+    const brand = MOCK_BRANDS.find(b => b.id === brandId)
+    if (brand) {
+      setSelectedBrand(brand)
+      setViewBrandPanelOpen(true)
+    }
   }
 
   const handleApproveShortlist = (shortlistId: string) => {
@@ -279,6 +288,82 @@ function BrandsPageClient() {
     setSelectedQuotation(null)
     setQuotePricing('')
     setQuoteNotes('')
+  }
+
+  const handleAddBrand = () => {
+    setAddBrandPanelOpen(true)
+  }
+
+  const handleSaveBrand = async (brandData: any) => {
+    console.log('Saving brand:', brandData)
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Generate new ID
+      const newId = `brand_${Date.now()}`
+      
+      // Create new brand object
+      const newBrand = {
+        id: newId,
+        company_name: brandData.company_name,
+        contact_name: brandData.contact_name,
+        email: brandData.email,
+        phone: brandData.phone,
+        website: brandData.website,
+        industry: brandData.industry,
+        company_size: brandData.company_size,
+        location_country: brandData.location_country,
+        location_city: brandData.location_city,
+        description: brandData.description,
+        budget_range: brandData.budget_range,
+        logo_url: null,
+        shortlists_count: 0,
+        active_campaigns: 0,
+        total_spend: 0,
+        last_activity: new Date().toISOString().split('T')[0],
+        status: 'active'
+      }
+      
+      // Handle user invitations if provided
+      if (brandData.brandUsers && brandData.brandUsers.length > 0) {
+        console.log('Processing user invitations:', brandData.brandUsers)
+        
+        // TODO: Implement Clerk invitation system
+        const invitationResults = await Promise.allSettled(
+          brandData.brandUsers.map(async (user: any) => {
+            // This will be replaced with actual Clerk invitation API call
+            console.log(`Sending invitation to ${user.email} (${user.firstName} ${user.lastName})`)
+            return {
+              email: user.email,
+              status: 'sent',
+              invitationId: `inv_${Date.now()}_${Math.random()}`
+            }
+          })
+        )
+        
+        const successfulInvites = invitationResults
+          .filter(result => result.status === 'fulfilled')
+          .length
+        
+        console.log(`Successfully sent ${successfulInvites} invitation(s)`)
+        
+        // Show success message with invitation details
+        const userMessage = brandData.brandUsers.length === 1 
+          ? `User invitation sent to ${brandData.brandUsers[0].email}`
+          : `${successfulInvites} user invitations sent successfully`
+        
+        alert(`✅ Brand "${brandData.company_name}" has been added successfully!\n\n📧 ${userMessage}`)
+      } else {
+        alert(`✅ Brand "${brandData.company_name}" has been added successfully!`)
+      }
+      
+    } catch (error) {
+      console.error('Error saving brand:', error)
+      alert('❌ Error adding brand. Please try again.')
+      throw error
+    }
   }
 
   const brandStats = {
@@ -493,43 +578,59 @@ function BrandsPageClient() {
     <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
       <ModernStaffHeader />
       
-      <main className="px-4 lg:px-8 pb-8">
+      <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
+        addBrandPanelOpen ? 'mr-[32rem]' : viewBrandPanelOpen ? 'mr-[56rem]' : ''
+      }`}>
         {/* Tab Navigation */}
-        <div className="mb-6">
-          <div className="flex space-x-2">
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('clients-list')}
               className={`
-                relative px-4 py-2 text-base font-medium transition-all duration-200 rounded-lg
+                flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors
                 ${activeTab === 'clients-list'
-                  ? 'text-white bg-black border border-black'
-                  : 'text-gray-600 hover:text-gray-600 hover:bg-gray-200 border border-transparent'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }
               `}
             >
-              Clients List
+              Clients list
+              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                activeTab === 'clients-list' 
+                  ? 'bg-black text-white' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {filteredBrands.length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('shortlist')}
               className={`
-                relative px-4 py-2 text-base font-medium transition-all duration-200 rounded-lg
+                flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors
                 ${activeTab === 'shortlist'
-                  ? 'text-white bg-black border border-black'
-                  : 'text-gray-600 hover:text-gray-600 hover:bg-gray-200 border border-transparent'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }
               `}
             >
               Quotations
+              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                activeTab === 'shortlist' 
+                  ? 'bg-black text-white' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {filteredQuotations.length}
+              </span>
             </button>
-          </div>
+          </nav>
         </div>
 
         {/* Content based on active tab */}
         {activeTab === 'clients-list' && (
           <div className="mb-8">
-            {/* Premium Search Bar */}
-            <div className="mb-6">
-              <div className="relative">
+            {/* Premium Search Bar and Actions */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 relative">
                 <input
                   type="text"
                   placeholder="Search brands..."
@@ -543,15 +644,23 @@ function BrandsPageClient() {
                   </svg>
                 </div>
               </div>
+
+              <button
+                onClick={handleAddBrand}
+                className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
+              >
+                <Plus size={16} className="mr-2" />
+                Add Brand
+              </button>
             </div>
             <BrandTable />
           </div>
         )}
         {activeTab === 'shortlist' && (
           <div className="mb-8">
-            {/* Premium Search Bar for Quotations */}
-            <div className="mb-6">
-              <div className="relative">
+            {/* Premium Search Bar and Actions for Quotations */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 relative">
                 <input
                   type="text"
                   placeholder="Search quotations by brand or campaign..."
@@ -565,6 +674,14 @@ function BrandsPageClient() {
                   </svg>
                 </div>
               </div>
+
+              <button
+                onClick={handleAddBrand}
+                className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
+              >
+                <Plus size={16} className="mr-2" />
+                Add Brand
+              </button>
             </div>
             <QuotationRequestTable />
           </div>
@@ -731,6 +848,25 @@ function BrandsPageClient() {
         }))}
         onApprove={handleBulkApprove}
       />
+
+      {/* Add Brand Panel */}
+      <AddBrandPanel
+        isOpen={addBrandPanelOpen}
+        onClose={() => setAddBrandPanelOpen(false)}
+        onSave={handleSaveBrand}
+      />
+
+      {/* View Brand Panel */}
+      {viewBrandPanelOpen && selectedBrand && (
+        <ViewBrandPanel
+          isOpen={viewBrandPanelOpen}
+          onClose={() => {
+            setViewBrandPanelOpen(false)
+            setSelectedBrand(null)
+          }}
+          brand={selectedBrand}
+        />
+      )}
     </div>
   )
 }
