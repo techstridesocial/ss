@@ -421,7 +421,7 @@ export default function InfluencerDetailPanel({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
           />
           
           {/* Enhanced Panel */}
@@ -430,7 +430,7 @@ export default function InfluencerDetailPanel({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-40 overflow-hidden flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 overflow-hidden flex flex-col"
           >
             {/* Enhanced Header */}
             <div className="border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
