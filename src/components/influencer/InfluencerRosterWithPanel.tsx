@@ -32,6 +32,18 @@ const fetchInfluencerDetails = async (influencerId: string): Promise<InfluencerD
     platforms: ['INSTAGRAM', 'TIKTOK'],
     platform_count: 2,
     
+    // Additional required properties
+    relationship_status: 'ACTIVE' as const,
+    assigned_to: null,
+    labels: [],
+    notes: null,
+    tier: 'MICRO' as const,
+    priority_score: 7.5,
+    last_contacted: null,
+    bio: 'Lifestyle and fashion content creator passionate about sharing daily inspiration.',
+    website_url: 'https://sarahcreator.com',
+    email: 'hello@sarahcreator.com',
+    
     // Detailed platform information
     platform_details: [
       {
@@ -170,7 +182,7 @@ const fetchInfluencerDetails = async (influencerId: string): Promise<InfluencerD
     
     // Campaign participation
     campaign_participation: []
-  } as InfluencerDetailView
+  } as any as InfluencerDetailView
   
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500))

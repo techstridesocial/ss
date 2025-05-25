@@ -16,6 +16,14 @@ interface UserTableProps {
   }
 }
 
+interface StaffUsersPageProps {
+  searchParams: Promise<{
+    search?: string
+    role?: UserRole
+    page?: string
+  }>
+}
+
 async function UserTable({ searchParams }: UserTableProps) {
   const page = parseInt(searchParams.page || '1')
   const search = searchParams.search || ''
@@ -212,8 +220,11 @@ async function UserTable({ searchParams }: UserTableProps) {
   )
 }
 
-export default async function StaffUsersPage() {
+export default async function StaffUsersPage({ searchParams }: StaffUsersPageProps) {
   await requireStaffAccess()
+
+  // Provide defaults for searchParams
+  const params = await searchParams
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -230,8 +241,8 @@ export default async function StaffUsersPage() {
 
         {/* Filters */}
         <UserFilters 
-          currentSearch={searchParams.search}
-          currentRole={searchParams.role}
+          currentSearch={params.search}
+          currentRole={params.role}
         />
 
         {/* User Table */}
@@ -247,7 +258,7 @@ export default async function StaffUsersPage() {
             </div>
           </div>
         }>
-          <UserTable searchParams={searchParams} />
+          <UserTable searchParams={params} />
         </React.Suspense>
       </main>
     </div>
