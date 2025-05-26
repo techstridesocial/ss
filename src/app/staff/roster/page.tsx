@@ -27,7 +27,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null)
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
-  const [activeTab, setActiveTab] = useState<'SIGNED' | 'PARTNERED'>('SIGNED')
+  const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'UGC' | 'SEEDING'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [managementPanelOpen, setManagementPanelOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('')
@@ -144,6 +144,95 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         average_views: 25000,
         platforms: ['INSTAGRAM' as Platform],
         platform_count: 1
+      },
+      // New influencer types
+      {
+        id: 'inf_6',
+        user_id: 'user_9',
+        display_name: 'AgencyMax',
+        niches: ['Business', 'Marketing'],
+        total_followers: 95000,
+        total_engagement_rate: 4.1,
+        total_avg_views: 38000,
+        estimated_promotion_views: 32300,
+        influencer_type: 'AGENCY_PARTNER',
+        is_active: true,
+        first_name: 'Max',
+        last_name: 'Agency',
+        avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
+        location_country: 'United States',
+        location_city: 'Los Angeles',
+        bio: 'Digital marketing expert and agency partner',
+        website_url: 'https://agencymax.com',
+        average_views: 38000,
+        platforms: ['INSTAGRAM' as Platform, 'LINKEDIN' as Platform],
+        platform_count: 2
+      },
+      {
+        id: 'inf_7',
+        user_id: 'user_10',
+        display_name: 'UGCQueen',
+        niches: ['UGC', 'Product Reviews'],
+        total_followers: 45000,
+        total_engagement_rate: 6.2,
+        total_avg_views: 18000,
+        estimated_promotion_views: 15300,
+        influencer_type: 'UGC',
+        is_active: true,
+        first_name: 'Emma',
+        last_name: 'UGC',
+        avatar_url: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=150&h=150&fit=crop&crop=face',
+        location_country: 'United Kingdom',
+        location_city: 'Manchester',
+        bio: 'UGC specialist creating authentic product content',
+        website_url: 'https://ugcqueen.com',
+        average_views: 18000,
+        platforms: ['TIKTOK' as Platform, 'INSTAGRAM' as Platform],
+        platform_count: 2
+      },
+      {
+        id: 'inf_8',
+        user_id: 'user_11',
+        display_name: 'SeedingPro',
+        niches: ['Product Seeding', 'Reviews'],
+        total_followers: 72000,
+        total_engagement_rate: 3.9,
+        total_avg_views: 28000,
+        estimated_promotion_views: 23800,
+        influencer_type: 'SEEDING',
+        is_active: true,
+        first_name: 'Jake',
+        last_name: 'Seeder',
+        avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+        location_country: 'Australia',
+        location_city: 'Melbourne',
+        bio: 'Product seeding specialist and unboxing expert',
+        website_url: 'https://seedingpro.com',
+        average_views: 28000,
+        platforms: ['YOUTUBE' as Platform, 'INSTAGRAM' as Platform],
+        platform_count: 2
+      },
+      {
+        id: 'inf_9',
+        user_id: 'user_12',
+        display_name: 'ContentCreatorAlex',
+        niches: ['UGC', 'Lifestyle'],
+        total_followers: 38000,
+        total_engagement_rate: 5.8,
+        total_avg_views: 16000,
+        estimated_promotion_views: 13600,
+        influencer_type: 'UGC',
+        is_active: true,
+        first_name: 'Alex',
+        last_name: 'Content',
+        avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        location_country: 'Canada',
+        location_city: 'Vancouver',
+        bio: 'UGC creator focused on lifestyle and everyday products',
+        website_url: 'https://alexcontent.com',
+        average_views: 16000,
+        platforms: ['TIKTOK' as Platform],
+        platform_count: 1
       }
     ]
     return INITIAL_INFLUENCERS
@@ -163,10 +252,20 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   // Apply filters
   let filteredInfluencers = [...MOCK_INFLUENCERS]
   
-  // Filter by influencer type (tab)
-  if (activeTab === 'SIGNED') {
+    // Filter by influencer type (tab)
+  if (activeTab === 'ALL') {
+    // Show both SIGNED (Gold/Silver) and PARTNERED influencers
+    filteredInfluencers = filteredInfluencers.filter(inf => 
+      inf.influencer_type === 'GOLD' || 
+      inf.influencer_type === 'SILVER' || 
+      inf.influencer_type === 'PARTNERED'
+    )
+  } else if (activeTab === 'SIGNED') {
     filteredInfluencers = filteredInfluencers.filter(inf => inf.influencer_type === 'GOLD' || inf.influencer_type === 'SILVER')
+  } else if (activeTab === 'PARTNERED') {
+    filteredInfluencers = filteredInfluencers.filter(inf => inf.influencer_type === 'PARTNERED')
   } else {
+    // For AGENCY_PARTNER, UGC, SEEDING
     filteredInfluencers = filteredInfluencers.filter(inf => inf.influencer_type === activeTab)
   }
   
@@ -403,7 +502,15 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       // Show success message and switch to appropriate tab
       if (oldType && newType && oldType !== newType) {
         // Determine which tab to switch to based on the new type
-        const targetTab = (newType === 'GOLD' || newType === 'SILVER') ? 'SIGNED' : 'PARTNERED'
+        const getTargetTab = (type: string) => {
+          if (type === 'GOLD' || type === 'SILVER') return 'SIGNED'
+          if (type === 'PARTNERED') return 'PARTNERED'
+          if (type === 'AGENCY_PARTNER') return 'AGENCY_PARTNER'
+          if (type === 'UGC') return 'UGC'
+          if (type === 'SEEDING') return 'SEEDING'
+          return 'ALL'
+        }
+        const targetTab = getTargetTab(newType)
         
         alert(`✅ Influencer ${data.display_name} updated successfully!\n\n📋 Type changed from ${oldType} to ${newType}.\n🔄 The influencer now appears in the ${targetTab} tab.`)
         setActiveTab(targetTab)
@@ -465,7 +572,15 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       setInfluencers(prev => [...prev, newInfluencer])
       
       // Switch to the appropriate tab to show the new influencer
-      const targetTab = (data.influencer_type === 'GOLD' || data.influencer_type === 'SILVER') ? 'SIGNED' : 'PARTNERED'
+      const getTargetTab = (type: string) => {
+        if (type === 'GOLD' || type === 'SILVER') return 'SIGNED'
+        if (type === 'PARTNERED') return 'PARTNERED'
+        if (type === 'AGENCY_PARTNER') return 'AGENCY_PARTNER'
+        if (type === 'UGC') return 'UGC'
+        if (type === 'SEEDING') return 'SEEDING'
+        return 'ALL'
+      }
+      const targetTab = getTargetTab(data.influencer_type)
       setActiveTab(targetTab)
       
       alert(`✅ New influencer ${data.display_name} added successfully!\n\n📁 Added to ${data.influencer_type} category.\n🔄 Switched to ${targetTab} tab.`)
@@ -614,16 +729,32 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       {/* Tab Navigation */}
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          {(['SIGNED', 'PARTNERED'] as const).map((tab) => {
+          {(['ALL', 'SIGNED', 'PARTNERED', 'AGENCY_PARTNER', 'UGC', 'SEEDING'] as const).map((tab) => {
             let count = 0
             let displayName = ''
             
-            if (tab === 'SIGNED') {
+            if (tab === 'ALL') {
+              count = MOCK_INFLUENCERS.filter(inf => 
+                inf.influencer_type === 'GOLD' || 
+                inf.influencer_type === 'SILVER' || 
+                inf.influencer_type === 'PARTNERED'
+              ).length
+              displayName = 'All'
+            } else if (tab === 'SIGNED') {
               count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === 'GOLD' || inf.influencer_type === 'SILVER').length
               displayName = 'Signed'
-            } else {
+            } else if (tab === 'PARTNERED') {
               count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
-              displayName = tab.charAt(0) + tab.slice(1).toLowerCase()
+              displayName = 'Partnered'
+            } else if (tab === 'AGENCY_PARTNER') {
+              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
+              displayName = 'Agency Partner'
+            } else if (tab === 'UGC') {
+              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
+              displayName = 'UGC'
+            } else if (tab === 'SEEDING') {
+              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
+              displayName = 'Seeding'
             }
             
             return (
@@ -710,11 +841,23 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                       }`}>
                         {influencer.influencer_type === 'GOLD' ? 'Gold' : 'Silver'}
                       </span>
-                    ) : (
+                    ) : influencer.influencer_type === 'PARTNERED' ? (
                       <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         Partnered
                       </span>
-                    )}
+                    ) : influencer.influencer_type === 'AGENCY_PARTNER' ? (
+                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                        Agency Partner
+                      </span>
+                    ) : influencer.influencer_type === 'UGC' ? (
+                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        UGC
+                      </span>
+                    ) : influencer.influencer_type === 'SEEDING' ? (
+                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                        Seeding
+                      </span>
+                    ) : null}
                   </td>
 
                   {/* Platforms */}
