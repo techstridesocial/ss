@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
-import AddInfluencerModal from '../../../components/modals/AddInfluencerModal'
+import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import InfluencerManagementPanel from '../../../components/influencer/InfluencerManagementPanel'
 import { Platform, InfluencerDetailView } from '../../../types/database'
-import { Search, Filter, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe } from 'lucide-react'
+import { Search, Filter, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp } from 'lucide-react'
 
 interface InfluencerTableProps {
   searchParams: {
@@ -27,13 +27,40 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null)
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
-  const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'UGC' | 'SEEDING'>('ALL')
+  const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [managementPanelOpen, setManagementPanelOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Add pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  
+  // Add sort state
+  const [sortConfig, setSortConfig] = useState<{
+    key: string | null
+    direction: 'asc' | 'desc'
+  }>({
+    key: null,
+    direction: 'asc'
+  })
+  
+  // Add filter state management (matching brand page pattern)
+  const [rosterFilters, setRosterFilters] = useState({
+    niche: '',
+    platform: '',
+    followerRange: '',
+    engagementRange: '',
+    location: '',
+    influencerType: '',
+    contentType: '',
+    status: ''
+  })
+  const [rosterFilterOpen, setRosterFilterOpen] = useState(false)
+
   const [influencers, setInfluencers] = useState(() => {
-    // Initialize with mock data - in real app this would load from API
+    // Initialize with mock data - updated with new type system
     const INITIAL_INFLUENCERS = [
       {
         id: 'inf_1',
@@ -44,7 +71,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 3.8,
         total_avg_views: 45000,
         estimated_promotion_views: 38250,
-        influencer_type: 'GOLD',
+        influencer_type: 'SIGNED', // Changed to use signing status
+        content_type: 'STANDARD', // New content type field
         is_active: true,
         first_name: 'Sarah',
         last_name: 'Creator',
@@ -66,7 +94,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 4.2,
         total_avg_views: 32000,
         estimated_promotion_views: 27200,
-        influencer_type: 'SILVER',
+        influencer_type: 'SIGNED',
+        content_type: 'STANDARD',
         is_active: true,
         first_name: 'Mike',
         last_name: 'Content',
@@ -88,7 +117,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 5.1,
         total_avg_views: 62000,
         estimated_promotion_views: 52700,
-        influencer_type: 'GOLD',
+        influencer_type: 'SIGNED',
+        content_type: 'UGC',
         is_active: true,
         first_name: 'Fiona',
         last_name: 'Fit',
@@ -111,6 +141,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_avg_views: 78000,
         estimated_promotion_views: 66300,
         influencer_type: 'PARTNERED',
+        content_type: 'STANDARD',
         is_active: true,
         first_name: 'Bella',
         last_name: 'Beauty',
@@ -132,7 +163,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 2.9,
         total_avg_views: 25000,
         estimated_promotion_views: 21250,
-        influencer_type: 'SILVER',
+        influencer_type: 'SIGNED',
+        content_type: 'SEEDING',
         is_active: false,
         first_name: 'Tom',
         last_name: 'Explorer',
@@ -145,7 +177,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         platforms: ['INSTAGRAM' as Platform],
         platform_count: 1
       },
-      // New influencer types
       {
         id: 'inf_6',
         user_id: 'user_9',
@@ -156,6 +187,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_avg_views: 38000,
         estimated_promotion_views: 32300,
         influencer_type: 'AGENCY_PARTNER',
+        content_type: 'STANDARD',
         is_active: true,
         first_name: 'Max',
         last_name: 'Agency',
@@ -165,7 +197,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         bio: 'Digital marketing expert and agency partner',
         website_url: 'https://agencymax.com',
         average_views: 38000,
-        platforms: ['INSTAGRAM' as Platform, 'LINKEDIN' as Platform],
+        agency_name: 'MaxMedia Agency',
+        platforms: ['INSTAGRAM' as Platform, 'YOUTUBE' as Platform],
         platform_count: 2
       },
       {
@@ -177,7 +210,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 6.2,
         total_avg_views: 18000,
         estimated_promotion_views: 15300,
-        influencer_type: 'UGC',
+        influencer_type: 'PARTNERED',
+        content_type: 'UGC',
         is_active: true,
         first_name: 'Emma',
         last_name: 'UGC',
@@ -199,7 +233,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 3.9,
         total_avg_views: 28000,
         estimated_promotion_views: 23800,
-        influencer_type: 'SEEDING',
+        influencer_type: 'SIGNED',
+        content_type: 'SEEDING',
         is_active: true,
         first_name: 'Jake',
         last_name: 'Seeder',
@@ -221,7 +256,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_engagement_rate: 5.8,
         total_avg_views: 16000,
         estimated_promotion_views: 13600,
-        influencer_type: 'UGC',
+        influencer_type: 'PARTNERED',
+        content_type: 'UGC',
         is_active: true,
         first_name: 'Alex',
         last_name: 'Content',
@@ -249,50 +285,309 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const nicheFilter = searchParams.niche
   const platformFilter = searchParams.platform
   
-  // Apply filters
-  let filteredInfluencers = [...MOCK_INFLUENCERS]
-  
-    // Filter by influencer type (tab)
-  if (activeTab === 'ALL') {
-    // Show both SIGNED (Gold/Silver) and PARTNERED influencers
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.influencer_type === 'GOLD' || 
-      inf.influencer_type === 'SILVER' || 
-      inf.influencer_type === 'PARTNERED'
-    )
-  } else if (activeTab === 'SIGNED') {
-    filteredInfluencers = filteredInfluencers.filter(inf => inf.influencer_type === 'GOLD' || inf.influencer_type === 'SILVER')
-  } else if (activeTab === 'PARTNERED') {
-    filteredInfluencers = filteredInfluencers.filter(inf => inf.influencer_type === 'PARTNERED')
-  } else {
-    // For AGENCY_PARTNER, UGC, SEEDING
-    filteredInfluencers = filteredInfluencers.filter(inf => inf.influencer_type === activeTab)
-  }
-  
-  if (search) {
-    const searchLower = search.toLowerCase()
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.display_name.toLowerCase().includes(searchLower) ||
-      inf.first_name?.toLowerCase().includes(searchLower) ||
-      inf.last_name?.toLowerCase().includes(searchLower) ||
-      inf.niches.some(niche => niche.toLowerCase().includes(searchLower))
-    )
-  }
-  
-  if (nicheFilter) {
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.niches.includes(nicheFilter)
-    )
-  }
-  
-  if (platformFilter) {
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.platforms.includes(platformFilter as Platform)
-    )
+  // Add filter change handlers (matching brand page pattern)
+  const handleRosterFilterChange = (key: string, value: string) => {
+    setRosterFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  const total = filteredInfluencers.length
-  const totalPages = Math.ceil(total / 20)
+  const clearRosterFilters = () => {
+    setRosterFilters({
+      niche: '',
+      platform: '',
+      followerRange: '',
+      engagementRange: '',
+      location: '',
+      influencerType: '',
+      contentType: '',
+      status: ''
+    })
+  }
+
+  // Filter options (matching brand page structure)
+  const rosterFilterOptions = {
+    niche: [
+      { value: '', label: 'All Niches' },
+      { value: 'Lifestyle', label: 'Lifestyle' },
+      { value: 'Fashion', label: 'Fashion' },
+      { value: 'Beauty', label: 'Beauty' },
+      { value: 'Fitness', label: 'Fitness' },
+      { value: 'Health', label: 'Health' },
+      { value: 'Tech', label: 'Tech' },
+      { value: 'Gaming', label: 'Gaming' },
+      { value: 'Travel', label: 'Travel' },
+      { value: 'Food', label: 'Food' },
+      { value: 'Business', label: 'Business' },
+      { value: 'Marketing', label: 'Marketing' },
+      { value: 'UGC', label: 'UGC' },
+      { value: 'Product Reviews', label: 'Product Reviews' },
+      { value: 'Product Seeding', label: 'Product Seeding' }
+    ],
+    platform: [
+      { value: '', label: 'All Platforms' },
+      { value: 'INSTAGRAM', label: 'Instagram' },
+      { value: 'TIKTOK', label: 'TikTok' },
+      { value: 'YOUTUBE', label: 'YouTube' },
+      { value: 'TWITTER', label: 'Twitter' }
+    ],
+    followerRange: [
+      { value: '', label: 'All Follower Ranges' },
+      { value: 'under-10k', label: 'Under 10K' },
+      { value: '10k-50k', label: '10K - 50K' },
+      { value: '50k-100k', label: '50K - 100K' },
+      { value: '100k-500k', label: '100K - 500K' },
+      { value: '500k-1m', label: '500K - 1M' },
+      { value: 'over-1m', label: 'Over 1M' }
+    ],
+    engagementRange: [
+      { value: '', label: 'All Engagement Rates' },
+      { value: 'under-2', label: 'Under 2%' },
+      { value: '2-4', label: '2% - 4%' },
+      { value: '4-6', label: '4% - 6%' },
+      { value: 'over-6', label: 'Over 6%' }
+    ],
+    location: [
+      { value: '', label: 'All Locations' },
+      { value: 'United Kingdom', label: 'United Kingdom' },
+      { value: 'United States', label: 'United States' },
+      { value: 'Canada', label: 'Canada' },
+      { value: 'Australia', label: 'Australia' },
+      { value: 'Germany', label: 'Germany' },
+      { value: 'France', label: 'France' },
+      { value: 'Other', label: 'Other' }
+    ],
+    influencerType: [
+      { value: '', label: 'All Types' },
+      { value: 'SIGNED', label: 'Signed' },
+      { value: 'PARTNERED', label: 'Partnered' },
+      { value: 'AGENCY_PARTNER', label: 'Agency Partner' }
+    ],
+    contentType: [
+      { value: '', label: 'All Content Types' },
+      { value: 'STANDARD', label: 'Standard' },
+      { value: 'UGC', label: 'UGC' },
+      { value: 'SEEDING', label: 'Seeding' }
+    ],
+    status: [
+      { value: '', label: 'All Statuses' },
+      { value: 'true', label: 'Active' },
+      { value: 'false', label: 'Inactive' }
+    ]
+  }
+
+  // Enhanced filtering logic
+  const applyFilters = (influencers: any[]) => {
+    return influencers.filter(influencer => {
+      // Existing tab filter
+  if (activeTab === 'ALL') {
+        if (!(influencer.influencer_type === 'SIGNED' || 
+              influencer.influencer_type === 'PARTNERED')) {
+          return false
+        }
+  } else if (activeTab === 'SIGNED') {
+        if (!(influencer.influencer_type === 'SIGNED')) {
+          return false
+        }
+  } else if (activeTab === 'PARTNERED') {
+        if (influencer.influencer_type !== 'PARTNERED') {
+          return false
+        }
+  } else {
+        if (influencer.influencer_type !== activeTab) {
+          return false
+        }
+      }
+
+      // Search filter
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase()
+        const matchesSearch = influencer.display_name.toLowerCase().includes(searchLower) ||
+                             influencer.first_name?.toLowerCase().includes(searchLower) ||
+                             influencer.last_name?.toLowerCase().includes(searchLower) ||
+                             influencer.niches.some((niche: string) => niche.toLowerCase().includes(searchLower))
+        if (!matchesSearch) return false
+      }
+
+      // Advanced filters
+      const matchesNiche = !rosterFilters.niche || influencer.niches.includes(rosterFilters.niche)
+      const matchesPlatform = !rosterFilters.platform || influencer.platforms.includes(rosterFilters.platform as Platform)
+      const matchesFollowerRange = !rosterFilters.followerRange || checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
+      const matchesEngagementRange = !rosterFilters.engagementRange || checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
+      const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
+      const matchesInfluencerType = !rosterFilters.influencerType || influencer.influencer_type === rosterFilters.influencerType
+      const matchesContentType = !rosterFilters.contentType || influencer.content_type === rosterFilters.contentType
+      const matchesStatus = !rosterFilters.status || influencer.is_active.toString() === rosterFilters.status
+
+      return matchesNiche && matchesPlatform && matchesFollowerRange && 
+             matchesEngagementRange && matchesLocation && matchesInfluencerType && 
+             matchesContentType && matchesStatus
+    })
+  }
+
+  // Separate function for tab counts that doesn't depend on activeTab
+  const applyFiltersForTab = (influencers: any[], tabType: string) => {
+    return influencers.filter(influencer => {
+      // Tab-specific filter
+      if (tabType === 'ALL') {
+        if (!(influencer.influencer_type === 'SIGNED' || 
+              influencer.influencer_type === 'PARTNERED')) {
+          return false
+        }
+      } else if (tabType === 'SIGNED') {
+        if (!(influencer.influencer_type === 'SIGNED')) {
+          return false
+        }
+      } else if (tabType === 'PARTNERED') {
+        if (influencer.influencer_type !== 'PARTNERED') {
+          return false
+        }
+      } else {
+        if (influencer.influencer_type !== tabType) {
+          return false
+        }
+      }
+
+      // Apply same search and advanced filters as main filter
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase()
+        const matchesSearch = influencer.display_name.toLowerCase().includes(searchLower) ||
+                             influencer.first_name?.toLowerCase().includes(searchLower) ||
+                             influencer.last_name?.toLowerCase().includes(searchLower) ||
+                             influencer.niches.some((niche: string) => niche.toLowerCase().includes(searchLower))
+        if (!matchesSearch) return false
+      }
+
+      const matchesNiche = !rosterFilters.niche || influencer.niches.includes(rosterFilters.niche)
+      const matchesPlatform = !rosterFilters.platform || influencer.platforms.includes(rosterFilters.platform as Platform)
+      const matchesFollowerRange = !rosterFilters.followerRange || checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
+      const matchesEngagementRange = !rosterFilters.engagementRange || checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
+      const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
+      const matchesInfluencerType = !rosterFilters.influencerType || influencer.influencer_type === rosterFilters.influencerType
+      const matchesContentType = !rosterFilters.contentType || influencer.content_type === rosterFilters.contentType
+      const matchesStatus = !rosterFilters.status || influencer.is_active.toString() === rosterFilters.status
+
+      return matchesNiche && matchesPlatform && matchesFollowerRange && 
+             matchesEngagementRange && matchesLocation && matchesInfluencerType && 
+             matchesContentType && matchesStatus
+    })
+  }
+
+  // Helper functions for range checking (matching brand page pattern)
+  function checkFollowerRange(followers: number, range: string) {
+    switch (range) {
+      case 'under-10k': return followers < 10000
+      case '10k-50k': return followers >= 10000 && followers <= 50000
+      case '50k-100k': return followers >= 50000 && followers <= 100000
+      case '100k-500k': return followers >= 100000 && followers <= 500000
+      case '500k-1m': return followers >= 500000 && followers <= 1000000
+      case 'over-1m': return followers > 1000000
+      default: return true
+    }
+  }
+
+  function checkEngagementRange(engagement: number, range: string) {
+    switch (range) {
+      case 'under-2': return engagement < 2.0
+      case '2-4': return engagement >= 2.0 && engagement <= 4.0
+      case '4-6': return engagement >= 4.0 && engagement <= 6.0
+      case 'over-6': return engagement > 6.0
+      default: return true
+    }
+  }
+
+  // Apply all filters
+  const filteredInfluencers = applyFilters(influencers)
+  
+  // Apply sorting
+  const sortedInfluencers = React.useMemo(() => {
+    if (!sortConfig.key) return filteredInfluencers
+
+    return [...filteredInfluencers].sort((a, b) => {
+      let aValue: any = a[sortConfig.key as keyof typeof a]
+      let bValue: any = b[sortConfig.key as keyof typeof b]
+
+      // Handle different data types
+      switch (sortConfig.key) {
+        case 'display_name':
+        case 'first_name':
+        case 'last_name':
+        case 'location_city':
+        case 'location_country':
+        case 'influencer_type':
+        case 'content_type':
+          aValue = String(aValue).toLowerCase()
+          bValue = String(bValue).toLowerCase()
+          break
+        case 'total_followers':
+        case 'total_engagement_rate':
+        case 'total_avg_views':
+          aValue = Number(aValue)
+          bValue = Number(bValue)
+          break
+        case 'niches':
+          aValue = Array.isArray(aValue) ? aValue.join(', ').toLowerCase() : ''
+          bValue = Array.isArray(bValue) ? bValue.join(', ').toLowerCase() : ''
+          break
+        case 'platforms':
+          aValue = Array.isArray(aValue) ? aValue.length : 0
+          bValue = Array.isArray(bValue) ? bValue.length : 0
+          break
+        case 'is_active':
+          aValue = aValue ? 1 : 0
+          bValue = bValue ? 1 : 0
+          break
+        default:
+          aValue = String(aValue).toLowerCase()
+          bValue = String(bValue).toLowerCase()
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1
+      }
+      return 0
+    })
+  }, [filteredInfluencers, sortConfig])
+  
+  // Pagination calculations
+  const totalInfluencers = sortedInfluencers.length
+  const totalPages = Math.ceil(totalInfluencers / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedInfluencers = sortedInfluencers.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = (key: string, value: string) => {
+    handleRosterFilterChange(key, value)
+    setCurrentPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setCurrentPage(1)
+  }
+
+  // Sort handler
+  const handleSort = (key: string) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }))
+    setCurrentPage(1)
+  }
+
+  // Tab change handler with sort reset
+  const handleTabChange = (tab: typeof activeTab) => {
+    setActiveTab(tab)
+    setCurrentPage(1)
+    setSortConfig({ key: null, direction: 'asc' })
+  }
 
   // Mock function to generate detailed influencer data
   const generateDetailedInfluencerData = (basicInfluencer: any): InfluencerDetailView => {
@@ -395,15 +690,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const getPlatformBadgeColor = (platform: Platform) => {
-    const colors = {
+    const colors: Record<string, string> = {
       INSTAGRAM: 'bg-pink-100 text-pink-800',
       TIKTOK: 'bg-black text-white',
-      YOUTUBE: 'bg-red-100 text-red-800',
-      TWITCH: 'bg-purple-100 text-purple-800',
-      TWITTER: 'bg-blue-100 text-blue-800',
-      LINKEDIN: 'bg-blue-100 text-blue-800'
+      YOUTUBE: 'bg-red-100 text-red-800'
     }
-    return colors[platform]
+    return colors[platform] || 'bg-gray-100 text-gray-800'
   }
 
   const handleViewInfluencer = async (influencer: any) => {
@@ -503,11 +795,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       if (oldType && newType && oldType !== newType) {
         // Determine which tab to switch to based on the new type
         const getTargetTab = (type: string) => {
-          if (type === 'GOLD' || type === 'SILVER') return 'SIGNED'
+          if (type === 'SIGNED') return 'SIGNED'
           if (type === 'PARTNERED') return 'PARTNERED'
           if (type === 'AGENCY_PARTNER') return 'AGENCY_PARTNER'
-          if (type === 'UGC') return 'UGC'
-          if (type === 'SEEDING') return 'SEEDING'
           return 'ALL'
         }
         const targetTab = getTargetTab(newType)
@@ -537,7 +827,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       // Generate new ID
       const newId = `inf_${Date.now()}`
       
-      // Calculate platform data
+      // Calculate platform data (Only Instagram, YouTube, TikTok supported)
       const platforms = [
         ...(data.instagram_username ? ['INSTAGRAM' as Platform] : []),
         ...(data.tiktok_username ? ['TIKTOK' as Platform] : []),
@@ -555,6 +845,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         total_avg_views: data.average_views || 0,
         estimated_promotion_views: Math.floor((data.average_views || 0) * 0.85),
         influencer_type: data.influencer_type,
+        content_type: data.content_type || 'STANDARD', // Add content_type field
         is_active: true,
         first_name: data.first_name,
         last_name: data.last_name,
@@ -565,7 +856,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         website_url: data.website_url || '',
         average_views: data.average_views || 0,
         platforms,
-        platform_count: platforms.length
+        platform_count: platforms.length,
+        agency_name: data.agency_name || undefined // Add agency_name for consistency
       }
       
       // Add to state
@@ -573,11 +865,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       // Switch to the appropriate tab to show the new influencer
       const getTargetTab = (type: string) => {
-        if (type === 'GOLD' || type === 'SILVER') return 'SIGNED'
+        if (type === 'SIGNED') return 'SIGNED'
         if (type === 'PARTNERED') return 'PARTNERED'
         if (type === 'AGENCY_PARTNER') return 'AGENCY_PARTNER'
-        if (type === 'UGC') return 'UGC'
-        if (type === 'SEEDING') return 'SEEDING'
         return 'ALL'
       }
       const targetTab = getTargetTab(data.influencer_type)
@@ -633,13 +923,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
+  // Memoize the panel state change handler to prevent dependency array issues
+  const handlePanelStateChange = useCallback((isOpen: boolean) => {
+    onPanelStateChange?.(isOpen)
+  }, [onPanelStateChange])
+
   // Track panel state changes for the parent component
   useEffect(() => {
-    const isAnyPanelOpen = detailPanelOpen || managementPanelOpen
-    onPanelStateChange?.(isAnyPanelOpen)
-  }, [detailPanelOpen, managementPanelOpen, onPanelStateChange])
+    const isAnyPanelOpen = detailPanelOpen || managementPanelOpen || addModalOpen
+    handlePanelStateChange(isAnyPanelOpen)
+  }, [detailPanelOpen, managementPanelOpen, addModalOpen, handlePanelStateChange])
 
-  // Platform Icon Component with SVG logos
+  // Platform Icon Component with SVG logos (Only Instagram, YouTube, TikTok)
   const PlatformIcon = ({ platform, size = 20 }: { platform: string, size?: number }) => {
     switch (platform.toLowerCase()) {
       case 'instagram':
@@ -666,29 +961,44 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             </svg>
           </div>
         )
-      case 'twitter':
-        return (
-          <div className={`rounded-lg flex items-center justify-center`} style={{ width: size, height: size }}>
-            <svg className="text-blue-500" style={{ width: size * 0.8, height: size * 0.8 }} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-          </div>
-        )
-      case 'linkedin':
-        return (
-          <div className={`rounded-lg flex items-center justify-center`} style={{ width: size, height: size }}>
-            <svg className="text-blue-700" style={{ width: size * 0.8, height: size * 0.8 }} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-            </svg>
-          </div>
-        )
       default:
-        return (
-          <div className={`rounded-lg flex items-center justify-center`} style={{ width: size, height: size }}>
-            <Globe size={size * 0.8} className="text-gray-500" />
-          </div>
-        )
+        return null // Don't show unsupported platforms
     }
+  }
+
+  // Sortable Header Component
+  const SortableHeader = ({ 
+    children, 
+    sortKey, 
+    className = "" 
+  }: { 
+    children: React.ReactNode
+    sortKey: string
+    className?: string 
+  }) => {
+    const isActive = sortConfig.key === sortKey
+    const direction = sortConfig.direction
+    
+    return (
+      <th 
+        className={`px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100/40 transition-colors ${className}`}
+        onClick={() => handleSort(sortKey)}
+      >
+        <div className="flex items-center space-x-1">
+          <span>{children}</span>
+          <div className="flex flex-col">
+            <ChevronUp 
+              size={12} 
+              className={`${isActive && direction === 'asc' ? 'text-black' : 'text-gray-300'} transition-colors`} 
+            />
+            <ChevronDown 
+              size={12} 
+              className={`${isActive && direction === 'desc' ? 'text-black' : 'text-gray-300'} transition-colors -mt-1`} 
+            />
+          </div>
+        </div>
+      </th>
+    )
   }
 
   return (
@@ -700,87 +1010,273 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             type="text"
             placeholder="Search influencers by name, niche, or location..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
-            <Search className="w-4 h-4 text-gray-400" />
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
         </div>
 
         <button
-          onClick={() => setAddModalOpen(true)}
-          className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg"
+          onClick={() => setRosterFilterOpen(!rosterFilterOpen)}
+          className={`flex items-center space-x-2 px-4 py-3 rounded-2xl border transition-all duration-300 font-medium ${
+            Object.values(rosterFilters).filter(value => value !== '').length > 0
+              ? 'bg-black text-white border-black'
+              : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
+          }`}
         >
-          <Users size={16} className="mr-2" />
+          <Filter size={16} />
+          <span>Filters</span>
+          {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
+            <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
+              {Object.values(rosterFilters).filter(value => value !== '').length}
+            </span>
+          )}
+          <ChevronDown size={14} className={`transition-transform ${rosterFilterOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        <button
+          onClick={() => setAddModalOpen(true)}
+          className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
+        >
+          <Plus size={16} className="mr-2" />
           Add Influencer
         </button>
         
         <button
           onClick={handleRefreshData}
           disabled={isLoading}
-          className="flex items-center px-6 py-3 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm text-gray-700 hover:bg-white/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium"
+          className="flex items-center px-4 py-3 bg-white/60 backdrop-blur-md border border-gray-200 rounded-2xl hover:bg-white/80 transition-all duration-300 font-medium text-gray-700 disabled:opacity-50"
         >
-          <RefreshCw size={16} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh Data
+          <RefreshCw size={16} className={`${isLoading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {(['ALL', 'SIGNED', 'PARTNERED', 'AGENCY_PARTNER', 'UGC', 'SEEDING'] as const).map((tab) => {
-            let count = 0
-            let displayName = ''
-            
-            if (tab === 'ALL') {
-              count = MOCK_INFLUENCERS.filter(inf => 
-                inf.influencer_type === 'GOLD' || 
-                inf.influencer_type === 'SILVER' || 
-                inf.influencer_type === 'PARTNERED'
-              ).length
-              displayName = 'All'
-            } else if (tab === 'SIGNED') {
-              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === 'GOLD' || inf.influencer_type === 'SILVER').length
-              displayName = 'Signed'
-            } else if (tab === 'PARTNERED') {
-              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
-              displayName = 'Partnered'
-            } else if (tab === 'AGENCY_PARTNER') {
-              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
-              displayName = 'Agency Partner'
-            } else if (tab === 'UGC') {
-              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
-              displayName = 'UGC'
-            } else if (tab === 'SEEDING') {
-              count = MOCK_INFLUENCERS.filter(inf => inf.influencer_type === tab).length
-              displayName = 'Seeding'
-            }
+      {/* Filter Panel */}
+      {rosterFilterOpen && (
+        <div className="w-full bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/40 mb-4 animate-in slide-in-from-top-2 duration-300">
+          <div className="p-4">
+            {/* Active Filters Chips */}
+            {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
+              <div className="mb-4 pb-3 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Active Filters</h4>
+                  <button
+                    onClick={clearRosterFilters}
+                    className="text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(rosterFilters).map(([key, value]) => {
+                    if (!value) return null
+                    const option = rosterFilterOptions[key as keyof typeof rosterFilterOptions]?.find((opt: any) => opt.value === value)
+                    const displayKey = key === 'contentType' ? 'Content Type' 
+                                     : key === 'influencerType' ? 'Influencer Type'
+                                     : key === 'followerRange' ? 'Followers'
+                                     : key === 'engagementRange' ? 'Engagement'
+                                     : key.charAt(0).toUpperCase() + key.slice(1)
             
             return (
+                      <div key={key} className="flex items-center bg-black text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                        <span className="mr-1.5">{displayKey}: {option?.label || value}</span>
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                          onClick={() => handleFilterChange(key, '')}
+                          className="ml-0.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Filter Grid */}
+            <div className="space-y-4">
+              {/* Primary Filters Row */}
+              <div>
+                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Primary Filters</h4>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Niche</label>
+                    <select
+                      value={rosterFilters.niche}
+                      onChange={(e) => handleFilterChange('niche', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.niche.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Platform</label>
+                    <select
+                      value={rosterFilters.platform}
+                      onChange={(e) => handleFilterChange('platform', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.platform.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Influencer Type</label>
+                    <select
+                      value={rosterFilters.influencerType}
+                      onChange={(e) => handleFilterChange('influencerType', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.influencerType.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Content Type</label>
+                    <select
+                      value={rosterFilters.contentType}
+                      onChange={(e) => handleFilterChange('contentType', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.contentType.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary Filters Row */}
+              <div>
+                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Advanced Filters</h4>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Followers</label>
+                    <select
+                      value={rosterFilters.followerRange}
+                      onChange={(e) => handleFilterChange('followerRange', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.followerRange.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Engagement Rate</label>
+                    <select
+                      value={rosterFilters.engagementRange}
+                      onChange={(e) => handleFilterChange('engagementRange', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.engagementRange.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Location</label>
+                    <select
+                      value={rosterFilters.location}
+                      onChange={(e) => handleFilterChange('location', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.location.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Status</label>
+                    <select
+                      value={rosterFilters.status}
+                      onChange={(e) => handleFilterChange('status', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.status.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="mb-8">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 p-2">
+          <nav className="flex space-x-1">
+            {[
+              { key: 'ALL', label: 'All Influencers', count: applyFiltersForTab(influencers, 'ALL').length },
+              { key: 'SIGNED', label: 'Signed', count: applyFiltersForTab(influencers, 'SIGNED').length },
+              { key: 'PARTNERED', label: 'Partnered', count: applyFiltersForTab(influencers, 'PARTNERED').length },
+              { key: 'AGENCY_PARTNER', label: 'Agency Partners', count: applyFiltersForTab(influencers, 'AGENCY_PARTNER').length }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as any)}
                 className={`
-                  flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors
-                  ${activeTab === tab
-                    ? 'border-black text-black'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  group relative flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 min-w-0 flex-1
+                  ${activeTab === tab.key
+                    ? 'bg-black text-white shadow-lg transform scale-[1.02]'
+                    : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-white/60'
                   }
                 `}
               >
-                {displayName}
-                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                  activeTab === tab 
-                    ? 'bg-black text-white' 
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {count}
+                <span className="truncate mr-2">{tab.label}</span>
+                <span className={`
+                  inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold transition-all duration-300
+                  ${activeTab === tab.key 
+                    ? 'bg-white text-black' 
+                    : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
+                  }
+                `}>
+                  {tab.count}
                 </span>
+                
+                {/* Active indicator */}
+                {activeTab === tab.key && (
+                  <div className="absolute inset-0 rounded-xl bg-black/5 pointer-events-none" />
+                )}
               </button>
-            )
-          })}
+            ))}
         </nav>
+        </div>
       </div>
 
       {/* Influencer Table */}
@@ -789,20 +1285,21 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           <table className="w-full">
             <thead className="bg-gray-50/60 border-b border-gray-100/60">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Influencer</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tier</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Platforms</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Niches</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Followers</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Engagement</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Avg Views</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                <SortableHeader sortKey="display_name">Influencer</SortableHeader>
+                <SortableHeader sortKey="influencer_type">Type/Agency</SortableHeader>
+                <SortableHeader sortKey="content_type">Content Type</SortableHeader>
+                <SortableHeader sortKey="platforms">Platforms</SortableHeader>
+                <SortableHeader sortKey="niches">Niches</SortableHeader>
+                <SortableHeader sortKey="total_followers">Followers</SortableHeader>
+                <SortableHeader sortKey="total_engagement_rate">Engagement</SortableHeader>
+                <SortableHeader sortKey="total_avg_views">Avg Views</SortableHeader>
+                <SortableHeader sortKey="location_city">Location</SortableHeader>
+                <SortableHeader sortKey="is_active">Status</SortableHeader>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white/50 divide-y divide-gray-100/60">
-              {filteredInfluencers.map((influencer) => (
+              {paginatedInfluencers.map((influencer) => (
                 <tr key={influencer.id} className="hover:bg-white/70 transition-colors duration-150">
                   {/* Influencer Info */}
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -831,39 +1328,41 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                     </div>
                   </td>
 
-                  {/* Tier */}
+                  {/* Tier/Agency */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {(influencer.influencer_type === 'GOLD' || influencer.influencer_type === 'SILVER') ? (
+                    {(influencer.influencer_type === 'SIGNED' || influencer.influencer_type === 'PARTNERED') ? (
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                        influencer.influencer_type === 'GOLD' 
+                        influencer.influencer_type === 'SIGNED' 
                           ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
+                          : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {influencer.influencer_type === 'GOLD' ? 'Gold' : 'Silver'}
-                      </span>
-                    ) : influencer.influencer_type === 'PARTNERED' ? (
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        Partnered
+                        {influencer.influencer_type === 'SIGNED' ? 'Signed' : 'Partnered'}
                       </span>
                     ) : influencer.influencer_type === 'AGENCY_PARTNER' ? (
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                        Agency Partner
-                      </span>
-                    ) : influencer.influencer_type === 'UGC' ? (
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        UGC
-                      </span>
-                    ) : influencer.influencer_type === 'SEEDING' ? (
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-                        Seeding
+                      <span className="text-sm font-medium text-gray-900">
+                        {influencer.agency_name || 'Unknown Agency'}
                       </span>
                     ) : null}
+                  </td>
+
+                  {/* Content Type */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                      influencer.content_type === 'UGC' 
+                        ? 'bg-purple-100 text-purple-800'
+                        : influencer.content_type === 'SEEDING'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {influencer.content_type === 'UGC' ? 'UGC' : 
+                       influencer.content_type === 'SEEDING' ? 'Seeding' : 'Standard'}
+                    </span>
                   </td>
 
                   {/* Platforms */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-2">
-                      {influencer.platforms.map((platform) => (
+                      {influencer.platforms.map((platform: Platform) => (
                         <div key={platform} className="flex items-center">
                           <PlatformIcon platform={platform} size={24} />
                         </div>
@@ -874,7 +1373,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   {/* Niches */}
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {influencer.niches.slice(0, 2).map((niche) => (
+                      {influencer.niches.slice(0, 2).map((niche: string) => (
                         <span
                           key={niche}
                           className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg"
@@ -975,17 +1474,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </div>
 
         {/* Empty State */}
-        {filteredInfluencers.length === 0 && (
+        {paginatedInfluencers.length === 0 && (
           <div className="px-6 py-12 text-center">
             <Users size={48} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No influencers found</h3>
             <p className="text-gray-500 mb-4">
-              {search || nicheFilter || platformFilter 
+              {searchQuery || Object.values(rosterFilters).some(value => value !== '') 
                 ? 'Try adjusting your search or filters to find what you\'re looking for.'
                 : `No ${activeTab.toLowerCase()} influencers available.`
               }
             </p>
-            {!search && !nicheFilter && !platformFilter && (
+            {!searchQuery && !Object.values(rosterFilters).some(value => value !== '') && (
               <button
                 onClick={() => setAddModalOpen(true)}
                 className="inline-flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg"
@@ -997,6 +1496,76 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalInfluencers > 0 && (
+        <div className="flex items-center justify-between mt-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700">
+              Showing {startIndex + 1} to {Math.min(endIndex, totalInfluencers)} of {totalInfluencers} influencers
+            </span>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                className="px-3 py-1 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 transition-all duration-300"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            >
+              Previous
+            </button>
+            
+            <div className="flex space-x-1">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                      currentPage === pageNum
+                        ? 'bg-black text-white'
+                        : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+            </div>
+            
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {editModalOpen && selectedInfluencer && (
@@ -1012,7 +1581,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       )}
 
       {addModalOpen && (
-        <AddInfluencerModal
+        <AddInfluencerPanel
           isOpen={addModalOpen}
           onClose={() => setAddModalOpen(false)}
           onSave={handleAddInfluencer}
@@ -1089,6 +1658,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 export default function StaffRosterPage() {
   const [isAnyPanelOpen, setIsAnyPanelOpen] = useState(false)
 
+  // Memoize the panel state change handler
+  const handlePanelStateChange = useCallback((isOpen: boolean) => {
+    setIsAnyPanelOpen(isOpen)
+  }, [])
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
       <ModernStaffHeader />
@@ -1098,7 +1672,7 @@ export default function StaffRosterPage() {
       }`}>
         <InfluencerTableClient 
           searchParams={{}}
-          onPanelStateChange={setIsAnyPanelOpen}
+          onPanelStateChange={handlePanelStateChange}
         />
       </main>
     </div>

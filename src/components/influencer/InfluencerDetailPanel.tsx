@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, Share2, MapPin, Calendar, Bookmark, BookmarkPlus, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Star, Shield, AlertTriangle, Target, Zap, Settings } from 'lucide-react'
+import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, Share2, MapPin, Calendar, Bookmark, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Star, Shield, AlertTriangle, Target, Settings } from 'lucide-react'
 import { InfluencerDetailView, Platform } from '@/types/database'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -11,8 +11,6 @@ interface InfluencerDetailPanelProps {
   onClose: () => void
   selectedPlatform?: string
   onPlatformSwitch?: (platform: string) => void
-  onSave?: (influencerId: string) => void
-  onAddToShortlist?: (influencerId: string) => void
 }
 
 // Enhanced Button component with perfect visual hierarchy
@@ -328,41 +326,30 @@ export default function InfluencerDetailPanel({
   onClose, 
   selectedPlatform, 
   onPlatformSwitch,
-  onSave, 
-  onAddToShortlist,
   onOpenManagement
 }: InfluencerDetailPanelProps & { onOpenManagement?: () => void }) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [isSaved, setIsSaved] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Reset state when opening new influencer
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'performance', label: 'Performance' },
+    { id: 'audience', label: 'Audience' },
+    { id: 'content', label: 'Content' }
+  ]
+
+  // Reset state when panel opens with new influencer
   useEffect(() => {
     if (isOpen && influencer) {
       setActiveTab('overview')
-      setIsSaved(false)
     }
-  }, [isOpen, influencer?.id])
+  }, [isOpen, influencer])
 
-  // Smooth tab transitions
   const handleTabChange = (tabId: string) => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setActiveTab(tabId)
-      setIsLoading(false)
-    }, 150)
+    setActiveTab(tabId)
   }
 
   if (!influencer) return null
-
-  const handleSave = () => {
-    setIsSaved(!isSaved)
-    onSave?.(influencer.id)
-  }
-
-  const handleAddToShortlist = () => {
-    onAddToShortlist?.(influencer.id)
-  }
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
@@ -390,13 +377,6 @@ export default function InfluencerDetailPanel({
   const selectedPlatformData = getSelectedPlatformData()
   const engagementRating = getEngagementRating(selectedPlatformData?.engagement_rate || 0)
   const fakeFollowersRating = getFakeFollowersRating(19.37) // Mock data
-
-  const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'performance', label: 'Performance' },
-    { id: 'audience', label: 'Audience' },
-    { id: 'content', label: 'Content' }
-  ]
 
   // Mock audience interests - in real implementation this would come from Modash API
   const audienceInterests = [
@@ -500,21 +480,6 @@ export default function InfluencerDetailPanel({
                   
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-3">
-                    <Button
-                      variant={isSaved ? "success" : "outline"}
-                      size="default"
-                      onClick={handleSave}
-                      className="flex items-center space-x-2"
-                    >
-                      {isSaved ? <Bookmark className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
-                      <span>{isSaved ? 'Saved' : 'Save'}</span>
-                    </Button>
-                    
-                    <Button variant="outline" size="default">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Full Report
-                    </Button>
-                    
                     <Button
                       variant="ghost"
                       size="default"
@@ -972,10 +937,6 @@ export default function InfluencerDetailPanel({
                     Manage
                   </Button>
                 )}
-                <Button onClick={handleAddToShortlist} size="lg">
-                  <Zap className="w-4 h-4 mr-2" />
-                  Add to Shortlist
-                </Button>
               </div>
             </div>
           </motion.div>

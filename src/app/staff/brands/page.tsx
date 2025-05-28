@@ -6,7 +6,7 @@ import BulkApproveModal from '@/components/modals/BulkApproveModal'
 import AddBrandPanel from '@/components/brands/AddBrandPanel'
 import ViewBrandPanel from '@/components/brands/ViewBrandPanel'
 import QuotationDetailPanel from '@/components/brands/QuotationDetailPanel'
-import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, Filter, ChevronDown } from 'lucide-react'
+import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, Filter, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
 
 // Mock data for brands and their shortlists
 const MOCK_BRANDS = [
@@ -225,193 +225,50 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
 }
 
 function BrandsPageClient() {
-  const [selectedShortlists, setSelectedShortlists] = useState<string[]>([])
-  const [bulkApproveModalOpen, setBulkApproveModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'clients-list' | 'shortlist'>('clients-list')
-  const [brandSearchQuery, setBrandSearchQuery] = useState('')
-  const [quotationSearchQuery, setQuotationSearchQuery] = useState('')
-  const [quotationDetailPanelOpen, setQuotationDetailPanelOpen] = useState(false)
-  const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
-  const [quotePricing, setQuotePricing] = useState('')
-  const [quoteNotes, setQuoteNotes] = useState('')
+  const [activeTab, setActiveTab] = useState<'clients' | 'quotations'>('clients')
+  const [isLoading, setIsLoading] = useState(false)
+  
+  // Panel states
   const [addBrandPanelOpen, setAddBrandPanelOpen] = useState(false)
   const [viewBrandPanelOpen, setViewBrandPanelOpen] = useState(false)
+  const [quotationDetailPanelOpen, setQuotationDetailPanelOpen] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<any>(null)
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  
+  // Sort state
+  const [sortConfig, setSortConfig] = useState<{
+    key: string | null
+    direction: 'asc' | 'desc'
+  }>({
+    key: null,
+    direction: 'asc'
+  })
+  
+  // Brand filters
   const [brandFilters, setBrandFilters] = useState({
-    industry: '',
-    status: '',
-    spendRange: '',
-    campaignCount: ''
-  })
-  const [quotationFilters, setQuotationFilters] = useState({
-    status: '',
-    budgetRange: '',
-    influencerCount: ''
-  })
-  const [brandFilterOpen, setBrandFilterOpen] = useState(false)
-  const [quotationFilterOpen, setQuotationFilterOpen] = useState(false)
-
-  const handleSelectShortlist = (shortlistId: string) => {
-    setSelectedShortlists(prev => 
-      prev.includes(shortlistId) 
-        ? prev.filter(id => id !== shortlistId)
-        : [...prev, shortlistId]
-    )
-  }
-
-  const handleBulkApprove = async (shortlistIds: string[], notes?: string, priceAdjustment?: number) => {
-    console.log('Bulk approving shortlists:', shortlistIds, notes, priceAdjustment)
-    alert(`Successfully approved ${shortlistIds.length} shortlists!`)
-    setSelectedShortlists([])
-  }
-
-  const handleExportReports = () => {
-    alert('Exporting brand reports...')
-  }
-
-  const handleViewBrand = (brandId: string) => {
-    const brand = MOCK_BRANDS.find(b => b.id === brandId)
-    if (brand) {
-      setSelectedBrand(brand)
-      setViewBrandPanelOpen(true)
-    }
-  }
-
-  const handleApproveShortlist = (shortlistId: string) => {
-    alert(`Approving shortlist ${shortlistId}`)
-  }
-
-  const handleRejectShortlist = (shortlistId: string) => {
-    alert(`Rejecting shortlist ${shortlistId}`)
-  }
-
-  const handleOpenQuotation = (quotation: any) => {
-    setSelectedQuotation(quotation)
-    setQuotePricing(quotation.total_quote || '')
-    setQuoteNotes('')
-    setQuotationDetailPanelOpen(true)
-  }
-
-  const handleSendQuote = (pricing: string, notes: string) => {
-    if (!pricing) {
-      alert('Please enter pricing before sending quote')
-      return
-    }
-    alert(`Sending quote for $${pricing} to ${selectedQuotation?.brand_name}`)
-    setQuotationDetailPanelOpen(false)
-    setSelectedQuotation(null)
-    setQuotePricing('')
-    setQuoteNotes('')
-  }
-
-  const handleAddBrand = () => {
-    setAddBrandPanelOpen(true)
-  }
-
-  const handleSaveBrand = async (brandData: any) => {
-    console.log('Saving brand:', brandData)
-    
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Generate new ID
-      const newId = `brand_${Date.now()}`
-      
-      // Create new brand object
-      const newBrand = {
-        id: newId,
-        company_name: brandData.company_name,
-        contact_name: brandData.contact_name,
-        email: brandData.email,
-        phone: brandData.phone,
-        website: brandData.website,
-        industry: brandData.industry,
-        company_size: brandData.company_size,
-        location_country: brandData.location_country,
-        location_city: brandData.location_city,
-        description: brandData.description,
-        budget_range: brandData.budget_range,
-        logo_url: null,
-        shortlists_count: 0,
-        active_campaigns: 0,
-        total_spend: 0,
-        last_activity: new Date().toISOString().split('T')[0],
-        status: 'active'
-      }
-      
-      // Handle user invitations if provided
-      if (brandData.brandUsers && brandData.brandUsers.length > 0) {
-        console.log('Processing user invitations:', brandData.brandUsers)
-        
-        // TODO: Implement Clerk invitation system
-        const invitationResults = await Promise.allSettled(
-          brandData.brandUsers.map(async (user: any) => {
-            // This will be replaced with actual Clerk invitation API call
-            console.log(`Sending invitation to ${user.email} (${user.firstName} ${user.lastName})`)
-            return {
-              email: user.email,
-              status: 'sent',
-              invitationId: `inv_${Date.now()}_${Math.random()}`
-            }
-          })
-        )
-        
-        const successfulInvites = invitationResults
-          .filter(result => result.status === 'fulfilled')
-          .length
-        
-        console.log(`Successfully sent ${successfulInvites} invitation(s)`)
-        
-        // Show success message with invitation details
-        const userMessage = brandData.brandUsers.length === 1 
-          ? `User invitation sent to ${brandData.brandUsers[0].email}`
-          : `${successfulInvites} user invitations sent successfully`
-        
-        alert(`✅ Brand "${brandData.company_name}" has been added successfully!\n\n📧 ${userMessage}`)
-      } else {
-        alert(`✅ Brand "${brandData.company_name}" has been added successfully!`)
-      }
-      
-    } catch (error) {
-      console.error('Error saving brand:', error)
-      alert('❌ Error adding brand. Please try again.')
-      throw error
-    }
-  }
-
-  const brandStats = {
-    totalBrands: MOCK_BRANDS.length,
-    activeBrands: MOCK_BRANDS.filter(b => b.status === 'active').length,
-    pendingShortlists: MOCK_SHORTLISTS.filter(s => s.status === 'pending_review').length,
-    totalRevenue: MOCK_BRANDS.reduce((sum, brand) => sum + brand.total_spend, 0)
-  }
-
-  // Filter change handlers
-  const handleBrandFilterChange = (key: string, value: string) => {
-    setBrandFilters(prev => ({ ...prev, [key]: value }))
-  }
-
-  const handleQuotationFilterChange = (key: string, value: string) => {
-    setQuotationFilters(prev => ({ ...prev, [key]: value }))
-  }
-
-  const clearBrandFilters = () => {
-    setBrandFilters({
       industry: '',
       status: '',
       spendRange: '',
-      campaignCount: ''
+    campaignCount: '',
+    lastActivity: ''
     })
-  }
 
-  const clearQuotationFilters = () => {
-    setQuotationFilters({
+  // Quotation filters
+  const [quotationFilters, setQuotationFilters] = useState({
       status: '',
       budgetRange: '',
-      influencerCount: ''
+    influencerCount: '',
+    duration: '',
+    brand: ''
     })
-  }
 
   // Filter options
   const brandFilterOptions = {
@@ -421,23 +278,8 @@ function BrandsPageClient() {
       { value: 'Fitness & Sports', label: 'Fitness & Sports' },
       { value: 'Technology', label: 'Technology' },
       { value: 'Fashion', label: 'Fashion' },
-      { value: 'Food & Beverage', label: 'Food & Beverage' },
-      { value: 'Health & Wellness', label: 'Health & Wellness' },
-      { value: 'Travel & Tourism', label: 'Travel & Tourism' },
-      { value: 'Gaming & Entertainment', label: 'Gaming & Entertainment' },
-      { value: 'Home & Garden', label: 'Home & Garden' },
-      { value: 'Automotive', label: 'Automotive' },
-      { value: 'Finance & Insurance', label: 'Finance & Insurance' },
-      { value: 'Education', label: 'Education' },
-      { value: 'Real Estate', label: 'Real Estate' },
-      { value: 'Retail & E-commerce', label: 'Retail & E-commerce' },
-      { value: 'Music & Arts', label: 'Music & Arts' },
-      { value: 'Pet & Animals', label: 'Pet & Animals' },
-      { value: 'Baby & Kids', label: 'Baby & Kids' },
-      { value: 'Lifestyle', label: 'Lifestyle' },
-      { value: 'Photography', label: 'Photography' },
-      { value: 'Non-Profit', label: 'Non-Profit' },
-      { value: 'Other', label: 'Other' }
+      { value: 'Sustainability', label: 'Sustainability' },
+      { value: 'Food & Beverage', label: 'Food & Beverage' }
     ],
     status: [
       { value: '', label: 'All Statuses' },
@@ -446,17 +288,24 @@ function BrandsPageClient() {
     ],
     spendRange: [
       { value: '', label: 'All Spend Ranges' },
-      { value: 'under-5k', label: 'Under $5K' },
-      { value: '5k-15k', label: '$5K - $15K' },
-      { value: '15k-50k', label: '$15K - $50K' },
-      { value: 'over-50k', label: 'Over $50K' }
+      { value: 'under-5k', label: 'Under $5,000' },
+      { value: '5k-15k', label: '$5,000 - $15,000' },
+      { value: '15k-25k', label: '$15,000 - $25,000' },
+      { value: 'over-25k', label: 'Over $25,000' }
     ],
     campaignCount: [
       { value: '', label: 'All Campaign Counts' },
-      { value: '0', label: '0 Campaigns' },
+      { value: '0', label: 'No Campaigns' },
       { value: '1-2', label: '1-2 Campaigns' },
       { value: '3-5', label: '3-5 Campaigns' },
-      { value: 'over-5', label: '5+ Campaigns' }
+      { value: 'over-5', label: 'Over 5 Campaigns' }
+    ],
+    lastActivity: [
+      { value: '', label: 'All Activity' },
+      { value: 'today', label: 'Today' },
+      { value: 'week', label: 'This Week' },
+      { value: 'month', label: 'This Month' },
+      { value: 'older', label: 'Older' }
     ]
   }
 
@@ -470,49 +319,84 @@ function BrandsPageClient() {
     ],
     budgetRange: [
       { value: '', label: 'All Budget Ranges' },
-      { value: 'under-5k', label: 'Under $5K' },
-      { value: '5k-15k', label: '$5K - $15K' },
-      { value: '15k-50k', label: '$15K - $50K' },
-      { value: 'over-50k', label: 'Over $50K' }
+      { value: 'under-10k', label: 'Under $10,000' },
+      { value: '10k-20k', label: '$10,000 - $20,000' },
+      { value: 'over-20k', label: 'Over $20,000' }
     ],
     influencerCount: [
       { value: '', label: 'All Influencer Counts' },
-      { value: '1-5', label: '1-5 Influencers' },
-      { value: '6-15', label: '6-15 Influencers' },
-      { value: '16-30', label: '16-30 Influencers' },
-      { value: 'over-30', label: '30+ Influencers' }
+      { value: 'under-5', label: 'Under 5' },
+      { value: '5-10', label: '5-10' },
+      { value: 'over-10', label: 'Over 10' }
+    ],
+    duration: [
+      { value: '', label: 'All Durations' },
+      { value: '1-2', label: '1-2 weeks' },
+      { value: '3-4', label: '3-4 weeks' },
+      { value: 'over-4', label: 'Over 4 weeks' }
+    ],
+    brand: [
+      { value: '', label: 'All Brands' },
+      ...MOCK_BRANDS.map(brand => ({
+        value: brand.id,
+        label: brand.company_name
+      }))
     ]
   }
 
-  // Filter brands based on search query and filters
-  const filteredBrands = MOCK_BRANDS.filter(brand => {
-    const matchesSearch = brand.company_name.toLowerCase().includes(brandSearchQuery.toLowerCase())
+  // Filtering logic
+  const applyBrandFilters = (brands: any[]) => {
+    return brands.filter(brand => {
+      // Search filter
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase()
+        const matchesSearch = brand.company_name.toLowerCase().includes(searchLower) ||
+                             brand.contact_name.toLowerCase().includes(searchLower) ||
+                             brand.email.toLowerCase().includes(searchLower) ||
+                             brand.industry.toLowerCase().includes(searchLower)
+        if (!matchesSearch) return false
+      }
+
+      // Advanced filters
     const matchesIndustry = !brandFilters.industry || brand.industry === brandFilters.industry
     const matchesStatus = !brandFilters.status || brand.status === brandFilters.status
     const matchesSpendRange = !brandFilters.spendRange || checkSpendRange(brand.total_spend, brandFilters.spendRange)
     const matchesCampaignCount = !brandFilters.campaignCount || checkCampaignCount(brand.active_campaigns, brandFilters.campaignCount)
-    
-    return matchesSearch && matchesIndustry && matchesStatus && matchesSpendRange && matchesCampaignCount
-  })
+      const matchesLastActivity = !brandFilters.lastActivity || checkLastActivity(brand.last_activity, brandFilters.lastActivity)
 
-  // Filter quotations based on search query and filters
-  const filteredQuotations = MOCK_QUOTATION_REQUESTS.filter(quote => {
-    const matchesSearch = quote.brand_name.toLowerCase().includes(quotationSearchQuery.toLowerCase()) ||
-                         quote.campaign_name.toLowerCase().includes(quotationSearchQuery.toLowerCase())
-    const matchesStatus = !quotationFilters.status || quote.status === quotationFilters.status
-    const matchesBudgetRange = !quotationFilters.budgetRange || checkBudgetRange(quote.budget_range, quotationFilters.budgetRange)
-    const matchesInfluencerCount = !quotationFilters.influencerCount || checkInfluencerCount(quote.influencer_count, quotationFilters.influencerCount)
-    
-    return matchesSearch && matchesStatus && matchesBudgetRange && matchesInfluencerCount
-  })
+      return matchesIndustry && matchesStatus && matchesSpendRange && matchesCampaignCount && matchesLastActivity
+    })
+  }
+
+  const applyQuotationFilters = (quotations: any[]) => {
+    return quotations.filter(quotation => {
+      // Search filter
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase()
+        const matchesSearch = quotation.brand_name.toLowerCase().includes(searchLower) ||
+                             quotation.campaign_name.toLowerCase().includes(searchLower) ||
+                             quotation.description.toLowerCase().includes(searchLower)
+        if (!matchesSearch) return false
+      }
+
+      // Advanced filters
+      const matchesStatus = !quotationFilters.status || quotation.status === quotationFilters.status
+      const matchesBudgetRange = !quotationFilters.budgetRange || checkBudgetRange(quotation.budget_range, quotationFilters.budgetRange)
+      const matchesInfluencerCount = !quotationFilters.influencerCount || checkInfluencerCount(quotation.influencer_count, quotationFilters.influencerCount)
+      const matchesDuration = !quotationFilters.duration || checkDuration(quotation.campaign_duration, quotationFilters.duration)
+      const matchesBrand = !quotationFilters.brand || quotation.brand_id === quotationFilters.brand
+
+      return matchesStatus && matchesBudgetRange && matchesInfluencerCount && matchesDuration && matchesBrand
+    })
+  }
 
   // Helper functions for range checking
   function checkSpendRange(spend: number, range: string) {
     switch (range) {
       case 'under-5k': return spend < 5000
       case '5k-15k': return spend >= 5000 && spend <= 15000
-      case '15k-50k': return spend >= 15000 && spend <= 50000
-      case 'over-50k': return spend > 50000
+      case '15k-25k': return spend >= 15000 && spend <= 25000
+      case 'over-25k': return spend > 25000
       default: return true
     }
   }
@@ -527,220 +411,307 @@ function BrandsPageClient() {
     }
   }
 
+  function checkLastActivity(activity: string, range: string) {
+    const today = new Date()
+    const activityDate = new Date(activity)
+    const diffDays = Math.floor((today.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    switch (range) {
+      case 'today': return diffDays === 0
+      case 'week': return diffDays <= 7
+      case 'month': return diffDays <= 30
+      case 'older': return diffDays > 30
+      default: return true
+    }
+  }
+
   function checkBudgetRange(budgetRange: string, filterRange: string) {
     const extractBudgetValue = (range: string) => {
-      const numbers = range.match(/\d+,?\d*/g)
-      return numbers ? parseInt(numbers[0].replace(',', '')) : 0
+      const match = range.match(/\$?(\d+(?:,\d+)*(?:\.\d+)?)/)
+      return match && match[1] ? parseInt(match[1].replace(/,/g, '')) : 0
     }
     
     const budgetValue = extractBudgetValue(budgetRange)
     
     switch (filterRange) {
-      case 'under-5k': return budgetValue < 5000
-      case '5k-15k': return budgetValue >= 5000 && budgetValue <= 15000
-      case '15k-50k': return budgetValue >= 15000 && budgetValue <= 50000
-      case 'over-50k': return budgetValue > 50000
+      case 'under-10k': return budgetValue < 10000
+      case '10k-20k': return budgetValue >= 10000 && budgetValue <= 20000
+      case 'over-20k': return budgetValue > 20000
       default: return true
     }
   }
 
   function checkInfluencerCount(count: number, range: string) {
     switch (range) {
-      case '1-5': return count >= 1 && count <= 5
-      case '6-15': return count >= 6 && count <= 15
-      case '16-30': return count >= 16 && count <= 30
-      case 'over-30': return count > 30
+      case 'under-5': return count < 5
+      case '5-10': return count >= 5 && count <= 10
+      case 'over-10': return count > 10
       default: return true
     }
   }
 
-  // Selected shortlist data for bulk operations
-  const selectedShortlistData = MOCK_SHORTLISTS.filter(s => selectedShortlists.includes(s.id))
-
-  // Selected quotation request data for bulk operations
-  const selectedQuotationData = MOCK_QUOTATION_REQUESTS.filter(q => selectedShortlists.includes(q.id))
-
-  function QuotationRequestTable() {
-    const getStatusBadge = (status: string) => {
-      if (status === 'pending_review') {
-        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Review</span>
-      }
-      if (status === 'sent') {
-        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Sent</span>
-      }
-      if (status === 'approved') {
-        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
-      }
-      return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Rejected</span>
+  function checkDuration(duration: string, range: string) {
+    const weeks = parseInt(duration) || 0
+    
+    switch (range) {
+      case '1-2': return weeks >= 1 && weeks <= 2
+      case '3-4': return weeks >= 3 && weeks <= 4
+      case 'over-4': return weeks > 4
+      default: return true
     }
-
-    return (
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
-        <div className="px-6 py-5 border-b border-gray-100/60">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Quotation Requests ({filteredQuotations.length}
-            {quotationSearchQuery && filteredQuotations.length !== MOCK_QUOTATION_REQUESTS.length && ` of ${MOCK_QUOTATION_REQUESTS.length}`})
-          </h2>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Influencers</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredQuotations.map((quote) => (
-                <tr key={quote.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{quote.brand_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{quote.campaign_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(quote.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Star size={14} className="mr-1 text-gray-400" />
-                      {quote.influencer_count}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {quote.budget_range}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      {quote.status === 'pending_review' && (
-                          <button 
-                          onClick={() => handleOpenQuotation(quote)}
-                          className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
-                          >
-                          Open
-                          </button>
-                      )}
-                      {quote.status === 'sent' && (
-                        <span className="px-3 py-1 text-xs font-medium text-gray-500 bg-gray-50 rounded-md">
-                          Awaiting Response
-                        </span>
-                      )}
-                      {quote.status === 'approved' && (
-                        <span className="px-3 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-md">
-                          Completed
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
   }
 
-  function BrandTable() {
-    const getStatusBadge = (status: string) => {
-      if (status === 'active') {
-        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-      }
-      return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
-    }
+  // Apply filters - always calculate both for correct tab counts
+  const filteredBrands = applyBrandFilters(MOCK_BRANDS)
+  const filteredQuotations = applyQuotationFilters(MOCK_QUOTATION_REQUESTS)
+  
+  // Apply sorting
+  const sortedData = React.useMemo(() => {
+    const dataToSort = activeTab === 'clients' ? filteredBrands : filteredQuotations
+    
+    if (!sortConfig.key) return dataToSort
 
+    return [...dataToSort].sort((a: any, b: any) => {
+      let aValue: any = a[sortConfig.key as string]
+      let bValue: any = b[sortConfig.key as string]
+
+      // Handle different data types based on column
+      switch (sortConfig.key) {
+        case 'company_name':
+        case 'contact_name':
+        case 'email':
+        case 'industry':
+        case 'status':
+        case 'brand_name':
+        case 'campaign_name':
+        case 'description':
+          aValue = String(aValue || '').toLowerCase()
+          bValue = String(bValue || '').toLowerCase()
+          break
+        case 'shortlists_count':
+        case 'active_campaigns':
+        case 'total_spend':
+        case 'influencer_count':
+          aValue = Number(aValue || 0)
+          bValue = Number(bValue || 0)
+          break
+        case 'last_activity':
+        case 'requested_at':
+        case 'quoted_at':
+        case 'approved_at':
+          aValue = new Date(aValue || 0).getTime()
+          bValue = new Date(bValue || 0).getTime()
+          break
+        case 'budget_range':
+          // Extract numeric value from budget range
+          const extractBudgetForSort = (range: string) => {
+            const match = range.match(/\$?(\d+(?:,\d+)*(?:\.\d+)?)/)
+            return match && match[1] ? parseInt(match[1].replace(/,/g, '')) : 0
+          }
+          aValue = extractBudgetForSort(aValue || '')
+          bValue = extractBudgetForSort(bValue || '')
+          break
+        case 'total_quote':
+          // Extract numeric value from quote
+          const extractQuoteForSort = (quote: string) => {
+            if (!quote) return 0
+            const match = quote.match(/\$?(\d+(?:,\d+)*(?:\.\d+)?)/)
+            return match && match[1] ? parseInt(match[1].replace(/,/g, '')) : 0
+          }
+          aValue = extractQuoteForSort(aValue || '')
+          bValue = extractQuoteForSort(bValue || '')
+          break
+        default:
+          aValue = String(aValue || '').toLowerCase()
+          bValue = String(bValue || '').toLowerCase()
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1
+      }
+      return 0
+    })
+  }, [filteredBrands, filteredQuotations, sortConfig, activeTab])
+  
+  // Pagination calculations
+  const currentData = sortedData
+  const totalItems = currentData.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedData = currentData.slice(startIndex, endIndex)
+
+  // Handler functions
+  const handleFilterChange = (key: string, value: string) => {
+    if (activeTab === 'clients') {
+      setBrandFilters(prev => ({ ...prev, [key]: value }))
+    } else {
+      setQuotationFilters(prev => ({ ...prev, [key]: value }))
+    }
+    setCurrentPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setCurrentPage(1)
+  }
+
+  // Sort handler
+  const handleSort = (key: string) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }))
+    setCurrentPage(1)
+  }
+
+  const handleTabChange = (tab: 'clients' | 'quotations') => {
+    setActiveTab(tab)
+    setCurrentPage(1)
+    setSearchQuery('')
+    setFilterOpen(false)
+    setSortConfig({ key: null, direction: 'asc' })
+  }
+
+  const clearFilters = () => {
+    if (activeTab === 'clients') {
+      setBrandFilters({
+        industry: '',
+        status: '',
+        spendRange: '',
+        campaignCount: '',
+        lastActivity: ''
+      })
+    } else {
+      setQuotationFilters({
+        status: '',
+        budgetRange: '',
+        influencerCount: '',
+        duration: '',
+        brand: ''
+      })
+    }
+    setCurrentPage(1)
+  }
+
+  // Get active filters for the current tab
+  const activeFilters = activeTab === 'clients' ? brandFilters : quotationFilters
+  const activeFilterOptions = activeTab === 'clients' ? brandFilterOptions : quotationFilterOptions
+  const activeFilterCount = Object.values(activeFilters).filter(value => value !== '').length
+
+  const handleAddBrand = () => {
+    setAddBrandPanelOpen(true)
+  }
+
+  const handleViewBrand = (brandId: string) => {
+    const brand = MOCK_BRANDS.find(b => b.id === brandId)
+    setSelectedBrand(brand)
+    setViewBrandPanelOpen(true)
+  }
+
+  const handleViewQuotation = (quotationId: string) => {
+    const quotation = MOCK_QUOTATION_REQUESTS.find(q => q.id === quotationId)
+    setSelectedQuotation(quotation)
+    setQuotationDetailPanelOpen(true)
+  }
+
+  const handleSaveBrand = async (brandData: any) => {
+    setIsLoading(true)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('Saving brand:', brandData)
+      alert('✅ Brand added successfully!')
+      setAddBrandPanelOpen(false)
+    } catch (error) {
+      console.error('Error saving brand:', error)
+      alert('❌ Error saving brand. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const closePanels = () => {
+    setAddBrandPanelOpen(false)
+    setViewBrandPanelOpen(false)
+    setQuotationDetailPanelOpen(false)
+    setSelectedBrand(null)
+    setSelectedQuotation(null)
+  }
+
+  // Format number helper
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`
+    }
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`
+    }
+    return num.toString()
+  }
+
+  // Status badge helpers
+  const getBrandStatusBadge = (status: string) => {
+      if (status === 'active') {
+      return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+    }
+    return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+  }
+
+  const getQuotationStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending_review':
+        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Review</span>
+      case 'sent':
+        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Sent</span>
+      case 'approved':
+        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
+      case 'rejected':
+        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
+      default:
+        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Unknown</span>
+    }
+  }
+
+  // Sortable Header Component
+  const SortableHeader = ({ 
+    children, 
+    sortKey, 
+    className = "" 
+  }: { 
+    children: React.ReactNode
+    sortKey: string
+    className?: string 
+  }) => {
+    const isActive = sortConfig.key === sortKey
+    const direction = sortConfig.direction
+    
     return (
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
-        <div className="px-6 py-5 border-b border-gray-100/60">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Brand Clients ({filteredBrands.length}
-            {brandSearchQuery && filteredBrands.length !== MOCK_BRANDS.length && ` of ${MOCK_BRANDS.length}`})
-          </h2>
+      <th 
+        className={`px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100/40 transition-colors ${className}`}
+        onClick={() => handleSort(sortKey)}
+      >
+        <div className="flex items-center space-x-1">
+          <span>{children}</span>
+          <div className="flex flex-col">
+            <ChevronUp 
+              size={12} 
+              className={`${isActive && direction === 'asc' ? 'text-black' : 'text-gray-300'} transition-colors`} 
+            />
+            <ChevronDown 
+              size={12} 
+              className={`${isActive && direction === 'desc' ? 'text-black' : 'text-gray-300'} transition-colors -mt-1`} 
+            />
+                    </div>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shortlists</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaigns</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spend</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBrands.map((brand) => (
-                <tr key={brand.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        {brand.logo_url ? (
-                          <img className="h-10 w-10 rounded-full" src={brand.logo_url} alt="" />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <Building2 size={20} className="text-gray-600" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{brand.company_name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{brand.contact_name}</div>
-                    <div className="text-sm text-gray-500">{brand.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {brand.industry}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <FileText size={14} className="mr-1 text-gray-400" />
-                      {brand.shortlists_count}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Star size={14} className="mr-1 text-gray-400" />
-                      {brand.active_campaigns}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${brand.total_spend.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(brand.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleViewBrand(brand.id)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900">
-                        <Download size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </th>
     )
   }
 
@@ -749,65 +720,56 @@ function BrandsPageClient() {
       <ModernStaffHeader />
       
       <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
-        addBrandPanelOpen ? 'mr-[32rem]' : 
-        viewBrandPanelOpen ? 'mr-[56rem]' : 
-        quotationDetailPanelOpen ? 'mr-[56rem]' : ''
+        addBrandPanelOpen || viewBrandPanelOpen || quotationDetailPanelOpen ? 'mr-[400px]' : ''
       }`}>
         {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="mb-8">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 p-2">
+            <nav className="flex space-x-1">
+              {[
+                { key: 'clients', label: 'Clients List', count: filteredBrands.length },
+                { key: 'quotations', label: 'Quotations', count: filteredQuotations.length }
+              ].map(tab => (
             <button
-              onClick={() => setActiveTab('clients-list')}
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab.key as 'clients' | 'quotations')}
               className={`
-                flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors
-                ${activeTab === 'clients-list'
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
-            >
-              Clients list
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === 'clients-list' 
-                  ? 'bg-black text-white' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {filteredBrands.length}
+                    group relative flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 min-w-0 flex-1
+                    ${activeTab === tab.key
+                      ? 'bg-black text-white shadow-lg transform scale-[1.02]'
+                      : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                    }
+                  `}
+                >
+                  <span className="truncate mr-2">{tab.label}</span>
+                  <span className={`
+                    inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold transition-all duration-300
+                    ${activeTab === tab.key 
+                      ? 'bg-white text-black' 
+                      : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
+                    }
+                  `}>
+                    {tab.count}
               </span>
+                  
+                  {/* Active indicator */}
+                  {activeTab === tab.key && (
+                    <div className="absolute inset-0 rounded-xl bg-black/5 pointer-events-none" />
+                  )}
             </button>
-            <button
-              onClick={() => setActiveTab('shortlist')}
-              className={`
-                flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors
-                ${activeTab === 'shortlist'
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
-            >
-              Quotations
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === 'shortlist' 
-                  ? 'bg-black text-white' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {filteredQuotations.length}
-              </span>
-            </button>
+              ))}
           </nav>
+          </div>
         </div>
 
-        {/* Content based on active tab */}
-        {activeTab === 'clients-list' && (
-          <div className="mb-8">
-            {/* Premium Search Bar and Actions */}
+        {/* Search Bar and Actions */}
             <div className="flex items-center gap-4 mb-6">
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder="Search brands..."
-                  value={brandSearchQuery}
-                  onChange={(e) => setBrandSearchQuery(e.target.value)}
+              placeholder={activeTab === 'clients' ? 'Search brands...' : 'Search quotations...'}
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
@@ -818,23 +780,24 @@ function BrandsPageClient() {
               </div>
 
               <button
-                onClick={() => setBrandFilterOpen(!brandFilterOpen)}
+            onClick={() => setFilterOpen(!filterOpen)}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-2xl border transition-all duration-300 font-medium ${
-                  Object.values(brandFilters).filter(value => value !== '').length > 0
+              activeFilterCount > 0
                     ? 'bg-black text-white border-black'
                     : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
                 }`}
               >
                 <Filter size={16} />
                 <span>Filters</span>
-                {Object.values(brandFilters).filter(value => value !== '').length > 0 && (
+            {activeFilterCount > 0 && (
                   <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
-                    {Object.values(brandFilters).filter(value => value !== '').length}
+                {activeFilterCount}
                   </span>
                 )}
-                <ChevronDown size={14} className={`transition-transform ${brandFilterOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
               </button>
 
+          {activeTab === 'clients' && (
               <button
                 onClick={handleAddBrand}
                 className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
@@ -842,22 +805,70 @@ function BrandsPageClient() {
                 <Plus size={16} className="mr-2" />
                 Add Brand
               </button>
+          )}
             </div>
 
             {/* Filter Panel */}
-            {brandFilterOpen && (
-              <div className="w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 mb-6">
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {Object.entries(brandFilterOptions).map(([key, options]) => (
-                      <div key={key} className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700 capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
+        {filterOpen && (
+          <div className="w-full bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/40 mb-4 animate-in slide-in-from-top-2 duration-300">
+            <div className="p-4">
+              {/* Active Filters Chips */}
+              {activeFilterCount > 0 && (
+                <div className="mb-4 pb-3 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Active Filters</h4>
+                    <button
+                      onClick={clearFilters}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(activeFilters).map(([key, value]) => {
+                      if (!value) return null
+                      const option = activeFilterOptions[key as keyof typeof activeFilterOptions]?.find((opt: any) => opt.value === value)
+                      const displayKey = key === 'spendRange' ? 'Spend Range'
+                                       : key === 'campaignCount' ? 'Campaigns'
+                                       : key === 'lastActivity' ? 'Activity'
+                                       : key === 'budgetRange' ? 'Budget'
+                                       : key === 'influencerCount' ? 'Influencers'
+                                       : key.charAt(0).toUpperCase() + key.slice(1)
+              
+              return (
+                        <div key={key} className="flex items-center bg-black text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                          <span className="mr-1.5">{displayKey}: {option?.label || value}</span>
+                <button
+                            onClick={() => handleFilterChange(key, '')}
+                            className="ml-0.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                          >
+                            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Filter Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {Object.entries(activeFilterOptions).map(([key, options]) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700 capitalize">
+                      {key === 'spendRange' ? 'Spend Range' 
+                       : key === 'campaignCount' ? 'Campaigns'
+                       : key === 'lastActivity' ? 'Last Activity'
+                       : key === 'budgetRange' ? 'Budget Range'
+                       : key === 'influencerCount' ? 'Influencers'
+                       : key}
                         </label>
                         <select
-                          value={brandFilters[key as keyof typeof brandFilters]}
-                          onChange={(e) => handleBrandFilterChange(key, e.target.value)}
-                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20 transition-all duration-300"
+                      value={activeFilters[key as keyof typeof activeFilters]}
+                      onChange={(e) => handleFilterChange(key, e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
                         >
                           {(options as any[]).map((option) => (
                             <option key={option.value} value={option.value}>
@@ -868,156 +879,317 @@ function BrandsPageClient() {
                       </div>
                     ))}
                   </div>
-                  {Object.values(brandFilters).filter(value => value !== '').length > 0 && (
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={clearBrandFilters}
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                      >
-                        Clear all filters
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
             
-            <BrandTable />
+        {/* Data Table */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50/60 border-b border-gray-100/60">
+                <tr>
+                  {activeTab === 'clients' ? (
+                    <>
+                      <SortableHeader sortKey="company_name">Brand</SortableHeader>
+                      <SortableHeader sortKey="contact_name">Contact</SortableHeader>
+                      <SortableHeader sortKey="industry">Industry</SortableHeader>
+                      <SortableHeader sortKey="shortlists_count">Shortlists</SortableHeader>
+                      <SortableHeader sortKey="active_campaigns">Campaigns</SortableHeader>
+                      <SortableHeader sortKey="total_spend">Total Spend</SortableHeader>
+                      <SortableHeader sortKey="status">Status</SortableHeader>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </>
+                  ) : (
+                    <>
+                      <SortableHeader sortKey="brand_name">Brand</SortableHeader>
+                      <SortableHeader sortKey="campaign_name">Campaign</SortableHeader>
+                      <SortableHeader sortKey="status">Status</SortableHeader>
+                      <SortableHeader sortKey="influencer_count">Influencers</SortableHeader>
+                      <SortableHeader sortKey="budget_range">Budget</SortableHeader>
+                      <SortableHeader sortKey="requested_at">Requested</SortableHeader>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white/50 divide-y divide-gray-100/60">
+                {paginatedData.map((item: any) => (
+                  <tr key={item.id} className="hover:bg-white/70 transition-colors duration-150">
+                    {activeTab === 'clients' ? (
+                      <>
+                        {/* Brand Info */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-12 w-12">
+                              {item.logo_url ? (
+                                <img className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" src={item.logo_url} alt="" />
+                              ) : (
+                                <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
+                                  <Building2 size={20} className="text-gray-500" />
           </div>
         )}
-        {activeTab === 'shortlist' && (
-          <div className="mb-8">
-            {/* Premium Search Bar and Actions for Quotations */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  placeholder="Search quotations by brand or campaign..."
-                  value={quotationSearchQuery}
-                  onChange={(e) => setQuotationSearchQuery(e.target.value)}
-                  className="w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
                 </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-semibold text-gray-900">{item.company_name}</div>
               </div>
+                          </div>
+                        </td>
 
+                        {/* Contact */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{item.contact_name}</div>
+                          <div className="text-sm text-gray-500 flex items-center">
+                            <Mail size={12} className="mr-1" />
+                            {item.email}
+                          </div>
+                        </td>
+
+                        {/* Industry */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
+                            {item.industry}
+                          </span>
+                        </td>
+
+                        {/* Shortlists */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm font-semibold text-gray-900">
+                            <FileText size={14} className="mr-1 text-gray-400" />
+                            {item.shortlists_count}
+                          </div>
+                        </td>
+
+                        {/* Campaigns */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm font-semibold text-gray-900">
+                            <Star size={14} className="mr-1 text-gray-400" />
+                            {item.active_campaigns}
+                          </div>
+                        </td>
+
+                        {/* Total Spend */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm font-semibold text-gray-900">
+                            <DollarSign size={14} className="mr-1 text-gray-400" />
+                            {formatNumber(item.total_spend)}
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getBrandStatusBadge(item.status)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-3">
               <button
-                onClick={() => setQuotationFilterOpen(!quotationFilterOpen)}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-2xl border transition-all duration-300 font-medium ${
-                  Object.values(quotationFilters).filter(value => value !== '').length > 0
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
-                }`}
-              >
-                <Filter size={16} />
-                <span>Filters</span>
-                {Object.values(quotationFilters).filter(value => value !== '').length > 0 && (
-                  <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
-                    {Object.values(quotationFilters).filter(value => value !== '').length}
-                  </span>
-                )}
-                <ChevronDown size={14} className={`transition-transform ${quotationFilterOpen ? 'rotate-180' : ''}`} />
-              </button>
+                              onClick={() => handleViewBrand(item.id)}
+                              className="text-blue-600 hover:text-blue-800 transition-colors"
+                              title="View Brand"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              className="text-green-600 hover:text-green-800 transition-colors"
+                              title="Download Report"
+                            >
+                              <Download size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        {/* Brand Name */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-gray-900">{item.brand_name}</div>
+                        </td>
 
+                        {/* Campaign */}
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{item.campaign_name}</div>
+                          <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getQuotationStatusBadge(item.status)}
+                        </td>
+
+                        {/* Influencers */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm font-semibold text-gray-900">
+                            <Users size={14} className="mr-1 text-gray-400" />
+                            {item.influencer_count}
+                          </div>
+                        </td>
+
+                        {/* Budget */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{item.budget_range}</div>
+                          {item.total_quote && (
+                            <div className="text-xs text-green-600 font-medium">Quoted: {item.total_quote}</div>
+                          )}
+                        </td>
+
+                        {/* Requested */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Calendar size={12} className="mr-1" />
+                            {new Date(item.requested_at).toLocaleDateString()}
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleViewQuotation(item.id)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+              </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Empty State */}
+          {paginatedData.length === 0 && (
+            <div className="px-6 py-12 text-center">
+              {activeTab === 'clients' ? (
+                <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
+              ) : (
+                <FileText size={48} className="mx-auto text-gray-400 mb-4" />
+              )}
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No {activeTab === 'clients' ? 'brands' : 'quotations'} found
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchQuery || activeFilterCount > 0
+                  ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                  : `No ${activeTab === 'clients' ? 'brand clients' : 'quotation requests'} available.`
+                }
+              </p>
+              {!searchQuery && activeFilterCount === 0 && activeTab === 'clients' && (
               <button
                 onClick={handleAddBrand}
-                className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
+                  className="inline-flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg"
               >
-                <Plus size={16} className="mr-2" />
-                Add Brand
+                  <Building2 size={16} className="mr-2" />
+                  Add Your First Brand
               </button>
+              )}
+            </div>
+          )}
             </div>
 
-            {/* Filter Panel */}
-            {quotationFilterOpen && (
-              <div className="w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 mb-6">
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.entries(quotationFilterOptions).map(([key, options]) => (
-                      <div key={key} className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700 capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </label>
+        {/* Pagination Controls */}
+        {totalItems > 0 && (
+          <div className="flex items-center justify-between mt-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-4">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-gray-700">
+                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} {activeTab === 'clients' ? 'brands' : 'quotations'}
+              </span>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Rows per page:</span>
                         <select
-                          value={quotationFilters[key as keyof typeof quotationFilters]}
-                          onChange={(e) => handleQuotationFilterChange(key, e.target.value)}
-                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20 transition-all duration-300"
-                        >
-                          {(options as any[]).map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="px-3 py-1 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 transition-all duration-300"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
                         </select>
                       </div>
-                    ))}
                   </div>
-                  {Object.values(quotationFilters).filter(value => value !== '').length > 0 && (
-                    <div className="mt-4 flex justify-end">
+
+            <div className="flex items-center space-x-2">
                       <button
-                        onClick={clearQuotationFilters}
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                       >
-                        Clear all filters
+                Previous
                       </button>
+              
+              <div className="flex space-x-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                        currentPage === pageNum
+                          ? 'bg-black text-white'
+                          : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
                     </div>
-                  )}
+              
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              >
+                Next
+              </button>
                 </div>
               </div>
             )}
             
-            <QuotationRequestTable />
-          </div>
-        )}
-      </main>
-
-      {/* Quotation Detail Panel */}
-      {quotationDetailPanelOpen && selectedQuotation && (
-        <QuotationDetailPanel
-          isOpen={quotationDetailPanelOpen}
-          onClose={() => setQuotationDetailPanelOpen(false)}
-          quotation={selectedQuotation}
-          onSendQuote={handleSendQuote}
-        />
-      )}
-
-      {/* Bulk Approve Modal */}
-      <BulkApproveModal
-        isOpen={bulkApproveModalOpen}
-        onClose={() => setBulkApproveModalOpen(false)}
-        selectedShortlists={selectedShortlistData.map(s => ({
-          id: s.id,
-          name: s.name,
-          brand_name: s.brand_name,
-          influencer_count: s.influencer_count,
-          estimated_value: 1000 * s.influencer_count // Mock estimated value
-        }))}
-        onApprove={handleBulkApprove}
-      />
-
-      {/* Add Brand Panel */}
+        {/* Side Panels */}
+        {addBrandPanelOpen && (
       <AddBrandPanel
         isOpen={addBrandPanelOpen}
-        onClose={() => setAddBrandPanelOpen(false)}
+            onClose={closePanels}
         onSave={handleSaveBrand}
       />
+        )}
 
-      {/* View Brand Panel */}
       {viewBrandPanelOpen && selectedBrand && (
         <ViewBrandPanel
           isOpen={viewBrandPanelOpen}
-          onClose={() => {
-            setViewBrandPanelOpen(false)
-            setSelectedBrand(null)
-          }}
+            onClose={closePanels}
           brand={selectedBrand}
         />
       )}
+
+        {quotationDetailPanelOpen && selectedQuotation && (
+          <QuotationDetailPanel
+            isOpen={quotationDetailPanelOpen}
+            onClose={closePanels}
+            quotation={selectedQuotation}
+            onSendQuote={() => {}}
+          />
+        )}
+      </main>
     </div>
   )
 }
 
-export default BrandsPageClient
+export default function StaffBrandsPage() {
+  return <BrandsPageClient />
+}

@@ -214,16 +214,6 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
     }
   }
 
-  const handleSaveInfluencer = (influencerId: string) => {
-    console.log('Saving influencer:', influencerId)
-    // Implement save logic here
-  }
-
-  const handleAddToShortlist = (influencerId: string) => {
-    console.log('Adding to shortlist:', influencerId)
-    // Implement shortlist logic here
-  }
-
   const getEngagementColor = (rate: number) => {
     if (rate >= 6) return 'text-green-600'
     if (rate >= 3) return 'text-blue-600'
@@ -352,8 +342,6 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
           setIsPanelOpen(false)
           setSelectedInfluencer(null)
         }}
-        onSave={handleSaveInfluencer}
-        onAddToShortlist={handleAddToShortlist}
       />
     </div>
   )
