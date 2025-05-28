@@ -16,6 +16,7 @@ interface InfluencerData {
   niches: string[]
   influencer_type: 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'
   content_type: 'STANDARD' | 'UGC' | 'SEEDING'
+  tier?: 'GOLD' | 'SILVER'
   average_views?: number
   instagram_username?: string
   tiktok_username?: string
@@ -93,6 +94,7 @@ export default function AddInfluencerPanel({
     niches: [],
     influencer_type: 'SIGNED',
     content_type: 'STANDARD',
+    tier: 'GOLD',
     average_views: undefined,
     instagram_username: '',
     tiktok_username: '',
@@ -294,6 +296,7 @@ export default function AddInfluencerPanel({
         niches: [],
         influencer_type: 'SIGNED',
         content_type: 'STANDARD',
+        tier: 'GOLD',
         average_views: undefined,
         instagram_username: '',
         tiktok_username: '',
@@ -632,7 +635,14 @@ export default function AddInfluencerPanel({
                     </label>
                     <select
                       value={formData.influencer_type}
-                      onChange={(e) => setFormData({ ...formData, influencer_type: e.target.value as any })}
+                      onChange={(e) => {
+                        const newType = e.target.value as 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'
+                        setFormData({ 
+                          ...formData, 
+                          influencer_type: newType,
+                          tier: (newType === 'SIGNED' || newType === 'PARTNERED') ? 'GOLD' : undefined
+                        })
+                      }}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30"
                     >
                       <option value="SIGNED">Signed</option>
@@ -671,6 +681,25 @@ export default function AddInfluencerPanel({
                       <option value="SEEDING">Seeding</option>
                     </select>
                   </div>
+
+                  {(formData.influencer_type === 'SIGNED' || formData.influencer_type === 'PARTNERED') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tier Override
+                      </label>
+                      <select
+                        value={formData.tier}
+                        onChange={(e) => setFormData({ ...formData, tier: e.target.value as any })}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30"
+                      >
+                        <option value="GOLD">Gold</option>
+                        <option value="SILVER">Silver</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Normally calculated from followers/engagement, but can be manually overridden
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

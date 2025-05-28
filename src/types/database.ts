@@ -37,6 +37,11 @@ export type ParticipationStatus =
   | 'COMPLETED' 
   | 'PAID';
 
+export type ContentType = 
+  | 'STANDARD' 
+  | 'UGC' 
+  | 'SEEDING';
+
 // =============================================
 // Core User Tables
 // =============================================
@@ -81,6 +86,8 @@ export interface Influencer {
   user_id: string;
   display_name: string;
   niches: string[];
+  content_type: ContentType;
+  tier?: 'GOLD' | 'SILVER';
   total_followers: number;
   total_engagement_rate: number;
   total_avg_views: number;
@@ -90,7 +97,6 @@ export interface Influencer {
   last_synced_at: Date | null;
   
   // Tier-based update tracking
-  tier: InfluencerTier;
   modash_last_updated: Date | null;
   modash_update_priority: number;
   auto_update_enabled: boolean;
@@ -300,6 +306,9 @@ export interface InfluencerWithProfile {
   user_id: string;
   display_name: string;
   niches: string[];
+  content_type: ContentType;
+  tier?: 'GOLD' | 'SILVER';
+  influencer_type: 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER';
   total_followers: number;
   total_engagement_rate: number;
   total_avg_views: number;

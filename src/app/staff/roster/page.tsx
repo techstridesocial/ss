@@ -6,7 +6,6 @@ import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
-import InfluencerManagementPanel from '../../../components/influencer/InfluencerManagementPanel'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { Search, Filter, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp } from 'lucide-react'
 
@@ -29,7 +28,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
-  const [managementPanelOpen, setManagementPanelOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   
@@ -55,6 +53,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     location: '',
     influencerType: '',
     contentType: '',
+    tier: '',
     status: ''
   })
   const [rosterFilterOpen, setRosterFilterOpen] = useState(false)
@@ -73,6 +72,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         estimated_promotion_views: 38250,
         influencer_type: 'SIGNED', // Changed to use signing status
         content_type: 'STANDARD', // New content type field
+        tier: 'SILVER' as const,
         is_active: true,
         first_name: 'Sarah',
         last_name: 'Creator',
@@ -96,6 +96,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         estimated_promotion_views: 27200,
         influencer_type: 'SIGNED',
         content_type: 'STANDARD',
+        tier: 'SILVER' as const,
         is_active: true,
         first_name: 'Mike',
         last_name: 'Content',
@@ -119,6 +120,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         estimated_promotion_views: 52700,
         influencer_type: 'SIGNED',
         content_type: 'UGC',
+        tier: 'GOLD' as const,
         is_active: true,
         first_name: 'Fiona',
         last_name: 'Fit',
@@ -142,6 +144,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         estimated_promotion_views: 66300,
         influencer_type: 'PARTNERED',
         content_type: 'STANDARD',
+        tier: 'GOLD' as const,
         is_active: true,
         first_name: 'Bella',
         last_name: 'Beauty',
@@ -299,8 +302,33 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       location: '',
       influencerType: '',
       contentType: '',
+      tier: '',
       status: ''
     })
+  }
+
+  // Function to determine influencer tier based on followers and engagement
+  const getInfluencerTier = (totalFollowers: number, engagementRate: number, influencerType?: string, manualTier?: string) => {
+    // Agency Partners don't have tiers
+    if (influencerType === 'AGENCY_PARTNER') {
+      return null
+    }
+    
+    // Use manual tier if set
+    if (manualTier) {
+      return manualTier
+    }
+    
+    // Gold: High followers (>500k) OR high engagement (>6%)
+    if (totalFollowers > 500000 || engagementRate > 6) {
+      return 'GOLD'
+    }
+    // Silver: Medium followers (100k-500k) OR good engagement (3-6%)
+    if (totalFollowers > 100000 || (engagementRate >= 3 && engagementRate <= 6)) {
+      return 'SILVER'
+    }
+    // Default for SIGNED/PARTNERED
+    return 'SILVER'
   }
 
   // Filter options (matching brand page structure)
@@ -367,6 +395,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       { value: 'UGC', label: 'UGC' },
       { value: 'SEEDING', label: 'Seeding' }
     ],
+    tier: [
+      { value: '', label: 'All Tiers' },
+      { value: 'GOLD', label: 'Gold' },
+      { value: 'SILVER', label: 'Silver' }
+    ],
     status: [
       { value: '', label: 'All Statuses' },
       { value: 'true', label: 'Active' },
@@ -415,11 +448,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
       const matchesInfluencerType = !rosterFilters.influencerType || influencer.influencer_type === rosterFilters.influencerType
       const matchesContentType = !rosterFilters.contentType || influencer.content_type === rosterFilters.contentType
+      const matchesTier = !rosterFilters.tier || getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === rosterFilters.tier
       const matchesStatus = !rosterFilters.status || influencer.is_active.toString() === rosterFilters.status
 
       return matchesNiche && matchesPlatform && matchesFollowerRange && 
              matchesEngagementRange && matchesLocation && matchesInfluencerType && 
-             matchesContentType && matchesStatus
+             matchesContentType && matchesTier && matchesStatus
     })
   }
 
@@ -463,11 +497,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
       const matchesInfluencerType = !rosterFilters.influencerType || influencer.influencer_type === rosterFilters.influencerType
       const matchesContentType = !rosterFilters.contentType || influencer.content_type === rosterFilters.contentType
+      const matchesTier = !rosterFilters.tier || getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === rosterFilters.tier
       const matchesStatus = !rosterFilters.status || influencer.is_active.toString() === rosterFilters.status
 
       return matchesNiche && matchesPlatform && matchesFollowerRange && 
              matchesEngagementRange && matchesLocation && matchesInfluencerType && 
-             matchesContentType && matchesStatus
+             matchesContentType && matchesTier && matchesStatus
     })
   }
 
@@ -721,7 +756,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       // Only open detail panel initially, management panel can be opened separately
       setDetailPanelOpen(true)
-      setManagementPanelOpen(false) // Start with management panel closed
     } catch (error) {
       console.error('Error loading influencer details:', error)
       alert('❌ Error loading influencer details. Please try again.')
@@ -731,14 +765,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleClosePanels = () => {
-    setManagementPanelOpen(false)
     setDetailPanelOpen(false)
     setSelectedInfluencerDetail(null)
-    setSelectedPlatform('')
-  }
-
-  const handleOpenManagementPanel = () => {
-    setManagementPanelOpen(true)
+    setSelectedInfluencer(null)
   }
 
   const handlePlatformSwitch = (platform: string) => {
@@ -930,9 +959,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Track panel state changes for the parent component
   useEffect(() => {
-    const isAnyPanelOpen = detailPanelOpen || managementPanelOpen || addModalOpen
-    handlePanelStateChange(isAnyPanelOpen)
-  }, [detailPanelOpen, managementPanelOpen, addModalOpen, handlePanelStateChange])
+    const isAnyPanelOpen = detailPanelOpen || addModalOpen
+    onPanelStateChange?.(isAnyPanelOpen)
+  }, [detailPanelOpen, addModalOpen, onPanelStateChange])
 
   // Platform Icon Component with SVG logos (Only Instagram, YouTube, TikTok)
   const PlatformIcon = ({ platform, size = 20 }: { platform: string, size?: number }) => {
@@ -1104,7 +1133,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               {/* Primary Filters Row */}
               <div>
                 <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Primary Filters</h4>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-700">Niche</label>
                     <select
@@ -1158,6 +1187,21 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                       className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
                     >
                       {rosterFilterOptions.contentType.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-700">Tier</label>
+                    <select
+                      value={rosterFilters.tier}
+                      onChange={(e) => handleFilterChange('tier', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 focus:bg-white transition-all duration-300 text-xs"
+                    >
+                      {rosterFilterOptions.tier.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -1333,7 +1377,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                     {(influencer.influencer_type === 'SIGNED' || influencer.influencer_type === 'PARTNERED') ? (
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                         influencer.influencer_type === 'SIGNED' 
-                          ? 'bg-yellow-100 text-yellow-800'
+                          ? getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === 'GOLD'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
                           : 'bg-blue-100 text-blue-800'
                       }`}>
                         {influencer.influencer_type === 'SIGNED' ? 'Signed' : 'Partnered'}
@@ -1352,7 +1398,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                         ? 'bg-purple-100 text-purple-800'
                         : influencer.content_type === 'SEEDING'
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        : 'bg-orange-100 text-orange-800'
                     }`}>
                       {influencer.content_type === 'UGC' ? 'UGC' : 
                        influencer.content_type === 'SEEDING' ? 'Seeding' : 'Standard'}
@@ -1633,23 +1679,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
       {/* Side Panels */}
       {selectedInfluencerDetail && (
-        <>
-          <InfluencerDetailPanel
-            isOpen={detailPanelOpen}
-            onClose={handleClosePanels}
-            influencer={selectedInfluencerDetail}
-            selectedPlatform={selectedPlatform}
-            onPlatformSwitch={handlePlatformSwitch}
-            onOpenManagement={handleOpenManagementPanel}
-          />
-          
-          <InfluencerManagementPanel
-            isOpen={managementPanelOpen}
-            onClose={() => setManagementPanelOpen(false)}
-            influencer={selectedInfluencerDetail}
-            onSave={handleSaveManagement}
-          />
-        </>
+        <InfluencerDetailPanel
+          isOpen={detailPanelOpen}
+          onClose={handleClosePanels}
+          influencer={selectedInfluencerDetail}
+          selectedPlatform={selectedPlatform}
+          onPlatformSwitch={handlePlatformSwitch}
+          onSave={handleSaveManagement}
+        />
       )}
     </div>
   )
