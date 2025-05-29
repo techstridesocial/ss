@@ -12,7 +12,10 @@ export default function Page() {
             Sign in to your account
           </p>
         </div>
-        <SignIn />
+        <SignIn 
+          redirectUrl="/dashboard"
+          afterSignInUrl="/dashboard"
+        />
       </div>
     </div>
   )
