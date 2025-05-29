@@ -774,11 +774,63 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setSelectedPlatform(platform)
   }
 
-  const handleSaveManagement = (data: Partial<InfluencerDetailView>) => {
+  const handleSaveManagement = async (data: Partial<InfluencerDetailView>) => {
+    if (!selectedInfluencerDetail) return
+    
+    setIsLoading(true)
     console.log('Saving management data:', data)
-    // Here you would typically update the influencer in your database
-    alert('✅ Influencer management data saved successfully!')
-    handleClosePanels()
+    
+    try {
+      const response = await fetch('/api/influencer-management', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          influencerId: selectedInfluencerDetail.id,
+          assigned_to: data.assigned_to,
+          labels: data.labels,
+          notes: data.notes
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        
+        // Update the influencer in state
+        setInfluencers(prev => prev.map(inf => {
+          if (inf.id === selectedInfluencerDetail.id) {
+            return {
+              ...inf,
+              assigned_to: data.assigned_to || null,
+              labels: data.labels || [],
+              notes: data.notes || null
+            }
+          }
+          return inf
+        }))
+        
+        // Update the detailed view data
+        if (selectedInfluencerDetail) {
+          setSelectedInfluencerDetail({
+            ...selectedInfluencerDetail,
+            assigned_to: data.assigned_to || null,
+            labels: data.labels || [],
+            notes: data.notes || null
+          })
+        }
+        
+        alert('✅ Management data saved successfully!')
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save management data')
+      }
+    } catch (error) {
+      console.error('Error saving management data:', error)
+      alert(`❌ Error saving management data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleEditInfluencer = (influencer: any) => {

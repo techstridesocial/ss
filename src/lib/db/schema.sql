@@ -91,6 +91,11 @@ CREATE TABLE influencers (
     modash_update_priority INTEGER DEFAULT 50, -- 1-100 priority score
     auto_update_enabled BOOLEAN DEFAULT TRUE,
     
+    -- Management fields
+    assigned_to VARCHAR(255), -- Staff member assigned to manage this influencer
+    labels TEXT[], -- Array of custom labels/tags for organization
+    notes TEXT, -- Internal notes about the influencer
+    
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -346,6 +351,20 @@ CREATE TABLE oauth_tokens (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Tracking links for campaigns and influencer management
+CREATE TABLE tracking_links (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    influencer_id UUID REFERENCES influencers(id) ON DELETE CASCADE,
+    short_io_link_id VARCHAR(255) UNIQUE NOT NULL, -- Short.io's idString
+    short_url TEXT NOT NULL,
+    original_url TEXT NOT NULL,
+    title VARCHAR(255),
+    clicks INTEGER DEFAULT 0,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Niche tags (predefined + custom)
 CREATE TABLE niche_tags (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -388,6 +407,11 @@ CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 
+-- Tracking links indexes
+CREATE INDEX idx_tracking_links_influencer ON tracking_links(influencer_id);
+CREATE INDEX idx_tracking_links_short_io_id ON tracking_links(short_io_link_id);
+CREATE INDEX idx_tracking_links_created_by ON tracking_links(created_by);
+
 -- ========================================
 -- FUNCTIONS AND TRIGGERS
 -- ========================================
@@ -411,4 +435,5 @@ CREATE TRIGGER update_campaigns_updated_at BEFORE UPDATE ON campaigns FOR EACH R
 CREATE TRIGGER update_campaign_influencers_updated_at BEFORE UPDATE ON campaign_influencers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_shortlists_updated_at BEFORE UPDATE ON shortlists FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_influencer_payments_updated_at BEFORE UPDATE ON influencer_payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_oauth_tokens_updated_at BEFORE UPDATE ON oauth_tokens FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 
+CREATE TRIGGER update_oauth_tokens_updated_at BEFORE UPDATE ON oauth_tokens FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_tracking_links_updated_at BEFORE UPDATE ON tracking_links FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, Share2, MapPin, Calendar, Bookmark, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Star, Shield, AlertTriangle, Target, Settings, Plus, Minus, Tag, Upload, Edit3, User, Lock } from 'lucide-react'
-import { InfluencerDetailView, Platform, ContentType } from '@/types/database'
+import { createPortal } from 'react-dom'
+import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, MapPin, Calendar, Bookmark, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Shield, AlertTriangle, Target, Settings, Plus, Tag, Edit3 } from 'lucide-react'
+import { InfluencerDetailView } from '@/types/database'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface InfluencerDetailPanelProps {
@@ -153,37 +154,6 @@ const PlatformIcon = ({ platform, size = 20 }: { platform: string, size?: number
     default:
       return <Globe {...iconProps} />
   }
-}
-
-// New Stat Card Component for better visual hierarchy
-const StatCard = ({ 
-  value, 
-  label, 
-  trend,
-  isMain = false,
-  variant = 'default'
-}: { 
-  value: string | number
-  label: string
-  trend?: { value: number; isPositive: boolean }
-  isMain?: boolean
-  variant?: 'default' | 'highlight'
-}) => {
-  return (
-    <div className={`text-center ${isMain ? 'p-6' : 'p-4'} ${variant === 'highlight' ? 'bg-blue-50 border-blue-200' : ''} rounded-xl border`}>
-      <div className={`font-bold text-gray-900 ${isMain ? 'text-3xl mb-2' : 'text-2xl mb-1'}`}>
-        {value}
-      </div>
-      <div className={`text-gray-600 ${isMain ? 'text-sm' : 'text-xs'} font-medium mb-1`}>
-        {label}
-      </div>
-      {trend && (
-        <div className={`text-xs ${trend.isPositive ? 'text-green-600' : 'text-red-500'} font-semibold`}>
-          {trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%
-        </div>
-      )}
-    </div>
-  )
 }
 
 // New Section Container for consistent spacing
@@ -418,45 +388,155 @@ export default function InfluencerDetailPanel({
   onPlatformSwitch,
   onSave
 }: InfluencerDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('management')
   const [isLoading, setIsLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure we're on the client side before rendering portal
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Management tab state
-  const [relationshipStatus, setRelationshipStatus] = useState('')
   const [assignee, setAssignee] = useState('')
   const [labels, setLabels] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [newLabel, setNewLabel] = useState('')
+  const [staffMembers, setStaffMembers] = useState<Array<{ value: string; label: string }>>([
+    { value: '', label: 'Unassigned' }
+  ])
+  const [trackingLinks, setTrackingLinks] = useState<Array<{
+    shortUrl: string
+    originalUrl: string
+    title: string
+    clicks: number
+    createdAt: string
+    linkId: string
+  }>>([])
+  const [showAddLinkForm, setShowAddLinkForm] = useState(false)
+  const [newLinkUrl, setNewLinkUrl] = useState('')
+  const [newLinkTitle, setNewLinkTitle] = useState('')
+  const [isCreatingLink, setIsCreatingLink] = useState(false)
+  const [linkSettingsOpen, setLinkSettingsOpen] = useState<string | null>(null)
+  const [editingLink, setEditingLink] = useState<string | null>(null)
+  const [editLinkTitle, setEditLinkTitle] = useState('')
+  const [notifications, setNotifications] = useState<Array<{
+    id: string
+    type: 'success' | 'error' | 'info'
+    message: string
+  }>>([])
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean
+    linkId: string | null
+    linkTitle: string | null
+  }>({
+    isOpen: false,
+    linkId: null,
+    linkTitle: null
+  })
 
   const tabs = [
+    { id: 'management', label: 'Management' },
     { id: 'overview', label: 'Overview' },
     { id: 'performance', label: 'Performance' },
-    { id: 'content', label: 'Content' },
-    { id: 'management', label: 'Management' }
+    { id: 'content', label: 'Content' }
   ]
 
   // Reset state when panel opens with new influencer
   useEffect(() => {
     if (isOpen && influencer) {
-      setActiveTab('overview')
+      setActiveTab('management')
     }
   }, [isOpen, influencer])
 
   // Initialize management data when influencer changes
   useEffect(() => {
     if (influencer) {
-      setRelationshipStatus(influencer.relationship_status || 'not_started')
       setAssignee(influencer.assigned_to || '')
       setLabels(influencer.labels || [])
       setNotes(influencer.notes || '')
     }
   }, [influencer])
 
+  // Fetch Stride Social staff members from Clerk
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      try {
+        console.log('Fetching staff members from API...')
+        const response = await fetch('/api/staff-members')
+        console.log('API response status:', response.status)
+        
+        if (response.ok) {
+          const staff = await response.json()
+          console.log('Fetched staff members:', staff)
+          setStaffMembers(staff)
+        } else {
+          const errorText = await response.text()
+          console.error('Failed to fetch staff members:', response.status, errorText)
+          // Fallback to mock data for development
+          const fallbackStaff = [
+            { value: '', label: 'Unassigned' },
+            { value: 'sarah_thompson', label: 'Sarah Thompson - Talent Manager' },
+            { value: 'james_wilson', label: 'James Wilson - Campaign Lead' },
+            { value: 'emily_davis', label: 'Emily Davis - Content Strategist' },
+            { value: 'alex_morgan', label: 'Alex Morgan - Partnership Manager' },
+            { value: 'charlie_brown', label: 'Charlie Brown - Creative Director' },
+          ]
+          setStaffMembers(fallbackStaff)
+        }
+        
+      } catch (error) {
+        console.error('Error fetching staff members:', error)
+        // Fallback to mock data for development
+        const fallbackStaff = [
+          { value: '', label: 'Unassigned' },
+          { value: 'sarah_thompson', label: 'Sarah Thompson - Talent Manager' },
+          { value: 'james_wilson', label: 'James Wilson - Campaign Lead' },
+          { value: 'emily_davis', label: 'Emily Davis - Content Strategist' },
+          { value: 'alex_morgan', label: 'Alex Morgan - Partnership Manager' },
+          { value: 'charlie_brown', label: 'Charlie Brown - Creative Director' },
+        ]
+        setStaffMembers(fallbackStaff)
+      }
+    }
+
+    fetchStaffMembers()
+  }, [])
+
+  // Fetch tracking links when influencer changes
+  useEffect(() => {
+    if (influencer) {
+      fetchTrackingLinks()
+    }
+  }, [influencer])
+
+  // Handle clicking outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Close settings dropdown if clicking outside
+      if (linkSettingsOpen && !(event.target as Element).closest('.relative')) {
+        setLinkSettingsOpen(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [linkSettingsOpen])
+
+  // Close dropdowns when delete confirmation opens
+  useEffect(() => {
+    if (deleteConfirmation.isOpen) {
+      setLinkSettingsOpen(null)
+    }
+  }, [deleteConfirmation.isOpen])
+
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
   }
 
-  if (!influencer) return null
+  if (!influencer || !mounted) return null
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
@@ -530,25 +610,8 @@ export default function InfluencerDetailPanel({
   const tierInfo = getInfluencerTier(influencer)
 
   // Management functionality
-  const relationshipOptions = [
-    { value: 'not_started', label: 'Not started' },
-    { value: 'contacted', label: 'Contacted' },
-    { value: 'in_negotiation', label: 'In negotiation' },
-    { value: 'agreed', label: 'Agreed' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'declined', label: 'Declined' }
-  ]
-
-  const assigneeOptions = [
-    { value: '', label: 'Unassigned' },
-    { value: 'john_doe', label: 'John Doe' },
-    { value: 'jane_smith', label: 'Jane Smith' },
-    { value: 'mike_johnson', label: 'Mike Johnson' },
-  ]
-
   const handleManagementSave = () => {
     onSave?.({
-      relationship_status: relationshipStatus,
       assigned_to: assignee,
       labels,
       notes
@@ -566,7 +629,342 @@ export default function InfluencerDetailPanel({
     setLabels(labels.filter(label => label !== labelToRemove))
   }
 
-  return (
+  // Tracking links functions
+  const fetchTrackingLinks = async () => {
+    if (!influencer) return
+    
+    try {
+      const response = await fetch(`/api/short-links?influencerId=${influencer.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setTrackingLinks(data.links || [])
+      } else {
+        console.error('Failed to fetch tracking links')
+      }
+    } catch (error) {
+      console.error('Error fetching tracking links:', error)
+    }
+  }
+
+  const createTrackingLink = async () => {
+    if (!influencer || !newLinkUrl.trim()) return
+
+    setIsCreatingLink(true)
+    try {
+      const response = await fetch('/api/short-links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          originalUrl: newLinkUrl.trim(),
+          title: newLinkTitle.trim() || undefined,
+          influencerId: influencer.id
+        })
+      })
+
+      if (response.ok) {
+        const newLink = await response.json()
+        setTrackingLinks(prev => [newLink, ...prev])
+        setNewLinkUrl('')
+        setNewLinkTitle('')
+        setShowAddLinkForm(false)
+        showNotification('success', 'Tracking link created successfully!')
+      } else {
+        const errorData = await response.json()
+        showNotification('error', `Failed to create tracking link: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error creating tracking link:', error)
+      showNotification('error', 'Error creating tracking link. Please try again.')
+    } finally {
+      setIsCreatingLink(false)
+    }
+  }
+
+  const handleAddLinkClick = () => {
+    setShowAddLinkForm(true)
+  }
+
+  const handleCancelAddLink = () => {
+    setShowAddLinkForm(false)
+    setNewLinkUrl('')
+    setNewLinkTitle('')
+  }
+
+  // Improved copy function with fallback
+  const copyToClipboard = async (text: string, buttonElement: HTMLButtonElement) => {
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        showCopySuccess(buttonElement)
+        return
+      }
+      
+      // Fallback method
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      if (document.execCommand('copy')) {
+        showCopySuccess(buttonElement)
+      } else {
+        throw new Error('Copy command failed')
+      }
+      
+      document.body.removeChild(textArea)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      // Show error feedback
+      const originalColor = buttonElement.style.color
+      buttonElement.style.color = '#EF4444'
+      buttonElement.title = 'Copy failed'
+      setTimeout(() => {
+        buttonElement.style.color = originalColor
+        buttonElement.title = 'Copy link'
+      }, 2000)
+    }
+  }
+
+  const showCopySuccess = (buttonElement: HTMLButtonElement) => {
+    const originalColor = buttonElement.style.color
+    const originalTitle = buttonElement.title
+    buttonElement.style.color = '#10B981'
+    buttonElement.title = 'Copied!'
+    setTimeout(() => {
+      buttonElement.style.color = originalColor
+      buttonElement.title = originalTitle
+    }, 2000)
+  }
+
+  // Delete tracking link
+  const deleteTrackingLink = async (linkId: string) => {
+    try {
+      const response = await fetch(`/api/short-links?linkId=${linkId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setTrackingLinks(prev => prev.filter(link => link.linkId !== linkId))
+        setLinkSettingsOpen(null)
+        showNotification('success', 'Link deleted successfully!')
+      } else {
+        const errorData = await response.json()
+        showNotification('error', `Failed to delete link: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error)
+      showNotification('error', 'Error deleting link. Please try again.')
+    }
+  }
+
+  // Edit tracking link
+  const saveEditLink = async (linkId: string) => {
+    try {
+      const response = await fetch('/api/short-links', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          linkId,
+          title: editLinkTitle
+        })
+      })
+
+      if (response.ok) {
+        const updatedLink = await response.json()
+        setTrackingLinks(prev => prev.map(link => 
+          link.linkId === linkId ? { ...link, title: updatedLink.title } : link
+        ))
+        setEditingLink(null)
+        setEditLinkTitle('')
+        showNotification('success', 'Link updated successfully!')
+      } else {
+        const errorData = await response.json()
+        showNotification('error', `Failed to update link: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error updating link:', error)
+      showNotification('error', 'Error updating link. Please try again.')
+    }
+  }
+
+  const startEditLink = (link: any) => {
+    setEditingLink(link.linkId)
+    setEditLinkTitle(link.title || '')
+    setLinkSettingsOpen(null)
+  }
+
+  // Notification helpers
+  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    setNotifications(prev => [...prev, { id, type, message }])
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id))
+    }, 4000)
+  }
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id))
+  }
+
+  // Custom Notification Component
+  const NotificationToast = ({ notification }: { notification: { id: string, type: 'success' | 'error' | 'info', message: string } }) => {
+    const variants = {
+      success: 'bg-green-50 border-green-200 text-green-800',
+      error: 'bg-red-50 border-red-200 text-red-800', 
+      info: 'bg-blue-50 border-blue-200 text-blue-800'
+    }
+
+    const icons = {
+      success: (
+        <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        </svg>
+      ),
+      error: (
+        <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        </svg>
+      ),
+      info: (
+        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+        </svg>
+      )
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -50, scale: 0.3 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -50, scale: 0.3 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 500 }}
+        className={`flex items-center p-4 border rounded-xl shadow-lg backdrop-blur-sm ${variants[notification.type]}`}
+      >
+        <div className="flex-shrink-0">
+          {icons[notification.type]}
+        </div>
+        <div className="ml-3 flex-1">
+          <p className="text-sm font-medium">{notification.message}</p>
+        </div>
+        <div className="ml-4 flex-shrink-0">
+          <button
+            onClick={() => removeNotification(notification.id)}
+            className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </motion.div>
+    )
+  }
+
+  // Delete confirmation helpers
+  const openDeleteConfirmation = (linkId: string, linkTitle: string | null) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      linkId,
+      linkTitle
+    })
+  }
+
+  const closeDeleteConfirmation = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      linkId: null,
+      linkTitle: null
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmation.linkId) {
+      await deleteTrackingLink(deleteConfirmation.linkId)
+      closeDeleteConfirmation()
+    }
+  }
+
+  // Custom Delete Confirmation Modal
+  const DeleteConfirmationModal = () => {
+    if (!deleteConfirmation.isOpen) return null
+
+    return (
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={closeDeleteConfirmation}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 500 }}
+            className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900">Delete Tracking Link</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete this tracking link?
+              </p>
+              {deleteConfirmation.linkTitle && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900">{deleteConfirmation.linkTitle}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={closeDeleteConfirmation}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleConfirmDelete}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete Link
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </AnimatePresence>
+    )
+  }
+
+  // Use createPortal to render directly to document.body, bypassing all parent containers
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -580,13 +978,25 @@ export default function InfluencerDetailPanel({
             className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]"
           />
           
+          {/* Notification Container */}
+          <div className="fixed top-4 right-4 z-[80] space-y-2 max-w-md">
+            <AnimatePresence>
+              {notifications.map(notification => (
+                <NotificationToast key={notification.id} notification={notification} />
+              ))}
+            </AnimatePresence>
+          </div>
+          
+          {/* Delete Confirmation Modal */}
+          <DeleteConfirmationModal />
+          
           {/* Enhanced Panel */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 inset-y-0 w-full max-w-2xl bg-white shadow-2xl z-[70] overflow-y-auto flex flex-col"
+            className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white shadow-2xl z-[70] overflow-y-auto flex flex-col"
           >
             {/* All Content in Scrollable Area */}
             <div className="flex-1 min-h-full">
@@ -1065,49 +1475,213 @@ export default function InfluencerDetailPanel({
                             <Section title="Assignee">
                               <ManagementDropdown
                                 value={assignee}
-                                options={assigneeOptions}
+                                options={staffMembers}
                                 onChange={setAssignee}
                                 placeholder="Select"
                               />
                             </Section>
 
-                            {/* Emails */}
-                            <Section title="Emails" action={<button className="text-blue-600 text-sm font-medium">Unlock</button>}>
-                              <p className="text-sm text-gray-500">Unlock the email and start a conversation.</p>
-                            </Section>
-
-                            {/* Campaign Setup */}
-                            <Section title="Campaign setup">
+                            {/* Tracking Links */}
+                            <Section title="Tracking Links">
                               <div className="space-y-4">
-                                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                                  <span className="text-sm text-gray-700">Product shipment</span>
-                                  <Plus className="w-4 h-4 text-gray-400" />
+                                {/* Tracking Links Header */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-700">Campaign tracking links</span>
+                                  <button
+                                    onClick={handleAddLinkClick}
+                                    className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Add Link</span>
+                                  </button>
                                 </div>
-                                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                                  <span className="text-sm text-gray-700">Tracking links</span>
-                                  <Plus className="w-4 h-4 text-gray-400" />
-                                </div>
-                                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                                  <span className="text-sm text-gray-700">Discount codes</span>
-                                  <Plus className="w-4 h-4 text-gray-400" />
-                                </div>
-                                <div className="flex items-center justify-between py-3">
-                                  <span className="text-sm text-gray-700">Affiliate program</span>
-                                  <Plus className="w-4 h-4 text-gray-400" />
-                                </div>
-                              </div>
-                            </Section>
 
-                            {/* Campaigns */}
-                            <Section title="Campaigns" action={<button className="text-blue-600 text-sm font-medium">Add</button>}>
-                              <p className="text-sm text-gray-500">Track content, engagements, clicks and real revenue. No creator signup required!</p>
-                            </Section>
+                                {/* Add Link Form */}
+                                {showAddLinkForm && (
+                                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div className="space-y-3">
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                          Original URL *
+                                        </label>
+                                        <ManagementInput
+                                          value={newLinkUrl}
+                                          onChange={setNewLinkUrl}
+                                          placeholder="https://example.com/product"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                          Title (optional)
+                                        </label>
+                                        <ManagementInput
+                                          value={newLinkTitle}
+                                          onChange={setNewLinkTitle}
+                                          placeholder="Product link for campaign"
+                                        />
+                                      </div>
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={createTrackingLink}
+                                          disabled={!newLinkUrl.trim() || isCreatingLink}
+                                          className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                          {isCreatingLink ? 'Creating...' : 'Create Link'}
+                                        </button>
+                                        <button
+                                          onClick={handleCancelAddLink}
+                                          className="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
 
-                            {/* Documents */}
-                            <Section title="Documents" action={<button className="text-blue-600 text-sm font-medium">Upload</button>}>
-                              <div className="text-center py-6">
-                                <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                <p className="text-sm text-gray-500">No documents uploaded</p>
+                                {/* Existing Tracking Links */}
+                                {trackingLinks.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {trackingLinks.map((link) => (
+                                      <div key={link.linkId} className="border border-gray-200 rounded-lg p-3 bg-white">
+                                        {editingLink === link.linkId ? (
+                                          /* Edit Mode */
+                                          <div className="space-y-3">
+                                            <div>
+                                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Short URL (read-only)
+                                              </label>
+                                              <div className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+                                                {link.shortUrl}
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Original URL (read-only)
+                                              </label>
+                                              <div className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md text-gray-600 truncate">
+                                                {link.originalUrl}
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Title
+                                              </label>
+                                              <ManagementInput
+                                                value={editLinkTitle}
+                                                onChange={setEditLinkTitle}
+                                                placeholder="Add a title for this link"
+                                              />
+                                            </div>
+                                            <div className="flex space-x-2">
+                                              <button
+                                                onClick={() => saveEditLink(link.linkId)}
+                                                className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                              >
+                                                Save
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  setEditingLink(null)
+                                                  setEditLinkTitle('')
+                                                }}
+                                                className="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                                              >
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          /* View Mode */
+                                          <div className="flex items-start justify-between">
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center space-x-2 mb-1">
+                                                <span className="text-sm font-medium text-blue-600 truncate">
+                                                  {link.shortUrl}
+                                                </span>
+                                                <div className="flex items-center space-x-1">
+                                                  <button
+                                                    onClick={(event) => {
+                                                      copyToClipboard(link.shortUrl, event.currentTarget as HTMLButtonElement)
+                                                    }}
+                                                    className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                                                    title="Copy link"
+                                                  >
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                      <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                                      <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                                                    </svg>
+                                                  </button>
+                                                  <button
+                                                    onClick={() => window.open(`https://app.short.io/links/${link.linkId}`, '_blank')}
+                                                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                                    title="View analytics"
+                                                  >
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                      <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/>
+                                                      <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/>
+                                                    </svg>
+                                                  </button>
+                                                  {/* Settings Dropdown */}
+                                                  <div className="relative">
+                                                    <button
+                                                      onClick={() => setLinkSettingsOpen(linkSettingsOpen === link.linkId ? null : link.linkId)}
+                                                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                                                      title="Settings"
+                                                    >
+                                                      <Settings className="w-3 h-3" />
+                                                    </button>
+                                                    
+                                                    <AnimatePresence>
+                                                      {linkSettingsOpen === link.linkId && (
+                                                        <motion.div
+                                                          initial={{ opacity: 0, y: -10 }}
+                                                          animate={{ opacity: 1, y: 0 }}
+                                                          exit={{ opacity: 0, y: -10 }}
+                                                          transition={{ duration: 0.15 }}
+                                                          className="absolute right-0 top-6 z-10 w-32 bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+                                                        >
+                                                          <button
+                                                            onClick={() => startEditLink(link)}
+                                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                                          >
+                                                            <Edit3 className="w-3 h-3" />
+                                                            <span>Edit</span>
+                                                          </button>
+                                                          <button
+                                                            onClick={() => openDeleteConfirmation(link.linkId, link.title)}
+                                                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                                          >
+                                                            <X className="w-3 h-3" />
+                                                            <span>Delete</span>
+                                                          </button>
+                                                        </motion.div>
+                                                      )}
+                                                    </AnimatePresence>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <p className="text-xs text-gray-500 truncate" title={link.originalUrl}>
+                                                → {link.originalUrl}
+                                              </p>
+                                              {link.title && (
+                                                <p className="text-xs text-gray-600 mt-1">{link.title}</p>
+                                              )}
+                                            </div>
+                                            <div className="flex flex-col items-end text-xs text-gray-500">
+                                              <span className="font-medium">{link.clicks} clicks</span>
+                                              <span>{new Date(link.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : !showAddLinkForm && (
+                                  <div className="text-center py-4 text-gray-500 text-sm">
+                                    No tracking links created yet
+                                  </div>
+                                )}
                               </div>
                             </Section>
 
@@ -1181,6 +1755,7 @@ export default function InfluencerDetailPanel({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 } 

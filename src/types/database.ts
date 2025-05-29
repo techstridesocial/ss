@@ -297,6 +297,23 @@ export interface OauthToken {
 }
 
 // =============================================
+// Tracking Links Table
+// =============================================
+
+export interface TrackingLink {
+  id: string;
+  influencer_id: string;
+  short_io_link_id: string;
+  short_url: string;
+  original_url: string;
+  title: string | null;
+  clicks: number;
+  created_by: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// =============================================
 // Joined/Enriched Types for Display
 // =============================================
 
