@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, MapPin, Calendar, Bookmark, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Shield, AlertTriangle, Target, Settings, Plus, Tag, Edit3 } from 'lucide-react'
+import { X, ExternalLink, TrendingUp, Users, Eye, Heart, MessageCircle, MapPin, Calendar, Bookmark, Mail, Globe, Instagram, Youtube, Video, ChevronDown, Shield, AlertTriangle, Target, Settings, Plus, Tag, Edit3, Hash } from 'lucide-react'
 import { InfluencerDetailView } from '@/types/database'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -402,6 +402,51 @@ export default function InfluencerDetailPanel({
   const [labels, setLabels] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [newLabel, setNewLabel] = useState('')
+  
+  // Internal Pricing state
+  const [pricing, setPricing] = useState({
+    instagram_post: { our_cost: '', client_rate: '' },
+    instagram_reel: { our_cost: '', client_rate: '' },
+    instagram_story: { our_cost: '', client_rate: '' },
+    tiktok_post: { our_cost: '', client_rate: '' },
+    youtube_video: { our_cost: '', client_rate: '' },
+    youtube_short: { our_cost: '', client_rate: '' },
+    package_deal: { our_cost: '', client_rate: '' },
+    notes: ''
+  })
+  const [pricingHasUnsavedChanges, setPricingHasUnsavedChanges] = useState(false)
+  const [originalPricing, setOriginalPricing] = useState({
+    instagram_post: { our_cost: '', client_rate: '' },
+    instagram_reel: { our_cost: '', client_rate: '' },
+    instagram_story: { our_cost: '', client_rate: '' },
+    tiktok_post: { our_cost: '', client_rate: '' },
+    youtube_video: { our_cost: '', client_rate: '' },
+    youtube_short: { our_cost: '', client_rate: '' },
+    package_deal: { our_cost: '', client_rate: '' },
+    notes: ''
+  })
+  
+  // Track original values to detect changes
+  const [originalValues, setOriginalValues] = useState({
+    assignee: '',
+    labels: [] as string[],
+    notes,
+    pricing: {
+      instagram_post: { our_cost: '', client_rate: '' },
+      instagram_reel: { our_cost: '', client_rate: '' },
+      instagram_story: { our_cost: '', client_rate: '' },
+      tiktok_post: { our_cost: '', client_rate: '' },
+      youtube_video: { our_cost: '', client_rate: '' },
+      youtube_short: { our_cost: '', client_rate: '' },
+      package_deal: { our_cost: '', client_rate: '' },
+      notes: ''
+    }
+  })
+  
+  // Unsaved changes tracking
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false)
+  
   const [staffMembers, setStaffMembers] = useState<Array<{ value: string; label: string }>>([
     { value: '', label: 'Unassigned' }
   ])
@@ -435,11 +480,224 @@ export default function InfluencerDetailPanel({
     linkTitle: null
   })
 
+  // Tracking links functions - moved above useEffect to avoid initialization issues
+  const fetchTrackingLinks = async () => {
+    if (!influencer) return
+    
+    try {
+      const response = await fetch(`/api/short-links?influencerId=${influencer.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setTrackingLinks(data.links || [])
+      } else {
+        console.error('Failed to fetch tracking links')
+      }
+    } catch (error) {
+      console.error('Error fetching tracking links:', error)
+    }
+  }
+
+  const createTrackingLink = async () => {
+    if (!influencer || !newLinkUrl.trim()) return
+
+    setIsCreatingLink(true)
+    try {
+      const response = await fetch('/api/short-links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          originalUrl: newLinkUrl.trim(),
+          title: newLinkTitle.trim() || undefined,
+          influencerId: influencer.id
+        })
+      })
+
+      if (response.ok) {
+        const newLink = await response.json()
+        setTrackingLinks(prev => [newLink, ...prev])
+        setNewLinkUrl('')
+        setNewLinkTitle('')
+        setShowAddLinkForm(false)
+        showNotification('success', 'Tracking link created successfully!')
+      } else {
+        const errorData = await response.json()
+        showNotification('error', `Failed to create tracking link: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error creating tracking link:', error)
+      showNotification('error', 'Error creating tracking link. Please try again.')
+    } finally {
+      setIsCreatingLink(false)
+    }
+  }
+
+  const handleAddLinkClick = () => {
+    setShowAddLinkForm(true)
+  }
+
+  const handleCancelAddLink = () => {
+    setShowAddLinkForm(false)
+    setNewLinkUrl('')
+    setNewLinkTitle('')
+  }
+
+  // Delete tracking link
+  const deleteTrackingLink = async (linkId: string) => {
+    try {
+      const response = await fetch(`/api/short-links?linkId=${linkId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setTrackingLinks(prev => prev.filter(link => link.linkId !== linkId))
+        setLinkSettingsOpen(null)
+        showNotification('success', 'Link deleted successfully!')
+      } else {
+        const errorData = await response.json()
+        showNotification('error', `Failed to delete link: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error)
+      showNotification('error', 'Error deleting link. Please try again.')
+    }
+  }
+
+  // Edit tracking link
+  const saveEditLink = async (linkId: string) => {
+    try {
+      const response = await fetch('/api/short-links', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          linkId,
+          title: editLinkTitle
+        })
+      })
+
+      if (response.ok) {
+        const updatedLink = await response.json()
+        setTrackingLinks(prev => prev.map(link => 
+          link.linkId === linkId ? { ...link, title: updatedLink.title } : link
+        ))
+        setEditingLink(null)
+        setEditLinkTitle('')
+        showNotification('success', 'Link updated successfully!')
+      } else {
+        const errorData = await response.json()
+        showNotification('error', `Failed to update link: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error updating link:', error)
+      showNotification('error', 'Error updating link. Please try again.')
+    }
+  }
+
+  const startEditLink = (link: any) => {
+    setEditingLink(link.linkId)
+    setEditLinkTitle(link.title || '')
+    setLinkSettingsOpen(null)
+  }
+
+  // Notification helpers
+  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    setNotifications(prev => [...prev, { id, type, message }])
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id))
+    }, 4000)
+  }
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id))
+  }
+
+  // Delete confirmation helpers
+  const openDeleteConfirmation = (linkId: string, linkTitle: string | null) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      linkId,
+      linkTitle
+    })
+  }
+
+  const closeDeleteConfirmation = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      linkId: null,
+      linkTitle: null
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmation.linkId) {
+      await deleteTrackingLink(deleteConfirmation.linkId)
+      closeDeleteConfirmation()
+    }
+  }
+
+  // Improved copy function with fallback
+  const copyToClipboard = async (text: string, buttonElement: HTMLButtonElement) => {
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        showCopySuccess(buttonElement)
+        return
+      }
+      
+      // Fallback method
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      if (document.execCommand('copy')) {
+        showCopySuccess(buttonElement)
+      } else {
+        throw new Error('Copy command failed')
+      }
+      
+      document.body.removeChild(textArea)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      // Show error feedback
+      const originalColor = buttonElement.style.color
+      buttonElement.style.color = '#EF4444'
+      buttonElement.title = 'Copy failed'
+      setTimeout(() => {
+        buttonElement.style.color = originalColor
+        buttonElement.title = 'Copy link'
+      }, 2000)
+    }
+  }
+
+  const showCopySuccess = (buttonElement: HTMLButtonElement) => {
+    const originalColor = buttonElement.style.color
+    const originalTitle = buttonElement.title
+    buttonElement.style.color = '#10B981'
+    buttonElement.title = 'Copied!'
+    setTimeout(() => {
+      buttonElement.style.color = originalColor
+      buttonElement.title = originalTitle
+    }, 2000)
+  }
+
   const tabs = [
     { id: 'management', label: 'Management' },
     { id: 'overview', label: 'Overview' },
     { id: 'performance', label: 'Performance' },
-    { id: 'content', label: 'Content' }
+    { id: 'content', label: 'Content' },
+    { id: 'pricing', label: 'Internal Pricing' }
   ]
 
   // Reset state when panel opens with new influencer
@@ -452,13 +710,57 @@ export default function InfluencerDetailPanel({
   // Initialize management data when influencer changes
   useEffect(() => {
     if (influencer) {
-      setAssignee(influencer.assigned_to || '')
-      setLabels(influencer.labels || [])
-      setNotes(influencer.notes || '')
+      const initialAssignee = influencer.assigned_to || ''
+      const initialLabels = influencer.labels || []
+      const initialNotes = influencer.notes || ''
+      
+      setAssignee(initialAssignee)
+      setLabels(initialLabels)
+      setNotes(initialNotes)
+      
+      // Set original values for change tracking
+      setOriginalValues({
+        assignee,
+        labels: [...labels],
+        notes,
+        pricing: {
+          instagram_post: { our_cost: '', client_rate: '' },
+          instagram_reel: { our_cost: '', client_rate: '' },
+          instagram_story: { our_cost: '', client_rate: '' },
+          tiktok_post: { our_cost: '', client_rate: '' },
+          youtube_video: { our_cost: '', client_rate: '' },
+          youtube_short: { our_cost: '', client_rate: '' },
+          package_deal: { our_cost: '', client_rate: '' },
+          notes: ''
+        }
+      })
+      
+      // Reset unsaved changes flag
+      setHasUnsavedChanges(false)
     }
   }, [influencer])
 
-  // Fetch Stride Social staff members from Clerk
+  // Track changes to management fields
+  useEffect(() => {
+    if (!influencer) return
+    
+    const hasChanges = 
+      assignee !== originalValues.assignee ||
+      notes !== originalValues.notes ||
+      JSON.stringify(labels.sort()) !== JSON.stringify(originalValues.labels.sort())
+    
+    setHasUnsavedChanges(hasChanges)
+  }, [assignee, labels, notes, originalValues, influencer])
+
+  // Track changes to pricing fields
+  useEffect(() => {
+    if (!influencer) return
+    
+    const hasPricingChanges = JSON.stringify(pricing) !== JSON.stringify(originalPricing)
+    setPricingHasUnsavedChanges(hasPricingChanges)
+  }, [pricing, originalPricing, influencer])
+
+  // Fetch staff members from Clerk
   useEffect(() => {
     const fetchStaffMembers = async () => {
       try {
@@ -616,6 +918,52 @@ export default function InfluencerDetailPanel({
       labels,
       notes
     })
+    
+    // Update original values after successful save
+    setOriginalValues({
+      assignee,
+      labels: [...labels],
+      notes,
+      pricing: {
+        instagram_post: { our_cost: '', client_rate: '' },
+        instagram_reel: { our_cost: '', client_rate: '' },
+        instagram_story: { our_cost: '', client_rate: '' },
+        tiktok_post: { our_cost: '', client_rate: '' },
+        youtube_video: { our_cost: '', client_rate: '' },
+        youtube_short: { our_cost: '', client_rate: '' },
+        package_deal: { our_cost: '', client_rate: '' },
+        notes: ''
+      }
+    })
+    setHasUnsavedChanges(false)
+  }
+
+  // Close confirmation handlers
+  const handleCloseAttempt = () => {
+    if ((hasUnsavedChanges && activeTab === 'management') || (pricingHasUnsavedChanges && activeTab === 'pricing')) {
+      setShowCloseConfirmation(true)
+    } else {
+      onClose()
+    }
+  }
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirmation(false)
+    onClose()
+  }
+
+  const handleSaveAndClose = () => {
+    if (activeTab === 'management') {
+      handleManagementSave()
+    } else if (activeTab === 'pricing') {
+      handlePricingSave()
+    }
+    setShowCloseConfirmation(false)
+    onClose()
+  }
+
+  const handleCancelClose = () => {
+    setShowCloseConfirmation(false)
   }
 
   const addLabel = () => {
@@ -629,192 +977,32 @@ export default function InfluencerDetailPanel({
     setLabels(labels.filter(label => label !== labelToRemove))
   }
 
-  // Tracking links functions
-  const fetchTrackingLinks = async () => {
-    if (!influencer) return
+  // Pricing helper functions
+  const handlePricingChange = (platform: string, field: 'our_cost' | 'client_rate', value: string) => {
+    setPricing(prev => ({
+      ...prev,
+      [platform]: {
+        ...(prev as any)[platform],
+        [field]: value
+      }
+    }))
+  }
+
+  const handlePricingNotesChange = (value: string) => {
+    setPricing(prev => ({ ...prev, notes: value }))
+  }
+
+  const handlePricingSave = () => {
+    // In a real implementation, this would save to the database
+    onSave?.({
+      ...(pricing as any)
+    })
     
-    try {
-      const response = await fetch(`/api/short-links?influencerId=${influencer.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setTrackingLinks(data.links || [])
-      } else {
-        console.error('Failed to fetch tracking links')
-      }
-    } catch (error) {
-      console.error('Error fetching tracking links:', error)
-    }
-  }
-
-  const createTrackingLink = async () => {
-    if (!influencer || !newLinkUrl.trim()) return
-
-    setIsCreatingLink(true)
-    try {
-      const response = await fetch('/api/short-links', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          originalUrl: newLinkUrl.trim(),
-          title: newLinkTitle.trim() || undefined,
-          influencerId: influencer.id
-        })
-      })
-
-      if (response.ok) {
-        const newLink = await response.json()
-        setTrackingLinks(prev => [newLink, ...prev])
-        setNewLinkUrl('')
-        setNewLinkTitle('')
-        setShowAddLinkForm(false)
-        showNotification('success', 'Tracking link created successfully!')
-      } else {
-        const errorData = await response.json()
-        showNotification('error', `Failed to create tracking link: ${errorData.error}`)
-      }
-    } catch (error) {
-      console.error('Error creating tracking link:', error)
-      showNotification('error', 'Error creating tracking link. Please try again.')
-    } finally {
-      setIsCreatingLink(false)
-    }
-  }
-
-  const handleAddLinkClick = () => {
-    setShowAddLinkForm(true)
-  }
-
-  const handleCancelAddLink = () => {
-    setShowAddLinkForm(false)
-    setNewLinkUrl('')
-    setNewLinkTitle('')
-  }
-
-  // Improved copy function with fallback
-  const copyToClipboard = async (text: string, buttonElement: HTMLButtonElement) => {
-    try {
-      // Try modern clipboard API first
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text)
-        showCopySuccess(buttonElement)
-        return
-      }
-      
-      // Fallback method
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      textArea.style.position = 'fixed'
-      textArea.style.left = '-999999px'
-      textArea.style.top = '-999999px'
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-      
-      if (document.execCommand('copy')) {
-        showCopySuccess(buttonElement)
-      } else {
-        throw new Error('Copy command failed')
-      }
-      
-      document.body.removeChild(textArea)
-    } catch (err) {
-      console.error('Failed to copy:', err)
-      // Show error feedback
-      const originalColor = buttonElement.style.color
-      buttonElement.style.color = '#EF4444'
-      buttonElement.title = 'Copy failed'
-      setTimeout(() => {
-        buttonElement.style.color = originalColor
-        buttonElement.title = 'Copy link'
-      }, 2000)
-    }
-  }
-
-  const showCopySuccess = (buttonElement: HTMLButtonElement) => {
-    const originalColor = buttonElement.style.color
-    const originalTitle = buttonElement.title
-    buttonElement.style.color = '#10B981'
-    buttonElement.title = 'Copied!'
-    setTimeout(() => {
-      buttonElement.style.color = originalColor
-      buttonElement.title = originalTitle
-    }, 2000)
-  }
-
-  // Delete tracking link
-  const deleteTrackingLink = async (linkId: string) => {
-    try {
-      const response = await fetch(`/api/short-links?linkId=${linkId}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        setTrackingLinks(prev => prev.filter(link => link.linkId !== linkId))
-        setLinkSettingsOpen(null)
-        showNotification('success', 'Link deleted successfully!')
-      } else {
-        const errorData = await response.json()
-        showNotification('error', `Failed to delete link: ${errorData.error}`)
-      }
-    } catch (error) {
-      console.error('Error deleting link:', error)
-      showNotification('error', 'Error deleting link. Please try again.')
-    }
-  }
-
-  // Edit tracking link
-  const saveEditLink = async (linkId: string) => {
-    try {
-      const response = await fetch('/api/short-links', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          linkId,
-          title: editLinkTitle
-        })
-      })
-
-      if (response.ok) {
-        const updatedLink = await response.json()
-        setTrackingLinks(prev => prev.map(link => 
-          link.linkId === linkId ? { ...link, title: updatedLink.title } : link
-        ))
-        setEditingLink(null)
-        setEditLinkTitle('')
-        showNotification('success', 'Link updated successfully!')
-      } else {
-        const errorData = await response.json()
-        showNotification('error', `Failed to update link: ${errorData.error}`)
-      }
-    } catch (error) {
-      console.error('Error updating link:', error)
-      showNotification('error', 'Error updating link. Please try again.')
-    }
-  }
-
-  const startEditLink = (link: any) => {
-    setEditingLink(link.linkId)
-    setEditLinkTitle(link.title || '')
-    setLinkSettingsOpen(null)
-  }
-
-  // Notification helpers
-  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-    const id = Math.random().toString(36).substr(2, 9)
-    setNotifications(prev => [...prev, { id, type, message }])
+    // Update original values after successful save
+    setOriginalPricing(pricing)
+    setPricingHasUnsavedChanges(false)
     
-    // Auto remove after 4 seconds
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(notif => notif.id !== id))
-    }, 4000)
-  }
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id))
+    showNotification('success', 'Internal pricing updated successfully!')
   }
 
   // Custom Notification Component
@@ -867,30 +1055,6 @@ export default function InfluencerDetailPanel({
         </div>
       </motion.div>
     )
-  }
-
-  // Delete confirmation helpers
-  const openDeleteConfirmation = (linkId: string, linkTitle: string | null) => {
-    setDeleteConfirmation({
-      isOpen: true,
-      linkId,
-      linkTitle
-    })
-  }
-
-  const closeDeleteConfirmation = () => {
-    setDeleteConfirmation({
-      isOpen: false,
-      linkId: null,
-      linkTitle: null
-    })
-  }
-
-  const handleConfirmDelete = async () => {
-    if (deleteConfirmation.linkId) {
-      await deleteTrackingLink(deleteConfirmation.linkId)
-      closeDeleteConfirmation()
-    }
   }
 
   // Custom Delete Confirmation Modal
@@ -974,7 +1138,7 @@ export default function InfluencerDetailPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onClick={onClose}
+            onClick={handleCloseAttempt}
             className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]"
           />
           
@@ -989,6 +1153,79 @@ export default function InfluencerDetailPanel({
           
           {/* Delete Confirmation Modal */}
           <DeleteConfirmationModal />
+          
+          {/* Close Confirmation Modal */}
+          {showCloseConfirmation && (
+            <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={handleCancelClose}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              />
+              
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 500 }}
+                className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-100"
+              >
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start space-x-4 mb-6">
+                    <div className="flex-shrink-0 w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center border border-yellow-200">
+                      <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">Unsaved Changes</h3>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        You have unsaved changes in the {activeTab === 'pricing' ? 'pricing' : 'management'} tab
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="mb-8">
+                    <p className="text-base text-gray-700 leading-relaxed">
+                      Would you like to save your changes before closing?
+                    </p>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex space-x-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleConfirmClose}
+                      className="flex-1 h-11"
+                    >
+                      Discard Changes
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleCancelClose}
+                      className="flex-1 h-11"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="default"
+                      onClick={handleSaveAndClose}
+                      className="flex-1 h-11 bg-blue-600 hover:bg-blue-700"
+                    >
+                      Save & Close
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
           
           {/* Enhanced Panel */}
           <motion.div
@@ -1085,7 +1322,7 @@ export default function InfluencerDetailPanel({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={onClose}
+                      onClick={handleCloseAttempt}
                       className="p-2"
                     >
                       <X className="w-5 h-5" />
@@ -1737,11 +1974,251 @@ export default function InfluencerDetailPanel({
                             {/* Save Button */}
                             <div className="flex justify-end pt-4 border-t border-gray-200">
                               <Button
-                                variant="default"
+                                variant={hasUnsavedChanges ? "default" : "ghost"}
                                 onClick={handleManagementSave}
-                                className="px-6 py-2"
+                                className={`px-6 py-2 ${hasUnsavedChanges ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' : ''}`}
                               >
+                                {hasUnsavedChanges && (
+                                  <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse" />
+                                )}
                                 Save Changes
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Internal Pricing Tab */}
+                        {activeTab === 'pricing' && (
+                          <div className="p-6 space-y-6">
+                            <div className="border-b border-gray-200 pb-4">
+                              <h3 className="text-lg font-semibold text-gray-900">Internal Pricing</h3>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Manage internal cost basis and client rates for this creator across all platforms.
+                              </p>
+                            </div>
+
+                            {/* Instagram Pricing */}
+                            <Section title="Instagram" description="Pricing for Instagram content">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Instagram Post */}
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+                                    Instagram Post
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.instagram_post.our_cost}
+                                        onChange={(value) => handlePricingChange('instagram_post', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.instagram_post.client_rate}
+                                        onChange={(value) => handlePricingChange('instagram_post', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Instagram Reel */}
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+                                    Instagram Reel
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.instagram_reel.our_cost}
+                                        onChange={(value) => handlePricingChange('instagram_reel', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.instagram_reel.client_rate}
+                                        onChange={(value) => handlePricingChange('instagram_reel', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Instagram Story */}
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+                                    Instagram Story
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.instagram_story.our_cost}
+                                        onChange={(value) => handlePricingChange('instagram_story', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.instagram_story.client_rate}
+                                        onChange={(value) => handlePricingChange('instagram_story', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </Section>
+
+                            {/* TikTok Pricing */}
+                            <Section title="TikTok" description="Pricing for TikTok content">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Hash className="w-4 h-4 mr-2 text-black" />
+                                    TikTok Video
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.tiktok_post.our_cost}
+                                        onChange={(value) => handlePricingChange('tiktok_post', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.tiktok_post.client_rate}
+                                        onChange={(value) => handlePricingChange('tiktok_post', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </Section>
+
+                            {/* YouTube Pricing */}
+                            <Section title="YouTube" description="Pricing for YouTube content">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* YouTube Video */}
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Youtube className="w-4 h-4 mr-2 text-red-500" />
+                                    YouTube Video
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.youtube_video.our_cost}
+                                        onChange={(value) => handlePricingChange('youtube_video', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.youtube_video.client_rate}
+                                        onChange={(value) => handlePricingChange('youtube_video', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* YouTube Short */}
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Youtube className="w-4 h-4 mr-2 text-red-500" />
+                                    YouTube Short
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.youtube_short.our_cost}
+                                        onChange={(value) => handlePricingChange('youtube_short', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.youtube_short.client_rate}
+                                        onChange={(value) => handlePricingChange('youtube_short', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </Section>
+
+                            {/* Package Deal */}
+                            <Section title="Package Deals" description="Special package pricing">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Users className="w-4 h-4 mr-2 text-blue-500" />
+                                    Multi-Platform Package
+                                  </h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Our Cost</label>
+                                      <ManagementInput
+                                        value={pricing.package_deal.our_cost}
+                                        onChange={(value) => handlePricingChange('package_deal', 'our_cost', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">Client Rate</label>
+                                      <ManagementInput
+                                        value={pricing.package_deal.client_rate}
+                                        onChange={(value) => handlePricingChange('package_deal', 'client_rate', value)}
+                                        placeholder="£0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </Section>
+
+                            {/* Pricing Notes */}
+                            <Section title="Pricing Notes" description="Internal notes about pricing strategy">
+                              <ManagementInput
+                                value={pricing.notes}
+                                onChange={handlePricingNotesChange}
+                                placeholder="Add any special notes about pricing, negotiation history, or restrictions..."
+                                multiline
+                                rows={4}
+                              />
+                            </Section>
+
+                            {/* Save Button */}
+                            <div className="flex justify-end pt-4 border-t border-gray-200">
+                              <Button
+                                variant={pricingHasUnsavedChanges ? "default" : "ghost"}
+                                onClick={handlePricingSave}
+                                className={`px-6 py-2 ${pricingHasUnsavedChanges ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' : ''}`}
+                              >
+                                {pricingHasUnsavedChanges && (
+                                  <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse" />
+                                )}
+                                Save Pricing
                               </Button>
                             </div>
                           </div>

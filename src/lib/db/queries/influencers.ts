@@ -185,6 +185,158 @@ export async function getInfluencers(
  * Get detailed influencer information by ID
  */
 export async function getInfluencerById(influencerId: string): Promise<InfluencerDetailView | null> {
+  // TEMPORARY: Use mock data instead of database
+  console.log('getInfluencerById: Using mock data (database not yet set up)')
+  
+  // Find the basic influencer data
+  const basicInfluencer = MOCK_INFLUENCERS.find(inf => inf.id === influencerId)
+  if (!basicInfluencer) return null
+  
+  // Generate detailed mock data
+  const mockDetailedInfluencer: InfluencerDetailView = {
+    ...basicInfluencer,
+    price_per_post: basicInfluencer.price_per_post || Math.floor(basicInfluencer.total_followers * 0.01),
+    
+    // Add missing profile properties
+    bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${basicInfluencer.niches.join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,
+    website_url: basicInfluencer.website_url || `https://${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
+    email: `contact@${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
+    
+    // CRM fields
+    relationship_status: 'ACTIVE',
+    assigned_to: null,
+    labels: [],
+    notes: null,
+    priority_score: 7.5,
+    last_contacted: null,
+    
+    // Generate platform details
+    platform_details: basicInfluencer.platforms.map((platform: any, index: number) => ({
+      id: `platform_${basicInfluencer.id}_${index}`,
+      influencer_id: basicInfluencer.id,
+      platform,
+      username: `${basicInfluencer.display_name.toLowerCase().replace(' ', '')}${index > 0 ? index + 1 : ''}`,
+      followers: Math.floor(basicInfluencer.total_followers / basicInfluencer.platform_count),
+      following: Math.floor(Math.random() * 2000) + 500,
+      engagement_rate: basicInfluencer.total_engagement_rate + (Math.random() - 0.5),
+      avg_views: Math.floor(basicInfluencer.total_avg_views / basicInfluencer.platform_count),
+      avg_likes: Math.floor(basicInfluencer.total_avg_views * 0.1),
+      avg_comments: Math.floor(basicInfluencer.total_avg_views * 0.02),
+      last_post_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+      profile_url: `https://${platform.toLowerCase()}.com/${basicInfluencer.display_name.toLowerCase().replace(' ', '')}`,
+      is_verified: Math.random() > 0.7,
+      is_connected: true,
+      created_at: new Date(),
+      updated_at: new Date()
+    })),
+    
+    // Mock recent content
+    recent_content: [
+      {
+        id: 'content_1',
+        influencer_platform_id: 'plat_1',
+        post_url: 'https://instagram.com/p/abc123',
+        thumbnail_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=300&fit=crop',
+        caption: 'Beautiful sunset at the beach! 🌅 #lifestyle #travel',
+        views: 45000,
+        likes: 4200,
+        comments: 156,
+        shares: 23,
+        posted_at: new Date('2024-01-15'),
+        created_at: new Date()
+      },
+      {
+        id: 'content_2',
+        influencer_platform_id: 'plat_1',
+        post_url: 'https://instagram.com/p/def456',
+        thumbnail_url: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=300&h=300&fit=crop',
+        caption: 'New outfit inspiration for spring! 🌸 #fashion #ootd',
+        views: 38000,
+        likes: 3800,
+        comments: 142,
+        shares: 31,
+        posted_at: new Date('2024-01-12'),
+        created_at: new Date()
+      }
+    ],
+    
+    // Mock demographics
+    demographics: {
+      id: 'demo_1',
+      influencer_platform_id: 'plat_1',
+      age_13_17: 5.2,
+      age_18_24: 32.1,
+      age_25_34: 28.7,
+      age_35_44: 18.4,
+      age_45_54: 12.1,
+      age_55_plus: 3.5,
+      gender_male: 45.3,
+      gender_female: 52.2,
+      gender_other: 2.5,
+      updated_at: new Date()
+    },
+    
+    // Mock audience locations
+    audience_locations: [
+      {
+        id: 'loc_1',
+        influencer_platform_id: 'plat_1',
+        country_name: 'United Kingdom',
+        country_code: 'GB',
+        percentage: 65.2
+      },
+      {
+        id: 'loc_2',
+        influencer_platform_id: 'plat_1',
+        country_name: 'United States',
+        country_code: 'US',
+        percentage: 18.7
+      },
+      {
+        id: 'loc_3',
+        influencer_platform_id: 'plat_1',
+        country_name: 'Canada',
+        country_code: 'CA',
+        percentage: 8.1
+      }
+    ],
+    
+    // Mock audience languages
+    audience_languages: [
+      {
+        id: 'lang_1',
+        influencer_platform_id: 'plat_1',
+        language_name: 'English',
+        language_code: 'en',
+        percentage: 85.4
+      },
+      {
+        id: 'lang_2',
+        influencer_platform_id: 'plat_1',
+        language_name: 'Spanish',
+        language_code: 'es',
+        percentage: 8.2
+      },
+      {
+        id: 'lang_3',
+        influencer_platform_id: 'plat_1',
+        language_name: 'French',
+        language_code: 'fr',
+        percentage: 6.4
+      }
+    ],
+    
+    // Mock campaign participation
+    campaign_participation: []
+  }
+  
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 300))
+  
+  return mockDetailedInfluencer
+
+  /* 
+  // Real database implementation (use when DB is set up):
   const sql = `
     SELECT 
       i.*,
@@ -318,6 +470,7 @@ export async function getInfluencerById(influencerId: string): Promise<Influence
     audience_languages: audienceLanguages,
     campaign_participation: campaignParticipation
   }
+  */
 }
 
 /**

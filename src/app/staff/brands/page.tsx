@@ -279,7 +279,8 @@ function BrandsPageClient() {
       { value: 'Technology', label: 'Technology' },
       { value: 'Fashion', label: 'Fashion' },
       { value: 'Sustainability', label: 'Sustainability' },
-      { value: 'Food & Beverage', label: 'Food & Beverage' }
+      { value: 'Food & Beverage', label: 'Food & Beverage' },
+      { value: 'Marketing Agency', label: 'Marketing Agency' }
     ],
     status: [
       { value: '', label: 'All Statuses' },
@@ -624,17 +625,49 @@ function BrandsPageClient() {
   }
 
   const handleSaveBrand = async (brandData: any) => {
-    setIsLoading(true)
+    console.log('Saving brand:', brandData)
+    // Mock save operation
+    const newBrand = {
+      ...brandData,
+      id: `brand_${Date.now()}`,
+      shortlists_count: 0,
+      active_campaigns: 0,
+      total_spend: 0,
+      last_activity: new Date().toISOString().split('T')[0],
+      status: 'active'
+    }
+    // In real app, this would call an API
+    alert(`Brand "${brandData.company_name}" saved successfully!`)
+    setAddBrandPanelOpen(false)
+  }
+
+  const handleCreateCampaign = async (quotationId: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('Saving brand:', brandData)
-      alert('✅ Brand added successfully!')
-      setAddBrandPanelOpen(false)
+      const response = await fetch('/api/quotations/create-campaign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quotationId })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create campaign')
+      }
+
+      // Success - close panels and show success message
+      closePanels()
+      alert(`Campaign "${result.campaign.name}" created successfully! ${result.campaign.invitations_sent} invitations sent to influencers.`)
+      
+      // Optional: Redirect to campaigns page to see the new campaign
+      // window.location.href = '/staff/campaigns'
+      
     } catch (error) {
-      console.error('Error saving brand:', error)
-      alert('❌ Error saving brand. Please try again.')
-    } finally {
-      setIsLoading(false)
+      console.error('Error creating campaign:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to create campaign: ${errorMessage}`)
     }
   }
 
@@ -1183,6 +1216,7 @@ function BrandsPageClient() {
             onClose={closePanels}
             quotation={selectedQuotation}
             onSendQuote={() => {}}
+            onCreateCampaign={handleCreateCampaign}
           />
         )}
       </main>

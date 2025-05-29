@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
@@ -28,8 +29,23 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Router hooks for URL state management
+  const router = useRouter()
+  const urlSearchParams = useSearchParams()
+  const pathname = usePathname()
+  
+  // Helper function to generate random 6-character alphanumeric ID
+  const generateRandomId = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let result = ''
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  }
   
   // Add pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -58,11 +74,70 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   })
   const [rosterFilterOpen, setRosterFilterOpen] = useState(false)
 
+  // URL state management functions
+  const updateUrl = (influencerId: string | null, platform?: string) => {
+    const params = new URLSearchParams(urlSearchParams)
+    
+    if (influencerId) {
+      params.set('influencer', influencerId)
+      if (platform) {
+        params.set('platform', platform)
+      }
+    } else {
+      params.delete('influencer')
+      params.delete('platform')
+    }
+    
+    const newUrl = `${pathname}?${params.toString()}`
+    router.replace(newUrl, { scroll: false })
+  }
+
+  const handleInfluencerFromUrl = async (influencerId: string) => {
+    setIsLoading(true)
+    try {
+      const basicInfluencer = influencers.find(inf => inf.id === influencerId)
+      if (basicInfluencer) {
+        const detailedInfluencer = generateDetailedInfluencerData(basicInfluencer)
+        setSelectedInfluencerDetail(detailedInfluencer)
+        setDetailPanelOpen(true)
+        onPanelStateChange?.(true)
+      } else {
+        // Remove invalid influencer from URL
+        updateUrl(null)
+      }
+    } catch (error) {
+      console.error('Failed to load influencer details:', error)
+      updateUrl(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle URL state for influencer selection
+  useEffect(() => {
+    const influencerId = urlSearchParams.get('influencer')
+    const platform = urlSearchParams.get('platform')
+    
+    if (influencerId && influencerId !== selectedInfluencerDetail?.id) {
+      // Load influencer from URL
+      handleInfluencerFromUrl(influencerId)
+    } else if (!influencerId && detailPanelOpen) {
+      // Close panel if no influencer in URL
+      setDetailPanelOpen(false)
+      setSelectedInfluencerDetail(null)
+      onPanelStateChange?.(false)
+    }
+    
+    if (platform) {
+      setSelectedPlatform(platform)
+    }
+  }, [urlSearchParams])
+
   const [influencers, setInfluencers] = useState(() => {
     // Initialize with mock data - updated with new type system
     const INITIAL_INFLUENCERS = [
       {
-        id: 'inf_1',
+        id: 'SC9K2L',
         user_id: 'user_3',
         display_name: 'Sarah Creator',
         niches: ['Lifestyle', 'Fashion'],
@@ -86,7 +161,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         platform_count: 2
       },
       {
-        id: 'inf_2',
+        id: 'MT7B9X',
         user_id: 'user_4',
         display_name: 'Mike Tech',
         niches: ['Tech', 'Gaming'],
@@ -734,44 +809,28 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleViewInfluencer = async (influencer: any) => {
-    setIsLoading(true)
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Generate detailed data with CRM fields
-      const detailedData = {
-        ...generateDetailedInfluencerData(influencer),
-        // Add CRM fields that might be missing
-        relationship_status: influencer.relationship_status || 'not_started',
-        assigned_to: influencer.assigned_to || null,
-        labels: influencer.labels || [],
-        notes: influencer.notes || ''
-      }
-      
-      setSelectedInfluencerDetail(detailedData)
-      // Set the first platform as default if no platform is selected
-      const defaultPlatform = detailedData.platform_details[0]?.platform || ''
-      setSelectedPlatform(defaultPlatform)
-      
-      // Only open detail panel initially, management panel can be opened separately
-      setDetailPanelOpen(true)
-    } catch (error) {
-      console.error('Error loading influencer details:', error)
-      alert('❌ Error loading influencer details. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
+    // Use URL state management instead of directly setting panel state
+    const defaultPlatform = influencer.platforms?.[0] || 'INSTAGRAM'
+    updateUrl(influencer.id, defaultPlatform)
+    
+    // The actual panel opening will be handled by the useEffect that watches URL changes
+    onPanelStateChange?.(true)
   }
 
   const handleClosePanels = () => {
+    updateUrl(null) // Clear URL
     setDetailPanelOpen(false)
     setSelectedInfluencerDetail(null)
     setSelectedInfluencer(null)
+    onPanelStateChange?.(false)
   }
 
   const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
+    // Update URL with new platform if an influencer is selected
+    if (selectedInfluencerDetail?.id) {
+      updateUrl(selectedInfluencerDetail.id, platform)
+    }
   }
 
   const handleSaveManagement = async (data: Partial<InfluencerDetailView>) => {
@@ -781,50 +840,35 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     console.log('Saving management data:', data)
     
     try {
-      const response = await fetch('/api/influencer-management', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          influencerId: selectedInfluencerDetail.id,
-          assigned_to: data.assigned_to,
-          labels: data.labels,
-          notes: data.notes
-        })
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        
-        // Update the influencer in state
-        setInfluencers(prev => prev.map(inf => {
-          if (inf.id === selectedInfluencerDetail.id) {
-            return {
-              ...inf,
-              assigned_to: data.assigned_to || null,
-              labels: data.labels || [],
-              notes: data.notes || null
-            }
-          }
-          return inf
-        }))
-        
-        // Update the detailed view data
-        if (selectedInfluencerDetail) {
-          setSelectedInfluencerDetail({
-            ...selectedInfluencerDetail,
+      // Simulate API delay for realistic UX
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Update the influencer in state (mock data approach)
+      setInfluencers(prev => prev.map(inf => {
+        if (inf.id === selectedInfluencerDetail.id) {
+          return {
+            ...inf,
             assigned_to: data.assigned_to || null,
             labels: data.labels || [],
             notes: data.notes || null
-          })
+          }
         }
-        
-        alert('✅ Management data saved successfully!')
-      } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save management data')
+        return inf
+      }))
+      
+      // Update the detailed view data
+      if (selectedInfluencerDetail) {
+        setSelectedInfluencerDetail({
+          ...selectedInfluencerDetail,
+          assigned_to: data.assigned_to || null,
+          labels: data.labels || [],
+          notes: data.notes || null
+        })
       }
+      
+      console.log('✅ Management data saved successfully (mock)!')
+      // No alert needed since the panel handles success feedback
+      
     } catch (error) {
       console.error('Error saving management data:', error)
       alert(`❌ Error saving management data: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -905,8 +949,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Generate new ID
-      const newId = `inf_${Date.now()}`
+      // Generate new random ID
+      const newId = generateRandomId()
       
       // Calculate platform data (Only Instagram, YouTube, TikTok supported)
       const platforms = [

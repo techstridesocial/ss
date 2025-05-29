@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Send, FileText, Tag, Target, TrendingUp, User, Edit, ExternalLink } from 'lucide-react'
+import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Send, FileText, Tag, Target, TrendingUp, User, Edit, ExternalLink, Megaphone, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface QuotationDetailPanelProps {
@@ -9,6 +9,7 @@ interface QuotationDetailPanelProps {
   onClose: () => void
   quotation: any
   onSendQuote: (pricing: string, notes: string) => void
+  onCreateCampaign?: (quotationId: string) => void
 }
 
 const Section = ({ 
@@ -297,13 +298,14 @@ const StatusBadge = ({ status }: { status: string }) => {
   )
 }
 
-export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSendQuote }: QuotationDetailPanelProps) {
+export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSendQuote, onCreateCampaign }: QuotationDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'campaign_info' | 'influencers'>('campaign_info')
   const [influencerPricing, setInfluencerPricing] = useState<{[key: number]: string}>({})
   const [useCustomTotal, setUseCustomTotal] = useState(false)
   const [customQuoteTotal, setCustomQuoteTotal] = useState('')
   const [quoteNotes, setQuoteNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false)
 
   // Initialize pricing from existing data or empty
   useEffect(() => {
@@ -354,6 +356,22 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
       console.error('Error sending quote:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleCreateCampaign = async () => {
+    if (!onCreateCampaign) return
+    
+    setIsCreatingCampaign(true)
+    
+    try {
+      await onCreateCampaign(quotation.id)
+      // Success feedback could be added here
+    } catch (error) {
+      console.error('Error creating campaign:', error)
+      // Error feedback could be added here
+    } finally {
+      setIsCreatingCampaign(false)
     }
   }
 
@@ -565,35 +583,6 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
                         </div>
                       </Section>
                     )}
-
-                    {/* Quote Status Info for completed quotes */}
-                    {!isEditable && (
-                      <Section title="Quote Status" delay={0.3}>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {quotation.quoted_at && (
-                            <InfoField
-                              label="Quoted Date"
-                              value={new Date(quotation.quoted_at).toLocaleDateString()}
-                              icon={<Calendar size={18} />}
-                            />
-                          )}
-                          {quotation.approved_at && (
-                            <InfoField
-                              label="Approved Date"
-                              value={new Date(quotation.approved_at).toLocaleDateString()}
-                              icon={<CheckCircle size={18} />}
-                            />
-                          )}
-                          {quotation.total_quote && (
-                            <InfoField
-                              label="Final Quote Amount"
-                              value={`$${quotation.total_quote}`}
-                              icon={<DollarSign size={18} />}
-                            />
-                          )}
-                        </div>
-                      </Section>
-                    )}
                   </>
                 )}
 
@@ -693,6 +682,84 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
                       </Section>
                     )}
                   </>
+                )}
+
+                {/* Quote Status Info for completed quotes */}
+                {!isEditable && (
+                  <Section title="Quote Status" delay={0.3}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {quotation.quoted_at && (
+                        <InfoField
+                          label="Quoted Date"
+                          value={new Date(quotation.quoted_at).toLocaleDateString()}
+                          icon={<Calendar size={18} />}
+                        />
+                      )}
+                      {quotation.approved_at && (
+                        <InfoField
+                          label="Approved Date"
+                          value={new Date(quotation.approved_at).toLocaleDateString()}
+                          icon={<CheckCircle size={18} />}
+                        />
+                      )}
+                      {quotation.total_quote && (
+                        <InfoField
+                          label="Final Quote Amount"
+                          value={`$${quotation.total_quote}`}
+                          icon={<DollarSign size={18} />}
+                        />
+                      )}
+                    </div>
+                    
+                    {/* Campaign Creation Section for Approved Quotes */}
+                    {quotation.status === 'approved' && onCreateCampaign && (
+                      <div className="border-t border-gray-200 pt-6 mt-6">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="text-lg font-semibold text-green-900 flex items-center mb-2">
+                                <Megaphone size={20} className="mr-2" />
+                                Ready to Launch Campaign
+                              </h4>
+                              <p className="text-sm text-green-700 mb-4">
+                                This quotation has been approved and is ready to be converted into an active campaign. 
+                                All selected influencers will be automatically invited to participate.
+                              </p>
+                              <div className="flex items-center space-x-4 text-sm text-green-600">
+                                <div className="flex items-center">
+                                  <Users size={16} className="mr-1" />
+                                  <span>{quotation.influencer_count} influencers selected</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <DollarSign size={16} className="mr-1" />
+                                  <span>${quotation.total_quote} approved budget</span>
+                                </div>
+                              </div>
+                            </div>
+                            <motion.button
+                              onClick={handleCreateCampaign}
+                              disabled={isCreatingCampaign}
+                              className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-green-400 disabled:opacity-60 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center space-x-2"
+                              whileHover={{ scale: isCreatingCampaign ? 1 : 1.02 }}
+                              whileTap={{ scale: isCreatingCampaign ? 1 : 0.98 }}
+                            >
+                              {isCreatingCampaign ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                  <span>Creating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Plus size={16} />
+                                  <span>Create Campaign</span>
+                                </>
+                              )}
+                            </motion.button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Section>
                 )}
               </div>
             </div>

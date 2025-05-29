@@ -178,6 +178,7 @@ export default function AddBrandPanel({ isOpen, onClose, onSave }: AddBrandPanel
     { value: 'finance', label: 'Finance & Banking' },
     { value: 'education', label: 'Education' },
     { value: 'healthcare', label: 'Healthcare' },
+    { value: 'marketing_agency', label: 'Marketing Agency' },
     { value: 'other', label: 'Other' }
   ]
 

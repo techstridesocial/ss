@@ -220,6 +220,7 @@ const EditBrandPanel = ({
     { value: 'Finance & Banking', label: 'Finance & Banking' },
     { value: 'Education', label: 'Education' },
     { value: 'Healthcare', label: 'Healthcare' },
+    { value: 'Marketing Agency', label: 'Marketing Agency' },
     { value: 'Other', label: 'Other' }
   ]
 
