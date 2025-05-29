@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole, getRoleRedirectPath } from '../../lib/auth/roles'
 
+// Force dynamic rendering since this route uses auth() and other dynamic functions
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardRedirect() {
   try {
     const { userId, sessionClaims } = await auth()

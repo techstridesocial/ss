@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
@@ -1803,10 +1803,12 @@ export default function StaffRosterPage() {
       <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
         isAnyPanelOpen ? 'mr-[400px]' : ''
       }`}>
-        <InfluencerTableClient 
-          searchParams={{}}
-          onPanelStateChange={handlePanelStateChange}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+          <InfluencerTableClient 
+            searchParams={{}}
+            onPanelStateChange={handlePanelStateChange}
+          />
+        </Suspense>
       </main>
     </div>
   )
