@@ -2,6 +2,17 @@
 
 import React, { useState } from 'react'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
+import MinMaxSelector from '../../../components/filters/MinMaxSelector'
+import FollowersGrowthSelector from '../../../components/filters/FollowersGrowthSelector'
+import TotalLikesGrowthSelector from '../../../components/filters/TotalLikesGrowthSelector'
+import ViewsGrowthSelector from '../../../components/filters/ViewsGrowthSelector'
+import EngagementSelector from '../../../components/filters/EngagementSelector'
+import CategorySelector from '../../../components/filters/CategorySelector'
+import TextInputFilter from '../../../components/filters/TextInputFilter'
+import ToggleFilter from '../../../components/filters/ToggleFilter'
+import CustomDropdown from '../../../components/filters/CustomDropdown'
+import MultiSelectDropdown from '../../../components/filters/MultiSelectDropdown'
+import { FOLLOWER_VIEW_OPTIONS } from '../../../constants/filterOptions'
 import { 
   Search, 
   Download, 
@@ -19,7 +30,9 @@ import {
   AlertCircle,
   Clock,
   MoreHorizontal,
-  ArrowUpRight
+  ArrowUpRight,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 
 // Mock data for Modash credit usage and discovered influencers
@@ -36,7 +49,10 @@ const MOCK_DISCOVERED_INFLUENCERS = [
   {
     id: 'discovered_1',
     display_name: 'HealthyLifeMia',
+    profile_picture: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face',
     instagram_handle: '@healthylifemia',
+    youtube_handle: '@healthylifemia',
+    tiktok_handle: null,
     followers: 89000,
     engagement_rate: 4.7,
     avg_views: 32000,
@@ -51,7 +67,10 @@ const MOCK_DISCOVERED_INFLUENCERS = [
   {
     id: 'discovered_2',
     display_name: 'FashionForwardSam',
+    profile_picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     instagram_handle: '@fashionforwardsam',
+    youtube_handle: null,
+    tiktok_handle: '@fashionforwardsam',
     followers: 156000,
     engagement_rate: 3.9,
     avg_views: 58000,
@@ -66,7 +85,10 @@ const MOCK_DISCOVERED_INFLUENCERS = [
   {
     id: 'discovered_3',
     display_name: 'TechReviewTom',
+    profile_picture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    instagram_handle: null,
     youtube_handle: '@techreviewtom',
+    tiktok_handle: '@techreviewtom',
     followers: 234000,
     engagement_rate: 5.2,
     avg_views: 125000,
@@ -81,6 +103,9 @@ const MOCK_DISCOVERED_INFLUENCERS = [
   {
     id: 'discovered_4',
     display_name: 'FitnessWithFiona',
+    profile_picture: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    instagram_handle: '@fitnesswithfiona',
+    youtube_handle: '@fitnesswithfiona',
     tiktok_handle: '@fitnesswithfiona',
     followers: 67000,
     engagement_rate: 6.1,
@@ -148,170 +173,423 @@ function MetricCard({ title, value, icon, trend, trendUp }: MetricCardProps) {
   )
 }
 
+// Logo components
+const InstagramLogo = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+  </svg>
+)
+
+const TikTokLogo = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+  </svg>
+)
+
+const YouTubeLogo = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+  </svg>
+)
+
 // New Modern Search Interface
-function DiscoverySearchInterface() {
-  const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'tiktok' | 'youtube'>('instagram')
+function DiscoverySearchInterface({ 
+  selectedPlatform, 
+  setSelectedPlatform 
+}: { 
+  selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
+  setSelectedPlatform: React.Dispatch<React.SetStateAction<'instagram' | 'tiktok' | 'youtube'>>
+}) {
+  const [locationTarget, setLocationTarget] = useState<'creator' | 'audience'>('creator')
+  const [genderTarget, setGenderTarget] = useState<'creator' | 'audience'>('creator')
+  const [ageTarget, setAgeTarget] = useState<'creator' | 'audience'>('creator')
+  const [languageTarget, setLanguageTarget] = useState<'creator' | 'audience'>('creator')
 
-  // Social Media Logo Components
-  const InstagramLogo = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-    </svg>
-  )
+  // Performance filter states
+  const [followersMin, setFollowersMin] = useState('')
+  const [followersMax, setFollowersMax] = useState('')
+  const [growthPercentage, setGrowthPercentage] = useState('')
+  const [growthPeriod, setGrowthPeriod] = useState('')
+  const [engagement, setEngagement] = useState('')
+  const [viewsMin, setViewsMin] = useState('')
+  const [viewsMax, setViewsMax] = useState('')
 
-  const TikTokLogo = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.321 5.562a5.124 5.124 0 0 1-.443-.258 6.228 6.228 0 0 1-1.137-.966c-.849-.952-1.153-2.271-1.192-3.338h-3.361v13.713c0 2.054-1.673 3.727-3.727 3.727s-3.727-1.673-3.727-3.727c0-2.054 1.673-3.727 3.727-3.727.337 0 .662.045.969.129V7.539a7.363 7.363 0 0 0-.969-.065c-4.063 0-7.363 3.3-7.363 7.363s3.3 7.363 7.363 7.363 7.363-3.3 7.363-7.363V9.515a9.847 9.847 0 0 0 5.698 1.824V7.976a5.892 5.892 0 0 1-3.201-2.414z"/>
-    </svg>
-  )
+  // TikTok-specific performance states
+  const [likesGrowthPercentage, setLikesGrowthPercentage] = useState('')
+  const [likesGrowthPeriod, setLikesGrowthPeriod] = useState('')
+  const [sharesMin, setSharesMin] = useState('')
+  const [sharesMax, setSharesMax] = useState('')
+  const [savesMin, setSavesMin] = useState('')
+  const [savesMax, setSavesMax] = useState('')
 
-  const YouTubeLogo = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-    </svg>
-  )
+  // YouTube-specific performance states
+  const [viewsGrowthPercentage, setViewsGrowthPercentage] = useState('')
+  const [viewsGrowthPeriod, setViewsGrowthPeriod] = useState('')
+
+  // Search bar toggles
+  const [emailAvailable, setEmailAvailable] = useState(false)
+  const [hideProfilesInRoster, setHideProfilesInRoster] = useState(false)
+
+  // Content filter states
+  const [contentCategoriesTarget, setContentCategoriesTarget] = useState<'creator' | 'audience'>('creator')
+  const [selectedContentCategories, setSelectedContentCategories] = useState<string[]>([])
+  const [hashtags, setHashtags] = useState('')
+  const [mentions, setMentions] = useState('')
+  const [captions, setCaptions] = useState('')
+  const [collaborations, setCollaborations] = useState('')
+  const [hasSponsoredPosts, setHasSponsoredPosts] = useState(false)
+
+  // YouTube-specific content states
+  const [topics, setTopics] = useState('')
+  const [transcript, setTranscript] = useState('')
+
+  // Demographics filter states
+  const [selectedLocation, setSelectedLocation] = useState('')
+  const [selectedGender, setSelectedGender] = useState('')
+  const [selectedAge, setSelectedAge] = useState('')
+  const [selectedLanguage, setSelectedLanguage] = useState('')
+
+  // Account filter states
+  const [bio, setBio] = useState('')
+  const [description, setDescription] = useState('')
+  const [accountType, setAccountType] = useState('')
+  const [selectedSocials, setSelectedSocials] = useState<string[]>([])
+  const [fakeFollowers, setFakeFollowers] = useState('')
+  const [lastPosted, setLastPosted] = useState('')
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
+
+  // Dropdown options
+  const LOCATION_OPTIONS = [
+    { value: '', label: 'All Locations' },
+    { value: 'united_kingdom', label: 'United Kingdom' },
+    { value: 'united_states', label: 'United States' },
+    { value: 'canada', label: 'Canada' },
+    { value: 'australia', label: 'Australia' },
+    { value: 'germany', label: 'Germany' },
+    { value: 'france', label: 'France' },
+    { value: 'spain', label: 'Spain' },
+    { value: 'italy', label: 'Italy' },
+    { value: 'netherlands', label: 'Netherlands' },
+    { value: 'sweden', label: 'Sweden' },
+    { value: 'norway', label: 'Norway' },
+    { value: 'denmark', label: 'Denmark' },
+    { value: 'belgium', label: 'Belgium' },
+    { value: 'switzerland', label: 'Switzerland' },
+    { value: 'austria', label: 'Austria' },
+    { value: 'portugal', label: 'Portugal' },
+    { value: 'ireland', label: 'Ireland' },
+    { value: 'finland', label: 'Finland' },
+    { value: 'poland', label: 'Poland' },
+    { value: 'czech_republic', label: 'Czech Republic' },
+    { value: 'brazil', label: 'Brazil' },
+    { value: 'mexico', label: 'Mexico' },
+    { value: 'argentina', label: 'Argentina' },
+    { value: 'chile', label: 'Chile' },
+    { value: 'japan', label: 'Japan' },
+    { value: 'south_korea', label: 'South Korea' },
+    { value: 'singapore', label: 'Singapore' },
+    { value: 'hong_kong', label: 'Hong Kong' },
+    { value: 'india', label: 'India' },
+    { value: 'south_africa', label: 'South Africa' },
+    { value: 'new_zealand', label: 'New Zealand' },
+    { value: 'israel', label: 'Israel' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  const GENDER_OPTIONS = [
+    { value: '', label: 'Any Gender' },
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  const AGE_OPTIONS = [
+    { value: '', label: 'Any Age' },
+    { value: '13-17', label: '13-17' },
+    { value: '18-24', label: '18-24' },
+    { value: '25-34', label: '25-34' },
+    { value: '35-44', label: '35-44' },
+    { value: '45-54', label: '45-54' },
+    { value: '55-64', label: '55-64' },
+    { value: '65+', label: '65+' }
+  ]
+
+  const LANGUAGE_OPTIONS = [
+    { value: '', label: 'Any Language' },
+    { value: 'english', label: 'English' },
+    { value: 'spanish', label: 'Spanish' },
+    { value: 'french', label: 'French' },
+    { value: 'german', label: 'German' },
+    { value: 'italian', label: 'Italian' },
+    { value: 'portuguese', label: 'Portuguese' },
+    { value: 'russian', label: 'Russian' },
+    { value: 'chinese', label: 'Chinese' },
+    { value: 'japanese', label: 'Japanese' },
+    { value: 'arabic', label: 'Arabic' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  // Account section options
+  const ACCOUNT_TYPE_OPTIONS = [
+    { value: '', label: 'Any Type' },
+    { value: 'regular', label: 'Regular' },
+    { value: 'business', label: 'Business' },
+    { value: 'creator', label: 'Creator' }
+  ]
+
+  const SOCIAL_PLATFORM_OPTIONS = [
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'tiktok', label: 'TikTok' },
+    { value: 'twitch', label: 'Twitch' },
+    { value: 'x', label: 'X' },
+    { value: 'facebook', label: 'Facebook' },
+    { value: 'threads', label: 'Threads' },
+    { value: 'snapchat', label: 'Snapchat' },
+    { value: 'linktree', label: 'Linktree' },
+    { value: 'kakao', label: 'Kakao' },
+    { value: 'kik', label: 'Kik' },
+    { value: 'line_id', label: 'Line ID' },
+    { value: 'pinterest', label: 'Pinterest' },
+    { value: 'sarahah', label: 'Sarahah' },
+    { value: 'sayat', label: 'Sayat' },
+    { value: 'tumblr', label: 'Tumblr' },
+    { value: 'vk', label: 'VK' },
+    { value: 'wechat', label: 'WeChat' }
+  ]
+
+  const FAKE_FOLLOWERS_OPTIONS = [
+    { value: '', label: 'Any Amount' },
+    { value: '25', label: '≤ 25%' },
+    { value: '35', label: '≤ 35%' },
+    { value: '50', label: '≤ 50%' }
+  ]
+
+  const LAST_POSTED_OPTIONS = [
+    { value: '', label: 'Any Time' },
+    { value: '30', label: '30 days' },
+    { value: '60', label: '60 days' },
+    { value: '90', label: '90 days' }
+  ]
+
+  // TikTok shares and saves options
+  const SHARES_SAVES_OPTIONS = [
+    '100',
+    '200', 
+    '300',
+    '400',
+    '500',
+    '1k',
+    '5k',
+    '10k',
+    '50k',
+    '100k',
+    '500k',
+    '> 1m'
+  ]
+
+  // Platform-specific options
+  const getPerformanceOptions = () => {
+    switch (selectedPlatform) {
+      case 'youtube':
+        return {
+          followersLabel: 'Subscribers',
+          viewsLabel: 'Video Views',
+          engagement: [
+            { value: '', label: 'Any Engagement' },
+            { value: 'greater_than_0.5', label: '≥ 0.5%' },
+            { value: 'greater_than_1', label: '≥ 1%' },
+            { value: 'greater_than_2', label: '≥ 2%' },
+            { value: 'greater_than_3', label: '≥ 3%' },
+            { value: 'greater_than_4', label: '≥ 4%' },
+            { value: 'greater_than_5', label: '≥ 5%' }
+          ]
+        }
+      case 'tiktok':
+        return {
+          followersLabel: 'Followers',
+          viewsLabel: 'Views',
+          engagement: [
+            { value: '', label: 'Any Engagement' },
+            { value: 'greater_than_2', label: '≥ 2%' },
+            { value: 'greater_than_5', label: '≥ 5%' },
+            { value: 'greater_than_8', label: '≥ 8%' },
+            { value: 'greater_than_10', label: '≥ 10%' },
+            { value: 'greater_than_15', label: '≥ 15%' },
+            { value: 'greater_than_20', label: '≥ 20%' }
+          ]
+        }
+      default: // instagram
+        return {
+          followersLabel: 'Followers',
+          viewsLabel: 'Views',
+          engagement: [
+            { value: '', label: 'Any Engagement' },
+            { value: 'hidden_likes', label: 'Hidden likes' },
+            { value: 'greater_than_0.5', label: '≥ 0.5%' },
+            { value: 'greater_than_1', label: '≥ 1%' },
+            { value: '2_average', label: '≥ 2% (average)' },
+            { value: '3', label: '≥ 3%' },
+            { value: '4', label: '≥ 4%' },
+            { value: '5', label: '≥ 5%' },
+            { value: '6', label: '≥ 6%' },
+            { value: '7', label: '≥ 7%' },
+            { value: '8', label: '≥ 8%' },
+            { value: '9', label: '≥ 9%' },
+            { value: '10', label: '≥ 10%' }
+          ]
+        }
+    }
+  }
+
+  const getContentOptions = () => {
+    switch (selectedPlatform) {
+      case 'youtube':
+        return {
+          categories: [
+            { value: 'gaming', label: 'Gaming' },
+            { value: 'tech_reviews', label: 'Tech Reviews' },
+            { value: 'tutorials', label: 'Tutorials' },
+            { value: 'vlogs', label: 'Vlogs' },
+            { value: 'music', label: 'Music' },
+            { value: 'entertainment', label: 'Entertainment' },
+            { value: 'education', label: 'Education' },
+            { value: 'cooking', label: 'Cooking' },
+            { value: 'fitness', label: 'Fitness' },
+            { value: 'beauty', label: 'Beauty' },
+            { value: 'travel', label: 'Travel' },
+            { value: 'business', label: 'Business' },
+            { value: 'lifestyle', label: 'Lifestyle' },
+            { value: 'comedy', label: 'Comedy' },
+            { value: 'news', label: 'News' }
+          ],
+          hashtags: 'Video Tags',
+          captions: 'Video Descriptions',
+          collaborations: 'Channel Collaborations',
+          topics: 'Topics',
+          transcript: 'Transcript'
+        }
+      case 'tiktok':
+        return {
+          categories: [
+            { value: 'dance', label: 'Dance' },
+            { value: 'comedy', label: 'Comedy' },
+            { value: 'beauty', label: 'Beauty' },
+            { value: 'fashion', label: 'Fashion' },
+            { value: 'food', label: 'Food' },
+            { value: 'pets', label: 'Pets' },
+            { value: 'diy_crafts', label: 'DIY & Crafts' },
+            { value: 'fitness', label: 'Fitness' },
+            { value: 'travel', label: 'Travel' },
+            { value: 'music', label: 'Music' },
+            { value: 'lifestyle', label: 'Lifestyle' },
+            { value: 'education', label: 'Education' },
+            { value: 'gaming', label: 'Gaming' },
+            { value: 'tech', label: 'Tech' },
+            { value: 'business', label: 'Business' }
+          ],
+          hashtags: 'TikTok Hashtags',
+          mentions: 'Mentions',
+          captions: 'Video Captions',
+          collaborations: 'TikTok Collaborations'
+        }
+      default: // instagram
+        return {
+          categories: [
+            { value: 'television_film', label: 'Television & film' },
+            { value: 'music', label: 'Music' },
+            { value: 'shopping_retail', label: 'Shopping & retail' },
+            { value: 'entertainment_pop_culture', label: 'Entertainment & pop culture' },
+            { value: 'family_relationships', label: 'Family & relationships' },
+            { value: 'fitness_yoga', label: 'Fitness & yoga' },
+            { value: 'food_cooking', label: 'Food & cooking' },
+            { value: 'beauty_makeup', label: 'Beauty & makeup' },
+            { value: 'fashion_outfits', label: 'Fashion & outfits' },
+            { value: 'photography_art', label: 'Photography & art' },
+            { value: 'travel_tourism', label: 'Travel & tourism' },
+            { value: 'business_entrepreneurship', label: 'Business & entrepreneurship' },
+            { value: 'sports', label: 'Sports' },
+            { value: 'wellness_mindfulness', label: 'Wellness & mindfulness' },
+            { value: 'home_garden', label: 'Home & garden' },
+            { value: 'gaming', label: 'Gaming' },
+            { value: 'books_literature', label: 'Books & literature' },
+            { value: 'cars_motorcycles', label: 'Cars & motorcycles' },
+            { value: 'diy_crafts', label: 'DIY & crafts' },
+            { value: 'animals_pets', label: 'Animals & pets' },
+            { value: 'technology', label: 'Technology' },
+            { value: 'science_nature', label: 'Science & nature' },
+            { value: 'news_politics', label: 'News & politics' },
+            { value: 'activism_causes', label: 'Activism & causes' },
+            { value: 'health_medicine', label: 'Health & medicine' },
+            { value: 'education_learning', label: 'Education & learning' },
+            { value: 'finance_investing', label: 'Finance & investing' },
+            { value: 'other', label: 'Other' }
+          ],
+          hashtags: 'Hashtags',
+          captions: 'Captions',
+          collaborations: 'Brand Collaborations'
+        }
+    }
+  }
+
+  const getAccountOptions = () => {
+    switch (selectedPlatform) {
+      case 'youtube':
+        return {
+          accountTypes: [
+            { value: '', label: 'Any Type' },
+            { value: 'personal', label: 'Personal' },
+            { value: 'brand', label: 'Brand' },
+            { value: 'music', label: 'Music' },
+            { value: 'gaming', label: 'Gaming' }
+          ],
+          verifiedLabel: 'YouTube Verified',
+          fakeFollowers: [
+            { value: '', label: 'Any Amount' },
+            { value: '10', label: '≤ 10%' },
+            { value: '20', label: '≤ 20%' },
+            { value: '30', label: '≤ 30%' }
+          ]
+        }
+      case 'tiktok':
+        return {
+          accountTypes: [
+            { value: '', label: 'Any Type' },
+            { value: 'personal', label: 'Personal' },
+            { value: 'business', label: 'Business' }
+          ],
+          verifiedLabel: 'TikTok Verified',
+          fakeFollowers: [
+            { value: '', label: 'Any Amount' },
+            { value: '15', label: '≤ 15%' },
+            { value: '25', label: '≤ 25%' },
+            { value: '40', label: '≤ 40%' }
+          ]
+        }
+      default: // instagram
+        return {
+          accountTypes: [
+            { value: '', label: 'Any Type' },
+            { value: 'regular', label: 'Regular' },
+            { value: 'business', label: 'Business' },
+            { value: 'creator', label: 'Creator' }
+          ],
+          verifiedLabel: 'Instagram Verified',
+          fakeFollowers: [
+            { value: '', label: 'Any Amount' },
+            { value: '25', label: '≤ 25%' },
+            { value: '35', label: '≤ 35%' },
+            { value: '50', label: '≤ 50%' }
+          ]
+        }
+    }
+  }
 
   const platforms = [
     { id: 'instagram', name: 'Instagram', logo: <InstagramLogo /> },
     { id: 'tiktok', name: 'TikTok', logo: <TikTokLogo /> },
     { id: 'youtube', name: 'YouTube', logo: <YouTubeLogo /> }
   ] as const
-
-  const renderFilters = () => {
-    switch (selectedPlatform) {
-      case 'instagram':
-  return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-            <input
-              type="text"
-              placeholder="beauty, fitness, tech..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
-          </div>
-          <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Followers</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>Any Size</option>
-                <option>1K - 10K</option>
-                <option>10K - 100K</option>
-                <option>100K - 1M</option>
-                <option>1M+</option>
-            </select>
-          </div>
-          <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Engagement Rate</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>Any Rate</option>
-                <option>1% - 3%</option>
-                <option>3% - 6%</option>
-                <option>6%+</option>
-            </select>
-          </div>
-          <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>All Locations</option>
-                <option>United Kingdom</option>
-                <option>United States</option>
-                <option>Canada</option>
-                <option>Australia</option>
-            </select>
-          </div>
-        </div>
-        )
-      case 'tiktok':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-              <input
-                type="text"
-                placeholder="dance, comedy, lifestyle..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Followers</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>Any Size</option>
-                <option>1K - 50K</option>
-                <option>50K - 500K</option>
-                <option>500K - 5M</option>
-                <option>5M+</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Avg Views</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>Any Views</option>
-                <option>1K - 10K</option>
-                <option>10K - 100K</option>
-                <option>100K - 1M</option>
-                <option>1M+</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>All Locations</option>
-                <option>United Kingdom</option>
-                <option>United States</option>
-                <option>Canada</option>
-                <option>Australia</option>
-              </select>
-            </div>
-          </div>
-        )
-      case 'youtube':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-              <input
-                type="text"
-                placeholder="tech reviews, gaming, tutorials..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Subscribers</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>Any Size</option>
-                <option>1K - 10K</option>
-                <option>10K - 100K</option>
-                <option>100K - 1M</option>
-                <option>1M+</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Avg Views</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>Any Views</option>
-                <option>1K - 10K</option>
-                <option>10K - 100K</option>
-                <option>100K - 1M</option>
-                <option>1M+</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <option>All Locations</option>
-                <option>United Kingdom</option>
-                <option>United States</option>
-                <option>Canada</option>
-                <option>Australia</option>
-              </select>
-            </div>
-          </div>
-        )
-      default:
-        return null
-    }
-  }
-
+  
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-6">
@@ -321,7 +599,7 @@ function DiscoverySearchInterface() {
           <span>Search</span>
         </button>
       </div>
-
+      
       {/* Platform Selection Tabs */}
       <div className="mb-6">
         <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
@@ -342,28 +620,817 @@ function DiscoverySearchInterface() {
         </div>
       </div>
 
-      {/* Conditional Filters */}
-      <div className="mb-6">
-        {renderFilters()}
+      {/* Creator Search Bar */}
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-gray-700 mb-3">Creator Search</label>
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            placeholder="Enter creator @ handle or email address..."
+            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
+          />
+          
+          {/* Toggles */}
+          <div className="flex items-center gap-6">
+            {/* Email Available Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setEmailAvailable(!emailAvailable)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  emailAvailable ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+              >
+                <span className="sr-only">Email Available</span>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    emailAvailable ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <label className="text-sm font-medium text-gray-700">Email Available</label>
+            </div>
+
+            {/* Hide Profiles in Roster Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setHideProfilesInRoster(!hideProfilesInRoster)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  hideProfilesInRoster ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+              >
+                <span className="sr-only">Hide Profiles in Roster</span>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    hideProfilesInRoster ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <label className="text-sm font-medium text-gray-700">Hide Profiles in Roster</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Demographics Section */}
+      <div className="mb-8">
+        <h4 className="text-base font-semibold text-gray-900 mb-4">Demographics</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <div className="space-y-3">
+              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                <button 
+                  onClick={() => setLocationTarget('creator')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    locationTarget === 'creator' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Creator
+                </button>
+                <button 
+                  onClick={() => setLocationTarget('audience')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    locationTarget === 'audience' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Audience
+                </button>
+              </div>
+              <CustomDropdown
+                value={selectedLocation}
+                onChange={setSelectedLocation}
+                options={LOCATION_OPTIONS}
+                placeholder="All Locations"
+              />
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+            <div className="space-y-3">
+              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                <button 
+                  onClick={() => setGenderTarget('creator')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    genderTarget === 'creator' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Creator
+                </button>
+                <button 
+                  onClick={() => setGenderTarget('audience')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    genderTarget === 'audience' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Audience
+                </button>
+              </div>
+              <CustomDropdown
+                value={selectedGender}
+                onChange={setSelectedGender}
+                options={GENDER_OPTIONS}
+                placeholder="Any Gender"
+              />
+            </div>
+          </div>
+
+          {/* Age */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+            <div className="space-y-3">
+              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                <button 
+                  onClick={() => setAgeTarget('creator')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    ageTarget === 'creator' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Creator
+                </button>
+                <button 
+                  onClick={() => setAgeTarget('audience')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    ageTarget === 'audience' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Audience
+                </button>
+              </div>
+              <CustomDropdown
+                value={selectedAge}
+                onChange={setSelectedAge}
+                options={AGE_OPTIONS}
+                placeholder="Any Age"
+              />
+            </div>
+          </div>
+
+          {/* Languages */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
+            <div className="space-y-3">
+              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                <button 
+                  onClick={() => setLanguageTarget('creator')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    languageTarget === 'creator' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Creator
+                </button>
+                <button 
+                  onClick={() => setLanguageTarget('audience')}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    languageTarget === 'audience' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Audience
+                </button>
+              </div>
+              <CustomDropdown
+                value={selectedLanguage}
+                onChange={setSelectedLanguage}
+                options={LANGUAGE_OPTIONS}
+                placeholder="Any Language"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Filter Sections */}
+      <div className="space-y-8">
+        {/* Divider */}
+        <div className="border-t border-gray-200"></div>
+        
+        {/* Performance Filters */}
+        <div className="border-t border-gray-200 pt-6">
+          <h4 className="text-base font-semibold text-gray-900 mb-4">Performance</h4>
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${
+            selectedPlatform === 'tiktok' 
+              ? 'lg:grid-cols-3 xl:grid-cols-7' 
+              : selectedPlatform === 'youtube'
+              ? 'lg:grid-cols-3 xl:grid-cols-5'
+              : 'lg:grid-cols-4'
+          }`}>
+            {/* Followers/Subscribers */}
+            <MinMaxSelector
+              label={getPerformanceOptions().followersLabel}
+              minValue={followersMin}
+              maxValue={followersMax}
+              onMinChange={setFollowersMin}
+              onMaxChange={setFollowersMax}
+              options={FOLLOWER_VIEW_OPTIONS}
+              placeholder="Any"
+            />
+
+            {/* Followers/Subscribers Growth */}
+            <FollowersGrowthSelector
+              growthPercentage={growthPercentage}
+              growthPeriod={growthPeriod}
+              onGrowthPercentageChange={setGrowthPercentage}
+              onGrowthPeriodChange={setGrowthPeriod}
+              label={selectedPlatform === 'youtube' ? 'Subscribers Growth' : 'Followers Growth'}
+            />
+
+            {/* Engagement */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Engagement</label>
+              <div className="grid grid-cols-1 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Rate</label>
+                  <CustomDropdown
+                    value={engagement}
+                    onChange={setEngagement}
+                    options={getPerformanceOptions().engagement}
+                    placeholder="Any Engagement"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Views/Video Views */}
+            <MinMaxSelector
+              label={getPerformanceOptions().viewsLabel}
+              minValue={viewsMin}
+              maxValue={viewsMax}
+              onMinChange={setViewsMin}
+              onMaxChange={setViewsMax}
+              options={FOLLOWER_VIEW_OPTIONS}
+              placeholder="Any"
+            />
+
+            {/* YouTube-specific fields */}
+            {selectedPlatform === 'youtube' && (
+              <ViewsGrowthSelector
+                growthPercentage={viewsGrowthPercentage}
+                growthPeriod={viewsGrowthPeriod}
+                onGrowthPercentageChange={setViewsGrowthPercentage}
+                onGrowthPeriodChange={setViewsGrowthPeriod}
+              />
+            )}
+
+            {/* TikTok-specific fields */}
+            {selectedPlatform === 'tiktok' && (
+              <>
+                {/* Total Likes Growth */}
+                <TotalLikesGrowthSelector
+                  growthPercentage={likesGrowthPercentage}
+                  growthPeriod={likesGrowthPeriod}
+                  onGrowthPercentageChange={setLikesGrowthPercentage}
+                  onGrowthPeriodChange={setLikesGrowthPeriod}
+                />
+
+                {/* Shares */}
+                <MinMaxSelector
+                  label="Shares"
+                  minValue={sharesMin}
+                  maxValue={sharesMax}
+                  onMinChange={setSharesMin}
+                  onMaxChange={setSharesMax}
+                  options={SHARES_SAVES_OPTIONS}
+                  placeholder="Any"
+                />
+
+                {/* Saves */}
+                <MinMaxSelector
+                  label="Saves"
+                  minValue={savesMin}
+                  maxValue={savesMax}
+                  onMinChange={setSavesMin}
+                  onMaxChange={setSavesMax}
+                  options={SHARES_SAVES_OPTIONS}
+                  placeholder="Any"
+                />
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200"></div>
+
+        {/* Content Filters */}
+        <div className="border-t border-gray-200 pt-6">
+          <h4 className="text-base font-semibold text-gray-900 mb-4">Content</h4>
+          
+          {selectedPlatform === 'tiktok' ? (
+            // TikTok-specific content layout
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Hashtags */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={hashtags}
+                      onChange={(e) => setHashtags(e.target.value)}
+                      placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mentions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().mentions}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={mentions}
+                      onChange={(e) => setMentions(e.target.value)}
+                      placeholder="Search mentions..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Captions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().captions}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={captions}
+                      onChange={(e) => setCaptions(e.target.value)}
+                      placeholder={`Search ${getContentOptions().captions.toLowerCase()}...`}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : selectedPlatform === 'youtube' ? (
+            // YouTube-specific content layout
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Topics */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().topics}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={topics}
+                      onChange={(e) => setTopics(e.target.value)}
+                      placeholder="Search topics..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Transcript */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().transcript}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={transcript}
+                      onChange={(e) => setTranscript(e.target.value)}
+                      placeholder="Search transcript..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Instagram content layout
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              {/* Categories */}
+              <CategorySelector
+                selectedCategories={selectedContentCategories}
+                onCategoriesChange={setSelectedContentCategories}
+                target={contentCategoriesTarget}
+                onTargetChange={setContentCategoriesTarget}
+              />
+
+              {/* Hashtags/Tags */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={hashtags}
+                      onChange={(e) => setHashtags(e.target.value)}
+                      placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Captions/Descriptions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().captions}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={captions}
+                      onChange={(e) => setCaptions(e.target.value)}
+                      placeholder={`Search ${getContentOptions().captions.toLowerCase()}...`}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Collaborations */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().collaborations}</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Search</label>
+                    <input
+                      type="search"
+                      value={collaborations}
+                      onChange={(e) => setCollaborations(e.target.value)}
+                      placeholder="Start typing to search for brands"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Sponsored Content Toggle */}
+              <ToggleFilter
+                label="Sponsored Content"
+                checked={hasSponsoredPosts}
+                onChange={setHasSponsoredPosts}
+                description="Has sponsored posts"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200"></div>
+
+        {/* Account Filters */}
+        <div className="border-t border-gray-200 pt-6">
+          <h4 className="text-base font-semibold text-gray-900 mb-4">Account</h4>
+          
+          {selectedPlatform === 'tiktok' ? (
+            // TikTok-specific account layout (no Type, no Fake Followers)
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Bio */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Content</label>
+                    <input
+                      type="text"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Search bio content..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Platforms */}
+              <MultiSelectDropdown
+                label="Socials"
+                selectedValues={selectedSocials}
+                onChange={setSelectedSocials}
+                options={SOCIAL_PLATFORM_OPTIONS}
+                placeholder="Select platforms..."
+              />
+
+              {/* Last Posted */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Within</label>
+                    <CustomDropdown
+                      value={lastPosted}
+                      onChange={setLastPosted}
+                      options={LAST_POSTED_OPTIONS}
+                      placeholder="Any Time"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Verified Creators Toggle */}
+              <ToggleFilter
+                label={getAccountOptions().verifiedLabel}
+                checked={verifiedOnly}
+                onChange={setVerifiedOnly}
+                description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
+              />
+            </div>
+          ) : selectedPlatform === 'youtube' ? (
+            // YouTube-specific account layout (Description, Socials, Last Posted, Verified)
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Content</label>
+                    <input
+                      type="text"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Search description content..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Platforms */}
+              <MultiSelectDropdown
+                label="Socials"
+                selectedValues={selectedSocials}
+                onChange={setSelectedSocials}
+                options={SOCIAL_PLATFORM_OPTIONS}
+                placeholder="Select platforms..."
+              />
+
+              {/* Last Posted */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Within</label>
+                    <CustomDropdown
+                      value={lastPosted}
+                      onChange={setLastPosted}
+                      options={LAST_POSTED_OPTIONS}
+                      placeholder="Any Time"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Verified Creators Toggle */}
+              <ToggleFilter
+                label={getAccountOptions().verifiedLabel}
+                checked={verifiedOnly}
+                onChange={setVerifiedOnly}
+                description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
+              />
+            </div>
+          ) : (
+            // Instagram account layout (full features)
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+              {/* Bio */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Content</label>
+                    <input
+                      type="text"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Search bio content..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Account</label>
+                    <CustomDropdown
+                      value={accountType}
+                      onChange={setAccountType}
+                      options={getAccountOptions().accountTypes}
+                      placeholder="Any Type"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Platforms */}
+              <MultiSelectDropdown
+                label="Socials"
+                selectedValues={selectedSocials}
+                onChange={setSelectedSocials}
+                options={SOCIAL_PLATFORM_OPTIONS}
+                placeholder="Select platforms..."
+              />
+
+              {/* Fake Followers */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fake Followers</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Threshold</label>
+                    <CustomDropdown
+                      value={fakeFollowers}
+                      onChange={setFakeFollowers}
+                      options={getAccountOptions().fakeFollowers}
+                      placeholder="Any Amount"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Last Posted */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Within</label>
+                    <CustomDropdown
+                      value={lastPosted}
+                      onChange={setLastPosted}
+                      options={LAST_POSTED_OPTIONS}
+                      placeholder="Any Time"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Verified Creators Toggle */}
+              <ToggleFilter
+                label={getAccountOptions().verifiedLabel}
+                checked={verifiedOnly}
+                onChange={setVerifiedOnly}
+                description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
 // New Modern Influencer Table
-function DiscoveredInfluencersTable() {
+function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'instagram' | 'tiktok' | 'youtube' }) {
+  // Selection state
+  const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([])
+  
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<{
+    key: string | null
+    direction: 'asc' | 'desc'
+  }>({
+    key: null,
+    direction: 'asc'
+  })
+
+  // Generate platform-specific title
+  const getPlatformTitle = () => {
+    switch (selectedPlatform) {
+      case 'instagram':
+        return 'Discovered Instagram Influencers'
+      case 'tiktok':
+        return 'Discovered TikTok Influencers'
+      case 'youtube':
+        return 'Discovered YouTube Influencers'
+      default:
+        return 'Discovered Influencers'
+    }
+  }
+
+  // Handle select all/none
+  const handleSelectAll = () => {
+    const availableInfluencers = MOCK_DISCOVERED_INFLUENCERS.filter(inf => !inf.already_imported)
+    if (selectedInfluencers.length === availableInfluencers.length) {
+      setSelectedInfluencers([])
+    } else {
+      setSelectedInfluencers(availableInfluencers.map(inf => inf.id))
+    }
+  }
+
+  // Handle individual selection
+  const handleIndividualSelect = (influencerId: string) => {
+    setSelectedInfluencers(prev => 
+      prev.includes(influencerId) 
+        ? prev.filter(id => id !== influencerId)
+        : [...prev, influencerId]
+    )
+  }
+
+  // Get checkbox state for header
+  const getSelectAllState = () => {
+    const availableInfluencers = MOCK_DISCOVERED_INFLUENCERS.filter(inf => !inf.already_imported)
+    if (selectedInfluencers.length === 0) return 'none'
+    if (selectedInfluencers.length === availableInfluencers.length) return 'all'
+    return 'some'
+  }
+
+  // Handle sorting
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }))
+  }
+
+  // Sort data
+  const sortedInfluencers = React.useMemo(() => {
+    let sortableInfluencers = [...MOCK_DISCOVERED_INFLUENCERS]
+    
+    if (sortConfig.key) {
+      sortableInfluencers.sort((a, b) => {
+        let aValue = a[sortConfig.key as keyof typeof a]
+        let bValue = b[sortConfig.key as keyof typeof b]
+        
+        // Handle null/undefined values
+        if (aValue == null) aValue = ''
+        if (bValue == null) bValue = ''
+        
+        // Handle string comparisons
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          aValue = aValue.toLowerCase()
+          bValue = bValue.toLowerCase()
+        }
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1
+        }
+        return 0
+      })
+    }
+    
+    return sortableInfluencers
+  }, [sortConfig])
+
+  // Sort icon component
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig.key !== columnKey) {
+      return <ChevronUp size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp size={14} className="text-gray-600" />
+      : <ChevronDown size={14} className="text-gray-600" />
+  }
+
+  const selectAllState = getSelectAllState()
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Discovered Influencers</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{getPlatformTitle()}</h3>
           <div className="flex items-center space-x-3">
             <button className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               Export
             </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm font-medium flex items-center space-x-2">
+            <button 
+              className={`px-4 py-2 rounded-xl transition-colors text-sm font-medium flex items-center space-x-2 ${
+                selectedInfluencers.length > 0 
+                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              disabled={selectedInfluencers.length === 0}
+            >
               <Download size={16} />
-              <span>Import Selected</span>
+              <span>
+                Import Selected
+                {selectedInfluencers.length > 0 && ` (${selectedInfluencers.length})`}
+              </span>
             </button>
           </div>
         </div>
@@ -374,27 +1441,77 @@ function DiscoveredInfluencersTable() {
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <input type="checkbox" className="rounded border-gray-300" />
+                <input 
+                  type="checkbox" 
+                  className="rounded border-gray-300" 
+                  checked={selectAllState === 'all'}
+                  ref={(el) => {
+                    if (el) el.indeterminate = selectAllState === 'some'
+                  }}
+                  onChange={handleSelectAll}
+                />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Influencer</th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Followers</th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engagement</th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Niche</th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+              <th 
+                className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                onClick={() => handleSort('display_name')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Influencer</span>
+                  <SortIcon columnKey="display_name" />
+                </div>
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms</th>
+              <th 
+                className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                onClick={() => handleSort('followers')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Followers</span>
+                  <SortIcon columnKey="followers" />
+                </div>
+              </th>
+              <th 
+                className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                onClick={() => handleSort('engagement_rate')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Engagement</span>
+                  <SortIcon columnKey="engagement_rate" />
+                </div>
+              </th>
+              <th 
+                className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
+                onClick={() => handleSort('location')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Location</span>
+                  <SortIcon columnKey="location" />
+                </div>
+              </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {MOCK_DISCOVERED_INFLUENCERS.map((influencer) => (
+            {sortedInfluencers.map((influencer) => (
               <tr key={influencer.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input 
                     type="checkbox" 
                     className="rounded border-gray-300"
                     disabled={influencer.already_imported}
+                    checked={selectedInfluencers.includes(influencer.id)}
+                    onChange={() => handleIndividualSelect(influencer.id)}
                   />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <img 
+                      src={influencer.profile_picture} 
+                      alt={influencer.display_name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center">
@@ -415,11 +1532,26 @@ function DiscoveredInfluencersTable() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                    {influencer.instagram_handle ? 'Instagram' : 
-                     influencer.youtube_handle ? 'YouTube' : 
-                     influencer.tiktok_handle ? 'TikTok' : 'Unknown'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    {influencer.instagram_handle && (
+                      <div className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors" title="Instagram">
+                        <InstagramLogo />
+                      </div>
+                    )}
+                    {influencer.youtube_handle && (
+                      <div className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors" title="YouTube">
+                        <YouTubeLogo />
+                      </div>
+                    )}
+                    {influencer.tiktok_handle && (
+                      <div className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors" title="TikTok">
+                        <TikTokLogo />
+                      </div>
+                    )}
+                    {!influencer.instagram_handle && !influencer.youtube_handle && !influencer.tiktok_handle && (
+                      <span className="text-gray-400 text-sm">No platforms</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
@@ -431,17 +1563,8 @@ function DiscoveredInfluencersTable() {
                     {influencer.engagement_rate}%
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
-                    {influencer.niche}
-                  </span>
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {influencer.location}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getScoreBadge(influencer.modash_score)}
-                  <div className="text-xs text-gray-500 mt-1">{influencer.modash_score}/100</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
@@ -471,6 +1594,9 @@ function DiscoveryPageClient() {
     creditsRemaining: 1753
   }
 
+  // Platform state moved here to share between components
+  const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'tiktok' | 'youtube'>('instagram')
+
   return (
     <div className="min-h-screen bg-gray-50">
       <ModernStaffHeader />
@@ -485,29 +1611,32 @@ function DiscoveryPageClient() {
           />
           <MetricCard
             title="Monthly Credit Usage"
-            value={`${Math.round((MOCK_CREDIT_USAGE.monthlyUsed / MOCK_CREDIT_USAGE.monthlyLimit) * 100)}%`}
+            value={`${MOCK_CREDIT_USAGE.monthlyUsed} / ${MOCK_CREDIT_USAGE.monthlyLimit}`}
             icon={<TrendingUp size={20} />}
-            trend={`${MOCK_CREDIT_USAGE.monthlyUsed.toLocaleString()} / ${MOCK_CREDIT_USAGE.monthlyLimit.toLocaleString()}`}
+            trend="12% increase from last month"
+            trendUp={false}
           />
           <MetricCard
-            title="Credits Remaining"
-            value={scrapingStats.creditsRemaining.toLocaleString()}
-            icon={<CreditCard size={20} />}
-            trend="This month"
+            title="Ready to Import"
+            value={scrapingStats.readyToImport}
+            icon={<Users size={20} />}
           />
           <MetricCard
-            title="Yearly Credit Usage"
-            value={`${Math.round((MOCK_CREDIT_USAGE.yearlyUsed / MOCK_CREDIT_USAGE.yearlyLimit) * 100)}%`}
+            title="Yearly Credits"
+            value={scrapingStats.creditsRemaining}
             icon={<Calendar size={20} />}
             trend={`${MOCK_CREDIT_USAGE.yearlyUsed.toLocaleString()} / ${MOCK_CREDIT_USAGE.yearlyLimit.toLocaleString()}`}
           />
         </div>
 
         {/* Search Interface */}
-        <DiscoverySearchInterface />
+        <DiscoverySearchInterface 
+          selectedPlatform={selectedPlatform}
+          setSelectedPlatform={setSelectedPlatform}
+        />
 
         {/* Discovered Influencers */}
-          <DiscoveredInfluencersTable />
+          <DiscoveredInfluencersTable selectedPlatform={selectedPlatform} />
       </main>
     </div>
   )
