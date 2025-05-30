@@ -50,9 +50,60 @@ interface ModashReport {
   }>
 }
 
+// Discovery search interfaces
+interface ModashDiscoveryFilters {
+  // Performance filters
+  followers?: { min?: number; max?: number }
+  engagementRate?: number
+  avgViews?: { min?: number; max?: number }
+  
+  // Content filters
+  bio?: string
+  hashtags?: string[]
+  mentions?: string[]
+  topics?: string[]
+  relevance?: string[]
+  
+  // Demographics
+  location?: number[]
+  gender?: string[]
+  language?: string[]
+  ageRange?: string[]
+  
+  // Platform specific
+  platform?: 'instagram' | 'tiktok' | 'youtube'
+  verified?: boolean
+  lastPosted?: number // days
+}
+
+interface ModashDiscoveryResult {
+  userId: string
+  username: string
+  display_name: string
+  platform: string
+  followers: number
+  engagement_rate: number
+  avg_views?: number
+  profile_picture: string
+  bio?: string
+  location?: string
+  verified: boolean
+  score: number
+  already_imported?: boolean
+}
+
+interface ModashSearchResponse {
+  results: ModashDiscoveryResult[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+  creditsUsed: number
+}
+
 class ModashService {
   private readonly apiKey: string
-  private readonly baseUrl = 'https://api.modash.io/v1'
+  private readonly baseUrl = 'https://api.modash.io'
   private readonly maxRetries = 3
   private readonly requestDelay = 500 // 2 requests/second limit
 
@@ -64,13 +115,238 @@ class ModashService {
   }
 
   /**
+   * Discovery search with comprehensive filtering
+   */
+  async searchDiscovery(
+    filters: ModashDiscoveryFilters,
+    page: number = 0,
+    limit: number = 20
+  ): Promise<ModashSearchResponse> {
+    try {
+      // Ensure platform is specified
+      if (!filters.platform) {
+        throw new Error('Platform is required for discovery search')
+      }
+
+      const modashFilters = this.mapFiltersToModash(filters)
+      
+      // Structure request body according to Modash API docs
+      const requestBody = {
+        page,
+        limit,
+        sort: {
+          field: 'followers',
+          direction: 'desc'
+        },
+        filter: {
+          influencer: {
+            ...modashFilters
+            // Platform is now in the URL, not in the filter
+          }
+        }
+      }
+
+      console.log('Modash Discovery Search:', {
+        platform: filters.platform,
+        endpoint: `/v1/${filters.platform}/search`,
+        body: JSON.stringify(requestBody, null, 2)
+      })
+
+      // Use platform-specific endpoint as shown in Modash support's example
+      const response = await this.makeRequest(`/v1/${filters.platform}/search`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+
+      console.log('📦 Raw Modash Response:', {
+        hasResults: !!response.results,
+        hasDirects: !!response.directs,
+        hasLookalikes: !!response.lookalikes,
+        directsLength: response.directs?.length || 0,
+        lookalikesLength: response.lookalikes?.length || 0,
+        totalCount: response.total,
+        responseKeys: Object.keys(response),
+        firstDirect: response.directs?.[0] || 'No directs',
+        isExactMatch: response.isExactMatch
+      })
+      
+      // Log the first result to see available fields
+      if (response.directs?.[0]) {
+        console.log('🔍 First direct result fields:', Object.keys(response.directs[0]))
+        console.log('📋 Full first direct result:', JSON.stringify(response.directs[0], null, 2))
+      }
+
+      // Modash returns results in 'directs' and 'lookalikes' arrays
+      const directResults = response.directs?.map(this.transformDiscoveryResult) || []
+      const lookalikeResults = response.lookalikes?.map(this.transformDiscoveryResult) || []
+      
+      // Combine both arrays, with directs first
+      const results = [...directResults, ...lookalikeResults]
+      
+      // Check which influencers are already imported
+      const resultsWithImportStatus = await this.checkImportStatus(results)
+
+      return {
+        results: resultsWithImportStatus,
+        total: response.total || 0,
+        page,
+        limit,
+        hasMore: (page + 1) * limit < (response.total || 0),
+        creditsUsed: 1 // Discovery search costs 1 credit
+      }
+    } catch (error) {
+      console.error('Discovery search failed:', error)
+      
+      // Check for specific error patterns
+      if (error instanceof Error) {
+        if (error.message.includes('Cannot POST')) {
+          throw new Error('Modash API endpoint not found. Please ensure you are using the correct API endpoint format. The platform-specific endpoint (e.g., /instagram/search) may require activation through the Modash developer portal.')
+        } else if (error.message.includes('Forbidden')) {
+          throw new Error('Modash API access forbidden. Please verify your API key is active and has the correct permissions for Discovery API access.')
+        } else if (error.message.includes('401')) {
+          throw new Error('Modash API authentication failed. Please check your API key.')
+        }
+      }
+      
+      throw new Error(`Discovery search failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * Map our UI filters to Modash API format
+   */
+  private mapFiltersToModash(filters: ModashDiscoveryFilters): any {
+    const modashFilters: any = {}
+
+    // Followers range
+    if (filters.followers) {
+      modashFilters.followers = {}
+      if (filters.followers.min) modashFilters.followers.min = filters.followers.min
+      if (filters.followers.max) modashFilters.followers.max = filters.followers.max
+    }
+
+    // Engagement rate
+    if (filters.engagementRate) {
+      modashFilters.engagementRate = filters.engagementRate / 100 // Convert percentage to decimal
+    }
+
+    // Bio keywords
+    if (filters.bio && filters.bio.trim()) {
+      modashFilters.bio = filters.bio.trim()
+    }
+
+    // Hashtags
+    if (filters.hashtags && filters.hashtags.length > 0) {
+      modashFilters.textTags = filters.hashtags.map(tag => ({
+        type: 'hashtag',
+        value: tag.replace('#', '')
+      }))
+    }
+
+    // Mentions
+    if (filters.mentions && filters.mentions.length > 0) {
+      modashFilters.textTags = [
+        ...(modashFilters.textTags || []),
+        ...filters.mentions.map(mention => ({
+          type: 'mention',
+          value: mention.replace('@', '')
+        }))
+      ]
+    }
+
+    // Topics/Relevance (platform-specific)
+    if (filters.topics && filters.topics.length > 0) {
+      modashFilters.relevance = filters.topics
+    }
+
+    if (filters.relevance && filters.relevance.length > 0) {
+      modashFilters.relevance = [
+        ...(modashFilters.relevance || []),
+        ...filters.relevance
+      ]
+    }
+
+    // Location
+    if (filters.location && filters.location.length > 0) {
+      modashFilters.location = filters.location
+    }
+
+    // Verified accounts only
+    if (filters.verified) {
+      modashFilters.verified = true
+    }
+
+    return modashFilters
+  }
+
+  /**
+   * Transform Modash discovery result to our format
+   */
+  private transformDiscoveryResult = (data: any): ModashDiscoveryResult => {
+    // Log the raw data to understand the structure
+    console.log('🔍 Transforming result:', {
+      hasUserId: !!data.userId,
+      hasUserInfo: !!data.userInfo,
+      hasProfile: !!data.profile,
+      dataKeys: Object.keys(data).slice(0, 10)
+    })
+
+    // Handle different response structures from Modash
+    const profile = data.profile || data.userInfo || data
+    
+    // For Instagram, we can construct the profile picture URL if not provided
+    let profilePicture = profile.profilePicture || profile.profilePic || profile.avatar || data.profilePicture
+    
+    // If no profile picture and it's Instagram, use Instagram's CDN
+    if (!profilePicture && data.platform === 'instagram' && data.username) {
+      // Instagram doesn't provide direct profile picture URLs anymore
+      // We'll use a placeholder for now
+      profilePicture = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.username)}&background=random&size=150`
+    }
+    
+    return {
+      userId: data.userId || data.id || profile.userId,
+      username: profile.username || profile.handle || data.username,
+      display_name: profile.fullName || profile.displayName || profile.username || data.username,
+      platform: data.platform || profile.platform || 'instagram',
+      followers: profile.followers || data.followers || 0,
+      engagement_rate: (profile.engagementRate || data.engagementRate || 0) * 100, // Convert to percentage
+      avg_views: profile.avgViews || profile.avgReelsPlays || data.avgViews,
+      profile_picture: profilePicture || 'https://via.placeholder.com/150',
+      bio: profile.bio || profile.description || data.bio,
+      location: profile.country || profile.location?.country || data.location,
+      verified: profile.isVerified || profile.verified || data.verified || false,
+      score: data.score ? Math.round(data.score * 100) : 0, // Convert to 0-100 scale
+      already_imported: false // Will be updated by checkImportStatus
+    }
+  }
+
+  /**
+   * Check which influencers are already in our database
+   */
+  private async checkImportStatus(results: ModashDiscoveryResult[]): Promise<ModashDiscoveryResult[]> {
+    // This would query our database to check if influencers already exist
+    // For now, simulating some as already imported
+    return results.map(result => ({
+      ...result,
+      already_imported: result.username === 'fashionforwardsam' // Example
+    }))
+  }
+
+  /**
    * Search for influencer by handle
    */
   async searchInfluencer(handle: string, platform: string): Promise<ModashProfile | null> {
     const cleanHandle = handle.replace('@', '')
     
+    // Validate platform
+    if (!platform || !['instagram', 'tiktok', 'youtube'].includes(platform)) {
+      throw new Error('Valid platform (instagram, tiktok, youtube) is required')
+    }
+    
     try {
-      const response = await this.makeRequest('/discovery/search', {
+      // Use platform-specific endpoint with v1 prefix
+      const response = await this.makeRequest(`/v1/${platform}/search`, {
         method: 'POST',
         body: JSON.stringify({
           filter: {
@@ -83,13 +359,19 @@ class ModashService {
         })
       })
 
-      if (response.results?.length > 0) {
-        return this.transformProfileData(response.results[0])
+      // Modash returns results in 'directs' for exact matches
+      if (response.directs?.length > 0) {
+        return this.transformProfileData(response.directs[0])
+      }
+      
+      // Fall back to lookalikes if no direct match
+      if (response.lookalikes?.length > 0) {
+        return this.transformProfileData(response.lookalikes[0])
       }
 
       return null
     } catch (error) {
-      console.error(`Failed to search for influencer @${cleanHandle}:`, error)
+      console.error(`Failed to search for influencer @${cleanHandle} on ${platform}:`, error)
       return null
     }
   }
@@ -99,7 +381,7 @@ class ModashService {
    */
   async getInfluencerReport(userId: string): Promise<ModashReport | null> {
     try {
-      const response = await this.makeRequest(`/discovery/profile/${userId}/report`)
+      const response = await this.makeRequest(`/v1/discovery/profile/${userId}/report`)
       return this.transformReportData(response)
     } catch (error) {
       console.error(`Failed to get report for user ${userId}:`, error)
@@ -200,7 +482,7 @@ class ModashService {
     resetDate: Date
   }> {
     try {
-      const response = await this.makeRequest('/account')
+      const response = await this.makeRequest('/v1/account')
       return {
         used: response.credits_used || 0,
         limit: response.credits_limit || 3000,
@@ -224,20 +506,79 @@ class ModashService {
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
     const url = `${this.baseUrl}${endpoint}`
     
-    const response = await fetch(url, {
+    console.log('🔗 Modash API Request:', {
+      fullUrl: url,
+      baseUrl: this.baseUrl,
+      endpoint: endpoint,
+      method: options.method || 'GET',
+      hasApiKey: !!this.apiKey,
+      apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 10) : 'NO_KEY',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
+        'Authorization': `Bearer ${this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'NO_KEY'}`,
+        'Content-Type': 'application/json'
+      }
     })
 
-    if (!response.ok) {
-      throw new Error(`Modash API error: ${response.status} ${response.statusText}`)
+    // Log request body if present
+    if (options.body) {
+      console.log('📤 Request Body:', options.body)
     }
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        ...options
+      })
 
-    return response.json()
+      const responseText = await response.text()
+      console.log('📡 Modash Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        bodyPreview: responseText.substring(0, 500),
+        bodyLength: responseText.length
+      })
+
+      if (!response.ok) {
+        console.error('❌ Modash API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: responseText,
+          endpoint: endpoint,
+          method: options.method || 'GET'
+        })
+        throw new Error(`Modash API error: ${response.status} ${response.statusText} - ${responseText}`)
+      }
+
+      try {
+        const jsonData = JSON.parse(responseText)
+        console.log('✅ Modash API Success:', {
+          endpoint: endpoint,
+          resultCount: jsonData.results?.length || 'N/A',
+          hasData: !!jsonData
+        })
+        return jsonData
+      } catch (e) {
+        console.error('Failed to parse response:', {
+          error: e,
+          responseText: responseText,
+          endpoint: endpoint
+        })
+        throw new Error('Invalid JSON response from Modash API')
+      }
+    } catch (error) {
+      console.error('🔥 Modash API Request Failed:', {
+        error: error instanceof Error ? error.message : error,
+        endpoint: endpoint,
+        url: url,
+        method: options.method || 'GET'
+      })
+      throw error
+    }
   }
 
   /**

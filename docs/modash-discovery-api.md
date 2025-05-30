@@ -47,8 +47,13 @@ The Modash Discovery API is a comprehensive influencer marketing API that provid
 
 ### 1. **Search Influencers**
 ```bash
-POST /v1/discovery/search
+POST /v1/{platform}/search
 ```
+
+**Platform-specific endpoints**:
+- Instagram: `POST /v1/instagram/search`
+- TikTok: `POST /v1/tiktok/search`
+- YouTube: `POST /v1/youtube/search`
 
 **Purpose**: Search and filter through 250M+ influencer profiles
 

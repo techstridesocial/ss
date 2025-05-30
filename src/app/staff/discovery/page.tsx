@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import MinMaxSelector from '../../../components/filters/MinMaxSelector'
 import FollowersGrowthSelector from '../../../components/filters/FollowersGrowthSelector'
@@ -32,7 +33,14 @@ import {
   MoreHorizontal,
   ArrowUpRight,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  User,
+  MessageSquare,
+  Loader2,
+  Info,
+  MapPin,
+  Video,
+  Image
 } from 'lucide-react'
 
 // Mock data for Modash credit usage and discovered influencers
@@ -195,15 +203,31 @@ const YouTubeLogo = () => (
 // New Modern Search Interface
 function DiscoverySearchInterface({ 
   selectedPlatform, 
-  setSelectedPlatform 
+  setSelectedPlatform,
+  onSearch,
+  isLoading,
+  searchQuery,
+  onSearchQueryChange
 }: { 
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
   setSelectedPlatform: React.Dispatch<React.SetStateAction<'instagram' | 'tiktok' | 'youtube'>>
+  onSearch?: () => void
+  isLoading?: boolean
+  searchQuery?: string
+  onSearchQueryChange?: (query: string) => void
 }) {
   const [locationTarget, setLocationTarget] = useState<'creator' | 'audience'>('creator')
   const [genderTarget, setGenderTarget] = useState<'creator' | 'audience'>('creator')
   const [ageTarget, setAgeTarget] = useState<'creator' | 'audience'>('creator')
   const [languageTarget, setLanguageTarget] = useState<'creator' | 'audience'>('creator')
+
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    demographics: false,
+    performance: false, 
+    content: false,
+    account: false
+  })
 
   // Performance filter states
   const [followersMin, setFollowersMin] = useState('')
@@ -226,7 +250,7 @@ function DiscoverySearchInterface({
   const [viewsGrowthPercentage, setViewsGrowthPercentage] = useState('')
   const [viewsGrowthPeriod, setViewsGrowthPeriod] = useState('')
 
-  // Search bar toggles
+  // Search bar states (removed searchQuery as it's now a prop)
   const [emailAvailable, setEmailAvailable] = useState(false)
   const [hideProfilesInRoster, setHideProfilesInRoster] = useState(false)
 
@@ -257,6 +281,72 @@ function DiscoverySearchInterface({
   const [fakeFollowers, setFakeFollowers] = useState('')
   const [lastPosted, setLastPosted] = useState('')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+
+  // Collapsible section toggle function with debouncing
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+  }
+
+  // Collapsible Section Header Component
+  const CollapsibleSectionHeader = ({ 
+    title, 
+    isExpanded, 
+    onToggle,
+    className = ""
+  }: {
+    title: string
+    isExpanded: boolean
+    onToggle: () => void
+    className?: string
+  }) => (
+    <button
+      onClick={onToggle}
+      className={`w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${className}`}
+      aria-expanded={isExpanded}
+      aria-controls={`${title.toLowerCase()}-content`}
+    >
+      <h4 className="text-base font-semibold text-gray-900 group-hover:text-gray-700">
+        {title}
+      </h4>
+      <motion.div
+        animate={{ rotate: isExpanded ? 180 : 0 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        className="text-gray-500 group-hover:text-gray-700"
+      >
+        <ChevronDown size={20} />
+      </motion.div>
+    </button>
+  )
+
+  // Animation variants for sections
+  const sectionVariants = {
+    hidden: { 
+      height: 0, 
+      opacity: 0,
+      overflow: 'hidden'
+    },
+    visible: { 
+      height: 'auto', 
+      opacity: 1,
+      overflow: 'visible',
+      transition: {
+        height: { duration: 0.3, ease: 'easeInOut' },
+        opacity: { duration: 0.2, delay: 0.1 }
+      }
+    },
+    exit: { 
+      height: 0, 
+      opacity: 0,
+      overflow: 'hidden',
+      transition: {
+        opacity: { duration: 0.1 },
+        height: { duration: 0.3, ease: 'easeInOut', delay: 0.1 }
+      }
+    }
+  }
 
   // Dropdown options
   const LOCATION_OPTIONS = [
@@ -594,10 +684,6 @@ function DiscoverySearchInterface({
     <div className="bg-white rounded-2xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Discover Influencers</h3>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium flex items-center space-x-2">
-          <Search size={16} />
-          <span>Search</span>
-        </button>
       </div>
       
       {/* Platform Selection Tabs */}
@@ -620,52 +706,63 @@ function DiscoverySearchInterface({
         </div>
       </div>
 
-      {/* Creator Search Bar */}
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-3">Creator Search</label>
-        <div className="flex items-center gap-4">
-          <input
-            type="text"
-            placeholder="Enter creator @ handle or email address..."
-            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
-          />
-          
-          {/* Toggles */}
-          <div className="flex items-center gap-6">
-            {/* Email Available Toggle */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setEmailAvailable(!emailAvailable)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  emailAvailable ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              >
-                <span className="sr-only">Email Available</span>
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    emailAvailable ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <label className="text-sm font-medium text-gray-700">Email Available</label>
+      {/* Search Bar */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-base font-semibold text-gray-900 mb-3">
+              Search Influencers
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                value={searchQuery || ''}
+                onChange={(e) => onSearchQueryChange?.(e.target.value)}
+                placeholder="Search by username (e.g., cristiano)"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
+              />
             </div>
-
-            {/* Hide Profiles in Roster Toggle */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setHideProfilesInRoster(!hideProfilesInRoster)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  hideProfilesInRoster ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              >
-                <span className="sr-only">Hide Profiles in Roster</span>
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    hideProfilesInRoster ? 'translate-x-6' : 'translate-x-1'
+            <p className="mt-2 text-sm text-gray-500">
+              Enter an Instagram, TikTok, or YouTube username to find specific influencers
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setEmailAvailable(!emailAvailable)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    emailAvailable ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
-                />
-              </button>
-              <label className="text-sm font-medium text-gray-700">Hide Profiles in Roster</label>
+                >
+                  <span className="sr-only">Has Email</span>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      emailAvailable ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <label className="text-sm font-medium text-gray-700">Has Email</label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHideProfilesInRoster(!hideProfilesInRoster)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    hideProfilesInRoster ? 'bg-blue-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span className="sr-only">Hide Profiles in Roster</span>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      hideProfilesInRoster ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <label className="text-sm font-medium text-gray-700">Hide Profiles in Roster</label>
+              </div>
             </div>
           </div>
         </div>
@@ -673,148 +770,168 @@ function DiscoverySearchInterface({
 
       {/* Demographics Section */}
       <div className="mb-8">
-        <h4 className="text-base font-semibold text-gray-900 mb-4">Demographics</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <div className="space-y-3">
-              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
-                <button 
-                  onClick={() => setLocationTarget('creator')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    locationTarget === 'creator' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Creator
-                </button>
-                <button 
-                  onClick={() => setLocationTarget('audience')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    locationTarget === 'audience' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Audience
-                </button>
-              </div>
-              <CustomDropdown
-                value={selectedLocation}
-                onChange={setSelectedLocation}
-                options={LOCATION_OPTIONS}
-                placeholder="All Locations"
-              />
-            </div>
-          </div>
+        <CollapsibleSectionHeader
+          title="Demographics"
+          isExpanded={expandedSections.demographics}
+          onToggle={() => toggleSection('demographics')}
+          className="mb-4"
+        />
+        <AnimatePresence initial={false}>
+          {expandedSections.demographics && (
+            <motion.div
+              id="demographics-content"
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="overflow-hidden"
+            >
+              <div className="pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Location */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <div className="space-y-3">
+                      <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                        <button 
+                          onClick={() => setLocationTarget('creator')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            locationTarget === 'creator' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Creator
+                        </button>
+                        <button 
+                          onClick={() => setLocationTarget('audience')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            locationTarget === 'audience' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Audience
+                        </button>
+                      </div>
+                      <CustomDropdown
+                        value={selectedLocation}
+                        onChange={setSelectedLocation}
+                        options={LOCATION_OPTIONS}
+                        placeholder="All Locations"
+                      />
+                    </div>
+                  </div>
 
-          {/* Gender */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-            <div className="space-y-3">
-              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
-                <button 
-                  onClick={() => setGenderTarget('creator')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    genderTarget === 'creator' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Creator
-                </button>
-                <button 
-                  onClick={() => setGenderTarget('audience')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    genderTarget === 'audience' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Audience
-                </button>
-              </div>
-              <CustomDropdown
-                value={selectedGender}
-                onChange={setSelectedGender}
-                options={GENDER_OPTIONS}
-                placeholder="Any Gender"
-              />
-            </div>
-          </div>
+                  {/* Gender */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                    <div className="space-y-3">
+                      <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                        <button 
+                          onClick={() => setGenderTarget('creator')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            genderTarget === 'creator' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Creator
+                        </button>
+                        <button 
+                          onClick={() => setGenderTarget('audience')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            genderTarget === 'audience' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Audience
+                        </button>
+                      </div>
+                      <CustomDropdown
+                        value={selectedGender}
+                        onChange={setSelectedGender}
+                        options={GENDER_OPTIONS}
+                        placeholder="Any Gender"
+                      />
+                    </div>
+                  </div>
 
-          {/* Age */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
-            <div className="space-y-3">
-              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
-                <button 
-                  onClick={() => setAgeTarget('creator')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    ageTarget === 'creator' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Creator
-                </button>
-                <button 
-                  onClick={() => setAgeTarget('audience')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    ageTarget === 'audience' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Audience
-                </button>
-              </div>
-              <CustomDropdown
-                value={selectedAge}
-                onChange={setSelectedAge}
-                options={AGE_OPTIONS}
-                placeholder="Any Age"
-              />
-            </div>
-          </div>
+                  {/* Age */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                    <div className="space-y-3">
+                      <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                        <button 
+                          onClick={() => setAgeTarget('creator')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            ageTarget === 'creator' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Creator
+                        </button>
+                        <button 
+                          onClick={() => setAgeTarget('audience')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            ageTarget === 'audience' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Audience
+                        </button>
+                      </div>
+                      <CustomDropdown
+                        value={selectedAge}
+                        onChange={setSelectedAge}
+                        options={AGE_OPTIONS}
+                        placeholder="Any Age"
+                      />
+                    </div>
+                  </div>
 
-          {/* Languages */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
-            <div className="space-y-3">
-              <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
-                <button 
-                  onClick={() => setLanguageTarget('creator')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    languageTarget === 'creator' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Creator
-                </button>
-                <button 
-                  onClick={() => setLanguageTarget('audience')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    languageTarget === 'audience' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Audience
-                </button>
+                  {/* Languages */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
+                    <div className="space-y-3">
+                      <div className="flex space-x-2 bg-gray-50 rounded-lg p-1">
+                        <button 
+                          onClick={() => setLanguageTarget('creator')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            languageTarget === 'creator' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Creator
+                        </button>
+                        <button 
+                          onClick={() => setLanguageTarget('audience')}
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            languageTarget === 'audience' 
+                              ? 'bg-white text-gray-900 shadow-sm' 
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Audience
+                        </button>
+                      </div>
+                      <CustomDropdown
+                        value={selectedLanguage}
+                        onChange={setSelectedLanguage}
+                        options={LANGUAGE_OPTIONS}
+                        placeholder="Any Language"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <CustomDropdown
-                value={selectedLanguage}
-                onChange={setSelectedLanguage}
-                options={LANGUAGE_OPTIONS}
-                placeholder="Any Language"
-              />
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Main Filter Sections */}
@@ -823,489 +940,578 @@ function DiscoverySearchInterface({
         <div className="border-t border-gray-200"></div>
         
         {/* Performance Filters */}
-        <div className="border-t border-gray-200 pt-6">
-          <h4 className="text-base font-semibold text-gray-900 mb-4">Performance</h4>
-          <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${
-            selectedPlatform === 'tiktok' 
-              ? 'lg:grid-cols-3 xl:grid-cols-7' 
-              : selectedPlatform === 'youtube'
-              ? 'lg:grid-cols-3 xl:grid-cols-5'
-              : 'lg:grid-cols-4'
-          }`}>
-            {/* Followers/Subscribers */}
-            <MinMaxSelector
-              label={getPerformanceOptions().followersLabel}
-              minValue={followersMin}
-              maxValue={followersMax}
-              onMinChange={setFollowersMin}
-              onMaxChange={setFollowersMax}
-              options={FOLLOWER_VIEW_OPTIONS}
-              placeholder="Any"
-            />
+        <div className="mb-8">
+          <CollapsibleSectionHeader
+            title="Performance"
+            isExpanded={expandedSections.performance}
+            onToggle={() => toggleSection('performance')}
+            className="mb-4"
+          />
+          <AnimatePresence initial={false}>
+            {expandedSections.performance && (
+              <motion.div
+                id="performance-content"
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${
+                    selectedPlatform === 'tiktok' 
+                      ? 'lg:grid-cols-3 xl:grid-cols-7' 
+                      : selectedPlatform === 'youtube'
+                      ? 'lg:grid-cols-3 xl:grid-cols-5'
+                      : 'lg:grid-cols-4'
+                  }`}>
+                    {/* Followers/Subscribers */}
+                    <MinMaxSelector
+                      label={getPerformanceOptions().followersLabel}
+                      minValue={followersMin}
+                      maxValue={followersMax}
+                      onMinChange={setFollowersMin}
+                      onMaxChange={setFollowersMax}
+                      options={FOLLOWER_VIEW_OPTIONS}
+                      placeholder="Any"
+                    />
 
-            {/* Followers/Subscribers Growth */}
-            <FollowersGrowthSelector
-              growthPercentage={growthPercentage}
-              growthPeriod={growthPeriod}
-              onGrowthPercentageChange={setGrowthPercentage}
-              onGrowthPeriodChange={setGrowthPeriod}
-              label={selectedPlatform === 'youtube' ? 'Subscribers Growth' : 'Followers Growth'}
-            />
+                    {/* Followers/Subscribers Growth */}
+                    <FollowersGrowthSelector
+                      growthPercentage={growthPercentage}
+                      growthPeriod={growthPeriod}
+                      onGrowthPercentageChange={setGrowthPercentage}
+                      onGrowthPeriodChange={setGrowthPeriod}
+                      label={selectedPlatform === 'youtube' ? 'Subscribers Growth' : 'Followers Growth'}
+                    />
 
-            {/* Engagement */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Engagement</label>
-              <div className="grid grid-cols-1 gap-2">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Rate</label>
-                  <CustomDropdown
-                    value={engagement}
-                    onChange={setEngagement}
-                    options={getPerformanceOptions().engagement}
-                    placeholder="Any Engagement"
-                  />
+                    {/* Engagement */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Engagement</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Rate</label>
+                          <CustomDropdown
+                            value={engagement}
+                            onChange={setEngagement}
+                            options={getPerformanceOptions().engagement}
+                            placeholder="Any Engagement"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Views/Video Views */}
+                    <MinMaxSelector
+                      label={getPerformanceOptions().viewsLabel}
+                      minValue={viewsMin}
+                      maxValue={viewsMax}
+                      onMinChange={setViewsMin}
+                      onMaxChange={setViewsMax}
+                      options={FOLLOWER_VIEW_OPTIONS}
+                      placeholder="Any"
+                    />
+
+                    {/* YouTube-specific fields */}
+                    {selectedPlatform === 'youtube' && (
+                      <ViewsGrowthSelector
+                        growthPercentage={viewsGrowthPercentage}
+                        growthPeriod={viewsGrowthPeriod}
+                        onGrowthPercentageChange={setViewsGrowthPercentage}
+                        onGrowthPeriodChange={setViewsGrowthPeriod}
+                      />
+                    )}
+
+                    {/* TikTok-specific fields */}
+                    {selectedPlatform === 'tiktok' && (
+                      <>
+                        {/* Total Likes Growth */}
+                        <TotalLikesGrowthSelector
+                          growthPercentage={likesGrowthPercentage}
+                          growthPeriod={likesGrowthPeriod}
+                          onGrowthPercentageChange={setLikesGrowthPercentage}
+                          onGrowthPeriodChange={setLikesGrowthPeriod}
+                        />
+
+                        {/* Shares */}
+                        <MinMaxSelector
+                          label="Shares"
+                          minValue={sharesMin}
+                          maxValue={sharesMax}
+                          onMinChange={setSharesMin}
+                          onMaxChange={setSharesMax}
+                          options={SHARES_SAVES_OPTIONS}
+                          placeholder="Any"
+                        />
+
+                        {/* Saves */}
+                        <MinMaxSelector
+                          label="Saves"
+                          minValue={savesMin}
+                          maxValue={savesMax}
+                          onMinChange={setSavesMin}
+                          onMaxChange={setSavesMax}
+                          options={SHARES_SAVES_OPTIONS}
+                          placeholder="Any"
+                        />
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Views/Video Views */}
-            <MinMaxSelector
-              label={getPerformanceOptions().viewsLabel}
-              minValue={viewsMin}
-              maxValue={viewsMax}
-              onMinChange={setViewsMin}
-              onMaxChange={setViewsMax}
-              options={FOLLOWER_VIEW_OPTIONS}
-              placeholder="Any"
-            />
-
-            {/* YouTube-specific fields */}
-            {selectedPlatform === 'youtube' && (
-              <ViewsGrowthSelector
-                growthPercentage={viewsGrowthPercentage}
-                growthPeriod={viewsGrowthPeriod}
-                onGrowthPercentageChange={setViewsGrowthPercentage}
-                onGrowthPeriodChange={setViewsGrowthPeriod}
-              />
+              </motion.div>
             )}
-
-            {/* TikTok-specific fields */}
-            {selectedPlatform === 'tiktok' && (
-              <>
-                {/* Total Likes Growth */}
-                <TotalLikesGrowthSelector
-                  growthPercentage={likesGrowthPercentage}
-                  growthPeriod={likesGrowthPeriod}
-                  onGrowthPercentageChange={setLikesGrowthPercentage}
-                  onGrowthPeriodChange={setLikesGrowthPeriod}
-                />
-
-                {/* Shares */}
-                <MinMaxSelector
-                  label="Shares"
-                  minValue={sharesMin}
-                  maxValue={sharesMax}
-                  onMinChange={setSharesMin}
-                  onMaxChange={setSharesMax}
-                  options={SHARES_SAVES_OPTIONS}
-                  placeholder="Any"
-                />
-
-                {/* Saves */}
-                <MinMaxSelector
-                  label="Saves"
-                  minValue={savesMin}
-                  maxValue={savesMax}
-                  onMinChange={setSavesMin}
-                  onMaxChange={setSavesMax}
-                  options={SHARES_SAVES_OPTIONS}
-                  placeholder="Any"
-                />
-              </>
-            )}
-          </div>
+          </AnimatePresence>
         </div>
 
         {/* Divider */}
         <div className="border-t border-gray-200"></div>
 
         {/* Content Filters */}
-        <div className="border-t border-gray-200 pt-6">
-          <h4 className="text-base font-semibold text-gray-900 mb-4">Content</h4>
-          
-          {selectedPlatform === 'tiktok' ? (
-            // TikTok-specific content layout
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Hashtags */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={hashtags}
-                      onChange={(e) => setHashtags(e.target.value)}
-                      placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
+        <div className="mb-8">
+          <CollapsibleSectionHeader
+            title="Content"
+            isExpanded={expandedSections.content}
+            onToggle={() => toggleSection('content')}
+            className="mb-4"
+          />
+          <AnimatePresence initial={false}>
+            {expandedSections.content && (
+              <motion.div
+                id="content-content"
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  {selectedPlatform === 'tiktok' ? (
+                    // TikTok-specific content layout
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {/* Hashtags */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={hashtags}
+                              onChange={(e) => setHashtags(e.target.value)}
+                              placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Mentions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().mentions}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={mentions}
-                      onChange={(e) => setMentions(e.target.value)}
-                      placeholder="Search mentions..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
+                      {/* Mentions */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().mentions}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={mentions}
+                              onChange={(e) => setMentions(e.target.value)}
+                              placeholder="Search mentions..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Captions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().captions}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={captions}
-                      onChange={(e) => setCaptions(e.target.value)}
-                      placeholder={`Search ${getContentOptions().captions.toLowerCase()}...`}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : selectedPlatform === 'youtube' ? (
-            // YouTube-specific content layout
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Topics */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().topics}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={topics}
-                      onChange={(e) => setTopics(e.target.value)}
-                      placeholder="Search topics..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
+                      {/* Captions */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().captions}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={captions}
+                              onChange={(e) => setCaptions(e.target.value)}
+                              placeholder={`Search ${getContentOptions().captions.toLowerCase()}...`}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedPlatform === 'youtube' ? (
+                    // YouTube-specific content layout
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Topics */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().topics}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={topics}
+                              onChange={(e) => setTopics(e.target.value)}
+                              placeholder="Search topics..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Transcript */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().transcript}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={transcript}
-                      onChange={(e) => setTranscript(e.target.value)}
-                      placeholder="Search transcript..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // Instagram content layout
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              {/* Categories */}
-              <CategorySelector
-                selectedCategories={selectedContentCategories}
-                onCategoriesChange={setSelectedContentCategories}
-                target={contentCategoriesTarget}
-                onTargetChange={setContentCategoriesTarget}
-              />
+                      {/* Transcript */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().transcript}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={transcript}
+                              onChange={(e) => setTranscript(e.target.value)}
+                              placeholder="Search transcript..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Instagram content layout
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                      {/* Categories */}
+                      <CategorySelector
+                        selectedCategories={selectedContentCategories}
+                        onCategoriesChange={setSelectedContentCategories}
+                        target={contentCategoriesTarget}
+                        onTargetChange={setContentCategoriesTarget}
+                      />
 
-              {/* Hashtags/Tags */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={hashtags}
-                      onChange={(e) => setHashtags(e.target.value)}
-                      placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
+                      {/* Hashtags/Tags */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={hashtags}
+                              onChange={(e) => setHashtags(e.target.value)}
+                              placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Captions/Descriptions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().captions}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="text"
-                      value={captions}
-                      onChange={(e) => setCaptions(e.target.value)}
-                      placeholder={`Search ${getContentOptions().captions.toLowerCase()}...`}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
+                      {/* Captions/Descriptions */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().captions}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="text"
+                              value={captions}
+                              onChange={(e) => setCaptions(e.target.value)}
+                              placeholder={`Search ${getContentOptions().captions.toLowerCase()}...`}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Collaborations */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().collaborations}</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Search</label>
-                    <input
-                      type="search"
-                      value={collaborations}
-                      onChange={(e) => setCollaborations(e.target.value)}
-                      placeholder="Start typing to search for brands"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
+                      {/* Collaborations */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().collaborations}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Search</label>
+                            <input
+                              type="search"
+                              value={collaborations}
+                              onChange={(e) => setCollaborations(e.target.value)}
+                              placeholder="Start typing to search for brands"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Sponsored Content Toggle */}
-              <ToggleFilter
-                label="Sponsored Content"
-                checked={hasSponsoredPosts}
-                onChange={setHasSponsoredPosts}
-                description="Has sponsored posts"
-              />
-            </div>
-          )}
+                      {/* Sponsored Content Toggle */}
+                      <ToggleFilter
+                        label="Sponsored Content"
+                        checked={hasSponsoredPosts}
+                        onChange={setHasSponsoredPosts}
+                        description="Has sponsored posts"
+                      />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Divider */}
         <div className="border-t border-gray-200"></div>
 
         {/* Account Filters */}
-        <div className="border-t border-gray-200 pt-6">
-          <h4 className="text-base font-semibold text-gray-900 mb-4">Account</h4>
-          
-          {selectedPlatform === 'tiktok' ? (
-            // TikTok-specific account layout (no Type, no Fake Followers)
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Bio */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Content</label>
-                    <input
-                      type="text"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Search bio content..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
+        <div className="mb-8">
+          <CollapsibleSectionHeader
+            title="Account"
+            isExpanded={expandedSections.account}
+            onToggle={() => toggleSection('account')}
+            className="mb-4"
+          />
+          <AnimatePresence initial={false}>
+            {expandedSections.account && (
+              <motion.div
+                id="account-content"
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  {selectedPlatform === 'tiktok' ? (
+                    // TikTok-specific account layout (no Type, no Fake Followers)
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {/* Bio */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Content</label>
+                            <input
+                              type="text"
+                              value={bio}
+                              onChange={(e) => setBio(e.target.value)}
+                              placeholder="Search bio content..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Social Platforms */}
+                      <MultiSelectDropdown
+                        label="Socials"
+                        selectedValues={selectedSocials}
+                        onChange={setSelectedSocials}
+                        options={SOCIAL_PLATFORM_OPTIONS}
+                        placeholder="Select platforms..."
+                      />
+
+                      {/* Last Posted */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Within</label>
+                            <CustomDropdown
+                              value={lastPosted}
+                              onChange={setLastPosted}
+                              options={LAST_POSTED_OPTIONS}
+                              placeholder="Any Time"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Verified Creators Toggle */}
+                      <ToggleFilter
+                        label={getAccountOptions().verifiedLabel}
+                        checked={verifiedOnly}
+                        onChange={setVerifiedOnly}
+                        description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
+                      />
+                    </div>
+                  ) : selectedPlatform === 'youtube' ? (
+                    // YouTube-specific account layout (Description, Socials, Last Posted, Verified)
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {/* Description */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Content</label>
+                            <input
+                              type="text"
+                              value={description}
+                              onChange={(e) => setDescription(e.target.value)}
+                              placeholder="Search description content..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Social Platforms */}
+                      <MultiSelectDropdown
+                        label="Socials"
+                        selectedValues={selectedSocials}
+                        onChange={setSelectedSocials}
+                        options={SOCIAL_PLATFORM_OPTIONS}
+                        placeholder="Select platforms..."
+                      />
+
+                      {/* Last Posted */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Within</label>
+                            <CustomDropdown
+                              value={lastPosted}
+                              onChange={setLastPosted}
+                              options={LAST_POSTED_OPTIONS}
+                              placeholder="Any Time"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Verified Creators Toggle */}
+                      <ToggleFilter
+                        label={getAccountOptions().verifiedLabel}
+                        checked={verifiedOnly}
+                        onChange={setVerifiedOnly}
+                        description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
+                      />
+                    </div>
+                  ) : (
+                    // Instagram account layout (full features)
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+                      {/* Bio */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Content</label>
+                            <input
+                              type="text"
+                              value={bio}
+                              onChange={(e) => setBio(e.target.value)}
+                              placeholder="Search bio content..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Account Type */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Account</label>
+                            <CustomDropdown
+                              value={accountType}
+                              onChange={setAccountType}
+                              options={getAccountOptions().accountTypes}
+                              placeholder="Any Type"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Social Platforms */}
+                      <MultiSelectDropdown
+                        label="Socials"
+                        selectedValues={selectedSocials}
+                        onChange={setSelectedSocials}
+                        options={SOCIAL_PLATFORM_OPTIONS}
+                        placeholder="Select platforms..."
+                      />
+
+                      {/* Fake Followers */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Fake Followers</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Threshold</label>
+                            <CustomDropdown
+                              value={fakeFollowers}
+                              onChange={setFakeFollowers}
+                              options={getAccountOptions().fakeFollowers}
+                              placeholder="Any Amount"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Last Posted */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Within</label>
+                            <CustomDropdown
+                              value={lastPosted}
+                              onChange={setLastPosted}
+                              options={LAST_POSTED_OPTIONS}
+                              placeholder="Any Time"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Verified Creators Toggle */}
+                      <ToggleFilter
+                        label={getAccountOptions().verifiedLabel}
+                        checked={verifiedOnly}
+                        onChange={setVerifiedOnly}
+                        description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Social Platforms */}
-              <MultiSelectDropdown
-                label="Socials"
-                selectedValues={selectedSocials}
-                onChange={setSelectedSocials}
-                options={SOCIAL_PLATFORM_OPTIONS}
-                placeholder="Select platforms..."
-              />
-
-              {/* Last Posted */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Within</label>
-                    <CustomDropdown
-                      value={lastPosted}
-                      onChange={setLastPosted}
-                      options={LAST_POSTED_OPTIONS}
-                      placeholder="Any Time"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Verified Creators Toggle */}
-              <ToggleFilter
-                label={getAccountOptions().verifiedLabel}
-                checked={verifiedOnly}
-                onChange={setVerifiedOnly}
-                description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
-              />
-            </div>
-          ) : selectedPlatform === 'youtube' ? (
-            // YouTube-specific account layout (Description, Socials, Last Posted, Verified)
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Content</label>
-                    <input
-                      type="text"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Search description content..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Social Platforms */}
-              <MultiSelectDropdown
-                label="Socials"
-                selectedValues={selectedSocials}
-                onChange={setSelectedSocials}
-                options={SOCIAL_PLATFORM_OPTIONS}
-                placeholder="Select platforms..."
-              />
-
-              {/* Last Posted */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Within</label>
-                    <CustomDropdown
-                      value={lastPosted}
-                      onChange={setLastPosted}
-                      options={LAST_POSTED_OPTIONS}
-                      placeholder="Any Time"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Verified Creators Toggle */}
-              <ToggleFilter
-                label={getAccountOptions().verifiedLabel}
-                checked={verifiedOnly}
-                onChange={setVerifiedOnly}
-                description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
-              />
-            </div>
-          ) : (
-            // Instagram account layout (full features)
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-              {/* Bio */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Content</label>
-                    <input
-                      type="text"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Search bio content..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Account</label>
-                    <CustomDropdown
-                      value={accountType}
-                      onChange={setAccountType}
-                      options={getAccountOptions().accountTypes}
-                      placeholder="Any Type"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Social Platforms */}
-              <MultiSelectDropdown
-                label="Socials"
-                selectedValues={selectedSocials}
-                onChange={setSelectedSocials}
-                options={SOCIAL_PLATFORM_OPTIONS}
-                placeholder="Select platforms..."
-              />
-
-              {/* Fake Followers */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fake Followers</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Threshold</label>
-                    <CustomDropdown
-                      value={fakeFollowers}
-                      onChange={setFakeFollowers}
-                      options={getAccountOptions().fakeFollowers}
-                      placeholder="Any Amount"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Last Posted */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Posted</label>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Within</label>
-                    <CustomDropdown
-                      value={lastPosted}
-                      onChange={setLastPosted}
-                      options={LAST_POSTED_OPTIONS}
-                      placeholder="Any Time"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Verified Creators Toggle */}
-              <ToggleFilter
-                label={getAccountOptions().verifiedLabel}
-                checked={verifiedOnly}
-                onChange={setVerifiedOnly}
-                description={`Show only ${getAccountOptions().verifiedLabel.toLowerCase()} creators`}
-              />
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      </div>
+      
+      {/* Search Button */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={onSearch}
+          disabled={!onSearch || isLoading}
+          className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-2xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          {isLoading ? (
+            <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+          ) : (
+            <Search className="w-5 h-5 mr-2" />
+          )}
+          {isLoading ? 'Searching...' : 'Search Influencers'}
+        </button>
       </div>
     </div>
   )
 }
 
 // New Modern Influencer Table
-function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'instagram' | 'tiktok' | 'youtube' }) {
+function DiscoveredInfluencersTable({ 
+  selectedPlatform, 
+  searchResults, 
+  isLoading, 
+  error 
+}: { 
+  selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
+  searchResults?: any[]
+  isLoading?: boolean
+  error?: string | null
+}) {
   // Selection state
   const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([])
+  
+  // Use props or fallback to mock data
+  const discoveredInfluencers = searchResults || MOCK_DISCOVERED_INFLUENCERS
+  const showLoading = isLoading || false
+  const showError = error || null
   
   // Sorting state
   const [sortConfig, setSortConfig] = useState<{
@@ -1332,11 +1538,11 @@ function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'i
 
   // Handle select all/none
   const handleSelectAll = () => {
-    const availableInfluencers = MOCK_DISCOVERED_INFLUENCERS.filter(inf => !inf.already_imported)
+    const availableInfluencers = discoveredInfluencers.filter(inf => !inf.already_imported)
     if (selectedInfluencers.length === availableInfluencers.length) {
       setSelectedInfluencers([])
     } else {
-      setSelectedInfluencers(availableInfluencers.map(inf => inf.id))
+      setSelectedInfluencers(availableInfluencers.map(inf => inf.userId))
     }
   }
 
@@ -1351,7 +1557,7 @@ function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'i
 
   // Get checkbox state for header
   const getSelectAllState = () => {
-    const availableInfluencers = MOCK_DISCOVERED_INFLUENCERS.filter(inf => !inf.already_imported)
+    const availableInfluencers = discoveredInfluencers.filter(inf => !inf.already_imported)
     if (selectedInfluencers.length === 0) return 'none'
     if (selectedInfluencers.length === availableInfluencers.length) return 'all'
     return 'some'
@@ -1367,7 +1573,7 @@ function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'i
 
   // Sort data
   const sortedInfluencers = React.useMemo(() => {
-    let sortableInfluencers = [...MOCK_DISCOVERED_INFLUENCERS]
+    let sortableInfluencers = [...discoveredInfluencers]
     
     if (sortConfig.key) {
       sortableInfluencers.sort((a, b) => {
@@ -1395,7 +1601,7 @@ function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'i
     }
     
     return sortableInfluencers
-  }, [sortConfig])
+  }, [discoveredInfluencers, sortConfig])
 
   // Sort icon component
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
@@ -1493,93 +1699,120 @@ function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'i
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {sortedInfluencers.map((influencer) => (
-              <tr key={influencer.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-gray-300"
-                    disabled={influencer.already_imported}
-                    checked={selectedInfluencers.includes(influencer.id)}
-                    onChange={() => handleIndividualSelect(influencer.id)}
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <img 
-                      src={influencer.profile_picture} 
-                      alt={influencer.display_name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 flex items-center">
-                        {influencer.display_name}
-                        {influencer.verified && (
-                          <CheckCircle size={14} className="ml-2 text-blue-500" />
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {influencer.instagram_handle || influencer.youtube_handle || influencer.tiktok_handle}
-                      </div>
-                      {influencer.already_imported && (
-                        <div className="text-xs text-green-600 mt-1 font-medium">Already imported</div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-2">
-                    {influencer.instagram_handle && (
-                      <div className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors" title="Instagram">
-                        <InstagramLogo />
-                      </div>
-                    )}
-                    {influencer.youtube_handle && (
-                      <div className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors" title="YouTube">
-                        <YouTubeLogo />
-                      </div>
-                    )}
-                    {influencer.tiktok_handle && (
-                      <div className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors" title="TikTok">
-                        <TikTokLogo />
-                      </div>
-                    )}
-                    {!influencer.instagram_handle && !influencer.youtube_handle && !influencer.tiktok_handle && (
-                      <span className="text-gray-400 text-sm">No platforms</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {formatNumber(influencer.followers)}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {influencer.engagement_rate}%
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {influencer.location}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center space-x-2">
-                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="View Profile">
-                      <Eye size={16} />
-                    </button>
-                    {!influencer.already_imported && (
-                      <button className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Import">
-                        <Plus size={16} />
-                      </button>
-                    )}
+            {showLoading ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <div className="flex items-center justify-center space-x-3">
+                    <RefreshCw className="w-5 h-5 animate-spin text-blue-600" />
+                    <span className="text-gray-600">Searching Modash database...</span>
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : showError ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <div className="text-center">
+                    <div className="text-red-600 font-medium mb-2">Search Failed</div>
+                    <div className="text-gray-600 text-sm">{showError}</div>
+                  </div>
+                </td>
+              </tr>
+            ) : sortedInfluencers.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <div className="text-center">
+                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <div className="text-gray-600 font-medium mb-2">No influencers found</div>
+                    <div className="text-gray-500 text-sm">Try adjusting your filters or search terms</div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              sortedInfluencers.map((influencer) => (
+                <tr key={influencer.userId} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300"
+                      disabled={influencer.already_imported}
+                      checked={selectedInfluencers.includes(influencer.userId)}
+                      onChange={() => handleIndividualSelect(influencer.userId)}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <img 
+                        src={influencer.profile_picture || 'https://via.placeholder.com/40'} 
+                        alt={influencer.display_name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 flex items-center">
+                          {influencer.display_name}
+                          {influencer.verified && (
+                            <CheckCircle size={14} className="ml-2 text-blue-500" />
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          @{influencer.username}
+                        </div>
+                        {influencer.already_imported && (
+                          <div className="text-xs text-green-600 mt-1 font-medium">Already imported</div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      {influencer.platform === 'instagram' && (
+                        <div className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors" title="Instagram">
+                          <InstagramLogo />
+                        </div>
+                      )}
+                      {influencer.platform === 'youtube' && (
+                        <div className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors" title="YouTube">
+                          <YouTubeLogo />
+                        </div>
+                      )}
+                      {influencer.platform === 'tiktok' && (
+                        <div className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors" title="TikTok">
+                          <TikTokLogo />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatNumber(influencer.followers)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {influencer.engagement_rate}%
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {influencer.location}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="View Profile">
+                        <Eye size={16} />
+                      </button>
+                      {!influencer.already_imported && (
+                        <button className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Import">
+                          <Plus size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -1588,14 +1821,102 @@ function DiscoveredInfluencersTable({ selectedPlatform }: { selectedPlatform: 'i
 }
 
 function DiscoveryPageClient() {
-  const scrapingStats = {
-    totalDiscovered: 4,
-    readyToImport: 3,
-    creditsRemaining: 1753
-  }
-
   // Platform state moved here to share between components
   const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'tiktok' | 'youtube'>('instagram')
+  
+  // API state
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [creditUsage, setCreditUsage] = useState(MOCK_CREDIT_USAGE)
+  const [apiWarning, setApiWarning] = useState<string | null>(null)
+  
+  // Search query state
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // Enhanced search function with full API integration
+  const handleSearch = async () => {
+    setIsSearching(true)
+    setSearchError(null)
+    setApiWarning(null)
+    
+    try {
+      const filters: any = {
+        platform: selectedPlatform,
+      }
+      
+      // Only add searchQuery if provided
+      if (searchQuery.trim()) {
+        filters.searchQuery = searchQuery.trim()
+      }
+      
+      console.log('🔍 Searching Modash API with filters:', filters)
+      
+      // Use full URL to avoid any routing issues
+      const apiUrl = `${window.location.origin}/api/discovery/search`
+      console.log('🌐 API URL:', apiUrl)
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filters)
+      })
+      
+      console.log('📡 Response status:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Response error:', errorText)
+        throw new Error(`Search failed: ${response.status} ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      console.log('📦 API Response:', result)
+      
+      if (result.success && result.data) {
+        setSearchResults(result.data.results || [])
+        
+        // Check if using mock data
+        if (result.warning) {
+          setApiWarning(result.warning)
+        }
+        
+        console.log('✅ Search completed:', result.data.results?.length, 'results')
+      } else {
+        throw new Error(result.details || 'Search failed')
+      }
+      
+    } catch (error) {
+      console.error('❌ Search error:', error)
+      setSearchError(error instanceof Error ? error.message : 'Search failed')
+      setSearchResults(MOCK_DISCOVERED_INFLUENCERS) // Fallback to mock data
+    } finally {
+      setIsSearching(false)
+    }
+  }
+  
+  // Load initial credit usage
+  React.useEffect(() => {
+    const loadCredits = async () => {
+      try {
+        const response = await fetch(`${window.location.origin}/api/discovery/credits`)
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success) {
+            setCreditUsage(prev => ({
+              ...prev,
+              monthlyUsed: result.data.used,
+              monthlyLimit: result.data.limit
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load credits:', error)
+      }
+    }
+    
+    loadCredits()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1603,29 +1924,19 @@ function DiscoveryPageClient() {
       
       <main className="px-4 lg:px-6 pb-8 space-y-6">
         {/* Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title="Discovered Today"
-            value={scrapingStats.totalDiscovered}
-            icon={<Search size={20} />}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MetricCard
             title="Monthly Credit Usage"
-            value={`${MOCK_CREDIT_USAGE.monthlyUsed} / ${MOCK_CREDIT_USAGE.monthlyLimit}`}
+            value={`${creditUsage.monthlyUsed.toFixed(2)} / ${creditUsage.monthlyLimit.toFixed(2)}`}
             icon={<TrendingUp size={20} />}
-            trend="12% increase from last month"
+            trend={`${((creditUsage.monthlyUsed / creditUsage.monthlyLimit) * 100).toFixed(1)}% used`}
             trendUp={false}
           />
           <MetricCard
-            title="Ready to Import"
-            value={scrapingStats.readyToImport}
-            icon={<Users size={20} />}
-          />
-          <MetricCard
             title="Yearly Credits"
-            value={scrapingStats.creditsRemaining}
+            value={`${MOCK_CREDIT_USAGE.yearlyUsed.toFixed(2)} / ${MOCK_CREDIT_USAGE.yearlyLimit.toFixed(2)}`}
             icon={<Calendar size={20} />}
-            trend={`${MOCK_CREDIT_USAGE.yearlyUsed.toLocaleString()} / ${MOCK_CREDIT_USAGE.yearlyLimit.toLocaleString()}`}
+            trend={`${((MOCK_CREDIT_USAGE.yearlyUsed / MOCK_CREDIT_USAGE.yearlyLimit) * 100).toFixed(1)}% used • ${(MOCK_CREDIT_USAGE.yearlyLimit - MOCK_CREDIT_USAGE.yearlyUsed).toFixed(0)} remaining`}
           />
         </div>
 
@@ -1633,10 +1944,49 @@ function DiscoveryPageClient() {
         <DiscoverySearchInterface 
           selectedPlatform={selectedPlatform}
           setSelectedPlatform={setSelectedPlatform}
+          onSearch={handleSearch}
+          isLoading={isSearching}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
         />
 
+        {/* API Status Alert */}
+        {apiWarning && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-yellow-800">Modash API Configuration Required</p>
+              <p className="text-sm text-yellow-700 mt-1">{apiWarning}</p>
+              <div className="text-xs text-yellow-600 mt-2 space-y-1">
+                <p>To activate your Modash API key:</p>
+                <ol className="list-decimal list-inside ml-2 space-y-1">
+                  <li>Visit <a href="https://marketer.modash.io/developer" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-800">https://marketer.modash.io/developer</a></li>
+                  <li>Log in with your Modash account</li>
+                  <li>Verify your API key is listed and active</li>
+                  <li>Check if Discovery API access is enabled for your plan</li>
+                </ol>
+                <p className="mt-2">If issues persist, contact support@modash.io with reference to the Discovery API endpoint issues.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {searchError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">{searchError}</p>
+          </div>
+        )}
+
+        {/* Credit Usage */}
+
         {/* Discovered Influencers */}
-          <DiscoveredInfluencersTable selectedPlatform={selectedPlatform} />
+          <DiscoveredInfluencersTable 
+            selectedPlatform={selectedPlatform}
+            searchResults={searchResults}
+            isLoading={isSearching}
+            error={searchError}
+          />
       </main>
     </div>
   )
