@@ -96,7 +96,7 @@ export default function ModernStaffHeader() {
   }
 
   const getUserName = () => {
-    if (!isClient || !user) return 'there' // Default for SSR and when user is not loaded
+    if (!isClient || !user) return null // Return null when no user data available
     
     // Try different sources for the user's name
     if (user?.firstName) {
@@ -111,14 +111,16 @@ export default function ModernStaffHeader() {
     if (user?.primaryEmailAddress?.emailAddress) {
       return user.primaryEmailAddress.emailAddress.split('@')[0] // Use email prefix as fallback
     }
-    return 'there' // Final fallback
+    return null // Return null instead of 'there'
   }
 
   const getPageHeader = () => {
+    const userName = getUserName()
+    
     // Check current route and return appropriate header content
     if (pathname === '/staff') {
       return {
-        title: `${getGreeting()}, ${getUserName()}!`,
+        title: userName ? `${getGreeting()}, ${userName}!` : 'Staff Dashboard',
         subtitle: 'Ready to manage your influencer network'
       }
     } else if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
@@ -144,7 +146,7 @@ export default function ModernStaffHeader() {
     } else {
       // Default fallback
       return {
-        title: `${getGreeting()}, ${getUserName()}!`,
+        title: userName ? `${getGreeting()}, ${userName}!` : 'Staff Dashboard',
         subtitle: 'Ready to manage your influencer network'
       }
     }

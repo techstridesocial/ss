@@ -180,17 +180,17 @@ function DiscoverySearchInterface() {
   const renderFilters = () => {
     switch (selectedPlatform) {
       case 'instagram':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-              <input
-                type="text"
-                placeholder="beauty, fitness, tech..."
+  return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
+            <input
+              type="text"
+              placeholder="beauty, fitness, tech..."
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-            <div>
+            />
+          </div>
+          <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Followers</label>
               <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                 <option>Any Size</option>
@@ -198,18 +198,18 @@ function DiscoverySearchInterface() {
                 <option>10K - 100K</option>
                 <option>100K - 1M</option>
                 <option>1M+</option>
-              </select>
-            </div>
-            <div>
+            </select>
+          </div>
+          <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Engagement Rate</label>
               <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                 <option>Any Rate</option>
                 <option>1% - 3%</option>
                 <option>3% - 6%</option>
                 <option>6%+</option>
-              </select>
-            </div>
-            <div>
+            </select>
+          </div>
+          <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
               <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                 <option>All Locations</option>
@@ -217,9 +217,9 @@ function DiscoverySearchInterface() {
                 <option>United States</option>
                 <option>Canada</option>
                 <option>Australia</option>
-              </select>
-            </div>
+            </select>
           </div>
+        </div>
         )
       case 'tiktok':
         return (
@@ -437,7 +437,7 @@ function DiscoveredInfluencersTable() {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {influencer.location}
+                    {influencer.location}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getScoreBadge(influencer.modash_score)}
@@ -507,7 +507,7 @@ function DiscoveryPageClient() {
         <DiscoverySearchInterface />
 
         {/* Discovered Influencers */}
-        <DiscoveredInfluencersTable />
+          <DiscoveredInfluencersTable />
       </main>
     </div>
   )
