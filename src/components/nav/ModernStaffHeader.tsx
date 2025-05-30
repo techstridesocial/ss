@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Menu, X, LogOut, Settings } from 'lucide-react'
+import { Menu, X, LogOut, Settings, LayoutDashboard, Building2, Users, Megaphone, Search, UserCog, Play } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useUserRole } from '../../lib/auth/hooks'
 
@@ -45,10 +45,10 @@ export default function ModernStaffHeader() {
   const getNavItems = () => {
     const baseItems = [
       { href: '/staff', label: 'Overview' },
-      { href: '/staff/brands', label: 'Brands' },
       { href: '/staff/roster', label: 'Roster' },
+      { href: '/staff/brands', label: 'Brands' },
       { href: '/staff/campaigns', label: 'Campaigns' },
-      { href: '/staff/scraping', label: 'Scraping' }
+      { href: '/staff/discovery', label: 'Discovery' }
     ]
 
     // Add admin-only items if user is admin
@@ -126,10 +126,10 @@ export default function ModernStaffHeader() {
         title: 'Campaign Management',
         subtitle: 'Create, manage, and track influencer marketing campaigns'
       }
-    } else if (pathname === '/staff/scraping' || pathname.startsWith('/staff/scraping/')) {
+    } else if (pathname === '/staff/discovery' || pathname.startsWith('/staff/discovery/')) {
       return {
-        title: 'Modash Integration',
-        subtitle: 'Discover, analyze, and import new influencers using Modash API'
+        title: 'Influencer Discovery',
+        subtitle: 'Discover, analyze, and import new influencers'
       }
     } else {
       // Default fallback

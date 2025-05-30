@@ -1379,43 +1379,26 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
       {/* Tab Navigation */}
       <div className="mb-8">
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 p-2">
-          <nav className="flex space-x-1">
-            {[
-              { key: 'ALL', label: 'All Influencers', count: applyFiltersForTab(influencers, 'ALL').length },
-              { key: 'SIGNED', label: 'Signed', count: applyFiltersForTab(influencers, 'SIGNED').length },
-              { key: 'PARTNERED', label: 'Partnered', count: applyFiltersForTab(influencers, 'PARTNERED').length },
-              { key: 'AGENCY_PARTNER', label: 'Agency Partners', count: applyFiltersForTab(influencers, 'AGENCY_PARTNER').length }
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key as any)}
-                className={`
-                  group relative flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 min-w-0 flex-1
-                  ${activeTab === tab.key
-                    ? 'bg-black text-white shadow-lg transform scale-[1.02]'
-                    : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-white/60'
-                  }
-                `}
-              >
-                <span className="truncate mr-2">{tab.label}</span>
-                <span className={`
-                  inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold transition-all duration-300
-                  ${activeTab === tab.key 
-                    ? 'bg-white text-black' 
-                    : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
-                  }
-                `}>
-                  {tab.count}
-                </span>
-                
-                {/* Active indicator */}
-                {activeTab === tab.key && (
-                  <div className="absolute inset-0 rounded-xl bg-black/5 pointer-events-none" />
-                )}
-              </button>
-            ))}
-        </nav>
+        <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
+          {[
+            { key: 'ALL', label: 'All Influencers', count: applyFiltersForTab(influencers, 'ALL').length },
+            { key: 'SIGNED', label: 'Signed', count: applyFiltersForTab(influencers, 'SIGNED').length },
+            { key: 'PARTNERED', label: 'Partnered', count: applyFiltersForTab(influencers, 'PARTNERED').length },
+            { key: 'AGENCY_PARTNER', label: 'Agency Partners', count: applyFiltersForTab(influencers, 'AGENCY_PARTNER').length }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key as any)}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === tab.key
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <span className="truncate font-bold capitalize">{tab.label}</span>
+              <span>({tab.count})</span>
+            </button>
+          ))}
         </div>
       </div>
 

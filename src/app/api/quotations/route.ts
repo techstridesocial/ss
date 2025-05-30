@@ -335,7 +335,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { quotationId, status, notes, final_price, create_campaign = false } = body
+    const { quotationId, status, notes, final_price, create_campaign: requestedCampaignCreation = false } = body
+
+    let create_campaign = requestedCampaignCreation
 
     const quotationIndex = quotations.findIndex(q => q.id === quotationId)
     if (quotationIndex === -1) {
@@ -347,21 +349,56 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Quotation not found' }, { status: 404 })
     }
     
-    // Update quotation
-    quotations[quotationIndex] = {
-      ...quotation,
+    // Update quotation based on status
+    const updatedFields: Partial<Quotation> = {
       status: status as QuotationStatus,
       notes: notes || quotation.notes,
-      final_price: final_price || quotation.final_price,
-      reviewed_at: new Date().toISOString(),
-      ...(status === 'APPROVED' && { approved_at: new Date().toISOString() })
+      final_price: final_price ? Number(final_price) : quotation.final_price,
+      reviewed_at: new Date().toISOString()
+    }
+
+    // Handle specific status updates
+    if (status === 'SENT') {
+      // When staff sends quote to brand
+      updatedFields.quoted_price = final_price ? Number(final_price) : quotation.quoted_price
+      updatedFields.final_price = final_price ? Number(final_price) : quotation.final_price
+      // Note: In real implementation, this would trigger email to brand
+    }
+
+    if (status === 'APPROVED') {
+      // When brand approves the quotation
+      updatedFields.approved_at = new Date().toISOString()
+      
+      // Skip saving to quotation table - go directly to campaign creation
+      console.log('Quotation approved, creating campaign directly (skipping quotation table save):', {
+        id: quotation.id,
+        brand_name: quotation.brand_name,
+        campaign_name: quotation.campaign_name,
+        final_price: updatedFields.final_price || quotation.final_price,
+        approved_at: updatedFields.approved_at,
+        status: 'APPROVED'
+      })
+
+      // Automatically create campaign when quotation is approved
+      create_campaign = true
+    }
+
+    if (status === 'REJECTED') {
+      // When brand rejects the quotation - just update the status
+      // The reviewed_at timestamp already captures when it was processed
+    }
+    
+    // Update quotation in memory (in real app, this would be database update)
+    quotations[quotationIndex] = {
+      ...quotation,
+      ...updatedFields
     }
 
     let createdCampaign = null
 
     // Create campaign if approved and requested
     if (status === 'APPROVED' && create_campaign) {
-      // Create campaign from quotation
+      // Create campaign directly from approved quotation (skip quotation table save)
       createdCampaign = {
         id: `campaign_${Date.now()}`,
         name: quotation.campaign_name,
@@ -369,7 +406,7 @@ export async function PUT(request: NextRequest) {
         brand_id: quotation.brand_id,
         description: quotation.description,
         status: 'ACTIVE',
-        budget: quotation.final_price || quotation.quoted_price,
+        budget: updatedFields.final_price || quotation.final_price || quotation.quoted_price,
         spent: 0,
         start_date: quotation.timeline.start_date,
         end_date: quotation.timeline.end_date,
@@ -388,16 +425,35 @@ export async function PUT(request: NextRequest) {
         invitations_pending: 0,
         invitations_declined: 0,
         created_from_quotation: true,
-        quotation_id: quotation.id
+        quotation_id: quotation.id,
+        // Mark quotation as converted (not saved to quotation table)
+        quotation_converted: true,
+        conversion_date: new Date().toISOString()
       }
 
-      // Update quotation with campaign info
+      // Update quotation with conversion info (but don't save to quotation table)
       quotations[quotationIndex].campaign_created = true
       quotations[quotationIndex].campaign_id = createdCampaign.id
+      quotations[quotationIndex].status = 'CONVERTED_TO_CAMPAIGN' as any
+
+      // In real implementation, this would:
+      // 1. Create campaign directly in campaigns table
+      // 2. Create campaign_invitations for each selected influencer
+      // 3. Send notification emails to influencers
+      // 4. Mark quotation as converted (not saved to quotation table)
+      console.log('Campaign created directly from approved quotation (quotation not saved to table):', createdCampaign)
     }
 
+    const responseMessage = status === 'SENT' 
+      ? 'Quotation sent to brand successfully'
+      : status === 'APPROVED'
+        ? createdCampaign 
+          ? 'Quotation approved and converted directly to campaign (skipped quotation table)'
+          : 'Quotation approved'
+        : `Quotation ${status.toLowerCase()} successfully`
+
     return NextResponse.json({
-      message: `Quotation ${status.toLowerCase()} successfully`,
+      message: responseMessage,
       quotation: quotations[quotationIndex],
       ...(createdCampaign && { campaign: createdCampaign })
     })

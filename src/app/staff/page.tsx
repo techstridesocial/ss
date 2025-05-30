@@ -149,9 +149,9 @@ export default async function StaffDashboard() {
           />
           
           <QuickActionCard
-            title="Create Campaign"
-            description="Set up new influencer campaigns"
-            href="/staff/campaigns/new"
+            title="Manage Quotations"
+            description="Review quotations and approve to auto-create campaigns"
+            href="/staff/brands?tab=quotations"
             icon={<UserPlus size={20} className="text-purple-600" />}
             color="purple"
           />

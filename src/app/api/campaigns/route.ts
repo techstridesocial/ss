@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new campaign
+// POST - Create new campaign (ONLY from approved quotations)
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -134,6 +134,13 @@ export async function POST(request: NextRequest) {
       target_platforms,
       quotation_id
     } = body
+
+    // ENFORCE: Campaigns can only be created from approved quotations
+    if (!quotation_id) {
+      return NextResponse.json({ 
+        error: 'Campaigns can only be created from approved quotations. Please use the quotation approval flow.' 
+      }, { status: 400 })
+    }
 
     // Validation
     if (!name || !description || !budget || !start_date || !end_date) {
@@ -165,14 +172,14 @@ export async function POST(request: NextRequest) {
       invitations_accepted: 0,
       invitations_pending: 0,
       invitations_declined: 0,
-      created_from_quotation: !!quotation_id,
-      quotation_id: quotation_id || null
+      created_from_quotation: true, // Always true now
+      quotation_id: quotation_id
     }
 
     campaigns.push(newCampaign)
 
     return NextResponse.json({ 
-      message: 'Campaign created successfully',
+      message: 'Campaign created successfully from approved quotation',
       campaign: newCampaign 
     }, { status: 201 })
   } catch (error) {

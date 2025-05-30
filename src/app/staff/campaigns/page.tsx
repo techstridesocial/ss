@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
-import CreateCampaignModal from '../../../components/modals/CreateCampaignModal'
 import CampaignDetailPanel from '../../../components/campaigns/CampaignDetailPanel'
 import EditCampaignModal from '../../../components/campaigns/EditCampaignModal'
 import ReplaceInfluencersModal from '../../../components/modals/ReplaceInfluencersModal'
@@ -310,7 +309,6 @@ function StatCard({ title, value, icon, color, trend }: StatCardProps) {
 
 function CampaignsPageClient() {
   const [activeTab, setActiveTab] = useState<'campaigns' | 'assignments'>('campaigns')
-  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   
   // Search and filter states
@@ -486,17 +484,13 @@ function CampaignsPageClient() {
   }
 
   const handleCreateCampaign = async (campaignData?: any) => {
-    if (campaignData) {
-      console.log('Creating campaign:', campaignData)
-      // In real app, this would make an API call
-      showNotification(
-        'Campaign Created!',
-        `Campaign "${campaignData.name}" has been created successfully.`,
-        'success'
-      )
-    } else {
-      setCreateModalOpen(true)
-    }
+    // DISABLED: Campaigns are now only created automatically from approved quotations
+    // Manual campaign creation is no longer allowed to ensure data integrity
+    showNotification(
+      'Campaign Creation Disabled',
+      'Campaigns are automatically created when brands approve quotations. Please use the Brands tab to manage quotations instead.',
+      'info'
+    )
   }
 
   const handleExportReport = () => {
@@ -1374,41 +1368,24 @@ function CampaignsPageClient() {
       <main className="px-4 lg:px-8 pb-8">
         {/* Tab Navigation */}
         <div className="mb-8">
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 p-2">
-            <nav className="flex space-x-1">
-              {[
-                { key: 'campaigns', label: 'Campaigns', count: filteredCampaigns.length },
-                { key: 'assignments', label: 'Assignments', count: filteredAssignments.length }
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab.key as 'campaigns' | 'assignments')}
-                  className={`
-                    group relative flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 min-w-0 flex-1
-                    ${activeTab === tab.key
-                      ? 'bg-black text-white shadow-lg transform scale-[1.02]'
-                      : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-white/60'
-                    }
-                  `}
-                >
-                  <span className="truncate mr-2">{tab.label}</span>
-                  <span className={`
-                    inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold transition-all duration-300
-                    ${activeTab === tab.key 
-                      ? 'bg-white text-black' 
-                      : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
-                    }
-                  `}>
-                    {tab.count}
-                  </span>
-                  
-                  {/* Active indicator */}
-                  {activeTab === tab.key && (
-                    <div className="absolute inset-0 rounded-xl bg-black/5 pointer-events-none" />
-                  )}
-                </button>
-              ))}
-            </nav>
+          <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
+            {[
+              { key: 'campaigns', label: 'Campaigns', count: filteredCampaigns.length },
+              { key: 'assignments', label: 'Assignments', count: filteredAssignments.length }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as 'campaigns' | 'assignments')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === tab.key
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <span className="font-bold capitalize">{tab.label}</span>
+                <span>({tab.count})</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1445,14 +1422,6 @@ function CampaignsPageClient() {
               </span>
             )}
             <ChevronDown size={14} className={`transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
-          >
-            <Plus size={16} className="mr-2" />
-            New Campaign
           </button>
         </div>
 
@@ -1638,14 +1607,6 @@ function CampaignsPageClient() {
           </div>
         )}
       </main>
-
-      {/* Create Campaign Modal */}
-      <CreateCampaignModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onSave={handleCreateCampaign}
-        brands={MOCK_BRANDS}
-      />
 
       {/* Campaign Detail Panel */}
       <CampaignDetailPanel

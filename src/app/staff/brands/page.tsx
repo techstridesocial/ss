@@ -642,32 +642,52 @@ function BrandsPageClient() {
   }
 
   const handleCreateCampaign = async (quotationId: string) => {
+    // NOTE: Campaigns are now automatically created when quotations are approved
+    // This function is kept for backward compatibility but should not be called
+    console.log('Campaign creation is now automatic when quotations are approved')
+  }
+
+  const handleSendQuote = async (pricing: string, notes: string) => {
     try {
-      const response = await fetch('/api/quotations/create-campaign', {
-        method: 'POST',
+      if (!selectedQuotation) {
+        throw new Error('No quotation selected')
+      }
+
+      const response = await fetch('/api/quotations', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ quotationId })
+        body: JSON.stringify({
+          quotationId: selectedQuotation.id,
+          status: 'SENT',
+          final_price: parseFloat(pricing),
+          notes: notes
+        })
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create campaign')
+        throw new Error(result.error || 'Failed to send quotation')
+      }
+
+      // Update the local quotation data
+      if (selectedQuotation) {
+        selectedQuotation.status = 'sent'
+        selectedQuotation.total_quote = `$${pricing}`
+        selectedQuotation.quoted_at = new Date().toISOString()
+        selectedQuotation.quote_notes = notes
       }
 
       // Success - close panels and show success message
       closePanels()
-      alert(`Campaign "${result.campaign.name}" created successfully! ${result.campaign.invitations_sent} invitations sent to influencers.`)
-      
-      // Optional: Redirect to campaigns page to see the new campaign
-      // window.location.href = '/staff/campaigns'
+      alert(`Quotation sent successfully to ${selectedQuotation.brand_name}! They will receive the quote via email.`)
       
     } catch (error) {
-      console.error('Error creating campaign:', error)
+      console.error('Error sending quotation:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      alert(`Failed to create campaign: ${errorMessage}`)
+      alert(`Failed to send quotation: ${errorMessage}`)
     }
   }
 
@@ -703,13 +723,23 @@ function BrandsPageClient() {
       case 'pending_review':
         return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Review</span>
       case 'sent':
-        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Sent</span>
+        return (
+          <div className="flex flex-col space-y-1">
+            <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Sent</span>
+            <span className="text-xs text-gray-500">Waiting for brand approval</span>
+          </div>
+        )
       case 'approved':
-        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
+        return (
+          <div className="flex flex-col space-y-1">
+            <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
+            <span className="text-xs text-green-600 font-medium">Converted to campaign</span>
+          </div>
+        )
       case 'rejected':
         return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
       default:
-        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Unknown</span>
+        return <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{status}</span>
     }
   }
 
@@ -757,41 +787,24 @@ function BrandsPageClient() {
       }`}>
         {/* Tab Navigation */}
         <div className="mb-8">
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 p-2">
-            <nav className="flex space-x-1">
-              {[
-                { key: 'clients', label: 'Clients List', count: filteredBrands.length },
-                { key: 'quotations', label: 'Quotations', count: filteredQuotations.length }
-              ].map(tab => (
-            <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab.key as 'clients' | 'quotations')}
-              className={`
-                    group relative flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 min-w-0 flex-1
-                    ${activeTab === tab.key
-                      ? 'bg-black text-white shadow-lg transform scale-[1.02]'
-                      : 'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-white/60'
-                    }
-                  `}
-                >
-                  <span className="truncate mr-2">{tab.label}</span>
-                  <span className={`
-                    inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold transition-all duration-300
-                    ${activeTab === tab.key 
-                      ? 'bg-white text-black' 
-                      : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
-                    }
-                  `}>
-                    {tab.count}
-              </span>
-                  
-                  {/* Active indicator */}
-                  {activeTab === tab.key && (
-                    <div className="absolute inset-0 rounded-xl bg-black/5 pointer-events-none" />
-                  )}
-            </button>
-              ))}
-          </nav>
+          <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
+            {[
+              { key: 'clients', label: 'Clients List', count: filteredBrands.length },
+              { key: 'quotations', label: 'Quotations', count: filteredQuotations.length }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as 'clients' | 'quotations')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === tab.key
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <span className="font-bold capitalize">{tab.label}</span>
+                <span>({tab.count})</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1065,6 +1078,12 @@ function BrandsPageClient() {
                           {item.total_quote && (
                             <div className="text-xs text-green-600 font-medium">Quoted: {item.total_quote}</div>
                           )}
+                          {item.status === 'approved' && (
+                            <div className="flex items-center space-x-1 mt-1">
+                              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                              <span className="text-xs text-purple-600 font-medium">Converted to campaign</span>
+                            </div>
+                          )}
                         </td>
 
                         {/* Requested */}
@@ -1215,7 +1234,7 @@ function BrandsPageClient() {
             isOpen={quotationDetailPanelOpen}
             onClose={closePanels}
             quotation={selectedQuotation}
-            onSendQuote={() => {}}
+            onSendQuote={handleSendQuote}
             onCreateCampaign={handleCreateCampaign}
           />
         )}

@@ -360,19 +360,9 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
   }
 
   const handleCreateCampaign = async () => {
-    if (!onCreateCampaign) return
-    
-    setIsCreatingCampaign(true)
-    
-    try {
-      await onCreateCampaign(quotation.id)
-      // Success feedback could be added here
-    } catch (error) {
-      console.error('Error creating campaign:', error)
-      // Error feedback could be added here
-    } finally {
-      setIsCreatingCampaign(false)
-    }
+    // DISABLED: Campaigns are now automatically created when quotations are approved
+    // This function is no longer used as the flow is fully automated
+    console.log('Campaign creation is now automatic when quotations are approved')
   }
 
   if (!quotation) return null
@@ -712,49 +702,34 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
                     </div>
                     
                     {/* Campaign Creation Section for Approved Quotes */}
-                    {quotation.status === 'approved' && onCreateCampaign && (
+                    {quotation.status === 'approved' && (
                       <div className="border-t border-gray-200 pt-6 mt-6">
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="text-lg font-semibold text-green-900 flex items-center mb-2">
                                 <Megaphone size={20} className="mr-2" />
-                                Ready to Launch Campaign
+                                Campaign Created Automatically
                               </h4>
                               <p className="text-sm text-green-700 mb-4">
-                                This quotation has been approved and is ready to be converted into an active campaign. 
-                                All selected influencers will be automatically invited to participate.
+                                When this quotation was approved by the brand, a campaign was automatically created and 
+                                all selected influencers were invited to participate.
                               </p>
                               <div className="flex items-center space-x-4 text-sm text-green-600">
                                 <div className="flex items-center">
                                   <Users size={16} className="mr-1" />
-                                  <span>{quotation.influencer_count} influencers selected</span>
+                                  <span>{quotation.influencer_count} influencers invited</span>
                                 </div>
                                 <div className="flex items-center">
                                   <DollarSign size={16} className="mr-1" />
                                   <span>${quotation.total_quote} approved budget</span>
                                 </div>
+                                <div className="flex items-center">
+                                  <CheckCircle size={16} className="mr-1" />
+                                  <span>Campaign active</span>
+                                </div>
                               </div>
                             </div>
-                            <motion.button
-                              onClick={handleCreateCampaign}
-                              disabled={isCreatingCampaign}
-                              className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-green-400 disabled:opacity-60 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center space-x-2"
-                              whileHover={{ scale: isCreatingCampaign ? 1 : 1.02 }}
-                              whileTap={{ scale: isCreatingCampaign ? 1 : 0.98 }}
-                            >
-                              {isCreatingCampaign ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                  <span>Creating...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Plus size={16} />
-                                  <span>Create Campaign</span>
-                                </>
-                              )}
-                            </motion.button>
                           </div>
                         </div>
                       </div>
