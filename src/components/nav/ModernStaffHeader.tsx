@@ -120,8 +120,15 @@ export default function ModernStaffHeader() {
     
     // Check current route and return appropriate header content
     if (pathname === '/staff') {
+      // For overview page, wait for user data before showing greeting
+      if (!isClient || !user || !userName) {
+        return {
+          title: '...', // Minimal loading indicator
+          subtitle: 'Ready to manage your influencer network'
+        }
+      }
       return {
-        title: userName ? `${greeting}, ${userName}!` : `${greeting}!`,
+        title: `${greeting}, ${userName}!`,
         subtitle: 'Ready to manage your influencer network'
       }
     } else if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
@@ -145,7 +152,7 @@ export default function ModernStaffHeader() {
         subtitle: 'Discover, analyze, and import new influencers'
       }
     } else {
-      // Default fallback
+      // Default fallback - for non-overview pages, show greeting format
       return {
         title: userName ? `${greeting}, ${userName}!` : `${greeting}!`,
         subtitle: 'Ready to manage your influencer network'
