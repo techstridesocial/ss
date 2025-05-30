@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -36,10 +36,16 @@ function NavItem({ href, label, isActive, onClick }: NavItemProps) {
 export default function ModernStaffHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const pathname = usePathname()
   const { signOut } = useClerk()
   const { user } = useUser()
   const userRole = useUserRole()
+
+  // Handle client-side hydration
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Navigation items based on role
   const getNavItems = () => {
@@ -81,6 +87,8 @@ export default function ModernStaffHeader() {
   }
 
   const getGreeting = () => {
+    if (!isClient) return 'Good morning' // Default for SSR
+    
     const hour = new Date().getHours()
     if (hour < 12) return 'Good morning'
     if (hour < 17) return 'Good afternoon'
@@ -88,6 +96,8 @@ export default function ModernStaffHeader() {
   }
 
   const getUserName = () => {
+    if (!isClient || !user) return 'there' // Default for SSR and when user is not loaded
+    
     // Try different sources for the user's name
     if (user?.firstName) {
       return user.firstName
