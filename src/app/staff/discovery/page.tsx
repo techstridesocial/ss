@@ -1498,12 +1498,14 @@ function DiscoveredInfluencersTable({
   selectedPlatform, 
   searchResults, 
   isLoading, 
-  error 
+  error,
+  searchQuery
 }: { 
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
   searchResults?: any[]
   isLoading?: boolean
   error?: string | null
+  searchQuery?: string
 }) {
   // Selection state
   const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([])
@@ -1619,7 +1621,17 @@ function DiscoveredInfluencersTable({
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">{getPlatformTitle()}</h3>
+          <div className="flex items-center space-x-3">
+            <h3 className="text-lg font-semibold text-gray-900">{getPlatformTitle()}</h3>
+            {searchQuery?.trim() && (
+              <div className="flex items-center space-x-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Exact Match
+                </span>
+                <span className="text-sm text-gray-500">for "{searchQuery}"</span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center space-x-3">
             <button className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               Export
@@ -1830,10 +1842,37 @@ function DiscoveryPageClient() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [creditUsage, setCreditUsage] = useState(MOCK_CREDIT_USAGE)
   const [apiWarning, setApiWarning] = useState<string | null>(null)
+  const [isRefreshingCredits, setIsRefreshingCredits] = useState(false)
   
   // Search query state
   const [searchQuery, setSearchQuery] = useState('')
   
+  // Function to refresh credits from API
+  const refreshCredits = async () => {
+    setIsRefreshingCredits(true)
+    try {
+      const response = await fetch(`${window.location.origin}/api/discovery/credits`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setCreditUsage(prev => ({
+            ...prev,
+            monthlyUsed: result.data.used,
+            monthlyLimit: result.data.limit,
+            yearlyUsed: result.data.used, // In production, track separately
+            yearlyLimit: result.data.limit * 12,
+            lastUpdated: result.data.resetDate
+          }))
+          console.log('💳 Refreshed credits:', result.data.used + '/' + result.data.limit)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh credits:', error)
+    } finally {
+      setIsRefreshingCredits(false)
+    }
+  }
+
   // Enhanced search function with full API integration
   const handleSearch = async () => {
     setIsSearching(true)
@@ -1851,6 +1890,7 @@ function DiscoveryPageClient() {
       }
       
       console.log('🔍 Searching Modash API with filters:', filters)
+      console.log('🎯 Search mode:', searchQuery.trim() ? 'EXACT MATCH ONLY' : 'GENERAL DISCOVERY')
       
       // Use full URL to avoid any routing issues
       const apiUrl = `${window.location.origin}/api/discovery/search`
@@ -1876,12 +1916,24 @@ function DiscoveryPageClient() {
       if (result.success && result.data) {
         setSearchResults(result.data.results || [])
         
+        // If real API was used and credits were consumed, refresh the credit count from API
+        if (result.data.creditsUsed && result.data.creditsUsed > 0 && !result.warning) {
+          console.log('💳 Credits used in this search:', result.data.creditsUsed)
+          // Refresh credits from API to get the most accurate count
+          setTimeout(() => refreshCredits(), 1000) // Small delay to ensure API is updated
+        }
+        
         // Check if using mock data
         if (result.warning) {
           setApiWarning(result.warning)
         }
         
-        console.log('✅ Search completed:', result.data.results?.length, 'results')
+        console.log('✅ Search completed:', {
+          resultsCount: result.data.results?.length,
+          searchMode: result.searchMode,
+          creditsUsed: result.data.creditsUsed,
+          isExactMatch: !!searchQuery.trim()
+        })
       } else {
         throw new Error(result.details || 'Search failed')
       }
@@ -1906,8 +1958,18 @@ function DiscoveryPageClient() {
             setCreditUsage(prev => ({
               ...prev,
               monthlyUsed: result.data.used,
-              monthlyLimit: result.data.limit
+              monthlyLimit: result.data.limit,
+              // Initialize yearly based on current monthly usage for now
+              // In production, this would be tracked separately 
+              yearlyUsed: result.data.used,
+              yearlyLimit: result.data.limit * 12, // Assuming 12 months
+              lastUpdated: result.data.resetDate,
+              rolloverCredits: prev.rolloverCredits
             }))
+            console.log('💳 Loaded initial credits:', {
+              monthly: result.data.used + '/' + result.data.limit,
+              yearly: result.data.used + '/' + (result.data.limit * 12)
+            })
           }
         }
       } catch (error) {
@@ -1924,19 +1986,46 @@ function DiscoveryPageClient() {
       
       <main className="px-4 lg:px-6 pb-8 space-y-6">
         {/* Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MetricCard
-            title="Monthly Credit Usage"
-            value={`${creditUsage.monthlyUsed.toFixed(2)} / ${creditUsage.monthlyLimit.toFixed(2)}`}
-            icon={<TrendingUp size={20} />}
-            trend={`${((creditUsage.monthlyUsed / creditUsage.monthlyLimit) * 100).toFixed(1)}% used`}
-            trendUp={false}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 transition-all duration-200">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600 mb-1">Monthly Credits</p>
+                  <button 
+                    onClick={refreshCredits}
+                    disabled={isRefreshingCredits}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                    title="Refresh credits"
+                  >
+                    <RefreshCw size={14} className={isRefreshingCredits ? 'animate-spin' : ''} />
+                  </button>
+                </div>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {Math.round(creditUsage.monthlyUsed)} / {Math.round(creditUsage.monthlyLimit)}
+                </p>
+                <div className="flex items-center mt-2">
+                  <p className="text-xs text-gray-500">
+                    {((creditUsage.monthlyUsed / creditUsage.monthlyLimit) * 100).toFixed(1)}% used
+                  </p>
+                </div>
+              </div>
+              <div className="p-2 bg-gray-50 rounded-xl text-gray-600">
+                <TrendingUp size={20} />
+              </div>
+            </div>
+          </div>
           <MetricCard
             title="Yearly Credits"
-            value={`${MOCK_CREDIT_USAGE.yearlyUsed.toFixed(2)} / ${MOCK_CREDIT_USAGE.yearlyLimit.toFixed(2)}`}
+            value={`${Math.round(creditUsage.yearlyUsed)} / ${Math.round(creditUsage.yearlyLimit)}`}
             icon={<Calendar size={20} />}
-            trend={`${((MOCK_CREDIT_USAGE.yearlyUsed / MOCK_CREDIT_USAGE.yearlyLimit) * 100).toFixed(1)}% used • ${(MOCK_CREDIT_USAGE.yearlyLimit - MOCK_CREDIT_USAGE.yearlyUsed).toFixed(0)} remaining`}
+            trend={`${Math.round(creditUsage.yearlyLimit - creditUsage.yearlyUsed)} remaining`}
+          />
+          <MetricCard
+            title="Search Mode"
+            value={searchQuery.trim() ? 'Exact Match' : 'Discovery'}
+            icon={<Search size={20} />}
+            trend={searchQuery.trim() ? `Searching: "${searchQuery}"` : 'Browse all influencers'}
           />
         </div>
 
@@ -1986,6 +2075,7 @@ function DiscoveryPageClient() {
             searchResults={searchResults}
             isLoading={isSearching}
             error={searchError}
+            searchQuery={searchQuery}
           />
       </main>
     </div>

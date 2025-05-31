@@ -149,7 +149,8 @@ class ModashService {
       console.log('Modash Discovery Search:', {
         platform: filters.platform,
         endpoint: `/v1/${filters.platform}/search`,
-        body: JSON.stringify(requestBody, null, 2)
+        body: JSON.stringify(requestBody, null, 2),
+        hasSearchQuery: !!filters.relevance?.length
       })
 
       // Use platform-specific endpoint as shown in Modash support's example
@@ -167,7 +168,8 @@ class ModashService {
         totalCount: response.total,
         responseKeys: Object.keys(response),
         firstDirect: response.directs?.[0] || 'No directs',
-        isExactMatch: response.isExactMatch
+        isExactMatch: response.isExactMatch,
+        creditsConsumed: response.creditsConsumed || response.credits_used || 1
       })
       
       // Log the first result to see available fields
@@ -176,23 +178,38 @@ class ModashService {
         console.log('📋 Full first direct result:', JSON.stringify(response.directs[0], null, 2))
       }
 
-      // Modash returns results in 'directs' and 'lookalikes' arrays
-      const directResults = response.directs?.map(this.transformDiscoveryResult) || []
-      const lookalikeResults = response.lookalikes?.map(this.transformDiscoveryResult) || []
+      // If we have a search query (relevance filter), only return exact matches (directs)
+      const isSearchQuery = filters.relevance && filters.relevance.length > 0
       
-      // Combine both arrays, with directs first
-      const results = [...directResults, ...lookalikeResults]
+      let results = []
+      if (isSearchQuery) {
+        // Only return exact matches for specific searches
+        const directResults = response.directs?.map(this.transformDiscoveryResult) || []
+        results = directResults
+        console.log('🎯 Search query provided - returning only exact matches:', directResults.length)
+      } else {
+        // For general browsing, return both directs and lookalikes
+        const directResults = response.directs?.map(this.transformDiscoveryResult) || []
+        const lookalikeResults = response.lookalikes?.map(this.transformDiscoveryResult) || []
+        results = [...directResults, ...lookalikeResults]
+        console.log('🌐 General search - returning directs + lookalikes:', directResults.length, '+', lookalikeResults.length)
+      }
       
       // Check which influencers are already imported
       const resultsWithImportStatus = await this.checkImportStatus(results)
 
+      // Get actual credits used from the response
+      const actualCreditsUsed = response.creditsConsumed || response.credits_used || response.creditsUsed || 
+        // Fallback calculation: 0.01 credits per result as per Modash documentation
+        (resultsWithImportStatus.length * 0.01)
+
       return {
         results: resultsWithImportStatus,
-        total: response.total || 0,
+        total: isSearchQuery ? (response.directs?.length || 0) : (response.total || 0),
         page,
         limit,
-        hasMore: (page + 1) * limit < (response.total || 0),
-        creditsUsed: 1 // Discovery search costs 1 credit
+        hasMore: !isSearchQuery && (page + 1) * limit < (response.total || 0),
+        creditsUsed: actualCreditsUsed
       }
     } catch (error) {
       console.error('Discovery search failed:', error)
@@ -259,11 +276,25 @@ class ModashService {
       modashFilters.relevance = filters.topics
     }
 
+    // Handle search queries differently - for username searches, use specific username field
     if (filters.relevance && filters.relevance.length > 0) {
-      modashFilters.relevance = [
-        ...(modashFilters.relevance || []),
-        ...filters.relevance
-      ]
+      const searchTerms = filters.relevance
+      
+      // Check if search term looks like a username (no spaces, alphanumeric)
+      const isUsernameSearch = searchTerms.length === 1 && 
+        searchTerms[0] && /^[a-zA-Z0-9._@]+$/.test(searchTerms[0].trim())
+      
+      if (isUsernameSearch) {
+        // For username searches, use both username and relevance
+        const cleanUsername = searchTerms[0]!.replace('@', '').trim()
+        modashFilters.username = cleanUsername
+        modashFilters.relevance = [`@${cleanUsername}`, cleanUsername]
+        console.log('🎯 Username search detected:', cleanUsername)
+      } else {
+        // For general content searches, use relevance only
+        modashFilters.relevance = searchTerms
+        console.log('🔍 Content search detected:', searchTerms)
+      }
     }
 
     // Location

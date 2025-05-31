@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
     
     console.log('🎯 Discovery Search API called with:', {
       platform: body.platform,
+      searchQuery: body.searchQuery,
       hasFilters: !!body,
       filterKeys: Object.keys(body).filter(k => body[k as keyof DiscoverySearchBody] !== undefined)
     })
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
     try {
       console.log('🚀 Attempting real Modash API call...')
       console.log('🎯 Platform:', body.platform)
+      console.log('🔍 Search Query:', body.searchQuery)
       console.log('📄 Page:', body.page || 0, 'Limit:', body.limit || 20)
       
       const results = await modashService.searchDiscovery(
@@ -95,14 +97,16 @@ export async function POST(request: NextRequest) {
         totalResults: results.total,
         returnedResults: results.results?.length || 0,
         hasMore: results.hasMore,
-        creditsUsed: results.creditsUsed
+        creditsUsed: results.creditsUsed,
+        isSearchQuery: !!body.searchQuery
       })
       
       return NextResponse.json({
         success: true,
         data: results,
         filters: modashFilters,
-        note: 'Real Modash API data'
+        note: 'Real Modash API data',
+        searchMode: body.searchQuery ? 'exact_match' : 'general_discovery'
       })
     } catch (modashError) {
       console.warn('⚠️ Modash API failed:', {
@@ -119,7 +123,8 @@ export async function POST(request: NextRequest) {
         filters: modashFilters,
         note: 'Mock data - Modash API credentials pending activation',
         warning: 'Using mock data while Modash API access is being configured',
-        apiError: modashError instanceof Error ? modashError.message : 'Unknown error'
+        apiError: modashError instanceof Error ? modashError.message : 'Unknown error',
+        searchMode: body.searchQuery ? 'exact_match' : 'general_discovery'
       })
     }
     
@@ -222,6 +227,20 @@ function generateMockResponse(body: DiscoverySearchBody, filters: any) {
   // Generate mock influencers based on filters
   const mockInfluencers = [
     {
+      userId: 'cristiano_ronaldo',
+      username: 'cristiano',
+      display_name: 'Cristiano Ronaldo',
+      platform: body.platform,
+      followers: 635000000,
+      engagement_rate: 2.8,
+      profile_picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      bio: 'Manchester United, Portugal National Team',
+      location: 'Portugal',
+      verified: true,
+      score: 98,
+      already_imported: false
+    },
+    {
       userId: 'mock_1',
       username: 'fashionista_uk',
       display_name: 'Fashion Influencer UK',
@@ -265,13 +284,38 @@ function generateMockResponse(body: DiscoverySearchBody, filters: any) {
     }
   ]
   
-  // Filter based on follower range if specified
   let filteredResults = mockInfluencers
-  if (filters.followers?.min) {
-    filteredResults = filteredResults.filter(i => i.followers >= filters.followers.min)
-  }
-  if (filters.followers?.max) {
-    filteredResults = filteredResults.filter(i => i.followers <= filters.followers.max)
+  
+  // If there's a search query, filter for exact matches only
+  if (body.searchQuery?.trim()) {
+    const searchTerm = body.searchQuery.trim().toLowerCase()
+    console.log('🔍 Filtering mock results for search query:', searchTerm)
+    
+    filteredResults = mockInfluencers.filter(influencer => {
+      const usernameMatch = influencer.username.toLowerCase().includes(searchTerm)
+      const displayNameMatch = influencer.display_name.toLowerCase().includes(searchTerm)
+      return usernameMatch || displayNameMatch
+    })
+    
+    // Sort by exact match first, then by followers
+    filteredResults.sort((a, b) => {
+      const aExactMatch = a.username.toLowerCase() === searchTerm
+      const bExactMatch = b.username.toLowerCase() === searchTerm
+      
+      if (aExactMatch && !bExactMatch) return -1
+      if (!aExactMatch && bExactMatch) return 1
+      return b.followers - a.followers
+    })
+    
+    console.log('🎯 Filtered to', filteredResults.length, 'results for search:', searchTerm)
+  } else {
+    // Filter based on follower range if specified
+    if (filters.followers?.min) {
+      filteredResults = filteredResults.filter(i => i.followers >= filters.followers.min)
+    }
+    if (filters.followers?.max) {
+      filteredResults = filteredResults.filter(i => i.followers <= filters.followers.max)
+    }
   }
   
   const page = body.page || 0
@@ -285,7 +329,7 @@ function generateMockResponse(body: DiscoverySearchBody, filters: any) {
     page,
     limit,
     hasMore: (page + 1) * limit < filteredResults.length,
-    creditsUsed: 0 // No credits used for mock data
+    creditsUsed: paginatedResults.length * 0.01 // 0.01 credits per result as per Modash docs
   }
 }
 
