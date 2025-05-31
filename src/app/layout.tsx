@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs'
 import "./globals.css";
 import Script from 'next/script';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,8 @@ export default function RootLayout({
               gtag('config', 'G-T68YCYENPE');
             `}
           </Script>
+          {/* Vercel Speed Insights */}
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
