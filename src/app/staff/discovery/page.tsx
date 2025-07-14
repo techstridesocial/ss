@@ -42,6 +42,7 @@ import {
   Video,
   Image
 } from 'lucide-react'
+import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
 
 // Mock data for Modash credit usage and discovered influencers
 const MOCK_CREDIT_USAGE = {
@@ -1499,19 +1500,18 @@ function DiscoveredInfluencersTable({
   searchResults, 
   isLoading, 
   error,
-  searchQuery
+  searchQuery,
+  onViewProfile
 }: { 
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
   searchResults?: any[]
   isLoading?: boolean
   error?: string | null
   searchQuery?: string
+  onViewProfile?: (influencer: any) => void
 }) {
-  // Selection state
-  const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([])
-  
   // Use props or fallback to mock data
-  const discoveredInfluencers = searchResults || MOCK_DISCOVERED_INFLUENCERS
+  const discoveredCreators = searchResults || MOCK_DISCOVERED_INFLUENCERS
   const showLoading = isLoading || false
   const showError = error || null
   
@@ -1524,46 +1524,12 @@ function DiscoveredInfluencersTable({
     direction: 'asc'
   })
 
-  // Generate platform-specific title
-  const getPlatformTitle = () => {
-    switch (selectedPlatform) {
-      case 'instagram':
-        return 'Discovered Instagram Influencers'
-      case 'tiktok':
-        return 'Discovered TikTok Influencers'
-      case 'youtube':
-        return 'Discovered YouTube Influencers'
-      default:
-        return 'Discovered Influencers'
-    }
+  // Generate title for multi-platform discovery
+  const getDiscoveryTitle = () => {
+    return `Discovered Creators (${selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} Stats)`
   }
 
-  // Handle select all/none
-  const handleSelectAll = () => {
-    const availableInfluencers = discoveredInfluencers.filter(inf => !inf.already_imported)
-    if (selectedInfluencers.length === availableInfluencers.length) {
-      setSelectedInfluencers([])
-    } else {
-      setSelectedInfluencers(availableInfluencers.map(inf => inf.userId))
-    }
-  }
 
-  // Handle individual selection
-  const handleIndividualSelect = (influencerId: string) => {
-    setSelectedInfluencers(prev => 
-      prev.includes(influencerId) 
-        ? prev.filter(id => id !== influencerId)
-        : [...prev, influencerId]
-    )
-  }
-
-  // Get checkbox state for header
-  const getSelectAllState = () => {
-    const availableInfluencers = discoveredInfluencers.filter(inf => !inf.already_imported)
-    if (selectedInfluencers.length === 0) return 'none'
-    if (selectedInfluencers.length === availableInfluencers.length) return 'all'
-    return 'some'
-  }
 
   // Handle sorting
   const handleSort = (key: string) => {
@@ -1575,7 +1541,7 @@ function DiscoveredInfluencersTable({
 
   // Sort data
   const sortedInfluencers = React.useMemo(() => {
-    let sortableInfluencers = [...discoveredInfluencers]
+    let sortableInfluencers = [...discoveredCreators]
     
     if (sortConfig.key) {
       sortableInfluencers.sort((a, b) => {
@@ -1603,7 +1569,7 @@ function DiscoveredInfluencersTable({
     }
     
     return sortableInfluencers
-  }, [discoveredInfluencers, sortConfig])
+  }, [discoveredCreators, sortConfig])
 
   // Sort icon component
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
@@ -1615,14 +1581,14 @@ function DiscoveredInfluencersTable({
       : <ChevronDown size={14} className="text-gray-600" />
   }
 
-  const selectAllState = getSelectAllState()
+
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-semibold text-gray-900">{getPlatformTitle()}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{getDiscoveryTitle()}</h3>
             {searchQuery?.trim() && (
               <div className="flex items-center space-x-2">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -1636,20 +1602,6 @@ function DiscoveredInfluencersTable({
             <button className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               Export
             </button>
-            <button 
-              className={`px-4 py-2 rounded-xl transition-colors text-sm font-medium flex items-center space-x-2 ${
-                selectedInfluencers.length > 0 
-                  ? 'bg-green-600 text-white hover:bg-green-700' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              disabled={selectedInfluencers.length === 0}
-            >
-              <Download size={16} />
-              <span>
-                Import Selected
-                {selectedInfluencers.length > 0 && ` (${selectedInfluencers.length})`}
-              </span>
-            </button>
           </div>
         </div>
       </div>
@@ -1658,17 +1610,7 @@ function DiscoveredInfluencersTable({
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <input 
-                  type="checkbox" 
-                  className="rounded border-gray-300" 
-                  checked={selectAllState === 'all'}
-                  ref={(el) => {
-                    if (el) el.indeterminate = selectAllState === 'some'
-                  }}
-                  onChange={handleSelectAll}
-                />
-              </th>
+
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
               <th 
                 className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
@@ -1685,7 +1627,7 @@ function DiscoveredInfluencersTable({
                 onClick={() => handleSort('followers')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Followers</span>
+                  <span>Followers ({selectedPlatform})</span>
                   <SortIcon columnKey="followers" />
                 </div>
               </th>
@@ -1694,17 +1636,8 @@ function DiscoveredInfluencersTable({
                 onClick={() => handleSort('engagement_rate')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Engagement</span>
+                  <span>Engagement ({selectedPlatform})</span>
                   <SortIcon columnKey="engagement_rate" />
-                </div>
-              </th>
-              <th 
-                className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group"
-                onClick={() => handleSort('location')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>Location</span>
-                  <SortIcon columnKey="location" />
                 </div>
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -1713,7 +1646,7 @@ function DiscoveredInfluencersTable({
           <tbody className="bg-white divide-y divide-gray-100">
             {showLoading ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex items-center justify-center space-x-3">
                     <RefreshCw className="w-5 h-5 animate-spin text-blue-600" />
                     <span className="text-gray-600">Searching Modash database...</span>
@@ -1722,7 +1655,7 @@ function DiscoveredInfluencersTable({
               </tr>
             ) : showError ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="text-center">
                     <div className="text-red-600 font-medium mb-2">Search Failed</div>
                     <div className="text-gray-600 text-sm">{showError}</div>
@@ -1731,7 +1664,7 @@ function DiscoveredInfluencersTable({
               </tr>
             ) : sortedInfluencers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="text-center">
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <div className="text-gray-600 font-medium mb-2">No influencers found</div>
@@ -1740,90 +1673,167 @@ function DiscoveredInfluencersTable({
                 </td>
               </tr>
             ) : (
-              sortedInfluencers.map((influencer) => (
-                <tr key={influencer.userId} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-gray-300"
-                      disabled={influencer.already_imported}
-                      checked={selectedInfluencers.includes(influencer.userId)}
-                      onChange={() => handleIndividualSelect(influencer.userId)}
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <img 
-                        src={influencer.profile_picture || 'https://via.placeholder.com/40'} 
-                        alt={influencer.display_name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 flex items-center">
-                          {influencer.display_name}
-                          {influencer.verified && (
-                            <CheckCircle size={14} className="ml-2 text-blue-500" />
+              sortedInfluencers.map((creator) => {
+                // Check if this is a multi-platform creator
+                const isMultiPlatform = creator.platforms && Object.keys(creator.platforms).length > 1
+                
+                // Get platform-specific data for the selected platform
+                const primaryPlatformData = creator.platforms?.[selectedPlatform] || 
+                  (creator.platforms ? Object.values(creator.platforms)[0] : creator)
+                
+                return (
+                  <tr key={creator.creatorId || creator.userId} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img 
+                          src={creator.profilePicture || creator.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.displayName || creator.display_name || creator.username)}&background=random&size=150&color=fff`} 
+                          alt={creator.displayName || creator.display_name || creator.username}
+                          className="w-10 h-10 rounded-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.displayName || creator.display_name || creator.username)}&background=random&size=150&color=fff`;
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 flex items-center">
+                            {creator.displayName || creator.display_name || creator.username}
+                            {creator.verified && (
+                              <CheckCircle size={14} className="ml-2 text-blue-500" />
+                            )}
+                          </div>
+                          {/* Show platform handles */}
+                          {isMultiPlatform ? (
+                            <div className="text-xs text-gray-500 space-y-1 mt-1">
+                              {Object.entries(creator.platforms).map(([platform, data]: [string, any]) => (
+                                <div key={platform} className="flex items-center space-x-1">
+                                  <span className="capitalize">{platform}:</span>
+                                  <span>@{data.username}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">
+                              @{creator.username || (creator.platforms && Object.values(creator.platforms)[0] as any)?.username}
+                            </div>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          @{influencer.username}
-                        </div>
-                        {influencer.already_imported && (
-                          <div className="text-xs text-green-600 mt-1 font-medium">Already imported</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {isMultiPlatform ? (
+                          Object.entries(creator.platforms).map(([platform, data]: [string, any]) => (
+                            <div key={platform} className="flex items-center space-x-1">
+                              {platform === 'instagram' && (
+                                <a 
+                                  href={data.url || `https://www.instagram.com/${data.username}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                  title={`View on Instagram (@${data.username})`}
+                                >
+                                  <InstagramLogo />
+                                </a>
+                              )}
+                              {platform === 'youtube' && (
+                                <a 
+                                  href={data.url || `https://www.youtube.com/@${data.username}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                  title={`View on YouTube (@${data.username})`}
+                                >
+                                  <YouTubeLogo />
+                                </a>
+                              )}
+                              {platform === 'tiktok' && (
+                                <a 
+                                  href={data.url || `https://www.tiktok.com/@${data.username}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                  title={`View on TikTok (@${data.username})`}
+                                >
+                                  <TikTokLogo />
+                                </a>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <>
+                            {(creator.platform === 'instagram' || !creator.platform) && (
+                              <a 
+                                href={creator.url || `https://www.instagram.com/${creator.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                title={`View on Instagram (@${creator.username})`}
+                              >
+                                <InstagramLogo />
+                              </a>
+                            )}
+                            {creator.platform === 'youtube' && (
+                              <a 
+                                href={creator.url || `https://www.youtube.com/@${creator.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                title={`View on YouTube (@${creator.username})`}
+                              >
+                                <YouTubeLogo />
+                              </a>
+                            )}
+                            {creator.platform === 'tiktok' && (
+                              <a 
+                                href={creator.url || `https://www.tiktok.com/@${creator.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                title={`View on TikTok (@${creator.username})`}
+                              >
+                                <TikTokLogo />
+                              </a>
+                            )}
+                          </>
                         )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {influencer.platform === 'instagram' && (
-                        <div className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors" title="Instagram">
-                          <InstagramLogo />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatNumber(primaryPlatformData.followers || creator.followers || 0)}
+                      </div>
+                      {isMultiPlatform && (
+                        <div className="text-xs text-gray-500">
+                          {selectedPlatform} • {formatNumber(creator.totalFollowers)} total
                         </div>
                       )}
-                      {influencer.platform === 'youtube' && (
-                        <div className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors" title="YouTube">
-                          <YouTubeLogo />
-                        </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {(primaryPlatformData.engagement_rate || creator.engagement_rate || 0).toFixed(2)}%
+                      </div>
+                      {isMultiPlatform && (
+                        <div className="text-xs text-gray-500">{selectedPlatform} only</div>
                       )}
-                      {influencer.platform === 'tiktok' && (
-                        <div className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors" title="TikTok">
-                          <TikTokLogo />
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatNumber(influencer.followers)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {influencer.engagement_rate}%
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {influencer.location}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="View Profile">
-                        <Eye size={16} />
-                      </button>
-                      {!influencer.already_imported && (
-                        <button className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Import">
-                          <Plus size={16} />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" 
+                          title="View Profile"
+                          onClick={() => onViewProfile?.(creator)}
+                        >
+                          <Eye size={16} />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
@@ -1980,6 +1990,80 @@ function DiscoveryPageClient() {
     loadCredits()
   }, [])
 
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false)
+  const [detailInfluencer, setDetailInfluencer] = useState<any | null>(null)
+  const [detailCity, setDetailCity] = useState<string | undefined>()
+  const [detailCountry, setDetailCountry] = useState<string | undefined>()
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  // Handler to open detail panel and fetch city/country
+  const handleViewProfile = async (influencer: any) => {
+    setDetailPanelOpen(true)
+    setDetailInfluencer(influencer)
+    setDetailLoading(true)
+    
+    // Use location from search results as fallback
+    const fallbackLocation = influencer.location || 'Unknown'
+    const [fallbackCity, fallbackCountry] = fallbackLocation.includes(',') 
+      ? fallbackLocation.split(',').map((s: string) => s.trim())
+      : [fallbackLocation, 'Unknown']
+    
+    setDetailCity(fallbackCity)
+    setDetailCountry(fallbackCountry)
+    
+    try {
+      // Get userId from the selected platform or fallback to any available platform
+      let platformData = influencer.platforms?.[selectedPlatform]
+      let actualPlatform = selectedPlatform
+      
+      // If no data for selected platform, use the first available platform
+      if (!platformData && influencer.platforms) {
+        const firstPlatform = Object.keys(influencer.platforms)[0] as 'instagram' | 'tiktok' | 'youtube'
+        if (firstPlatform) {
+          platformData = influencer.platforms[firstPlatform]
+          actualPlatform = firstPlatform
+          console.log(`📍 No data for ${selectedPlatform}, using ${firstPlatform} instead`)
+        }
+      }
+      
+      const userId = platformData?.userId || influencer.userId
+      
+      if (!userId) {
+        console.log('📍 No userId available for detailed profile fetch, using fallback location')
+        setDetailLoading(false)
+        return
+      }
+      
+      // Try to fetch detailed city and country from Modash API
+      const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          platform: actualPlatform
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data && (result.data.city || result.data.country)) {
+          // Only update if we got actual data
+          setDetailCity(result.data.city || fallbackCity)
+          setDetailCountry(result.data.country || fallbackCountry)
+          console.log('📍 Updated location data from Modash:', result.data)
+        } else {
+          console.log('📍 Using fallback location:', { city: fallbackCity, country: fallbackCountry })
+        }
+      } else {
+        console.error('❌ Failed to fetch profile data:', response.statusText)
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch location data:', error)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <ModernStaffHeader />
@@ -2076,8 +2160,17 @@ function DiscoveryPageClient() {
             isLoading={isSearching}
             error={searchError}
             searchQuery={searchQuery}
+            onViewProfile={handleViewProfile}
           />
       </main>
+      <InfluencerDetailPanel 
+        influencer={detailInfluencer}
+        isOpen={detailPanelOpen}
+        onClose={() => setDetailPanelOpen(false)}
+        city={detailCity}
+        country={detailCountry}
+        loading={detailLoading}
+      />
     </div>
   )
 }

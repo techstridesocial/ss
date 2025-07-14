@@ -325,14 +325,17 @@ class ModashService {
     // Handle different response structures from Modash
     const profile = data.profile || data.userInfo || data
     
-    // For Instagram, we can construct the profile picture URL if not provided
-    let profilePicture = profile.profilePicture || profile.profilePic || profile.avatar || data.profilePicture
+    // Use real profile picture if available, fallback to generated avatar
+    let profilePicture = profile.picture || profile.profile_picture || ''
     
-    // If no profile picture and it's Instagram, use Instagram's CDN
-    if (!profilePicture && data.platform === 'instagram' && data.username) {
-      // Instagram doesn't provide direct profile picture URLs anymore
-      // We'll use a placeholder for now
-      profilePicture = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.username)}&background=random&size=150`
+    // If no profile picture available, create a personalized placeholder
+    if (!profilePicture && profile.username) {
+      profilePicture = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.username)}&background=random&size=150&color=fff`
+    }
+    
+    // Fallback to generic placeholder if still no picture
+    if (!profilePicture) {
+      profilePicture = 'https://via.placeholder.com/150'
     }
     
     return {
@@ -343,12 +346,32 @@ class ModashService {
       followers: profile.followers || data.followers || 0,
       engagement_rate: (profile.engagementRate || data.engagementRate || 0) * 100, // Convert to percentage
       avg_views: profile.avgViews || profile.avgReelsPlays || data.avgViews,
-      profile_picture: profilePicture || 'https://via.placeholder.com/150',
+      profile_picture: profilePicture,
       bio: profile.bio || profile.description || data.bio,
-      location: profile.country || profile.location?.country || data.location,
+      location: 'Unknown', // Location data not available in search results, requires profile report
       verified: profile.isVerified || profile.verified || data.verified || false,
       score: data.score ? Math.round(data.score * 100) : 0, // Convert to 0-100 scale
       already_imported: false // Will be updated by checkImportStatus
+    }
+  }
+
+  /**
+   * Get profile picture for an influencer
+   * This method calls the Modash profile picture endpoint
+   */
+  async getProfilePicture(userId: string): Promise<string | null> {
+    try {
+      const response = await this.makeRequest(`/v1/discovery/profile/${userId}/picture`)
+      
+      // The response should contain the profile picture URL
+      if (response.url) {
+        return response.url
+      }
+      
+      return null
+    } catch (error) {
+      console.error(`Failed to get profile picture for user ${userId}:`, error)
+      return null
     }
   }
 
@@ -416,6 +439,60 @@ class ModashService {
       return this.transformReportData(response)
     } catch (error) {
       console.error(`Failed to get report for user ${userId}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Fetch detailed profile report for an influencer (city/country)
+   */
+  async getProfileReport(userId: string, platform: string = 'instagram'): Promise<{ city?: string; country?: string } | null> {
+    try {
+      console.log(`🔍 Fetching profile report for userId: ${userId}, platform: ${platform}`)
+      
+      // Use the correct endpoint for the platform
+      const endpoint = `/v1/${platform}/profile/${userId}/report`
+      console.log(`📡 Modash endpoint: ${endpoint}`)
+      
+      const response = await this.makeRequest(endpoint)
+      console.log('📦 FULL Raw profile response:', JSON.stringify(response, null, 2))
+      
+      // Check multiple possible locations for city/country data
+      let city, country
+      
+      if (response) {
+        // Check in profile object
+        if (response.profile) {
+          city = response.profile.city || response.profile.location?.city
+          country = response.profile.country || response.profile.location?.country
+        }
+        
+        // Check in root level
+        city = city || response.city
+        country = country || response.country
+        
+        // Check in demographics/locations array
+        if (response.demographics && response.demographics.locations && Array.isArray(response.demographics.locations)) {
+          const topLocation = response.demographics.locations[0]
+          if (topLocation) {
+            country = country || topLocation.country
+            city = city || topLocation.city
+          }
+        }
+        
+        const locationData = {
+          city: city || undefined,
+          country: country || undefined
+        }
+        
+        console.log('📍 Extracted location data:', locationData)
+        return locationData
+      }
+      
+      console.log('⚠️ No response data found')
+      return null
+    } catch (error) {
+      console.error(`❌ Failed to fetch profile report for user ${userId}:`, error)
       return null
     }
   }

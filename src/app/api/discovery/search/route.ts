@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { modashService } from '../../../../lib/services/modash'
 
 interface DiscoverySearchBody {
-  platform: 'instagram' | 'tiktok' | 'youtube'
+  platform: 'instagram' | 'tiktok' | 'youtube' // This will now be ignored, we'll search all platforms
   
   // Performance filters
   followersMin?: number
@@ -55,75 +55,119 @@ interface DiscoverySearchBody {
   limit?: number
 }
 
+interface MergedCreator {
+  creatorId: string
+  displayName: string
+  platforms: {
+    instagram?: any
+    tiktok?: any
+    youtube?: any
+  }
+  totalFollowers: number
+  averageEngagement: number
+  verified: boolean
+  location: string
+  bio: string
+  profilePicture: string
+  score: number
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: DiscoverySearchBody = await request.json()
     
-    console.log('🎯 Discovery Search API called with:', {
-      platform: body.platform,
+    console.log('🎯 Multi-Platform Discovery Search called with:', {
       searchQuery: body.searchQuery,
       hasFilters: !!body,
       filterKeys: Object.keys(body).filter(k => body[k as keyof DiscoverySearchBody] !== undefined)
     })
     
-    // Validate required fields
-    if (!body.platform) {
-      return NextResponse.json(
-        { error: 'Platform is required' },
-        { status: 400 }
-      )
-    }
-
-    // Map UI filters to Modash format
-    const modashFilters = mapToModashFilters(body)
+    // Search all three platforms in parallel
+    const platforms = ['instagram', 'tiktok', 'youtube'] as const
     
-    console.log('🔍 Discovery API called with filters:', JSON.stringify(modashFilters, null, 2))
-    console.log('📦 Full request body:', JSON.stringify(body, null, 2))
-    
-    // Try real Modash API first
     try {
-      console.log('🚀 Attempting real Modash API call...')
-      console.log('🎯 Platform:', body.platform)
-      console.log('🔍 Search Query:', body.searchQuery)
-      console.log('📄 Page:', body.page || 0, 'Limit:', body.limit || 20)
+      console.log('🚀 Searching all platforms in parallel...')
       
-      const results = await modashService.searchDiscovery(
-        modashFilters,
-        body.page || 0,
-        body.limit || 20
-      )
+      const searchPromises = platforms.map(async (platform) => {
+        try {
+          const filters = mapToModashFilters({ ...body, platform })
+          console.log(`🔍 Searching ${platform} with filters:`, JSON.stringify(filters, null, 2))
+          
+          const results = await modashService.searchDiscovery(
+            filters,
+            body.page || 0,
+            body.limit || 20
+          )
+          
+          console.log(`✅ ${platform} search successful:`, {
+            platform,
+            results: results.results?.length || 0,
+            creditsUsed: results.creditsUsed
+          })
+          
+          return {
+            platform,
+            success: true,
+            data: results,
+            error: null
+          }
+        } catch (error) {
+          console.warn(`⚠️ ${platform} search failed:`, error)
+          return {
+            platform,
+            success: false,
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }
+      })
       
-      console.log('✅ Modash API successful:', {
-        totalResults: results.total,
-        returnedResults: results.results?.length || 0,
-        hasMore: results.hasMore,
-        creditsUsed: results.creditsUsed,
-        isSearchQuery: !!body.searchQuery
+      const platformResults = await Promise.all(searchPromises)
+      
+      // Merge results by creator
+      const mergedCreators = mergeCreatorResults(platformResults)
+      
+      // Calculate totals
+      const totalResults = mergedCreators.length
+      const successfulPlatforms = platformResults.filter(r => r.success).length
+      
+      console.log('🔄 Platform search summary:', {
+        totalCreators: totalResults,
+        successfulPlatforms,
+        platformResults: platformResults.map(r => ({ platform: r.platform, success: r.success, count: r.data?.results?.length || 0 }))
       })
       
       return NextResponse.json({
         success: true,
-        data: results,
-        filters: modashFilters,
-        note: 'Real Modash API data',
+        data: {
+          results: mergedCreators,
+          total: totalResults,
+          page: body.page || 0,
+          limit: body.limit || 20,
+          hasMore: false, // We'll implement pagination later if needed
+          creditsUsed: platformResults.reduce((sum, r) => sum + (r.data?.creditsUsed || 0), 0)
+        },
+        platformResults: platformResults.map(r => ({
+          platform: r.platform,
+          success: r.success,
+          count: r.data?.results?.length || 0,
+          error: r.error
+        })),
+        note: 'Multi-platform search results merged by creator',
         searchMode: body.searchQuery ? 'exact_match' : 'general_discovery'
       })
-    } catch (modashError) {
-      console.warn('⚠️ Modash API failed:', {
-        error: modashError instanceof Error ? modashError.message : modashError,
-        stack: modashError instanceof Error ? modashError.stack : undefined
-      })
       
-      // Fallback to mock data
-      const mockResponse = generateMockResponse(body, modashFilters)
+    } catch (error) {
+      console.warn('⚠️ Multi-platform search failed, using mock data:', error)
+      
+      // Fallback to mock data with multiple platforms
+      const mockResponse = generateMultiPlatformMockResponse(body)
       
       return NextResponse.json({
         success: true,
         data: mockResponse,
-        filters: modashFilters,
-        note: 'Mock data - Modash API credentials pending activation',
+        note: 'Mock multi-platform data - Modash API credentials pending activation',
         warning: 'Using mock data while Modash API access is being configured',
-        apiError: modashError instanceof Error ? modashError.message : 'Unknown error',
         searchMode: body.searchQuery ? 'exact_match' : 'general_discovery'
       })
     }
@@ -134,11 +178,160 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Discovery search failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
+  }
+}
+
+function mergeCreatorResults(platformResults: any[]): MergedCreator[] {
+  const creatorMap = new Map<string, MergedCreator>()
+  
+  platformResults.forEach(({ platform, data }) => {
+    if (!data || !data.results) return
+    
+    data.results.forEach((influencer: any) => {
+      // Handle Modash's nested profile structure
+      const profile = influencer.profile || influencer
+      
+      // Debug: Log influencer picture fields
+      console.log(`🖼️ ${platform} influencer picture fields:`, {
+        username: profile.username || influencer.username,
+        picture: profile.picture,
+        profile_picture: profile.profile_picture,
+        hasProfile: !!influencer.profile,
+        profileKeys: influencer.profile ? Object.keys(influencer.profile) : 'none'
+      })
+      
+      const creatorKey = normalizeCreatorName(profile.fullname || profile.display_name || profile.username || influencer.username)
+      
+      if (!creatorMap.has(creatorKey)) {
+        // Create new merged creator
+        creatorMap.set(creatorKey, {
+          creatorId: creatorKey,
+          displayName: profile.fullname || profile.display_name || profile.username || influencer.username,
+          platforms: {},
+          totalFollowers: 0,
+          averageEngagement: 0,
+          verified: false,
+          location: profile.location || influencer.location || 'Unknown',
+          bio: profile.bio || influencer.bio || '',
+          profilePicture: profile.picture || profile.profile_picture || '',
+          score: influencer.score || 0
+        })
+      }
+      
+      const creator = creatorMap.get(creatorKey)!
+      
+      // Add platform-specific data
+      creator.platforms[platform as keyof typeof creator.platforms] = {
+        userId: influencer.userId,
+        username: profile.username || influencer.username,
+        followers: profile.followers || influencer.followers,
+        engagement_rate: profile.engagementRate || influencer.engagement_rate,
+        profile_picture: profile.picture || profile.profile_picture,
+        url: profile.url || influencer.url,
+        verified: profile.isVerified || profile.verified || influencer.verified,
+        bio: profile.bio || influencer.bio
+      }
+      
+      // Update aggregated data
+      creator.totalFollowers += profile.followers || influencer.followers || 0
+      creator.verified = creator.verified || profile.isVerified || profile.verified || influencer.verified
+      
+      // Use the best profile picture and bio
+      const influencerPicture = profile.picture || profile.profile_picture
+      if (influencerPicture && !creator.profilePicture) {
+        creator.profilePicture = influencerPicture
+      }
+      if ((profile.bio || influencer.bio) && !creator.bio) {
+        creator.bio = profile.bio || influencer.bio
+      }
+      
+      // Calculate average engagement
+      const platformCount = Object.keys(creator.platforms).length
+      const totalEngagement = Object.values(creator.platforms).reduce((sum: number, p: any) => sum + (p.engagement_rate || 0), 0)
+      creator.averageEngagement = totalEngagement / platformCount
+      
+      // Use highest score
+      creator.score = Math.max(creator.score, influencer.score || 0)
+    })
+  })
+  
+  // Generate fallback avatars for creators without profile pictures
+  const creators = Array.from(creatorMap.values())
+  creators.forEach(creator => {
+    if (!creator.profilePicture) {
+      creator.profilePicture = `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.displayName)}&background=random&size=150&color=fff`
+    }
+  })
+  
+  return creators.sort((a, b) => b.totalFollowers - a.totalFollowers)
+}
+
+function normalizeCreatorName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')
+    .trim()
+}
+
+function generateMultiPlatformMockResponse(body: DiscoverySearchBody) {
+  const mockCreators: MergedCreator[] = [
+    {
+      creatorId: 'cristiano_ronaldo',
+      displayName: 'Cristiano Ronaldo',
+      platforms: {
+        instagram: {
+          userId: '173560420',
+          username: 'cristiano',
+          followers: 635000000,
+          engagement_rate: 0.028,
+          profile_picture: 'https://ui-avatars.com/api/?name=Cristiano+Ronaldo&background=random&size=150&color=fff',
+          url: 'https://www.instagram.com/cristiano/',
+          verified: true,
+          bio: 'Manchester United, Portugal National Team'
+        },
+        tiktok: {
+          userId: 'cristiano_tiktok',
+          username: 'cristiano7official',
+          followers: 48500000,
+          engagement_rate: 0.045,
+          profile_picture: 'https://ui-avatars.com/api/?name=Cristiano+Ronaldo&background=random&size=150&color=fff',
+          url: 'https://www.tiktok.com/@cristiano7official',
+          verified: true,
+          bio: 'Official Cristiano Ronaldo TikTok'
+        },
+        youtube: {
+          userId: 'cristiano_youtube',
+          username: 'cr7',
+          followers: 3200000,
+          engagement_rate: 0.032,
+          profile_picture: 'https://ui-avatars.com/api/?name=Cristiano+Ronaldo&background=random&size=150&color=fff',
+          url: 'https://www.youtube.com/@cr7',
+          verified: true,
+          bio: 'CR7 Official YouTube Channel'
+        }
+      },
+      totalFollowers: 686700000,
+      averageEngagement: 0.035,
+      verified: true,
+      location: 'Portugal',
+      bio: 'Manchester United, Portugal National Team',
+      profilePicture: 'https://ui-avatars.com/api/?name=Cristiano+Ronaldo&background=random&size=150&color=fff',
+      score: 98
+    }
+  ]
+  
+  return {
+    results: mockCreators,
+    total: mockCreators.length,
+    page: body.page || 0,
+    limit: body.limit || 20,
+    hasMore: false,
+    creditsUsed: 0.03
   }
 }
 
@@ -223,120 +416,10 @@ function mapToModashFilters(body: DiscoverySearchBody) {
   return filters
 }
 
-function generateMockResponse(body: DiscoverySearchBody, filters: any) {
-  // Generate mock influencers based on filters
-  const mockInfluencers = [
-    {
-      userId: 'cristiano_ronaldo',
-      username: 'cristiano',
-      display_name: 'Cristiano Ronaldo',
-      platform: body.platform,
-      followers: 635000000,
-      engagement_rate: 2.8,
-      profile_picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      bio: 'Manchester United, Portugal National Team',
-      location: 'Portugal',
-      verified: true,
-      score: 98,
-      already_imported: false
-    },
-    {
-      userId: 'mock_1',
-      username: 'fashionista_uk',
-      display_name: 'Fashion Influencer UK',
-      platform: body.platform,
-      followers: 75000,
-      engagement_rate: 4.2,
-      profile_picture: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face',
-      bio: 'Fashion & Lifestyle | London based | Brand collaborations',
-      location: 'United Kingdom',
-      verified: true,
-      score: 88,
-      already_imported: false
-    },
-    {
-      userId: 'mock_2',
-      username: 'beautyguru_london',
-      display_name: 'Beauty Guru London',
-      platform: body.platform,
-      followers: 125000,
-      engagement_rate: 3.8,
-      profile_picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
-      bio: 'Beauty enthusiast | Makeup tutorials | Product reviews',
-      location: 'United Kingdom',
-      verified: true,
-      score: 92,
-      already_imported: false
-    },
-    {
-      userId: 'mock_3',
-      username: 'fitness_coach_uk',
-      display_name: 'UK Fitness Coach',
-      platform: body.platform,
-      followers: 50000,
-      engagement_rate: 5.1,
-      profile_picture: 'https://images.unsplash.com/photo-1595152452543-e5fc28ebc2b8?w=150&h=150&fit=crop&crop=face',
-      bio: 'Personal trainer | Nutrition tips | Workout routines',
-      location: 'United Kingdom',
-      verified: false,
-      score: 85,
-      already_imported: true
-    }
-  ]
-  
-  let filteredResults = mockInfluencers
-  
-  // If there's a search query, filter for exact matches only
-  if (body.searchQuery?.trim()) {
-    const searchTerm = body.searchQuery.trim().toLowerCase()
-    console.log('🔍 Filtering mock results for search query:', searchTerm)
-    
-    filteredResults = mockInfluencers.filter(influencer => {
-      const usernameMatch = influencer.username.toLowerCase().includes(searchTerm)
-      const displayNameMatch = influencer.display_name.toLowerCase().includes(searchTerm)
-      return usernameMatch || displayNameMatch
-    })
-    
-    // Sort by exact match first, then by followers
-    filteredResults.sort((a, b) => {
-      const aExactMatch = a.username.toLowerCase() === searchTerm
-      const bExactMatch = b.username.toLowerCase() === searchTerm
-      
-      if (aExactMatch && !bExactMatch) return -1
-      if (!aExactMatch && bExactMatch) return 1
-      return b.followers - a.followers
-    })
-    
-    console.log('🎯 Filtered to', filteredResults.length, 'results for search:', searchTerm)
-  } else {
-    // Filter based on follower range if specified
-  if (filters.followers?.min) {
-    filteredResults = filteredResults.filter(i => i.followers >= filters.followers.min)
-  }
-  if (filters.followers?.max) {
-    filteredResults = filteredResults.filter(i => i.followers <= filters.followers.max)
-    }
-  }
-  
-  const page = body.page || 0
-  const limit = body.limit || 20
-  const start = page * limit
-  const paginatedResults = filteredResults.slice(start, start + limit)
-  
-  return {
-    results: paginatedResults,
-    total: filteredResults.length,
-    page,
-    limit,
-    hasMore: (page + 1) * limit < filteredResults.length,
-    creditsUsed: paginatedResults.length * 0.01 // 0.01 credits per result as per Modash docs
-  }
-}
-
-// GET method for health check
 export async function GET() {
-  return NextResponse.json({ 
-    status: 'ok',
-    message: 'Discovery search API is running'
+  return NextResponse.json({
+    message: 'Multi-platform discovery search API. Use POST method with search parameters.',
+    platforms: ['instagram', 'tiktok', 'youtube'],
+    note: 'Searches all platforms simultaneously and merges results by creator'
   })
 } 
