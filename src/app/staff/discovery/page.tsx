@@ -2034,50 +2034,54 @@ function DiscoveryPageClient() {
         return
       }
       
-      // Fetch comprehensive influencer report with demographics
-      console.log('📊 Fetching comprehensive influencer report...')
-      const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userId,
-          platform: actualPlatform,
-          includeReport: true // Request full report with demographics
+      // Try to fetch comprehensive influencer report with demographics
+      try {
+        console.log('📊 Fetching comprehensive influencer report...')
+        const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            platform: actualPlatform,
+            includeReport: true // Request full report with demographics
+          })
         })
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          // Merge the comprehensive data with the existing influencer data
-          const enhancedInfluencer = {
-            ...influencer,
-            // Add demographic and audience data
-            audience: result.data.audience || {},
-            demographics: result.data.demographics || {},
-            engagement: result.data.engagement || {},
-            // Add engagement metrics
-            avgLikes: result.data.avgLikes || 0,
-            avgComments: result.data.avgComments || 0,
-            avgShares: result.data.avgShares || 0,
-            // Add additional metadata that might be in the API response
-            accountType: result.data.accountType || influencer.accountType,
-            country: result.data.country || influencer.country,
-            ageGroup: result.data.ageGroup || influencer.ageGroup,
-            isPrivate: result.data.isPrivate || influencer.isPrivate,
-            postCount: result.data.postCount || influencer.postCount,
-            // Keep recent posts if available
-            recentPosts: result.data.recentPosts || []
+        
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success && result.data) {
+            // Merge the comprehensive data with the existing influencer data
+            const enhancedInfluencer = {
+              ...influencer,
+              // Add demographic and audience data
+              audience: result.data.audience || {},
+              demographics: result.data.demographics || {},
+              engagement: result.data.engagement || {},
+              // Add engagement metrics
+              avgLikes: result.data.avgLikes || 0,
+              avgComments: result.data.avgComments || 0,
+              avgShares: result.data.avgShares || 0,
+              // Add additional metadata that might be in the API response
+              accountType: result.data.accountType || influencer.accountType,
+              country: result.data.country || influencer.country,
+              ageGroup: result.data.ageGroup || influencer.ageGroup,
+              isPrivate: result.data.isPrivate || influencer.isPrivate,
+              postCount: result.data.postCount || influencer.postCount,
+              // Keep recent posts if available
+              recentPosts: result.data.recentPosts || []
+            }
+            
+            // Update the detail influencer with enhanced data
+            setDetailInfluencer(enhancedInfluencer)
+            console.log('📊 Enhanced influencer data with demographics:', enhancedInfluencer)
+          } else {
+            console.log('📊 Using basic influencer data, no enhanced report available')
           }
-          
-          // Update the detail influencer with enhanced data
-          setDetailInfluencer(enhancedInfluencer)
-          console.log('📊 Enhanced influencer data with demographics:', enhancedInfluencer)
         } else {
-          console.log('📊 Using basic influencer data, no enhanced report available')
+          console.warn('⚠️ Comprehensive report API returned:', response.status, response.statusText)
         }
-      } else {
-        console.error('❌ Failed to fetch comprehensive report:', response.statusText)
+      } catch (error) {
+        console.warn('⚠️ Failed to fetch comprehensive report, using basic data:', error)
       }
       
       // Also fetch basic location data as fallback
