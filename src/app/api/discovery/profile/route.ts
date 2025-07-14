@@ -53,23 +53,46 @@ export async function POST(request: NextRequest) {
         }
 
         // Transform the report data to match our UI expectations
+        console.log('🔍 Raw report data structure:', JSON.stringify(reportData, null, 2))
+        
+        // Cast to any since the actual API returns more data than our type definitions
+        const data = reportData as any
+        
         const transformedData = {
           userId: reportData.userId,
-          demographics: reportData.demographics,
-          engagement: reportData.engagement,
-          recentPosts: reportData.recent_posts,
-          // Map demographics to our expected format
+          // Extract engagement metrics from the actual data structure
+          avgLikes: data.statsByContentType?.all?.avgLikes || data.avgLikes || 0,
+          avgComments: data.statsByContentType?.all?.avgComments || data.avgComments || 0,
+          avgShares: data.statsByContentType?.all?.avgShares || data.avgShares || 0,
+          engagementRate: data.statsByContentType?.all?.engagementRate || data.engagementRate || 0,
+          
+          // Extract post counts and account info
+          postCount: data.posts?.length || data.postCount || 0,
+          isPrivate: data.isPrivate || false,
+          accountType: data.accountType || 'personal',
+          
+          // Historical performance data
+          statHistory: data.statHistory || [],
+          
+          // Recent posts
+          recentPosts: data.posts || data.recent_posts || [],
+          
+          // Audience demographics (if available in audience object)
           audience: {
-            ageRanges: reportData.demographics?.age_ranges || {},
-            gender: reportData.demographics?.gender || {},
-            locations: reportData.demographics?.locations || [],
-            languages: reportData.demographics?.languages || []
+            ageRanges: data.audience?.ageGroups || reportData.demographics?.age_ranges || {},
+            gender: data.audience?.genders || reportData.demographics?.gender || {},
+            locations: data.audience?.geoCountries || reportData.demographics?.locations || [],
+            languages: data.audience?.languages || reportData.demographics?.languages || []
           },
-          // Add engagement details
-          avgLikes: reportData.engagement?.avg_likes || 0,
-          avgComments: reportData.engagement?.avg_comments || 0,
-          avgShares: reportData.engagement?.avg_shares || 0,
-          engagementRate: reportData.engagement?.engagement_rate || 0
+          
+          // Additional metrics from the comprehensive data
+          paidPostPerformance: data.paidPostPerformance || 0,
+          sponsoredPostsMedianLikes: data.sponsoredPostsMedianLikes || 0,
+          nonSponsoredPostsMedianLikes: data.nonSponsoredPostsMedianLikes || 0,
+          
+          // Engagement distribution data
+          engagementDistribution: data.audienceExtra?.engagementRateDistribution || [],
+          credibilityDistribution: data.audienceExtra?.credibilityDistribution || []
         }
 
         return NextResponse.json({

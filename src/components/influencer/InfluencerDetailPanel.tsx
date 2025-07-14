@@ -335,6 +335,74 @@ export default function InfluencerDetailPanel({
                 </div>
               )}
 
+              {/* Performance History */}
+              {influencer.statHistory && influencer.statHistory.length > 0 && (
+                <div className="p-6 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance History</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 font-medium text-gray-900">Month</th>
+                          <th className="text-right py-2 font-medium text-gray-900">Followers</th>
+                          <th className="text-right py-2 font-medium text-gray-900">Avg Likes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {influencer.statHistory.slice(-6).map((stat: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-100">
+                            <td className="py-2 text-gray-700">{stat.month}</td>
+                            <td className="py-2 text-right font-medium">{formatNumber(stat.followers)}</td>
+                            <td className="py-2 text-right font-medium">{formatNumber(stat.avgLikes)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Sponsored vs Organic Performance */}
+              {(influencer.sponsoredPostsMedianLikes || influencer.nonSponsoredPostsMedianLikes) && (
+                <div className="p-6 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Content Performance</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {influencer.sponsoredPostsMedianLikes && (
+                      <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-medium text-yellow-900">Sponsored Posts</span>
+                        </div>
+                        <div className="text-xl font-bold text-yellow-900">
+                          {formatNumber(influencer.sponsoredPostsMedianLikes)} likes
+                        </div>
+                        <div className="text-xs text-yellow-700 mt-1">Median performance</div>
+                      </div>
+                    )}
+                    
+                    {influencer.nonSponsoredPostsMedianLikes && (
+                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-medium text-blue-900">Organic Posts</span>
+                        </div>
+                        <div className="text-xl font-bold text-blue-900">
+                          {formatNumber(influencer.nonSponsoredPostsMedianLikes)} likes
+                        </div>
+                        <div className="text-xs text-blue-700 mt-1">Median performance</div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {influencer.paidPostPerformance && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-600">
+                        Sponsored content performs at <span className="font-semibold text-gray-900">
+                        {formatPercentage(influencer.paidPostPerformance)}</span> of organic content level
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Demographics */}
               {influencer.audience && (
                 <div className="p-6 border-b border-gray-100">
