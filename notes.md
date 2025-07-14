@@ -1,0 +1,2 @@
+- remove short link in roster. 
+- redo campaign and quotation like modash 

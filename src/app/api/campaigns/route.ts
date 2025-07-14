@@ -135,16 +135,20 @@ export async function POST(request: NextRequest) {
       quotation_id
     } = body
 
-    // ENFORCE: Campaigns can only be created from approved quotations
-    if (!quotation_id) {
-      return NextResponse.json({ 
-        error: 'Campaigns can only be created from approved quotations. Please use the quotation approval flow.' 
-      }, { status: 400 })
-    }
+    // Allow manual campaign creation - quotation_id is optional
+    // If quotation_id is provided, it means campaign was created from approved quotation
+    // If not provided, it's a manual campaign creation by staff
 
     // Validation
     if (!name || !description || !budget || !start_date || !end_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Additional validation for manual campaign creation
+    if (!quotation_id && !brand_id) {
+      return NextResponse.json({ 
+        error: 'Either quotation_id or brand_id is required for campaign creation' 
+      }, { status: 400 })
     }
 
     const newCampaign = {
@@ -172,14 +176,16 @@ export async function POST(request: NextRequest) {
       invitations_accepted: 0,
       invitations_pending: 0,
       invitations_declined: 0,
-      created_from_quotation: true, // Always true now
-      quotation_id: quotation_id
+      created_from_quotation: !!quotation_id, // True if created from quotation
+      quotation_id: quotation_id || null
     }
 
     campaigns.push(newCampaign)
 
     return NextResponse.json({ 
-      message: 'Campaign created successfully from approved quotation',
+      message: quotation_id 
+        ? 'Campaign created successfully from approved quotation'
+        : 'Campaign created successfully',
       campaign: newCampaign 
     }, { status: 201 })
   } catch (error) {

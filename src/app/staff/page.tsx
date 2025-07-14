@@ -1,7 +1,7 @@
 import React from 'react'
 import { requireStaffAccess } from '../../lib/auth/roles'
 import ModernStaffHeader from '../../components/nav/ModernStaffHeader'
-import { Users, UserCheck, Activity, TrendingUp, Eye, UserPlus } from 'lucide-react'
+import { Users, UserCheck, Activity, TrendingUp, Eye, UserPlus, Plus } from 'lucide-react'
 
 interface StatCardProps {
   title: string
@@ -43,14 +43,15 @@ interface QuickActionProps {
   description: string
   href: string
   icon: React.ReactNode
-  color: 'blue' | 'green' | 'purple'
+  color: 'blue' | 'green' | 'purple' | 'orange'
 }
 
 function QuickActionCard({ title, description, href, icon, color }: QuickActionProps) {
   const colorClasses = {
     blue: 'hover:bg-blue-50 border-blue-200',
     green: 'hover:bg-green-50 border-green-200',
-    purple: 'hover:bg-purple-50 border-purple-200'
+    purple: 'hover:bg-purple-50 border-purple-200',
+    orange: 'hover:bg-orange-50 border-orange-200'
   }
 
   return (
@@ -150,10 +151,18 @@ export default async function StaffDashboard() {
           
           <QuickActionCard
             title="Manage Quotations"
-            description="Review quotations and approve to auto-create campaigns"
+            description="Review quotations and manage influencer contact workflow"
             href="/staff/brands?tab=quotations"
             icon={<UserPlus size={20} className="text-purple-600" />}
             color="purple"
+          />
+          
+          <QuickActionCard
+            title="Create Campaign"
+            description="Manually create campaigns after influencer confirmations"
+            href="/staff/campaigns"
+            icon={<Plus size={20} className="text-orange-600" />}
+            color="orange"
           />
         </div>
 

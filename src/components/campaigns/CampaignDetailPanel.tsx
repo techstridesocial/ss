@@ -1,19 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, Eye, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface CampaignDetailPanelProps {
   isOpen: boolean
   onClose: () => void
   campaign: any
-  onEditCampaign?: (campaignId: string) => void
   onPauseCampaign?: (campaignId: string) => void
   onResumeCampaign?: (campaignId: string) => void
-  onViewInvitations?: (campaignId: string) => void
 }
 
+// Enhanced Section component with animation
 const Section = ({ 
   title, 
   children, 
@@ -29,20 +28,16 @@ const Section = ({
 }) => {
   return (
     <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5, ease: "easeOut" }}
-      className={`bg-white rounded-2xl shadow-sm border border-gray-200/60 ${className}`}
+      className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/40 p-8 ${className}`}
     >
-      <div className="px-8 py-6 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
-          {action}
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+        {action}
       </div>
-      <div className="p-8">
-        {children}
-      </div>
+      {children}
     </motion.div>
   )
 }
@@ -162,41 +157,68 @@ const ProgressBar = ({ current, total, label, color = 'blue' }: { current: numbe
   )
 }
 
-const InvitationStatusCard = ({ invitation }: { invitation: any }) => {
-  const getStatusColor = (status: string) => {
+const InfluencerCard = ({ influencer }: { influencer: any }) => {
+  const getContactStatusColor = (status: string) => {
     switch (status) {
-      case 'ACCEPTED': return 'border-l-green-500 bg-green-50'
-      case 'DECLINED': return 'border-l-red-500 bg-red-50'
-      case 'PENDING': return 'border-l-yellow-500 bg-yellow-50'
+      case 'confirmed': return 'border-l-green-500 bg-green-50'
+      case 'contacted': return 'border-l-yellow-500 bg-yellow-50'
+      case 'pending': return 'border-l-gray-500 bg-gray-50'
       default: return 'border-l-gray-500 bg-gray-50'
     }
   }
 
-  const getStatusIcon = (status: string) => {
+  const getContactStatusIcon = (status: string) => {
     switch (status) {
-      case 'ACCEPTED': return <CheckCircle size={16} className="text-green-600" />
-      case 'DECLINED': return <X size={16} className="text-red-600" />
-      case 'PENDING': return <Clock size={16} className="text-yellow-600" />
-      default: return <MessageCircle size={16} className="text-gray-600" />
+      case 'confirmed': return <CheckCircle size={16} className="text-green-600" />
+      case 'contacted': return <Mail size={16} className="text-yellow-600" />
+      case 'pending': return <Clock size={16} className="text-gray-600" />
+      default: return <User size={16} className="text-gray-600" />
+    }
+  }
+
+  const getContactStatusLabel = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'Confirmed'
+      case 'contacted': return 'Contacted'
+      case 'pending': return 'Pending Contact'
+      default: return 'Unknown'
     }
   }
 
   return (
-    <div className={`border-l-4 ${getStatusColor(invitation.status)} p-4 rounded-r-lg`}>
+    <div className={`border-l-4 ${getContactStatusColor(influencer.contact_status)} p-4 rounded-r-lg`}>
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-3">
-          {getStatusIcon(invitation.status)}
-          <div>
-            <h4 className="font-medium text-gray-900">{invitation.influencer_name}</h4>
-            <p className="text-sm text-gray-600">${invitation.offered_amount.toLocaleString()}</p>
-            {invitation.decline_reason && (
-              <p className="text-sm text-red-600 mt-1">Reason: {invitation.decline_reason}</p>
+          {getContactStatusIcon(influencer.contact_status)}
+          <div className="flex-1">
+            <h4 className="font-medium text-gray-900">{influencer.name}</h4>
+            <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+              <span>{influencer.followers.toLocaleString()} followers</span>
+              <span>{influencer.engagement_rate}% engagement</span>
+              <span>{influencer.platform}</span>
+            </div>
+            {influencer.offered_amount && (
+              <p className="text-sm text-gray-600 mt-1">Offered: ${influencer.offered_amount.toLocaleString()}</p>
+            )}
+            {influencer.contact_notes && (
+              <p className="text-sm text-gray-700 mt-2 italic">{influencer.contact_notes}</p>
             )}
           </div>
         </div>
-        <span className="text-xs text-gray-500">
-          {invitation.responded_at ? new Date(invitation.responded_at).toLocaleDateString() : 'Pending'}
-        </span>
+        <div className="text-right">
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+            influencer.contact_status === 'confirmed' ? 'bg-green-100 text-green-800' :
+            influencer.contact_status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {getContactStatusLabel(influencer.contact_status)}
+          </span>
+          {influencer.contacted_at && (
+            <div className="text-xs text-gray-500 mt-1">
+              {influencer.contact_status === 'confirmed' ? 'Confirmed' : 'Contacted'}: {new Date(influencer.contacted_at).toLocaleDateString()}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -206,57 +228,98 @@ export default function CampaignDetailPanel({
   isOpen, 
   onClose, 
   campaign, 
-  onEditCampaign,
   onPauseCampaign,
-  onResumeCampaign,
-  onViewInvitations
+  onResumeCampaign
 }: CampaignDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'invitations' | 'analytics'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'influencers' | 'analytics'>('overview')
   const [isLoading, setIsLoading] = useState(false)
 
   if (!campaign) return null
 
-  // Mock invitation data - in real app this would come from props or API
-  const mockInvitations = [
+  // Determine if campaign has started (Active, Paused, or Completed campaigns)
+  const campaignHasStarted = ['ACTIVE', 'PAUSED', 'COMPLETED'].includes(campaign.status)
+
+  // Mock influencer data for the campaign - in real app this would come from props or API
+  const baseInfluencers = [
     {
-      id: 'inv_1',
-      influencer_name: 'Sarah Creator',
-      status: 'ACCEPTED',
+      id: 'inf_1',
+      name: 'Sarah Creator',
+      platform: 'Instagram',
+      followers: 45000,
+      engagement_rate: 4.2,
+      contact_status: 'confirmed',
       offered_amount: 1500,
-      responded_at: '2024-01-10T14:30:00Z'
+      contacted_at: '2024-01-10T14:30:00Z',
+      contact_notes: 'Confirmed participation. Content delivery scheduled for Jan 25th.'
     },
     {
-      id: 'inv_2',
-      influencer_name: 'BeautyByBella',
-      status: 'PENDING',
+      id: 'inf_2',
+      name: 'BeautyByBella',
+      platform: 'TikTok',
+      followers: 89000,
+      engagement_rate: 6.1,
+      contact_status: 'confirmed',
+      offered_amount: 2200,
+      contacted_at: '2024-01-12T09:15:00Z',
+      contact_notes: 'Confirmed. Requesting product samples by Jan 20th.'
+    },
+    {
+      id: 'inf_3',
+      name: 'TechReviewTom',
+      platform: 'YouTube',
+      followers: 125000,
+      engagement_rate: 3.8,
+      contact_status: campaignHasStarted ? 'confirmed' : 'contacted',
+      offered_amount: 3000,
+      contacted_at: '2024-01-15T11:00:00Z',
+      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'Initial contact made. Awaiting response by Jan 22nd.'
+    },
+    {
+      id: 'inf_4',
+      name: 'FitnessLifestyle',
+      platform: 'Instagram',
+      followers: 67000,
+      engagement_rate: 5.3,
+      contact_status: campaignHasStarted ? 'confirmed' : 'contacted',
+      offered_amount: 1800,
+      contacted_at: '2024-01-14T16:45:00Z',
+      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'Sent collaboration proposal. Follow-up scheduled for Jan 21st.'
+    },
+    {
+      id: 'inf_5',
+      name: 'WellnessWarrior',
+      platform: 'Instagram',
+      followers: 34000,
+      engagement_rate: 7.2,
+      contact_status: campaignHasStarted ? 'confirmed' : 'pending',
       offered_amount: 1200,
-      responded_at: null
+      contacted_at: campaignHasStarted ? '2024-01-16T10:30:00Z' : null,
+      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'Identified as potential match. Contact planned for Jan 20th.'
     },
     {
-      id: 'inv_3',
-      influencer_name: 'FitnessFiona',
-      status: 'DECLINED',
-      offered_amount: 920,
-      responded_at: '2024-01-16T11:00:00Z',
-      decline_reason: 'Schedule conflict with existing brand partnership'
+      id: 'inf_6',
+      name: 'LifestyleLuxe',
+      platform: 'TikTok',
+      followers: 112000,
+      engagement_rate: 4.9,
+      contact_status: campaignHasStarted ? 'confirmed' : 'pending',
+      offered_amount: 2500,
+      contacted_at: campaignHasStarted ? '2024-01-17T14:00:00Z' : null,
+      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'On contact list. Outreach scheduled for this week.'
     }
   ]
+
+  const mockInfluencers = baseInfluencers
 
   const handleAction = async (action: string) => {
     setIsLoading(true)
     try {
       switch (action) {
-        case 'edit':
-          onEditCampaign?.(campaign.id)
-          break
         case 'pause':
           onPauseCampaign?.(campaign.id)
           break
         case 'resume':
           onResumeCampaign?.(campaign.id)
-          break
-        case 'invitations':
-          onViewInvitations?.(campaign.id)
           break
       }
     } finally {
@@ -344,7 +407,7 @@ export default function CampaignDetailPanel({
                   <nav className="-mb-px flex space-x-8">
                     {[
                       { id: 'overview', label: 'Campaign Overview' },
-                      { id: 'invitations', label: 'Invitations & Progress' },
+                      { id: 'influencers', label: 'Influencers & Status' },
                       { id: 'analytics', label: 'Performance Analytics' }
                     ].map((tab) => (
                       <button
@@ -467,6 +530,19 @@ export default function CampaignDetailPanel({
                             </div>
                           </div>
                         </div>
+
+                        {campaign.created_from_quotation && (
+                          <div className="border-t border-gray-100 pt-6">
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                              <div className="flex items-center space-x-2">
+                                <Star size={16} className="text-blue-600" />
+                                <span className="text-sm font-medium text-blue-800">
+                                  Created from Quotation: {campaign.quotation_id}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </Section>
 
@@ -485,9 +561,9 @@ export default function CampaignDetailPanel({
                           color="green"
                         />
                         <ProgressBar
-                          current={campaign.invitations_accepted}
-                          total={campaign.total_invited}
-                          label="Invitations Accepted"
+                          current={campaign.confirmed_influencers}
+                          total={campaign.contacted_influencers}
+                          label="Influencers Confirmed"
                           color="yellow"
                         />
                       </div>
@@ -495,32 +571,37 @@ export default function CampaignDetailPanel({
                   </>
                 )}
 
-                {/* Invitations Tab */}
-                {activeTab === 'invitations' && (
+                {/* Influencers Tab */}
+                {activeTab === 'influencers' && (
                   <>
-                    <Section title="Invitation Status" delay={0.1}>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-                            <div className="text-2xl font-bold text-green-600">{campaign.invitations_accepted}</div>
-                            <div className="text-sm text-green-800">Accepted</div>
+                    <Section title={campaignHasStarted ? "Influencer Status Overview" : "Contact Status Overview"} delay={0.1}>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {mockInfluencers.filter(inf => inf.contact_status === 'confirmed').length}
                           </div>
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
-                            <div className="text-2xl font-bold text-yellow-600">{campaign.invitations_pending}</div>
-                            <div className="text-sm text-yellow-800">Pending</div>
-                          </div>
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                            <div className="text-2xl font-bold text-red-600">{campaign.invitations_declined}</div>
-                            <div className="text-sm text-red-800">Declined</div>
-                          </div>
+                          <div className="text-sm text-green-800">{campaignHasStarted ? 'Active Influencers' : 'Confirmed'}</div>
                         </div>
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-yellow-600">
+                            {mockInfluencers.filter(inf => inf.contact_status === 'contacted').length}
+                          </div>
+                          <div className="text-sm text-yellow-800">{campaignHasStarted ? 'In Progress' : 'Contacted'}</div>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-gray-600">
+                            {mockInfluencers.filter(inf => inf.contact_status === 'pending').length}
+                          </div>
+                          <div className="text-sm text-gray-800">{campaignHasStarted ? 'Not Started' : 'Pending Contact'}</div>
+                        </div>
+                      </div>
+                    </Section>
 
-                        <div className="space-y-3">
-                          <h4 className="text-lg font-semibold text-gray-900">Individual Responses</h4>
-                          {mockInvitations.map((invitation) => (
-                            <InvitationStatusCard key={invitation.id} invitation={invitation} />
-                          ))}
-                        </div>
+                    <Section title="Influencer Details" delay={0.2}>
+                      <div className="space-y-4">
+                        {mockInfluencers.map((influencer) => (
+                          <InfluencerCard key={influencer.id} influencer={influencer} />
+                        ))}
                       </div>
                     </Section>
                   </>
@@ -578,31 +659,9 @@ export default function CampaignDetailPanel({
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Footer Actions */}
             <div className="border-t border-gray-200 bg-white/80 backdrop-blur-sm p-8">
               <div className="flex justify-between items-center">
-                <div className="flex space-x-3">
-                  <motion.button
-                    onClick={() => handleAction('invitations')}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center space-x-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Eye size={16} />
-                    <span>Manage Invitations</span>
-                  </motion.button>
-                  
-                  <motion.button
-                    onClick={() => handleAction('edit')}
-                    className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center space-x-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Edit size={16} />
-                    <span>Edit Campaign</span>
-                  </motion.button>
-                </div>
-
                 <div className="flex space-x-3">
                   {campaign.status === 'ACTIVE' && (
                     <motion.button

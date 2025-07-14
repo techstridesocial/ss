@@ -369,8 +369,8 @@ export async function PUT(request: NextRequest) {
       // When brand approves the quotation
       updatedFields.approved_at = new Date().toISOString()
       
-      // Skip saving to quotation table - go directly to campaign creation
-      console.log('Quotation approved, creating campaign directly (skipping quotation table save):', {
+      // Quotation is approved and ready for manual influencer contact
+      console.log('Quotation approved, ready for manual influencer contact:', {
         id: quotation.id,
         brand_name: quotation.brand_name,
         campaign_name: quotation.campaign_name,
@@ -379,8 +379,7 @@ export async function PUT(request: NextRequest) {
         status: 'APPROVED'
       })
 
-      // Automatically create campaign when quotation is approved
-      create_campaign = true
+      // NO automatic campaign creation - staff must manually contact influencers first
     }
 
     if (status === 'REJECTED') {
@@ -394,68 +393,18 @@ export async function PUT(request: NextRequest) {
       ...updatedFields
     }
 
-    let createdCampaign = null
-
-    // Create campaign if approved and requested
-    if (status === 'APPROVED' && create_campaign) {
-      // Create campaign directly from approved quotation (skip quotation table save)
-      createdCampaign = {
-        id: `campaign_${Date.now()}`,
-        name: quotation.campaign_name,
-        brand_name: quotation.brand_name,
-        brand_id: quotation.brand_id,
-        description: quotation.description,
-        status: 'ACTIVE',
-        budget: updatedFields.final_price || quotation.final_price || quotation.quoted_price,
-        spent: 0,
-        start_date: quotation.timeline.start_date,
-        end_date: quotation.timeline.end_date,
-        target_niches: quotation.target_niches,
-        target_platforms: quotation.target_platforms,
-        assigned_influencers: 0,
-        completed_deliverables: 0,
-        pending_payments: 0,
-        estimated_reach: 0,
-        actual_reach: 0,
-        engagement_rate: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        total_invited: 0,
-        invitations_accepted: 0,
-        invitations_pending: 0,
-        invitations_declined: 0,
-        created_from_quotation: true,
-        quotation_id: quotation.id,
-        // Mark quotation as converted (not saved to quotation table)
-        quotation_converted: true,
-        conversion_date: new Date().toISOString()
-      }
-
-      // Update quotation with conversion info (but don't save to quotation table)
-      quotations[quotationIndex].campaign_created = true
-      quotations[quotationIndex].campaign_id = createdCampaign.id
-      quotations[quotationIndex].status = 'CONVERTED_TO_CAMPAIGN' as any
-
-      // In real implementation, this would:
-      // 1. Create campaign directly in campaigns table
-      // 2. Create campaign_invitations for each selected influencer
-      // 3. Send notification emails to influencers
-      // 4. Mark quotation as converted (not saved to quotation table)
-      console.log('Campaign created directly from approved quotation (quotation not saved to table):', createdCampaign)
-    }
+    // No automatic campaign creation - campaigns will be created manually by staff
+    // after they contact influencers and get confirmations
 
     const responseMessage = status === 'SENT' 
       ? 'Quotation sent to brand successfully'
       : status === 'APPROVED'
-        ? createdCampaign 
-          ? 'Quotation approved and converted directly to campaign (skipped quotation table)'
-          : 'Quotation approved'
+        ? 'Quotation approved - ready for manual influencer contact'
         : `Quotation ${status.toLowerCase()} successfully`
 
     return NextResponse.json({
       message: responseMessage,
-      quotation: quotations[quotationIndex],
-      ...(createdCampaign && { campaign: createdCampaign })
+      quotation: quotations[quotationIndex]
     })
   } catch (error) {
     console.error('Error updating quotation:', error)

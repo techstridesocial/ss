@@ -310,11 +310,11 @@ function generateMockResponse(body: DiscoverySearchBody, filters: any) {
     console.log('🎯 Filtered to', filteredResults.length, 'results for search:', searchTerm)
   } else {
     // Filter based on follower range if specified
-    if (filters.followers?.min) {
-      filteredResults = filteredResults.filter(i => i.followers >= filters.followers.min)
-    }
-    if (filters.followers?.max) {
-      filteredResults = filteredResults.filter(i => i.followers <= filters.followers.max)
+  if (filters.followers?.min) {
+    filteredResults = filteredResults.filter(i => i.followers >= filters.followers.min)
+  }
+  if (filters.followers?.max) {
+    filteredResults = filteredResults.filter(i => i.followers <= filters.followers.max)
     }
   }
   

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Send, FileText, Tag, Target, TrendingUp, User, Edit, ExternalLink, Megaphone, Plus } from 'lucide-react'
+import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Send, FileText, Tag, Target, TrendingUp, User, Edit, ExternalLink, Megaphone, Plus, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface QuotationDetailPanelProps {
@@ -9,7 +9,7 @@ interface QuotationDetailPanelProps {
   onClose: () => void
   quotation: any
   onSendQuote: (pricing: string, notes: string) => void
-  onCreateCampaign?: (quotationId: string) => void
+  onCreateCampaign?: () => void
 }
 
 const Section = ({ 
@@ -298,7 +298,129 @@ const StatusBadge = ({ status }: { status: string }) => {
   )
 }
 
-export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSendQuote, onCreateCampaign }: QuotationDetailPanelProps) {
+const InfluencerContactCard = ({
+  influencer,
+  index,
+  contactStatus,
+  onStatusChange
+}: {
+  influencer: any
+  index: number
+  contactStatus: string
+  onStatusChange: (status: string) => void
+}) => {
+  const [isUpdating, setIsUpdating] = useState(false)
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Not Contacted', color: 'gray' }
+      case 'contacted':
+        return { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Contacted', color: 'blue' }
+      case 'confirmed':
+        return { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmed', color: 'green' }
+      case 'declined':
+        return { bg: 'bg-red-100', text: 'text-red-800', label: 'Declined', color: 'red' }
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-800', label: status, color: 'gray' }
+    }
+  }
+
+  const config = getStatusConfig(contactStatus)
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+            <User size={16} className="text-gray-600" />
+          </div>
+          <div>
+            <h5 className="font-medium text-gray-900">{influencer.name}</h5>
+            <p className="text-sm text-gray-500">{influencer.platform} • {influencer.followers} • {influencer.engagement}</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${config.bg} ${config.text}`}>
+            {config.label}
+          </span>
+          <div className="flex space-x-2">
+            {contactStatus === 'pending' && (
+              <button
+                onClick={async () => {
+                  setIsUpdating(true)
+                  await onStatusChange('contacted')
+                  setIsUpdating(false)
+                }}
+                disabled={isUpdating}
+                className="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+              >
+                {isUpdating && <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>}
+                <span>Mark Contacted</span>
+              </button>
+            )}
+            {contactStatus === 'contacted' && (
+              <>
+                <button
+                  onClick={async () => {
+                    setIsUpdating(true)
+                    await onStatusChange('pending')
+                    setIsUpdating(false)
+                  }}
+                  disabled={isUpdating}
+                  className="px-3 py-1 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                >
+                  {isUpdating && <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>}
+                  <span>Not Contacted</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsUpdating(true)
+                    await onStatusChange('confirmed')
+                    setIsUpdating(false)
+                  }}
+                  disabled={isUpdating}
+                  className="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                >
+                  {isUpdating && <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>}
+                  <span>Confirmed</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsUpdating(true)
+                    await onStatusChange('declined')
+                    setIsUpdating(false)
+                  }}
+                  disabled={isUpdating}
+                  className="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                >
+                  {isUpdating && <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>}
+                  <span>Declined</span>
+                </button>
+              </>
+            )}
+            {(contactStatus === 'confirmed' || contactStatus === 'declined') && (
+              <button
+                onClick={async () => {
+                  setIsUpdating(true)
+                  await onStatusChange('contacted')
+                  setIsUpdating(false)
+                }}
+                disabled={isUpdating}
+                className="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+              >
+                {isUpdating && <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>}
+                <span>Reset to Contacted</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function QuotationDetailPanel({ isOpen, onClose, quotation: initialQuotation, onSendQuote, onCreateCampaign }: QuotationDetailPanelProps) {
+  const [quotation, setQuotation] = useState(initialQuotation)
   const [activeTab, setActiveTab] = useState<'campaign_info' | 'influencers'>('campaign_info')
   const [influencerPricing, setInfluencerPricing] = useState<{[key: number]: string}>({})
   const [useCustomTotal, setUseCustomTotal] = useState(false)
@@ -306,6 +428,11 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
   const [quoteNotes, setQuoteNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isCreatingCampaign, setIsCreatingCampaign] = useState(false)
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setQuotation(initialQuotation)
+  }, [initialQuotation])
 
   // Initialize pricing from existing data or empty
   useEffect(() => {
@@ -360,9 +487,10 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
   }
 
   const handleCreateCampaign = async () => {
-    // DISABLED: Campaigns are now automatically created when quotations are approved
-    // This function is no longer used as the flow is fully automated
-    console.log('Campaign creation is now automatic when quotations are approved')
+    // Call the onCreateCampaign prop if provided
+    if (onCreateCampaign) {
+      onCreateCampaign()
+    }
   }
 
   if (!quotation) return null
@@ -370,11 +498,13 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
   const isEditable = quotation.status === 'pending_review'
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isOpen && (
-        <>
+        <div key="quotation-panel">
           {/* Enhanced Backdrop */}
           <motion.div
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -385,6 +515,7 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
           
           {/* Enhanced Panel */}
           <motion.div
+            key="panel"
             initial={{ x: '100%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '100%', opacity: 0 }}
@@ -595,7 +726,7 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
                       <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
                         {quotation.influencers.map((influencer: any, index: number) => (
                           <InfluencerPricingCard
-                            key={index}
+                            key={`pricing-${influencer.id || index}`}
                             influencer={influencer}
                             index={index}
                             pricing={influencerPricing[index] || ''}
@@ -704,33 +835,120 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
                     {/* Campaign Creation Section for Approved Quotes */}
                     {quotation.status === 'approved' && (
                       <div className="border-t border-gray-200 pt-6 mt-6">
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="text-lg font-semibold text-green-900 flex items-center mb-2">
-                                <Megaphone size={20} className="mr-2" />
-                                Campaign Created Automatically
+                              <h4 className="text-lg font-semibold text-orange-900 flex items-center mb-2">
+                                <Clock size={20} className="mr-2" />
+                                Ready for Manual Influencer Contact
                               </h4>
-                              <p className="text-sm text-green-700 mb-4">
-                                When this quotation was approved by the brand, a campaign was automatically created and 
-                                all selected influencers were invited to participate.
+                              <p className="text-sm text-orange-700 mb-4">
+                                This quotation has been approved by the brand. Staff must now manually contact each 
+                                selected influencer to confirm their participation before creating the campaign.
                               </p>
-                              <div className="flex items-center space-x-4 text-sm text-green-600">
+                              <div className="flex items-center space-x-4 text-sm text-orange-600">
                                 <div className="flex items-center">
                                   <Users size={16} className="mr-1" />
-                                  <span>{quotation.influencer_count} influencers invited</span>
+                                  <span>{quotation.influencer_count} influencers to contact</span>
                                 </div>
                                 <div className="flex items-center">
                                   <DollarSign size={16} className="mr-1" />
                                   <span>${quotation.total_quote} approved budget</span>
                                 </div>
                                 <div className="flex items-center">
-                                  <CheckCircle size={16} className="mr-1" />
-                                  <span>Campaign active</span>
+                                  <Clock size={16} className="mr-1" />
+                                  <span>Awaiting contact</span>
                                 </div>
                               </div>
                             </div>
                           </div>
+                        </div>
+                        
+                        {/* Influencer Contact Tracking Section */}
+                        <div className="mt-6">
+                          <h4 className="text-lg font-semibold text-gray-900 mb-4">Influencer Contact Status</h4>
+                          <div className="space-y-4">
+                            {quotation.influencers?.map((influencer: any, index: number) => (
+                              <InfluencerContactCard
+                                key={`contact-${influencer.id || index}`}
+                                influencer={influencer}
+                                index={index}
+                                contactStatus={influencer.contact_status || 'pending'}
+                                onStatusChange={async (status) => {
+                                  // Update influencer contact status via API
+                                  console.log(`Updating ${influencer.name} contact status to: ${status}`)
+                                  
+                                  try {
+                                    const response = await fetch('/api/influencer-contact', {
+                                      method: 'PUT',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        quotationId: quotation.id,
+                                        influencerIndex: index,
+                                        status: status
+                                      })
+                                    })
+
+                                    const result = await response.json()
+
+                                    if (!response.ok) {
+                                      throw new Error(result.error || 'Failed to update contact status')
+                                    }
+
+                                    // Update the local state properly with React state management
+                                    setQuotation((prevQuotation: any) => ({
+                                      ...prevQuotation,
+                                      influencers: prevQuotation.influencers.map((inf: any, idx: number) => 
+                                        idx === index 
+                                          ? { ...inf, contact_status: status }
+                                          : inf
+                                      )
+                                    }))
+                                    
+                                    console.log('Contact status updated successfully:', result)
+                                  } catch (error) {
+                                    console.error('Error updating contact status:', error)
+                                    // Better error handling - could be replaced with toast notifications
+                                    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+                                    alert(`Failed to update contact status: ${errorMessage}`)
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                          
+                          {/* Create Campaign Button - Only show if we have confirmed influencers */}
+                          {quotation.influencers?.some((inf: any) => inf.contact_status === 'confirmed') && (
+                            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h5 className="font-medium text-green-900">Ready to Create Campaign</h5>
+                                  <p className="text-sm text-green-700">
+                                    {quotation.influencers?.filter((inf: any) => inf.contact_status === 'confirmed').length} influencer(s) confirmed
+                                  </p>
+                                </div>
+                                                                 <button
+                                   onClick={() => {
+                                     const confirmedInfluencers = quotation.influencers?.filter((inf: any) => inf.contact_status === 'confirmed') || []
+                                     
+                                     if (confirmedInfluencers.length === 0) {
+                                       alert('No influencers confirmed yet. Please confirm at least one influencer before creating a campaign.')
+                                       return
+                                     }
+                                     
+                                     // Open the campaign creation modal and close the panel
+                                     handleCreateCampaign()
+                                     onClose()
+                                   }}
+                                   className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                                 >
+                                   Create Campaign
+                                 </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -774,8 +992,9 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation, onSen
               </div>
             )}
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
+    </>
   )
-} 
+}

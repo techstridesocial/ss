@@ -38,8 +38,8 @@ export default function EditCampaignModal({
         name: campaign.name || '',
         description: campaign.description || '',
         budget: campaign.budget?.toString() || '',
-        start_date: campaign.start_date ? new Date(campaign.start_date).toISOString().split('T')[0] : '',
-        end_date: campaign.end_date ? new Date(campaign.end_date).toISOString().split('T')[0] : '',
+        start_date: campaign.start_date ? new Date(campaign.start_date).toISOString().split('T')[0] || '' : '',
+        end_date: campaign.end_date ? new Date(campaign.end_date).toISOString().split('T')[0] || '' : '',
         status: campaign.status || 'ACTIVE',
         target_niches: campaign.target_niches || [],
         target_platforms: campaign.target_platforms || []
@@ -153,8 +153,8 @@ export default function EditCampaignModal({
         name: campaign.name || '',
         description: campaign.description || '',
         budget: campaign.budget?.toString() || '',
-        start_date: campaign.start_date ? new Date(campaign.start_date).toISOString().split('T')[0] : '',
-        end_date: campaign.end_date ? new Date(campaign.end_date).toISOString().split('T')[0] : '',
+        start_date: campaign.start_date ? new Date(campaign.start_date).toISOString().split('T')[0] || '' : '',
+        end_date: campaign.end_date ? new Date(campaign.end_date).toISOString().split('T')[0] || '' : '',
         status: campaign.status || 'ACTIVE',
         target_niches: campaign.target_niches || [],
         target_platforms: campaign.target_platforms || []
@@ -175,7 +175,7 @@ export default function EditCampaignModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70]"
             onClick={handleCancel}
           />
 
@@ -185,7 +185,7 @@ export default function EditCampaignModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
           >
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
               {/* Header */}

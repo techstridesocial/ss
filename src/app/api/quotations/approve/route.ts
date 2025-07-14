@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update quotation status to APPROVED and automatically create campaign
+    // Update quotation status to APPROVED - no automatic campaign creation
     const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/quotations`, {
       method: 'PUT',
       headers: {
@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         quotationId,
-        status: 'APPROVED',
-        create_campaign: true  // Automatically create campaign when approved
+        status: 'APPROVED'
+        // No create_campaign flag - staff must manually contact influencers first
       })
     })
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log for debugging - in real implementation this would be in database
-    console.log('Brand approved quotation - automatically saved to quotation table:', {
+    console.log('Brand approved quotation - ready for manual influencer contact:', {
       quotationId,
       approved_at: new Date().toISOString(),
       status: 'APPROVED'
@@ -54,11 +54,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: result.campaign 
-        ? `Quotation approved and converted directly to campaign \"${result.campaign.name}\"! ${result.campaign.invitations_sent || 0} invitations sent to influencers.`
-        : 'Quotation approved',
-      quotation: result.quotation,
-      ...(result.campaign && { campaign: result.campaign })
+      message: 'Quotation approved - staff can now manually contact influencers',
+      quotation: result.quotation
     })
 
   } catch (error) {

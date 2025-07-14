@@ -1,11 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import BulkApproveModal from '@/components/modals/BulkApproveModal'
 import AddBrandPanel from '@/components/brands/AddBrandPanel'
 import ViewBrandPanel from '@/components/brands/ViewBrandPanel'
 import QuotationDetailPanel from '@/components/brands/QuotationDetailPanel'
+import CreateCampaignModal from '@/components/modals/CreateCampaignModal'
 import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, Filter, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
 
 // Mock data for brands and their shortlists
@@ -225,6 +227,7 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
 }
 
 function BrandsPageClient() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'clients' | 'quotations'>('clients')
   const [isLoading, setIsLoading] = useState(false)
   
@@ -234,6 +237,10 @@ function BrandsPageClient() {
   const [quotationDetailPanelOpen, setQuotationDetailPanelOpen] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<any>(null)
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null)
+  
+  // Campaign modal state
+  const [showCreateCampaignModal, setShowCreateCampaignModal] = useState(false)
+  const [campaignQuotation, setCampaignQuotation] = useState<any>(null)
   
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('')
@@ -641,10 +648,44 @@ function BrandsPageClient() {
     setAddBrandPanelOpen(false)
   }
 
-  const handleCreateCampaign = async (quotationId: string) => {
-    // NOTE: Campaigns are now automatically created when quotations are approved
-    // This function is kept for backward compatibility but should not be called
-    console.log('Campaign creation is now automatic when quotations are approved')
+  const handleCreateCampaign = async (campaignData: any) => {
+    try {
+      // Add quotation data to campaign creation
+      const campaignWithQuotation = {
+        ...campaignData,
+        quotation_id: campaignQuotation?.id,
+        confirmed_influencers: campaignQuotation?.influencers?.filter((inf: any) => inf.contact_status === 'confirmed') || [],
+        total_budget: campaignQuotation?.total_quote,
+        created_from_quotation: true,
+        status: 'ACTIVE',
+        created_at: new Date().toISOString()
+      }
+      
+      console.log('Creating campaign from quotation:', campaignWithQuotation)
+      
+      // In a real app, this would make an API call to create the campaign
+      // For now, we'll simulate the creation
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Close modal and redirect to campaigns page
+      setShowCreateCampaignModal(false)
+      setCampaignQuotation(null)
+      
+      // Show success message and redirect
+      alert(`Campaign "${campaignData.name}" created successfully! Redirecting to campaigns page...`)
+      
+      // Redirect to the campaigns page
+      router.push('/staff/campaigns')
+      
+    } catch (error) {
+      console.error('Error creating campaign:', error)
+      alert('Failed to create campaign. Please try again.')
+    }
+  }
+
+  const handleOpenCampaignModal = (quotation: any) => {
+    setCampaignQuotation(quotation)
+    setShowCreateCampaignModal(true)
   }
 
   const handleSendQuote = async (pricing: string, notes: string) => {
@@ -733,7 +774,7 @@ function BrandsPageClient() {
         return (
           <div className="flex flex-col space-y-1">
             <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
-            <span className="text-xs text-green-600 font-medium">Converted to campaign</span>
+            <span className="text-xs text-green-600 font-medium">Ready for influencer contact</span>
           </div>
         )
       case 'rejected':
@@ -1080,8 +1121,8 @@ function BrandsPageClient() {
                           )}
                           {item.status === 'approved' && (
                             <div className="flex items-center space-x-1 mt-1">
-                              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                              <span className="text-xs text-purple-600 font-medium">Converted to campaign</span>
+                              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                              <span className="text-xs text-orange-600 font-medium">Ready for contact</span>
                             </div>
                           )}
                         </td>
@@ -1235,9 +1276,23 @@ function BrandsPageClient() {
             onClose={closePanels}
             quotation={selectedQuotation}
             onSendQuote={handleSendQuote}
-            onCreateCampaign={handleCreateCampaign}
+            onCreateCampaign={() => handleOpenCampaignModal(selectedQuotation)}
           />
         )}
+
+        {/* Create Campaign Modal */}
+        <CreateCampaignModal
+          isOpen={showCreateCampaignModal}
+          onClose={() => {
+            setShowCreateCampaignModal(false)
+            setCampaignQuotation(null)
+          }}
+          onSave={handleCreateCampaign}
+          brands={[{ 
+            id: campaignQuotation?.brand_id || '', 
+            company_name: campaignQuotation?.brand_name || 'Unknown Brand' 
+          }]}
+        />
       </main>
     </div>
   )

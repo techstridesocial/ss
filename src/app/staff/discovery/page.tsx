@@ -1622,7 +1622,7 @@ function DiscoveredInfluencersTable({
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <h3 className="text-lg font-semibold text-gray-900">{getPlatformTitle()}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{getPlatformTitle()}</h3>
             {searchQuery?.trim() && (
               <div className="flex items-center space-x-2">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -1872,7 +1872,7 @@ function DiscoveryPageClient() {
       setIsRefreshingCredits(false)
     }
   }
-
+  
   // Enhanced search function with full API integration
   const handleSearch = async () => {
     setIsSearching(true)
