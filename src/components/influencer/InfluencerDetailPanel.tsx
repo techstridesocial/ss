@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, MapPin, Shield, Instagram, Youtube, Video, Globe } from 'lucide-react'
+import { X, ExternalLink, MapPin, Shield, Instagram, Youtube, Video, Globe, Users, Heart, MessageCircle, Eye, TrendingUp, Calendar, UserCheck, Lock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface InfluencerDetailPanelProps {
@@ -120,83 +120,85 @@ export default function InfluencerDetailPanel({
     setMounted(true)
   }, [])
 
+  if (!mounted || !isOpen || !influencer) return null
+
   const formatNumber = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
-    return num?.toString() || '0'
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M'
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K'
+    }
+    return num.toString()
   }
 
-  if (!mounted || !influencer) return null
+  const formatPercentage = (value: number) => {
+    return `${(value * 100).toFixed(1)}%`
+  }
 
-  // Check if this is a multi-platform creator
+  // Check if this is a multi-platform influencer
   const isMultiPlatform = influencer.platforms && Object.keys(influencer.platforms).length > 1
+  
+  // Get current platform data
+  const currentPlatformData = isMultiPlatform 
+    ? influencer.platforms?.[selectedPlatform || 'instagram'] || Object.values(influencer.platforms)[0]
+    : influencer
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 z-[60]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
             onClick={onClose}
           />
           
+          {/* Panel */}
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white shadow-2xl z-[70] overflow-y-auto flex flex-col"
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed inset-y-0 right-0 z-[9999] w-full max-w-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex-1 min-h-full">
-              {/* Profile Section */}
-              <div className="p-6 pb-4 border-b border-gray-100 bg-gray-50/50">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start space-x-4">
-                    <div className="relative">
-                      <img
-                        src={influencer.profilePicture || influencer.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(influencer.displayName || influencer.display_name || influencer.username)}&background=random&size=150&color=fff`}
-                        alt={influencer.displayName || influencer.display_name || influencer.username}
-                        className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(influencer.displayName || influencer.display_name || influencer.username)}&background=random&size=150&color=fff`;
-                        }}
-                      />
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white shadow-md flex items-center justify-center">
-                        <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-4 mb-2">
-                        <h1 className="text-2xl font-bold text-gray-900 truncate">
-                          {influencer.displayName || influencer.display_name || influencer.username}
-                        </h1>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                        <div className="flex items-center space-x-2">
-                          <Shield className="w-4 h-4" />
-                          <span className="font-medium">Creator Account</span>
-                        </div>
-                            <span className="text-gray-300">•</span>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="w-4 h-4" />
-                          {loading ? (
-                            <span className="text-gray-400">Loading location...</span>
-                          ) : (
-                            <span>
-                              {city || influencer.location || 'Unknown City'}, {country || 'Unknown Country'}
+            <div className="flex flex-col h-full overflow-y-auto">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-100">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <img 
+                      src={influencer.profilePicture || influencer.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(influencer.displayName || influencer.display_name || influencer.username)}&background=random&size=150&color=fff`} 
+                      alt={influencer.displayName || influencer.display_name || influencer.username}
+                      className="w-16 h-16 rounded-2xl object-cover shadow-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(influencer.displayName || influencer.display_name || influencer.username)}&background=random&size=150&color=fff`;
+                      }}
+                    />
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                        {influencer.displayName || influencer.display_name || influencer.username}
+                      </h2>
+                      <div className="flex items-center space-x-2 mb-2">
+                        {loading ? (
+                          <div className="flex items-center space-x-2 text-gray-500">
+                            <MapPin className="w-4 h-4" />
+                            <span className="text-sm">Loading location...</span>
+                          </div>
+                        ) : (city || country) ? (
+                          <div className="flex items-center space-x-2 text-gray-600">
+                            <MapPin className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              {city && country ? `${city}, ${country}` : city || country}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        ) : null}
                       </div>
-                      
-                      {/* Platform Tags */}
-                      <div className="flex items-center flex-wrap gap-2 mb-3">
+                      <div className="flex items-center space-x-2">
                         {isMultiPlatform ? (
                           Object.keys(influencer.platforms).map((platform) => (
                             <Badge key={platform} variant="success" size="default" className="font-semibold">
@@ -211,7 +213,15 @@ export default function InfluencerDetailPanel({
                         
                         {influencer.verified && (
                           <Badge variant="default" size="default" className="font-semibold">
+                            <Shield className="w-3 h-3 mr-1" />
                             Verified
+                          </Badge>
+                        )}
+
+                        {influencer.isPrivate && (
+                          <Badge variant="secondary" size="default" className="font-semibold">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Private
                           </Badge>
                         )}
                       </div>
@@ -229,82 +239,265 @@ export default function InfluencerDetailPanel({
                     </Button>
                   </div>
                 </div>
+              </div>
 
-                {/* Platform-Specific Info */}
-                {isMultiPlatform ? (
-                <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">All Platforms</h3>
-                    <div className="space-y-3">
-                      {Object.entries(influencer.platforms).map(([platform, data]: [string, any]) => (
-                        <div key={platform} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100">
-                          <div className="flex items-center space-x-3">
-                            <PlatformIcon platform={platform} size={20} />
-                            <div>
-                              <div className="font-medium text-gray-900">
-                                @{data.username}
+              {/* Bio Section */}
+              {influencer.bio && (
+                <div className="p-6 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
+                  <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {influencer.bio}
+                    </p>
                   </div>
-                              <div className="text-sm text-gray-500">
-                                {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                    </div>
                 </div>
+              )}
+
+              {/* Key Metrics */}
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Metrics</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">Followers</span>
                     </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-gray-900">
-                              {formatNumber(data.followers)}
+                    <div className="text-2xl font-bold text-blue-900">
+                      {formatNumber(currentPlatformData?.followers || influencer.followers || 0)}
+                    </div>
                   </div>
-                            <div className="text-sm text-gray-500">
-                              {(data.engagement_rate * 100).toFixed(1)}% eng.
+                  
+                  <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <TrendingUp className="w-5 h-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-900">Engagement</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-900">
+                      {formatPercentage(currentPlatformData?.engagement_rate || influencer.engagement_rate || 0)}
                     </div>
                   </div>
-                    </div>
-                  ))}
-                </div>
+
+                  {(influencer.avgViews || currentPlatformData?.avgViews) && (
+                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Eye className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-900">Avg Views</span>
                       </div>
-                    ) : (
-                  <div className="mb-4">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <PlatformIcon platform={influencer.platform || selectedPlatform || 'instagram'} size={16} />
-                      <span className="font-medium text-gray-900">
-                        {((influencer.platform || selectedPlatform || 'instagram').charAt(0).toUpperCase() + (influencer.platform || selectedPlatform || 'instagram').slice(1))} Profile
-                      </span>
-                              </div>
-                    
-                    {influencer.bio && (
-                      <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {influencer.bio}
-                        </p>
-                          </div>
-                        )}
-                                    </div>
-                )}
+                      <div className="text-2xl font-bold text-purple-900">
+                        {formatNumber(influencer.avgViews || currentPlatformData?.avgViews || 0)}
+                      </div>
+                    </div>
+                  )}
 
-                {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 mb-1">
-                      {formatNumber(influencer.totalFollowers || influencer.followers || 0)}
-                                            </div>
-                    <div className="text-xs text-gray-500 font-medium">
-                      {isMultiPlatform ? 'Total Followers' : 'Followers'}
-                                          </div>
-                                            </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 mb-1">
-                      {((influencer.averageEngagement || influencer.engagement_rate || 0) * 100).toFixed(1)}%
-                                          </div>
-                    <div className="text-xs text-gray-500 font-medium">
-                      {isMultiPlatform ? 'Avg Engagement' : 'Engagement'}
-                                        </div>
-                                        </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 mb-1">
-                      {influencer.verified ? 'Yes' : 'No'}
-                                      </div>
-                    <div className="text-xs text-gray-500 font-medium">Verified</div>
-                                  </div>
-                                </div>
-                                      </div>
+                  {(influencer.postCount || influencer.postsCounts) && (
+                    <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Calendar className="w-5 h-5 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-900">Posts</span>
+                      </div>
+                      <div className="text-2xl font-bold text-orange-900">
+                        {formatNumber(influencer.postCount || influencer.postsCounts || 0)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Engagement Details */}
+              {(influencer.avgLikes || influencer.avgComments) && (
+                <div className="p-6 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Engagement Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {influencer.avgLikes && (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100">
+                        <div className="flex items-center space-x-3">
+                          <Heart className="w-5 h-5 text-red-500" />
+                          <span className="font-medium text-gray-900">Avg Likes</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {formatNumber(influencer.avgLikes)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {influencer.avgComments && (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100">
+                        <div className="flex items-center space-x-3">
+                          <MessageCircle className="w-5 h-5 text-blue-500" />
+                          <span className="font-medium text-gray-900">Avg Comments</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {formatNumber(influencer.avgComments)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Demographics */}
+              {influencer.audience && (
+                <div className="p-6 border-b border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Audience Demographics</h3>
+                  
+                  {/* Gender Distribution */}
+                  {influencer.audience.gender && (
+                    <div className="mb-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Gender Distribution</h4>
+                      <div className="space-y-2">
+                        {Object.entries(influencer.audience.gender).map(([gender, percentage]: [string, any]) => (
+                          <div key={gender} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 capitalize">{gender}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-500 h-2 rounded-full" 
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900 w-10">
+                                {percentage.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Age Distribution */}
+                  {influencer.audience.ageRanges && (
+                    <div className="mb-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Age Distribution</h4>
+                      <div className="space-y-2">
+                        {Object.entries(influencer.audience.ageRanges).map(([age, percentage]: [string, any]) => (
+                          <div key={age} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">{age}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full" 
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900 w-10">
+                                {percentage.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top Locations */}
+                  {influencer.audience.locations && (
+                    <div className="mb-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Top Audience Locations</h4>
+                      <div className="space-y-2">
+                        {influencer.audience.locations.slice(0, 5).map((location: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">{location.country}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-purple-500 h-2 rounded-full" 
+                                  style={{ width: `${location.percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900 w-10">
+                                {location.percentage.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Languages */}
+                  {influencer.audience.languages && (
+                    <div>
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Top Languages</h4>
+                      <div className="space-y-2">
+                        {influencer.audience.languages.slice(0, 3).map((lang: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600 capitalize">{lang.language}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-orange-500 h-2 rounded-full" 
+                                  style={{ width: `${lang.percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900 w-10">
+                                {lang.percentage.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Account Information */}
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Creator ID</span>
+                    <span className="font-medium text-gray-900">{influencer.creatorId || influencer.userId}</span>
+                  </div>
+                  
+                  {influencer.accountType && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Account Type</span>
+                      <Badge variant="secondary" className="capitalize">
+                        {influencer.accountType}
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Verified</span>
+                    <Badge variant={influencer.verified ? "success" : "secondary"}>
+                      {influencer.verified ? "Yes" : "No"}
+                    </Badge>
+                  </div>
+
+                  {influencer.country && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Country</span>
+                      <span className="font-medium text-gray-900">{influencer.country}</span>
+                    </div>
+                  )}
+
+                  {influencer.ageGroup && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Age Group</span>
+                      <span className="font-medium text-gray-900">{influencer.ageGroup}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Platforms</span>
+                    <span className="font-medium text-gray-900">
+                      {isMultiPlatform ? Object.keys(influencer.platforms).join(', ') : (influencer.platform || selectedPlatform || 'Instagram')}
+                    </span>
+                  </div>
+                  
+                  {influencer.score && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Discovery Score</span>
+                      <Badge variant="default" className="font-semibold">
+                        {influencer.score}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* External Links */}
               {isMultiPlatform ? (
@@ -325,9 +518,9 @@ export default function InfluencerDetailPanel({
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       )
-                                ))}
-                              </div>
-                          </div>
+                    ))}
+                  </div>
+                </div>
               ) : influencer.url && (
                 <div className="p-6 border-b border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Profile Link</h3>
@@ -340,29 +533,8 @@ export default function InfluencerDetailPanel({
                     <ExternalLink className="w-4 h-4" />
                     <span>View on {((influencer.platform || selectedPlatform || 'instagram').charAt(0).toUpperCase() + (influencer.platform || selectedPlatform || 'instagram').slice(1))}</span>
                   </a>
-                                  </div>
-                                )}
-
-              {/* Discovery Info */}
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Discovery Information</h3>
-                                          <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Creator ID</span>
-                    <span className="font-medium text-gray-900">{influencer.creatorId || influencer.userId}</span>
-                                              </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Platforms</span>
-                    <span className="font-medium text-gray-900">
-                      {isMultiPlatform ? Object.keys(influencer.platforms).join(', ') : (influencer.platform || selectedPlatform || 'Instagram')}
-                                                </span>
-                                                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Discovery Score</span>
-                    <span className="font-medium text-gray-900">{influencer.score || 'N/A'}</span>
-                                                </div>
-                                              </div>
-                                            </div>
+                </div>
+              )}
             </div>
           </motion.div>
         </>

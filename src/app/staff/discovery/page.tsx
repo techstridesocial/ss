@@ -1996,7 +1996,7 @@ function DiscoveryPageClient() {
   const [detailCountry, setDetailCountry] = useState<string | undefined>()
   const [detailLoading, setDetailLoading] = useState(false)
 
-  // Handler to open detail panel and fetch city/country
+  // Handler to open detail panel and fetch comprehensive data
   const handleViewProfile = async (influencer: any) => {
     setDetailPanelOpen(true)
     setDetailInfluencer(influencer)
@@ -2022,43 +2022,90 @@ function DiscoveryPageClient() {
         if (firstPlatform) {
           platformData = influencer.platforms[firstPlatform]
           actualPlatform = firstPlatform
-          console.log(`📍 No data for ${selectedPlatform}, using ${firstPlatform} instead`)
+          console.log(`📊 No data for ${selectedPlatform}, using ${firstPlatform} instead`)
         }
       }
       
       const userId = platformData?.userId || influencer.userId
       
       if (!userId) {
-        console.log('📍 No userId available for detailed profile fetch, using fallback location')
+        console.log('📊 No userId available for detailed profile fetch, using fallback data')
         setDetailLoading(false)
         return
       }
       
-      // Try to fetch detailed city and country from Modash API
+      // Fetch comprehensive influencer report with demographics
+      console.log('📊 Fetching comprehensive influencer report...')
       const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: userId,
-          platform: actualPlatform
+          platform: actualPlatform,
+          includeReport: true // Request full report with demographics
         })
       })
       
       if (response.ok) {
         const result = await response.json()
-        if (result.success && result.data && (result.data.city || result.data.country)) {
-          // Only update if we got actual data
-          setDetailCity(result.data.city || fallbackCity)
-          setDetailCountry(result.data.country || fallbackCountry)
-          console.log('📍 Updated location data from Modash:', result.data)
+        if (result.success && result.data) {
+          // Merge the comprehensive data with the existing influencer data
+          const enhancedInfluencer = {
+            ...influencer,
+            // Add demographic and audience data
+            audience: result.data.audience || {},
+            demographics: result.data.demographics || {},
+            engagement: result.data.engagement || {},
+            // Add engagement metrics
+            avgLikes: result.data.avgLikes || 0,
+            avgComments: result.data.avgComments || 0,
+            avgShares: result.data.avgShares || 0,
+            // Add additional metadata that might be in the API response
+            accountType: result.data.accountType || influencer.accountType,
+            country: result.data.country || influencer.country,
+            ageGroup: result.data.ageGroup || influencer.ageGroup,
+            isPrivate: result.data.isPrivate || influencer.isPrivate,
+            postCount: result.data.postCount || influencer.postCount,
+            // Keep recent posts if available
+            recentPosts: result.data.recentPosts || []
+          }
+          
+          // Update the detail influencer with enhanced data
+          setDetailInfluencer(enhancedInfluencer)
+          console.log('📊 Enhanced influencer data with demographics:', enhancedInfluencer)
         } else {
-          console.log('📍 Using fallback location:', { city: fallbackCity, country: fallbackCountry })
+          console.log('📊 Using basic influencer data, no enhanced report available')
         }
       } else {
-        console.error('❌ Failed to fetch profile data:', response.statusText)
+        console.error('❌ Failed to fetch comprehensive report:', response.statusText)
       }
+      
+      // Also fetch basic location data as fallback
+      try {
+        const locationResponse = await fetch(`${window.location.origin}/api/discovery/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            platform: actualPlatform,
+            includeReport: false
+          })
+        })
+        
+        if (locationResponse.ok) {
+          const locationResult = await locationResponse.json()
+          if (locationResult.success && locationResult.data && (locationResult.data.city || locationResult.data.country)) {
+            setDetailCity(locationResult.data.city || fallbackCity)
+            setDetailCountry(locationResult.data.country || fallbackCountry)
+            console.log('📍 Updated location data:', locationResult.data)
+          }
+        }
+      } catch (locationError) {
+        console.error('❌ Failed to fetch location data:', locationError)
+      }
+      
     } catch (error) {
-      console.error('❌ Failed to fetch location data:', error)
+      console.error('❌ Failed to fetch comprehensive data:', error)
     } finally {
       setDetailLoading(false)
     }
