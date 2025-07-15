@@ -307,6 +307,34 @@ class ModashService {
       modashFilters.verified = true
     }
 
+    // If no meaningful filters are provided, add some sensible defaults for general discovery
+    const hasSpecificFilters = modashFilters.followers || 
+                              modashFilters.engagementRate || 
+                              modashFilters.bio || 
+                              modashFilters.textTags || 
+                              modashFilters.relevance || 
+                              modashFilters.location || 
+                              modashFilters.verified
+    
+    if (!hasSpecificFilters) {
+      console.log('🌟 No specific filters provided, adding defaults for general discovery...')
+      
+      // Add sensible defaults for general discovery based on platform
+      switch (filters.platform) {
+        case 'instagram':
+          modashFilters.followers = { min: 1000 } // At least 1k followers
+          break
+        case 'tiktok':
+          modashFilters.followers = { min: 1000 } // At least 1k followers
+          break
+        case 'youtube':
+          modashFilters.followers = { min: 1000 } // At least 1k subscribers
+          break
+      }
+      
+      console.log('🎯 Added default filters:', modashFilters)
+    }
+
     return modashFilters
   }
 

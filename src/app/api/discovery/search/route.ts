@@ -76,48 +76,39 @@ export async function POST(request: NextRequest) {
   try {
     const body: DiscoverySearchBody = await request.json()
     
-    console.log('🎯 Multi-Platform Discovery Search called with:', {
-      searchQuery: body.searchQuery,
-      hasFilters: !!body,
-      filterKeys: Object.keys(body).filter(k => body[k as keyof DiscoverySearchBody] !== undefined)
+    console.log('🔍 Discovery search:', {
+      platform: body.platform,
+      hasQuery: !!body.searchQuery,
+      filtersCount: Object.keys(body).filter(k => body[k as keyof DiscoverySearchBody] !== undefined && k !== 'platform').length
     })
     
     // Search all three platforms in parallel
     const platforms = ['instagram', 'tiktok', 'youtube'] as const
     
     try {
-      console.log('🚀 Searching all platforms in parallel...')
-      
       const searchPromises = platforms.map(async (platform) => {
         try {
           const filters = mapToModashFilters({ ...body, platform })
-          console.log(`🔍 Searching ${platform} with filters:`, JSON.stringify(filters, null, 2))
           
-          const results = await modashService.searchDiscovery(
-            filters,
-            body.page || 0,
-            body.limit || 20
-          )
-          
-          console.log(`✅ ${platform} search successful:`, {
-            platform,
-            results: results.results?.length || 0,
-            creditsUsed: results.creditsUsed
-          })
+          console.log(`Searching ${platform}...`)
+          const result = await modashService.searchDiscovery(filters)
           
           return {
             platform,
             success: true,
-            data: results,
-            error: null
+            data: result.results || [],
+            total: result.total || 0,
+            creditsUsed: result.creditsUsed || 0
           }
         } catch (error) {
-          console.warn(`⚠️ ${platform} search failed:`, error)
+          console.error(`${platform} search failed:`, error)
           return {
             platform,
             success: false,
-            data: null,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
+            data: [],
+            total: 0,
+            creditsUsed: 0
           }
         }
       })
@@ -131,10 +122,10 @@ export async function POST(request: NextRequest) {
       const totalResults = mergedCreators.length
       const successfulPlatforms = platformResults.filter(r => r.success).length
       
-      console.log('🔄 Platform search summary:', {
+      console.log('✅ Search completed:', {
         totalCreators: totalResults,
         successfulPlatforms,
-        platformResults: platformResults.map(r => ({ platform: r.platform, success: r.success, count: r.data?.results?.length || 0 }))
+        platformResults: platformResults.map(r => ({ platform: r.platform, success: r.success, count: r.data?.length || 0 }))
       })
       
       return NextResponse.json({
@@ -145,12 +136,12 @@ export async function POST(request: NextRequest) {
           page: body.page || 0,
           limit: body.limit || 20,
           hasMore: false, // We'll implement pagination later if needed
-          creditsUsed: platformResults.reduce((sum, r) => sum + (r.data?.creditsUsed || 0), 0)
+          creditsUsed: platformResults.reduce((sum, r) => sum + (r.creditsUsed || 0), 0)
         },
         platformResults: platformResults.map(r => ({
           platform: r.platform,
           success: r.success,
-          count: r.data?.results?.length || 0,
+          count: r.data?.length || 0,
           error: r.error
         })),
         note: 'Multi-platform search results merged by creator',
@@ -189,20 +180,11 @@ function mergeCreatorResults(platformResults: any[]): MergedCreator[] {
   const creatorMap = new Map<string, MergedCreator>()
   
   platformResults.forEach(({ platform, data }) => {
-    if (!data || !data.results) return
+    if (!data || !Array.isArray(data) || data.length === 0) return
     
-    data.results.forEach((influencer: any) => {
+    data.forEach((influencer: any) => {
       // Handle Modash's nested profile structure
       const profile = influencer.profile || influencer
-      
-      // Debug: Log influencer picture fields
-      console.log(`🖼️ ${platform} influencer picture fields:`, {
-        username: profile.username || influencer.username,
-        picture: profile.picture,
-        profile_picture: profile.profile_picture,
-        hasProfile: !!influencer.profile,
-        profileKeys: influencer.profile ? Object.keys(influencer.profile) : 'none'
-      })
       
       const creatorKey = normalizeCreatorName(profile.fullname || profile.display_name || profile.username || influencer.username)
       
@@ -396,6 +378,8 @@ function mapToModashFilters(body: DiscoverySearchBody) {
   
   // Location mapping (would need location ID mapping)
   if (body.selectedLocation && body.selectedLocation !== '') {
+    console.log('⚠️ Location filter temporarily disabled for debugging')
+    console.log('🔍 Received location:', body.selectedLocation)
     // Map location names to Modash location IDs
     const locationMapping = {
       'united_kingdom': [826],
@@ -405,7 +389,9 @@ function mapToModashFilters(body: DiscoverySearchBody) {
       'germany': [276],
       'france': [250]
     }
-    filters.location = locationMapping[body.selectedLocation as keyof typeof locationMapping] || []
+    // Temporarily disable location filtering
+    // filters.location = locationMapping[body.selectedLocation as keyof typeof locationMapping] || []
+    console.log('🔍 Location mapping would be:', locationMapping[body.selectedLocation as keyof typeof locationMapping])
   }
   
   // Search query as relevance

@@ -1625,15 +1625,6 @@ function DiscoveredInfluencersTable({
   const handleSort = (key: string) => {
     const newDirection = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
     
-    console.log('🔄 Sorting triggered:', {
-      column: key,
-      previousKey: sortConfig.key,
-      previousDirection: sortConfig.direction,
-      newDirection,
-      dataCount: discoveredCreators.length,
-      selectedPlatform
-    })
-    
     setSortConfig({
       key,
       direction: newDirection
@@ -1645,18 +1636,6 @@ function DiscoveredInfluencersTable({
     let sortableInfluencers = [...discoveredCreators]
     
     if (sortConfig.key) {
-      console.log('📊 Sorting data:', {
-        sortKey: sortConfig.key,
-        direction: sortConfig.direction,
-        totalItems: sortableInfluencers.length,
-        sampleData: sortableInfluencers.slice(0, 2).map(item => ({
-          name: item.displayName || item.display_name || item.username,
-          platforms: item.platforms ? Object.keys(item.platforms) : 'none',
-          directFollowers: item.followers,
-          directEngagement: item.engagement_rate
-        }))
-      })
-      
       sortableInfluencers.sort((a, b) => {
         let aValue: any
         let bValue: any
@@ -1677,17 +1656,6 @@ function DiscoveredInfluencersTable({
             // Convert to number explicitly and handle undefined/null cases
             aValue = Number(aPlatformData?.followers || a.followers || 0) || 0
             bValue = Number(bPlatformData?.followers || b.followers || 0) || 0
-            
-            console.log('👥 Followers comparison:', {
-              aName: a.displayName || a.username,
-              bName: b.displayName || b.username,
-              aValue,
-              bValue,
-              aPlatformData: aPlatformData?.followers,
-              bPlatformData: bPlatformData?.followers,
-              aDirect: a.followers,
-              bDirect: b.followers
-            })
             break
           case 'engagement_rate':
             // Get platform-specific engagement rate with improved fallback logic
@@ -1699,17 +1667,6 @@ function DiscoveredInfluencersTable({
             // Convert to number explicitly and handle undefined/null cases
             aValue = Number(aEngagementData?.engagement_rate || a.engagement_rate || 0) || 0
             bValue = Number(bEngagementData?.engagement_rate || b.engagement_rate || 0) || 0
-            
-            console.log('📈 Engagement comparison:', {
-              aName: a.displayName || a.username,
-              bName: b.displayName || b.username,
-              aValue,
-              bValue,
-              aEngagementData: aEngagementData?.engagement_rate,
-              bEngagementData: bEngagementData?.engagement_rate,
-              aDirect: a.engagement_rate,
-              bDirect: b.engagement_rate
-            })
             break
           default:
             aValue = a[sortConfig.key as keyof typeof a]
@@ -1731,18 +1688,6 @@ function DiscoveredInfluencersTable({
           const numB = typeof bValue === 'number' ? bValue : Number(bValue) || 0
           
           const result = sortConfig.direction === 'asc' ? numA - numB : numB - numA
-          
-          if (sortConfig.key === 'followers') {
-            console.log('🔢 Final numeric sort result:', {
-              aName: a.displayName || a.username,
-              bName: b.displayName || b.username,
-              numA,
-              numB,
-              direction: sortConfig.direction,
-              result
-            })
-          }
-          
           return result
         }
         
@@ -1761,14 +1706,6 @@ function DiscoveredInfluencersTable({
         }
         return 0
       })
-      
-      console.log('✅ Sorting completed. First 3 results:', 
-        sortableInfluencers.slice(0, 3).map(item => ({
-          name: item.displayName || item.username,
-          followers: item.platforms?.[selectedPlatform]?.followers || item.followers,
-          engagement: item.platforms?.[selectedPlatform]?.engagement_rate || item.engagement_rate
-        }))
-      )
     }
     
     return sortableInfluencers
@@ -1886,7 +1823,7 @@ function DiscoveredInfluencersTable({
                 </td>
               </tr>
             ) : (
-              sortedInfluencers.map((creator) => {
+              sortedInfluencers.map((creator, index) => {
                 // Check if this is a multi-platform creator
                 const isMultiPlatform = creator.platforms && Object.keys(creator.platforms).length > 1
                 
@@ -1895,7 +1832,7 @@ function DiscoveredInfluencersTable({
                   (creator.platforms ? Object.values(creator.platforms)[0] : creator)
                 
                 return (
-                  <tr key={creator.creatorId || creator.userId} className="hover:bg-gray-50 transition-colors">
+                  <tr key={creator.creatorId || creator.userId || `creator-${index}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img 
@@ -1978,39 +1915,51 @@ function DiscoveredInfluencersTable({
                           ))
                         ) : (
                           <>
-                            {(creator.platform === 'instagram' || !creator.platform) && (
-                              <a 
-                                href={creator.url || `https://www.instagram.com/${creator.username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
-                                title={`View on Instagram (@${creator.username})`}
-                              >
-                                <InstagramLogo />
-                              </a>
-                            )}
-                            {creator.platform === 'youtube' && (
-                              <a 
-                                href={creator.url || `https://www.youtube.com/@${creator.username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
-                                title={`View on YouTube (@${creator.username})`}
-                              >
-                                <YouTubeLogo />
-                              </a>
-                            )}
-                            {creator.platform === 'tiktok' && (
-                              <a 
-                                href={creator.url || `https://www.tiktok.com/@${creator.username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
-                                title={`View on TikTok (@${creator.username})`}
-                              >
-                                <TikTokLogo />
-                              </a>
-                            )}
+                            {/* For single platform, use the selected platform data */}
+                            {(() => {
+                              const platformData = creator.platforms?.[selectedPlatform] || creator
+                              const username = platformData?.username || creator.username
+                              const url = platformData?.url || creator.url
+                              
+                              if (selectedPlatform === 'instagram' || !selectedPlatform) {
+                                return (
+                                  <a 
+                                    href={url || `https://www.instagram.com/${username}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-pink-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                    title={`View on Instagram (@${username})`}
+                                  >
+                                    <InstagramLogo />
+                                  </a>
+                                )
+                              } else if (selectedPlatform === 'youtube') {
+                                return (
+                                  <a 
+                                    href={url || `https://www.youtube.com/@${username}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-red-500 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                    title={`View on YouTube (@${username})`}
+                                  >
+                                    <YouTubeLogo />
+                                  </a>
+                                )
+                              } else if (selectedPlatform === 'tiktok') {
+                                return (
+                                  <a 
+                                    href={url || `https://www.tiktok.com/@${username}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-gray-900 hover:bg-gray-100 p-1 rounded transition-colors cursor-pointer" 
+                                    title={`View on TikTok (@${username})`}
+                                  >
+                                    <TikTokLogo />
+                                  </a>
+                                )
+                              }
+                              return null
+                            })()}
                           </>
                         )}
                       </div>
@@ -2120,7 +2069,10 @@ function DiscoveryPageClient() {
       console.log('🔍 Searching:', {
         platform: selectedPlatform,
         mode: searchQuery.trim() ? 'Exact Match' : 'Discovery',
-        filtersApplied: Object.keys(filters).filter(k => filters[k] !== undefined && filters[k] !== '' && filters[k] !== false && k !== 'platform').length
+        activeFilters: Object.keys(currentFilters).filter(k => {
+          const value = currentFilters[k]
+          return value !== undefined && value !== '' && value !== false && !(Array.isArray(value) && value.length === 0)
+        }).length
       })
       
       const response = await fetch(`${window.location.origin}/api/discovery/search`, {

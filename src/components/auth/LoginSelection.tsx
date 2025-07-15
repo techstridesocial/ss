@@ -27,52 +27,169 @@ export default function LoginSelection() {
     }
   }
 
+  // Custom Clerk appearance for staff login
+  const staffAppearance = {
+    variables: {
+      colorPrimary: '#1F2937',  // Tailwind slate-800
+      colorText: '#111827',
+      fontSize: '16px',
+      borderRadius: '10px',
+    },
+    elements: {
+      card: 'shadow-xl px-6 py-8 border border-gray-200',
+      headerTitle: 'text-xl font-semibold text-center',
+      headerSubtitle: 'text-sm text-gray-500 text-center mb-4',
+      formFieldLabel: 'text-sm font-medium text-gray-700',
+      formFieldInput: 'h-10 px-4 border-gray-300 focus:ring-2 focus:ring-slate-500 rounded-md text-sm',
+      footerAction: 'text-sm text-gray-400',
+      button: 'bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm h-10 rounded-md',
+      logoBox: 'mb-2',
+    },
+  }
+
+  // Get background image and text colors based on mode
+  const getBackgroundStyle = (mode: LoginMode) => {
+    switch (mode) {
+      case 'brand':
+        return {
+          backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-blue-ciNl7Fdr0aqj6WybhUHWs8TcRx4F7D.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }
+      case 'influencer':
+        return {
+          backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-cyan-DCLBrf9zXPufk7mvNq7d9hASFRCTQt.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }
+      case 'staff':
+        return {
+          backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-cyan-DCLBrf9zXPufk7mvNq7d9hASFRCTQt.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }
+      default:
+        return undefined
+    }
+  }
+
+  // Get text colors based on mode
+  const getTextColors = (mode: LoginMode) => {
+    switch (mode) {
+      case 'brand':
+        return {
+          title: 'text-white',
+          subtitle: 'text-blue-200',
+          description: 'text-blue-100',
+          backButton: 'text-blue-200 hover:text-white'
+        }
+      case 'influencer':
+        return {
+          title: 'text-white',
+          subtitle: 'text-cyan-200',
+          description: 'text-cyan-100',
+          backButton: 'text-cyan-200 hover:text-white'
+        }
+      case 'staff':
+        return {
+          title: 'text-white',
+          subtitle: 'text-cyan-200',
+          description: 'text-cyan-100',
+          backButton: 'text-cyan-200 hover:text-white'
+        }
+      default:
+        return {
+          title: 'text-gray-900',
+          subtitle: 'text-gray-500',
+          description: 'text-gray-600',
+          backButton: 'text-gray-500 hover:text-gray-700'
+        }
+    }
+  }
+
+  const backgroundStyle = getBackgroundStyle(mode)
+  const textColors = getTextColors(mode)
+
   if (mode === 'brand' || mode === 'influencer' || mode === 'staff') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen flex items-center justify-center bg-gray-50 p-4"
+        className="min-h-screen w-full flex items-center justify-center relative"
+        style={backgroundStyle}
       >
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {mode === 'brand' && 'Welcome, Brand'}
-              {mode === 'influencer' && 'Welcome, Influencer'}
-              {mode === 'staff' && 'Team Access'}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {mode === 'brand' && 'Access your influencer dashboard'}
-              {mode === 'influencer' && 'Connect and manage your campaigns'}
-              {mode === 'staff' && 'Staff & Admin Portal'}
-            </p>
+        {/* Background overlay for all modes */}
+        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        
+        {/* Centered login container */}
+        <div className="w-full max-w-md relative z-10 flex flex-col items-center text-center">
+          {/* Header */}
+          <div className="mb-4">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className={`font-bold text-xl mb-1 ${textColors.title}`}>
+                {mode === 'brand' && 'Stride Social'}
+                {mode === 'influencer' && 'Stride Social'}
+                {mode === 'staff' && 'Stride Social'}
+              </h1>
+              
+              <div className={`text-xs uppercase tracking-wider font-medium mb-2 ${textColors.subtitle}`}>
+                {mode === 'brand' && 'Brand Portal'}
+                {mode === 'influencer' && 'Creator Portal'}
+                {mode === 'staff' && 'Team Portal'}
+              </div>
+              
+              <p className={`text-xs ${textColors.description}`}>
+                {mode === 'brand' && 'Access your influencer dashboard'}
+                {mode === 'influencer' && 'Connect and manage your campaigns'}
+                {mode === 'staff' && 'Sign in to access staff tools'}
+              </p>
+            </motion.div>
           </div>
           
-          <SignIn 
-            routing="hash"
-            appearance={{
-              elements: {
-                formButtonPrimary: mode === 'brand' 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-sm normal-case'
-                  : mode === 'influencer'
-                  ? 'bg-purple-600 hover:bg-purple-700 text-sm normal-case'
-                  : 'bg-gray-600 hover:bg-gray-700 text-sm normal-case'
-              }
-            }}
-            afterSignInUrl={
-              mode === 'staff' ? '/staff' : 
-              mode === 'brand' ? '/brand' : 
-              mode === 'influencer' ? '/influencer' : 
-              '/dashboard'
-            }
-          />
-          
-          <button
-            onClick={() => setMode('selection')}
-            className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700"
+          {/* Clerk Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="w-full flex justify-center"
           >
-            ← Back to selection
-          </button>
+            <SignIn 
+              routing="hash"
+              appearance={mode === 'staff' ? staffAppearance : {
+                elements: {
+                  formButtonPrimary: mode === 'brand' 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-sm normal-case'
+                    : 'bg-purple-600 hover:bg-purple-700 text-sm normal-case'
+                }
+              }}
+              afterSignInUrl={
+                mode === 'staff' ? '/staff' : 
+                mode === 'brand' ? '/brand' : 
+                mode === 'influencer' ? '/influencer' : 
+                '/dashboard'
+              }
+            />
+          </motion.div>
+          
+          {/* Back Button - Outside card with proper spacing */}
+          <div className="mt-8">
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              onClick={() => setMode('selection')}
+              className={`text-xs transition-colors ${textColors.backButton}`}
+            >
+              ← Back to selection
+            </motion.button>
+          </div>
         </div>
       </motion.div>
     )
@@ -83,33 +200,43 @@ export default function LoginSelection() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen flex items-center justify-center bg-gray-900 p-4"
+        className="min-h-screen flex items-center justify-center bg-slate-900 p-4"
       >
-        <div className="w-full max-w-sm bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-center mb-6">Team Access</h2>
-          <form onSubmit={handleStaffCodeSubmit}>
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8"
+        >
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-1">Team Access</h2>
+            <p className="text-sm text-gray-500">Enter your access code</p>
+          </div>
+          
+          <form onSubmit={handleStaffCodeSubmit} className="space-y-4">
             <input
               type="password"
-              placeholder="Enter access code"
+              placeholder="Access code"
               value={staffCode}
               onChange={(e) => setStaffCode(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
               autoFocus
             />
             <button
               type="submit"
-              className="w-full mt-4 bg-gray-600 text-white py-2 rounded-md hover:bg-gray-700"
+              className="w-full bg-slate-800 text-white py-2.5 rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm"
             >
-              Access
+              Continue
             </button>
           </form>
+          
           <button
             onClick={() => setShowStaffAccess(false)}
-            className="w-full mt-2 text-sm text-gray-500 hover:text-gray-700"
+            className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             Cancel
           </button>
-        </div>
+        </motion.div>
       </motion.div>
     )
   }
@@ -123,9 +250,13 @@ export default function LoginSelection() {
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800">
-          {/* Background pattern or image would go here */}
-          <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div className="absolute inset-0">
+          <img 
+            src="https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/images/business.png"
+            alt="Business background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
         </div>
         
         <div className="relative z-10 h-full min-h-[50vh] lg:min-h-screen flex items-center justify-center p-8">
@@ -165,9 +296,13 @@ export default function LoginSelection() {
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600">
-          {/* Background pattern or image would go here */}
-          <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div className="absolute inset-0">
+          <img 
+            src="https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/images/influencer.jpg"
+            alt="Influencer background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
         </div>
         
         <div className="relative z-10 h-full min-h-[50vh] lg:min-h-screen flex items-center justify-center p-8">
