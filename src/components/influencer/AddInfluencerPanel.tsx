@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Save, Loader2, User, Mail, MapPin, Globe, Tag, DollarSign, Users, Search, CheckCircle, AlertTriangle, Zap, TrendingUp } from 'lucide-react'
+import { X, Save, Loader2, User, Mail, MapPin, Globe, Tag, DollarSign, Users, Search, CheckCircle, AlertTriangle, Zap, TrendingUp, Heart, Plus } from 'lucide-react'
+import { useHeartedInfluencers } from '../../lib/context/HeartedInfluencersContext'
 
 interface InfluencerData {
   display_name: string
@@ -81,6 +82,9 @@ export default function AddInfluencerPanel({
   const [isSearching, setIsSearching] = useState(false)
   const [discoveryData, setDiscoveryData] = useState<ModashDiscoveryData | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+  
+  // Use hearted influencers context
+  const { heartedInfluencers, removeHeartedInfluencer } = useHeartedInfluencers()
   
   const [formData, setFormData] = useState<InfluencerData>({
     display_name: '',
@@ -356,84 +360,106 @@ export default function AddInfluencerPanel({
         <div className="flex-1 overflow-y-auto">
           {mode === 'discovery' && !showPreview && (
             <div className="p-6 space-y-6">
-              {/* Discovery Mode */}
-              <div className="bg-blue-50 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <Zap className="text-blue-600 mt-0.5" size={20} />
-                  <div>
-                    <h3 className="font-medium text-blue-900">Smart Discovery</h3>
-                    <p className="text-sm text-blue-700 mt-1">
-                      Search our database to auto-fill influencer details and verify their metrics.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Search Platform
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {PLATFORMS.map((platform) => (
-                      <button
-                        key={platform.value}
-                        onClick={() => setSelectedPlatform(platform.value as any)}
-                        className={`p-3 text-sm font-medium rounded-lg border transition-colors ${
-                          selectedPlatform === platform.value
-                            ? 'bg-black text-white border-black'
-                            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        {platform.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Username or Handle
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={discoveryHandle}
-                      onChange={(e) => setDiscoveryHandle(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleDiscoverySearch()}
-                      className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30"
-                      placeholder="Enter username (without @)"
-                      disabled={isSearching}
-                    />
-                    <button
-                      onClick={handleDiscoverySearch}
-                      disabled={isSearching}
-                      className="px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center space-x-2"
-                    >
-                      {isSearching ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Search size={16} />
-                      )}
-                      <span>{isSearching ? 'Searching...' : 'Search'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {discoveryData && !discoveryData.found && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              {/* Hearted Influencers Section */}
+              {heartedInfluencers.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 rounded-xl p-4">
                     <div className="flex items-start space-x-3">
-                      <AlertTriangle className="text-yellow-600 mt-0.5" size={20} />
+                      <Heart className="text-blue-600 mt-0.5" size={20} />
                       <div>
-                        <h4 className="font-medium text-yellow-800">Profile Not Found</h4>
-                        <p className="text-sm text-yellow-700 mt-1">
-                          {discoveryData.error || 'This profile was not found in our database.'}
+                        <h3 className="font-medium text-blue-900">Add from Shortlist</h3>
+                        <p className="text-sm text-blue-700 mt-1">
+                          Quick add influencers you've favorited from discovery.
                         </p>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {heartedInfluencers.map((influencer) => (
+                      <div key={influencer.id} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <img 
+                            src={influencer.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(influencer.displayName)}&background=random&size=40&color=fff`}
+                            alt={influencer.displayName}
+                            className="w-10 h-10 rounded-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(influencer.displayName)}&background=random&size=40&color=fff`;
+                            }}
+                          />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{influencer.displayName}</div>
+                            <div className="text-xs text-gray-500">@{influencer.username} • {influencer.followers.toLocaleString()} followers</div>
+                            {influencer.niches && influencer.niches.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {influencer.niches.slice(0, 2).map((niche) => (
+                                  <span key={niche} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                    {niche}
+                                  </span>
+                                ))}
+                                {influencer.niches.length > 2 && (
+                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                    +{influencer.niches.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              // Pre-fill form with hearted influencer data
+                              setFormData({
+                                display_name: influencer.displayName,
+                                first_name: influencer.displayName.split(' ')[0] || '',
+                                last_name: influencer.displayName.split(' ').slice(1).join(' ') || '',
+                                email: '',
+                                bio: influencer.bio || '',
+                                location_country: influencer.location?.split(', ')[1] || '',
+                                location_city: influencer.location?.split(', ')[0] || '',
+                                website_url: '',
+                                niches: influencer.niches || [],
+                                influencer_type: 'SIGNED',
+                                content_type: 'STANDARD',
+                                tier: 'SILVER',
+                                average_views: undefined,
+                                instagram_username: influencer.platform === 'instagram' ? influencer.username : '',
+                                tiktok_username: influencer.platform === 'tiktok' ? influencer.username : '',
+                                youtube_username: influencer.platform === 'youtube' ? influencer.username : '',
+                                estimated_followers: influencer.followers,
+                                agency_name: ''
+                              })
+                              setMode('manual')
+                            }}
+                            className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2"
+                            title="Add to roster"
+                          >
+                            <Plus size={14} />
+                            <span>Add</span>
+                          </button>
+                          <button
+                            onClick={() => removeHeartedInfluencer(influencer.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove from favorites"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-6 text-center">
+                  <Heart size={48} className="mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Favorited Influencers</h3>
+                  <p className="text-gray-600 mb-4">
+                    Heart influencers in the Discovery page to add them to your shortlist.
+                  </p>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-gray-200">
                 <button

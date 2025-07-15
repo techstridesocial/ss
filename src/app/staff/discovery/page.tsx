@@ -40,9 +40,11 @@ import {
   Info,
   MapPin,
   Video,
-  Image
+  Image,
+  Heart
 } from 'lucide-react'
 import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
+import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 
 // Mock data for Modash credit usage and discovered influencers
 const MOCK_CREDIT_USAGE = {
@@ -1616,6 +1618,45 @@ function DiscoveredInfluencersTable({
     direction: 'asc'
   })
 
+  // Use the hearted influencers context
+  const { heartedInfluencers, addHeartedInfluencer, removeHeartedInfluencer, isInfluencerHearted } = useHeartedInfluencers()
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('💖 Heart context loaded in discovery page')
+    console.log('💖 Current hearted influencers:', heartedInfluencers)
+  }, [heartedInfluencers])
+
+  // Toggle heart status for an influencer
+  const handleHeartToggle = (influencer: any) => {
+    console.log('💖 Heart toggle clicked for influencer:', influencer)
+    
+    const influencerId = influencer.creatorId || influencer.userId || influencer.username || influencer.id
+    console.log('💖 Extracted influencer ID:', influencerId)
+    
+    if (isInfluencerHearted(influencerId)) {
+      console.log('💔 Removing influencer from hearts')
+      removeHeartedInfluencer(influencerId)
+    } else {
+      // Add to hearted influencers with all relevant data
+      const heartedInfluencer = {
+        id: influencerId,
+        displayName: influencer.displayName || influencer.display_name || influencer.username || influencer.id,
+        username: influencer.username || influencer.instagram_handle?.replace('@', '') || influencer.tiktok_handle?.replace('@', '') || influencer.youtube_handle?.replace('@', '') || 'unknown',
+        platform: selectedPlatform,
+        followers: influencer.platforms?.[selectedPlatform]?.followers || influencer.followers || 0,
+        engagement_rate: influencer.platforms?.[selectedPlatform]?.engagement_rate || influencer.engagement_rate || 0,
+        profilePicture: influencer.profilePicture || influencer.profile_picture,
+        niches: influencer.niches || [influencer.niche].filter(Boolean) || [],
+        location: influencer.location,
+        bio: influencer.bio
+      }
+      
+      console.log('❤️ Adding influencer to hearts:', heartedInfluencer)
+      addHeartedInfluencer(heartedInfluencer)
+    }
+  }
+
   // Generate title for multi-platform discovery
   const getDiscoveryTitle = () => {
     return `Discovered Creators (${selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} Stats)`
@@ -1985,6 +2026,20 @@ function DiscoveredInfluencersTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button 
+                          className={`p-2 transition-colors rounded-lg ${
+                            isInfluencerHearted(creator.creatorId || creator.userId || creator.username || creator.id)
+                              ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
+                              : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'
+                          }`}
+                          title={isInfluencerHearted(creator.creatorId || creator.userId || creator.username || creator.id) ? "Remove from favorites" : "Add to favorites"}
+                          onClick={() => handleHeartToggle(creator)}
+                        >
+                          <Heart 
+                            size={16} 
+                            fill={isInfluencerHearted(creator.creatorId || creator.userId || creator.username || creator.id) ? 'currentColor' : 'none'}
+                          />
+                        </button>
+                        <button 
                           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" 
                           title="View Profile"
                           onClick={() => onViewProfile?.(creator)}
@@ -2005,6 +2060,9 @@ function DiscoveredInfluencersTable({
 }
 
 function DiscoveryPageClient() {
+  // Add heart context to main component for debugging
+  const { heartedInfluencers } = useHeartedInfluencers()
+  
   // Platform state moved here to share between components
   const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'tiktok' | 'youtube'>('instagram')
   
@@ -2281,6 +2339,17 @@ function DiscoveryPageClient() {
       <ModernStaffHeader />
       
       <main className="px-4 lg:px-6 pb-8 space-y-6">
+
+
+        {/* Debug: Show hearted influencers count */}
+        {heartedInfluencers.length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-sm text-green-800">
+              💖 {heartedInfluencers.length} influencer{heartedInfluencers.length !== 1 ? 's' : ''} favorited
+            </p>
+          </div>
+        )}
+
         {/* Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 transition-all duration-200">
