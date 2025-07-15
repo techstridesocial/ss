@@ -89,7 +89,7 @@ export interface Influencer {
   content_type: ContentType;
   tier?: 'GOLD' | 'SILVER';
   total_followers: number;
-  total_engagement_rate: number;
+  total_engagement_rate: number | null;
   total_avg_views: number;
   estimated_promotion_views: number;
   price_per_post: number | null;

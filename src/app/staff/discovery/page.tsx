@@ -256,7 +256,6 @@ function DiscoverySearchInterface({
   const [viewsGrowthPeriod, setViewsGrowthPeriod] = useState('')
 
   // Search bar states (removed searchQuery as it's now a prop)
-  const [emailAvailable, setEmailAvailable] = useState(false)
   const [hideProfilesInRoster, setHideProfilesInRoster] = useState(false)
 
   // Content filter states
@@ -336,7 +335,6 @@ function DiscoverySearchInterface({
     if (verifiedOnly) filters.verifiedOnly = verifiedOnly
 
     // Search options
-    if (emailAvailable) filters.emailAvailable = emailAvailable
     if (hideProfilesInRoster) filters.hideProfilesInRoster = hideProfilesInRoster
 
     return filters
@@ -374,7 +372,7 @@ function DiscoverySearchInterface({
     bio, hashtags, mentions, captions, topics, transcript, collaborations,
     selectedContentCategories, selectedLocation, selectedGender, selectedAge,
     selectedLanguage, accountType, selectedSocials, fakeFollowers, lastPosted,
-    verifiedOnly, emailAvailable, hideProfilesInRoster, onFiltersChange
+    verifiedOnly, hideProfilesInRoster, onFiltersChange
   ])
 
   // Collapsible section toggle function with debouncing
@@ -776,7 +774,7 @@ function DiscoverySearchInterface({
   ] as const
   
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100">
+    <div className="bg-white rounded-2xl p-4 border border-gray-100 h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Discover Influencers</h3>
       </div>
@@ -788,7 +786,7 @@ function DiscoverySearchInterface({
             <button
               key={platform.id}
               onClick={() => setSelectedPlatform(platform.id)}
-              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 flex items-center justify-center space-x-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                 selectedPlatform === platform.id
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
@@ -802,21 +800,39 @@ function DiscoverySearchInterface({
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <div className="bg-gray-50 rounded-xl p-4 mb-4">
         <div className="space-y-4">
           <div>
             <label className="block text-base font-semibold text-gray-900 mb-3">
               Search Influencers
             </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchQuery || ''}
-                onChange={(e) => onSearchQueryChange?.(e.target.value)}
-                placeholder="Search by username (e.g., cristiano)"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
-              />
+            <div className="relative flex">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={searchQuery || ''}
+                  onChange={(e) => onSearchQueryChange?.(e.target.value)}
+                  placeholder="Search by username (e.g., cristiano)"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      onSearch?.();
+                    }
+                  }}
+                />
+              </div>
+              <button
+                onClick={onSearch}
+                disabled={!onSearch || isLoading}
+                className="px-4 py-3 bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white rounded-r-xl border border-l-0 border-black hover:border-gray-800 disabled:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                {isLoading ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Search className="w-5 h-5" />
+                )}
+              </button>
             </div>
             <p className="mt-2 text-sm text-gray-500">
               Enter an Instagram, TikTok, or YouTube username to find specific influencers
@@ -825,23 +841,6 @@ function DiscoverySearchInterface({
           
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEmailAvailable(!emailAvailable)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    emailAvailable ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span className="sr-only">Has Email</span>
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      emailAvailable ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <label className="text-sm font-medium text-gray-700">Has Email</label>
-              </div>
-
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setHideProfilesInRoster(!hideProfilesInRoster)}
@@ -882,7 +881,7 @@ function DiscoverySearchInterface({
               className="overflow-hidden"
             >
               <div className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 gap-4">
                   {/* Location */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
@@ -1030,12 +1029,12 @@ function DiscoverySearchInterface({
       </div>
 
       {/* Main Filter Sections */}
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* Divider */}
         <div className="border-t border-gray-200"></div>
         
         {/* Performance Filters */}
-        <div className="mb-8">
+        <div className="mb-4">
           <CollapsibleSectionHeader
             title="Performance"
             isExpanded={expandedSections.performance}
@@ -1053,13 +1052,7 @@ function DiscoverySearchInterface({
                 className="overflow-hidden"
               >
                 <div className="pt-4">
-                  <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${
-                    selectedPlatform === 'tiktok' 
-                      ? 'lg:grid-cols-3 xl:grid-cols-7' 
-                      : selectedPlatform === 'youtube'
-                      ? 'lg:grid-cols-3 xl:grid-cols-5'
-                      : 'lg:grid-cols-4'
-                  }`}>
+                  <div className="grid grid-cols-1 gap-4">
                     {/* Followers/Subscribers */}
                     <MinMaxSelector
                       label={getPerformanceOptions().followersLabel}
@@ -1162,7 +1155,7 @@ function DiscoverySearchInterface({
         <div className="border-t border-gray-200"></div>
 
         {/* Content Filters */}
-        <div className="mb-8">
+        <div className="mb-4">
           <CollapsibleSectionHeader
             title="Content"
             isExpanded={expandedSections.content}
@@ -1182,7 +1175,7 @@ function DiscoverySearchInterface({
                 <div className="pt-4">
                   {selectedPlatform === 'tiktok' ? (
                     // TikTok-specific content layout
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Hashtags */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
@@ -1236,7 +1229,7 @@ function DiscoverySearchInterface({
                     </div>
                   ) : selectedPlatform === 'youtube' ? (
                     // YouTube-specific content layout
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Topics */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().topics}</label>
@@ -1273,7 +1266,7 @@ function DiscoverySearchInterface({
                     </div>
                   ) : (
                     // Instagram content layout
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Categories */}
                       <CategorySelector
                         selectedCategories={selectedContentCategories}
@@ -1372,7 +1365,7 @@ function DiscoverySearchInterface({
                 <div className="pt-4">
                   {selectedPlatform === 'tiktok' ? (
                     // TikTok-specific account layout (no Type, no Fake Followers)
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Bio */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
@@ -1425,7 +1418,7 @@ function DiscoverySearchInterface({
                     </div>
                   ) : selectedPlatform === 'youtube' ? (
                     // YouTube-specific account layout (Description, Socials, Last Posted, Verified)
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Description */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -1478,7 +1471,7 @@ function DiscoverySearchInterface({
                     </div>
                   ) : (
                     // Instagram account layout (full features)
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Bio */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
@@ -1570,11 +1563,11 @@ function DiscoverySearchInterface({
       </div>
       
       {/* Search Button */}
-      <div className="mt-6 flex justify-center">
+      <div className="mt-4 flex justify-center">
         <button
           onClick={onSearch}
           disabled={!onSearch || isLoading}
-          className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-2xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+          className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
           {isLoading ? (
             <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -1775,7 +1768,7 @@ function DiscoveredInfluencersTable({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden h-full flex flex-col">
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -1797,7 +1790,7 @@ function DiscoveredInfluencersTable({
         </div>
       </div>
       
-      <div className="overflow-x-auto">
+      <div className="overflow-auto flex-1">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -2338,12 +2331,10 @@ function DiscoveryPageClient() {
     <div className="min-h-screen bg-gray-50">
       <ModernStaffHeader />
       
-      <main className="px-4 lg:px-6 pb-8 space-y-6">
-
-
+      <main className="px-4 lg:px-6 pb-8">
         {/* Debug: Show hearted influencers count */}
         {heartedInfluencers.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
             <p className="text-sm text-green-800">
               💖 {heartedInfluencers.length} influencer{heartedInfluencers.length !== 1 ? 's' : ''} favorited
             </p>
@@ -2351,7 +2342,7 @@ function DiscoveryPageClient() {
         )}
 
         {/* Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 transition-all duration-200">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -2394,19 +2385,6 @@ function DiscoveryPageClient() {
           />
         </div>
 
-        {/* Search Interface */}
-        <DiscoverySearchInterface 
-          selectedPlatform={selectedPlatform}
-          setSelectedPlatform={setSelectedPlatform}
-          onSearch={handleSearch}
-          isLoading={isSearching}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          onFiltersChange={setCurrentFilters}
-        />
-
-
-
         {/* API Status Alert */}
         {apiWarning && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start space-x-3">
@@ -2435,17 +2413,33 @@ function DiscoveryPageClient() {
           </div>
         )}
 
-        {/* Credit Usage */}
+        {/* Main Content Area - Side by Side Layout */}
+        <div className="flex flex-col lg:flex-row gap-6" style={{ height: 'calc(100vh - 200px)' }}>
+          {/* Left Column - Search Interface (1/3) */}
+          <div className="w-full lg:w-1/3 lg:flex-shrink-0">
+            <DiscoverySearchInterface 
+              selectedPlatform={selectedPlatform}
+              setSelectedPlatform={setSelectedPlatform}
+              onSearch={handleSearch}
+              isLoading={isSearching}
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              onFiltersChange={setCurrentFilters}
+            />
+          </div>
 
-        {/* Discovered Influencers */}
-          <DiscoveredInfluencersTable 
-            selectedPlatform={selectedPlatform}
-            searchResults={searchResults}
-            isLoading={isSearching}
-            error={searchError}
-            searchQuery={searchQuery}
-            onViewProfile={handleViewProfile}
-          />
+          {/* Right Column - Results Table (2/3) */}
+          <div className="flex-1 min-w-0 min-h-0">
+            <DiscoveredInfluencersTable 
+              selectedPlatform={selectedPlatform}
+              searchResults={searchResults}
+              isLoading={isSearching}
+              error={searchError}
+              searchQuery={searchQuery}
+              onViewProfile={handleViewProfile}
+            />
+          </div>
+        </div>
       </main>
       <InfluencerDetailPanel 
         influencer={detailInfluencer}

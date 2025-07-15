@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
+import { getAllContactRecords, createContactRecord, updateContactRecord } from '@/lib/db/queries/contact-tracking'
 
-// Mock storage for influencer contact status
-// In real implementation, this would be stored in database
-let influencerContactStatus: Record<string, Record<string, string>> = {}
-
-// GET - Get contact status for influencers in a quotation
+// GET - Get contact records for influencers
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -15,85 +12,41 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const influencerId = searchParams.get('influencerId')
+    const campaignId = searchParams.get('campaignId')
     const quotationId = searchParams.get('quotationId')
 
-    if (!quotationId) {
-      return NextResponse.json({ error: 'Quotation ID is required' }, { status: 400 })
+    let contactRecords = await getAllContactRecords()
+
+    // Filter by influencer if specified
+    if (influencerId) {
+      contactRecords = contactRecords.filter(record => record.influencerId === influencerId)
     }
 
-    const contactStatuses = influencerContactStatus[quotationId] || {}
-
-    return NextResponse.json({
-      quotationId,
-      contactStatuses
-    })
-  } catch (error) {
-    console.error('Error fetching contact status:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// PUT - Update contact status for an influencer
-export async function PUT(request: NextRequest) {
-  try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Filter by campaign if specified
+    if (campaignId) {
+      contactRecords = contactRecords.filter(record => record.campaignId === campaignId)
     }
 
-    const userRole = await getCurrentUserRole()
-    if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return NextResponse.json({ 
-        error: 'Only staff members can update contact status' 
-      }, { status: 403 })
+    // Filter by quotation if specified
+    if (quotationId) {
+      contactRecords = contactRecords.filter(record => record.quotationId === quotationId)
     }
-
-    const body = await request.json()
-    const { quotationId, influencerIndex, status } = body
-
-    if (!quotationId || influencerIndex === undefined || !status) {
-      return NextResponse.json({ 
-        error: 'quotationId, influencerIndex, and status are required' 
-      }, { status: 400 })
-    }
-
-    // Validate status
-    const validStatuses = ['pending', 'contacted', 'confirmed', 'declined']
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ 
-        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
-      }, { status: 400 })
-    }
-
-    // Initialize quotation contact status if it doesn't exist
-    if (!influencerContactStatus[quotationId]) {
-      influencerContactStatus[quotationId] = {}
-    }
-
-    // Update the contact status
-    influencerContactStatus[quotationId][influencerIndex] = status
-
-    console.log('Updated influencer contact status:', {
-      quotationId,
-      influencerIndex,
-      status,
-      timestamp: new Date().toISOString()
-    })
 
     return NextResponse.json({
       success: true,
-      message: 'Contact status updated successfully',
-      quotationId,
-      influencerIndex,
-      status
+      contactRecords
     })
   } catch (error) {
-    console.error('Error updating contact status:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching contact records:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch contact records' },
+      { status: 500 }
+    )
   }
 }
 
-// POST - Bulk update contact statuses
+// POST - Create new contact record
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -104,54 +57,98 @@ export async function POST(request: NextRequest) {
     const userRole = await getCurrentUserRole()
     if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
       return NextResponse.json({ 
-        error: 'Only staff members can update contact status' 
+        error: 'Only staff members can create contact records' 
       }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { quotationId, updates } = body
+    const data = await request.json()
+    
+    // Validate required fields
+    const requiredFields = ['influencerId', 'contactType', 'subject', 'message']
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return NextResponse.json(
+          { success: false, error: `Missing required field: ${field}` },
+          { status: 400 }
+        )
+      }
+    }
 
-    if (!quotationId || !updates || !Array.isArray(updates)) {
+    // Create the contact record
+    const contactData = {
+      influencerId: data.influencerId,
+      contactType: data.contactType,
+      subject: data.subject,
+      message: data.message,
+      status: 'sent' as const,
+      sentAt: new Date(),
+      respondedAt: undefined,
+      nextFollowUp: data.nextFollowUp,
+      campaignId: data.campaignId,
+      quotationId: data.quotationId,
+      sentBy: userId,
+      notes: data.notes,
+      attachments: data.attachments || []
+    }
+
+    const contactRecord = await createContactRecord(contactData)
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Contact record created successfully',
+      contactRecord
+    }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating contact record:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to create contact record' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT - Update contact record
+export async function PUT(request: NextRequest) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userRole = await getCurrentUserRole()
+    if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
       return NextResponse.json({ 
-        error: 'quotationId and updates array are required' 
+        error: 'Only staff members can update contact records' 
+      }, { status: 403 })
+    }
+
+    const data = await request.json()
+    const { id, updates } = data
+
+    if (!id) {
+      return NextResponse.json({ 
+        error: 'Contact record ID is required' 
       }, { status: 400 })
     }
 
-    // Initialize quotation contact status if it doesn't exist
-    if (!influencerContactStatus[quotationId]) {
-      influencerContactStatus[quotationId] = {}
+    const updatedRecord = await updateContactRecord(id, updates)
+    
+    if (!updatedRecord) {
+      return NextResponse.json({ 
+        error: 'Contact record not found' 
+      }, { status: 404 })
     }
-
-    // Apply all updates
-    const validStatuses = ['pending', 'contacted', 'confirmed', 'declined']
-    for (const update of updates) {
-      const { influencerIndex, status } = update
-      
-      if (influencerIndex === undefined || !status) {
-        continue // Skip invalid updates
-      }
-
-      if (!validStatuses.includes(status)) {
-        continue // Skip invalid statuses
-      }
-
-      influencerContactStatus[quotationId][influencerIndex] = status
-    }
-
-    console.log('Bulk updated influencer contact statuses:', {
-      quotationId,
-      updates,
-      timestamp: new Date().toISOString()
-    })
 
     return NextResponse.json({
       success: true,
-      message: 'Contact statuses updated successfully',
-      quotationId,
-      updatedCount: updates.length
+      message: 'Contact record updated successfully',
+      contactRecord: updatedRecord
     })
   } catch (error) {
-    console.error('Error bulk updating contact status:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error updating contact record:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to update contact record' },
+      { status: 500 }
+    )
   }
 } 

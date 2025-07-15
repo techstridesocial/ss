@@ -285,36 +285,55 @@ export default function AddInfluencerPanel({
 
     setIsLoading(true)
     try {
-      await onSave(formData)
-      
-      // Reset form
-      setFormData({
-        display_name: '',
-        first_name: '',
-        last_name: '',
-        email: '',
-        bio: '',
-        location_country: '',
-        location_city: '',
-        website_url: '',
-        niches: [],
-        influencer_type: 'SIGNED',
-        content_type: 'STANDARD',
-        tier: 'GOLD',
-        average_views: undefined,
-        instagram_username: '',
-        tiktok_username: '',
-        youtube_username: '',
-        estimated_followers: undefined,
-        agency_name: ''
+      // Call the real API to save influencer to database
+      const response = await fetch('/api/influencers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       })
-      setErrors({})
-      setMode('discovery')
-      setDiscoveryData(null)
-      setShowPreview(false)
-      onClose()
+
+      const result = await response.json()
+
+      if (result.success) {
+        alert(`✅ ${formData.display_name} added to roster successfully!`)
+        
+        // Call parent callback if provided
+        if (onSave) {
+          await onSave(result.data)
+        }
+        
+        // Reset form
+        setFormData({
+          display_name: '',
+          first_name: '',
+          last_name: '',
+          email: '',
+          bio: '',
+          location_country: '',
+          location_city: '',
+          website_url: '',
+          niches: [],
+          influencer_type: 'SIGNED',
+          content_type: 'STANDARD',
+          tier: 'GOLD',
+          average_views: undefined,
+          instagram_username: '',
+          tiktok_username: '',
+          youtube_username: '',
+          estimated_followers: undefined,
+          agency_name: ''
+        })
+        setErrors({})
+        setMode('discovery')
+        setDiscoveryData(null)
+        setShowPreview(false)
+        onClose()
+      } else {
+        throw new Error(result.error || 'Failed to add influencer')
+      }
     } catch (error) {
       console.error('Error saving influencer:', error)
+      alert(`❌ Failed to add influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
@@ -409,29 +428,52 @@ export default function AddInfluencerPanel({
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => {
-                              // Pre-fill form with hearted influencer data
-                              setFormData({
-                                display_name: influencer.displayName,
-                                first_name: influencer.displayName.split(' ')[0] || '',
-                                last_name: influencer.displayName.split(' ').slice(1).join(' ') || '',
-                                email: '',
-                                bio: influencer.bio || '',
-                                location_country: influencer.location?.split(', ')[1] || '',
-                                location_city: influencer.location?.split(', ')[0] || '',
-                                website_url: '',
-                                niches: influencer.niches || [],
-                                influencer_type: 'SIGNED',
-                                content_type: 'STANDARD',
-                                tier: 'SILVER',
-                                average_views: undefined,
-                                instagram_username: influencer.platform === 'instagram' ? influencer.username : '',
-                                tiktok_username: influencer.platform === 'tiktok' ? influencer.username : '',
-                                youtube_username: influencer.platform === 'youtube' ? influencer.username : '',
-                                estimated_followers: influencer.followers,
-                                agency_name: ''
-                              })
-                              setMode('manual')
+                            onClick={async () => {
+                              setIsLoading(true)
+                              try {
+                                // Directly save hearted influencer to database
+                                const influencerData = {
+                                  display_name: influencer.displayName,
+                                  first_name: influencer.displayName.split(' ')[0] || '',
+                                  last_name: influencer.displayName.split(' ').slice(1).join(' ') || '',
+                                  email: `${influencer.username}@discovered.temp`,
+                                  bio: influencer.bio || '',
+                                  location_country: influencer.location?.split(', ')[1] || '',
+                                  location_city: influencer.location?.split(', ')[0] || '',
+                                  niches: influencer.niches || [],
+                                  influencer_type: 'PARTNERED', // Default to partnered for discovered
+                                  tier: 'SILVER',
+                                  average_views: 0,
+                                  estimated_followers: influencer.followers,
+                                  discovered_platform: influencer.platform,
+                                  discovered_engagement_rate: influencer.engagement_rate,
+                                  // Set platform username based on discovered platform
+                                  instagram_username: influencer.platform === 'instagram' ? influencer.username : undefined,
+                                  tiktok_username: influencer.platform === 'tiktok' ? influencer.username : undefined,
+                                  youtube_username: influencer.platform === 'youtube' ? influencer.username : undefined,
+                                }
+
+                                const response = await fetch('/api/influencers', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify(influencerData)
+                                })
+
+                                const result = await response.json()
+
+                                if (result.success) {
+                                  alert(`✅ ${influencer.displayName} added to roster successfully!`)
+                                  removeHeartedInfluencer(influencer.id)
+                                  if (onSave) onSave(result.data) // Refresh roster if callback provided
+                                } else {
+                                  throw new Error(result.error || 'Failed to add influencer')
+                                }
+                              } catch (error) {
+                                console.error('Error adding influencer:', error)
+                                alert(`❌ Failed to add ${influencer.displayName}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                              } finally {
+                                setIsLoading(false)
+                              }
                             }}
                             className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2"
                             title="Add to roster"

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { modashService } from '../../../../lib/services/modash'
+import { getRosterInfluencerUsernames } from '../../../../lib/db/queries/influencers'
 
 interface DiscoverySearchBody {
   platform: 'instagram' | 'tiktok' | 'youtube' // This will now be ignored, we'll search all platforms
@@ -47,7 +48,6 @@ interface DiscoverySearchBody {
   
   // Search options
   searchQuery?: string
-  emailAvailable?: boolean
   hideProfilesInRoster?: boolean
   
   // Pagination
@@ -116,7 +116,49 @@ export async function POST(request: NextRequest) {
       const platformResults = await Promise.all(searchPromises)
       
       // Merge results by creator
-      const mergedCreators = mergeCreatorResults(platformResults)
+      let mergedCreators = mergeCreatorResults(platformResults)
+      
+      // Apply roster filtering if requested
+      if (body.hideProfilesInRoster) {
+        try {
+          const rosterUsernames = await getRosterInfluencerUsernames()
+          const beforeCount = mergedCreators.length
+          
+          mergedCreators = mergedCreators.filter(creator => {
+            // Check if any of the creator's platform usernames match roster usernames
+            const creatorUsernames: string[] = []
+            
+            // Extract usernames from all platforms
+            Object.entries(creator.platforms).forEach(([platform, data]) => {
+              if (data && data.username) {
+                creatorUsernames.push(data.username)
+                creatorUsernames.push(`@${data.username}`)
+              }
+            })
+            
+            // Also check display name variations
+            const displayUsername = creator.displayName.toLowerCase().replace(/\s+/g, '_')
+            creatorUsernames.push(displayUsername)
+            creatorUsernames.push(`@${displayUsername}`)
+            
+            // Return false if any username matches roster (exclude from results)
+            const isInRoster = rosterUsernames.some(rosterUsername => 
+              creatorUsernames.some(creatorUsername => 
+                creatorUsername.toLowerCase() === rosterUsername.toLowerCase()
+              )
+            )
+            
+            return !isInRoster
+          })
+          
+          const afterCount = mergedCreators.length
+          console.log(`🔍 Roster filtering: ${beforeCount} → ${afterCount} (excluded ${beforeCount - afterCount} roster influencers)`)
+          
+        } catch (error) {
+          console.error('❌ Roster filtering failed:', error)
+          // Continue without filtering if there's an error
+        }
+      }
       
       // Calculate totals
       const totalResults = mergedCreators.length
@@ -152,7 +194,51 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ Multi-platform search failed, using mock data:', error)
       
       // Fallback to mock data with multiple platforms
-      const mockResponse = generateMultiPlatformMockResponse(body)
+      let mockResponse = generateMultiPlatformMockResponse(body)
+      
+      // Apply roster filtering to mock data if requested
+      if (body.hideProfilesInRoster) {
+        try {
+          const rosterUsernames = await getRosterInfluencerUsernames()
+          const beforeCount = mockResponse.results.length
+          
+          mockResponse.results = mockResponse.results.filter(creator => {
+            // Check if any of the creator's platform usernames match roster usernames
+            const creatorUsernames: string[] = []
+            
+            // Extract usernames from all platforms
+            Object.entries(creator.platforms).forEach(([platform, data]) => {
+              if (data && data.username) {
+                creatorUsernames.push(data.username)
+                creatorUsernames.push(`@${data.username}`)
+              }
+            })
+            
+            // Also check display name variations
+            const displayUsername = creator.displayName.toLowerCase().replace(/\s+/g, '_')
+            creatorUsernames.push(displayUsername)
+            creatorUsernames.push(`@${displayUsername}`)
+            
+            // Return false if any username matches roster (exclude from results)
+            const isInRoster = rosterUsernames.some(rosterUsername => 
+              creatorUsernames.some(creatorUsername => 
+                creatorUsername.toLowerCase() === rosterUsername.toLowerCase()
+              )
+            )
+            
+            return !isInRoster
+          })
+          
+          // Update total count
+          mockResponse.total = mockResponse.results.length
+          const afterCount = mockResponse.results.length
+          console.log(`🔍 Mock roster filtering: ${beforeCount} → ${afterCount} (excluded ${beforeCount - afterCount} roster influencers)`)
+          
+        } catch (error) {
+          console.error('❌ Mock roster filtering failed:', error)
+          // Continue without filtering if there's an error
+        }
+      }
       
       return NextResponse.json({
         success: true,

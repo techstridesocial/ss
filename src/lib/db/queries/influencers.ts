@@ -638,3 +638,61 @@ export async function getInfluencerPlatformMetrics(
     audience_languages: audienceLanguages
   }
 } 
+
+/**
+ * Get all influencers currently in the roster (for filtering discovery results)
+ * Returns array of platform usernames that should be excluded from discovery
+ */
+export async function getRosterInfluencerUsernames(): Promise<string[]> {
+  // TEMPORARY: Use mock data instead of database
+  console.log('getRosterInfluencerUsernames: Using mock data (database not yet set up)')
+  
+  // Extract platform usernames from mock data
+  const rosterUsernames: string[] = []
+  
+  MOCK_INFLUENCERS.forEach(influencer => {
+    // For mock data, generate platform usernames based on display name
+    const baseUsername = influencer.display_name.toLowerCase().replace(/\s+/g, '_')
+    
+    // Add different username variations for different platforms
+    if (influencer.platforms.includes('INSTAGRAM')) {
+      rosterUsernames.push(`@${baseUsername}`)
+      rosterUsernames.push(baseUsername)
+    }
+    if (influencer.platforms.includes('TIKTOK')) {
+      rosterUsernames.push(`@${baseUsername}_tiktok`)
+      rosterUsernames.push(`${baseUsername}_tiktok`)
+    }
+    if (influencer.platforms.includes('YOUTUBE')) {
+      rosterUsernames.push(`@${baseUsername}_yt`)
+      rosterUsernames.push(`${baseUsername}_yt`)
+    }
+  })
+  
+  console.log(`Found ${rosterUsernames.length} roster usernames to exclude from discovery`)
+  return rosterUsernames
+
+  /*
+  // Real database implementation (use when DB is set up):
+  const sql = `
+    SELECT DISTINCT ip.username, ip.platform
+    FROM influencer_platforms ip
+    JOIN influencers i ON ip.influencer_id = i.id
+    JOIN users u ON i.user_id = u.id
+    WHERE u.role IN ('INFLUENCER_SIGNED', 'INFLUENCER_PARTNERED')
+    AND ip.username IS NOT NULL
+    AND i.is_active = true
+  `
+  
+  const platforms = await query<{username: string, platform: string}>(sql)
+  
+  // Return array of usernames with @ prefix variations
+  const usernames: string[] = []
+  platforms.forEach(p => {
+    usernames.push(p.username)
+    usernames.push(`@${p.username}`)
+  })
+  
+  return usernames
+  */
+} 

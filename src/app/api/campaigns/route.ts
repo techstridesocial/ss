@@ -1,263 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { getAllCampaigns, createCampaign } from '@/lib/db/queries/campaigns'
 
-// Mock database - In real app, this would use your database
-let campaigns = [
-  {
-    id: 'campaign_1',
-    name: 'Summer Beauty Collection',
-    brand_name: 'Luxe Beauty Co',
-    brand_id: 'brand_1',
-    description: 'Launch campaign for new summer makeup line targeting Gen Z',
-    status: 'ACTIVE',
-    budget: 25000,
-    spent: 12400,
-    start_date: '2024-01-10',
-    end_date: '2024-02-28',
-    target_niches: ['Beauty', 'Lifestyle'],
-    target_platforms: ['INSTAGRAM', 'TIKTOK'],
-    assigned_influencers: 8,
-    completed_deliverables: 5,
-    pending_payments: 3,
-    estimated_reach: 450000,
-    actual_reach: 289000,
-    engagement_rate: 4.2,
-    created_at: '2024-01-08T10:00:00Z',
-    updated_at: '2024-01-15T14:30:00Z',
-    total_invited: 8,
-    invitations_accepted: 6,
-    invitations_pending: 1,
-    invitations_declined: 1,
-    created_from_quotation: true,
-    quotation_id: 'quote_1'
-  },
-  {
-    id: 'campaign_2',
-    name: 'Fitness Equipment Launch',
-    brand_name: 'FitGear Pro',
-    brand_id: 'brand_2',
-    description: 'Product seeding campaign for new home gym equipment',
-    status: 'ACTIVE',
-    budget: 15000,
-    spent: 8750,
-    start_date: '2024-01-15',
-    end_date: '2024-03-15',
-    target_niches: ['Fitness', 'Health'],
-    target_platforms: ['YOUTUBE', 'INSTAGRAM'],
-    assigned_influencers: 6,
-    completed_deliverables: 3,
-    pending_payments: 2,
-    estimated_reach: 320000,
-    actual_reach: 198000,
-    engagement_rate: 5.1,
-    created_at: '2024-01-13T09:00:00Z',
-    updated_at: '2024-01-20T11:15:00Z',
-    total_invited: 12,
-    invitations_accepted: 6,
-    invitations_pending: 4,
-    invitations_declined: 2,
-    created_from_quotation: true,
-    quotation_id: 'quote_3'
-  }
-]
-
-// GET - Fetch all campaigns with optional filtering
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth()
+    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const status = searchParams.get('status')
-    const brand = searchParams.get('brand')
-    const search = searchParams.get('search')
-
-    let filteredCampaigns = [...campaigns]
-
-    // Apply filters
-    if (status) {
-      filteredCampaigns = filteredCampaigns.filter(c => c.status === status)
-    }
-    if (brand) {
-      filteredCampaigns = filteredCampaigns.filter(c => c.brand_id === brand)
-    }
-    if (search) {
-      const searchLower = search.toLowerCase()
-      filteredCampaigns = filteredCampaigns.filter(c => 
-        c.name.toLowerCase().includes(searchLower) ||
-        c.brand_name.toLowerCase().includes(searchLower) ||
-        c.description.toLowerCase().includes(searchLower)
-      )
-    }
-
-    // Pagination
-    const offset = (page - 1) * limit
-    const paginatedCampaigns = filteredCampaigns.slice(offset, offset + limit)
-
-    return NextResponse.json({
-      campaigns: paginatedCampaigns,
-      pagination: {
-        page,
-        limit,
-        total: filteredCampaigns.length,
-        totalPages: Math.ceil(filteredCampaigns.length / limit)
-      }
+    const campaigns = await getAllCampaigns()
+    
+    return NextResponse.json({ 
+      success: true, 
+      campaigns 
     })
   } catch (error) {
     console.error('Error fetching campaigns:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch campaigns' },
+      { status: 500 }
+    )
   }
 }
 
-// POST - Create new campaign (ONLY from approved quotations)
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const {
-      name,
-      description,
-      budget,
-      start_date,
-      end_date,
-      brand_id,
-      brand_name,
-      target_niches,
-      target_platforms,
-      quotation_id
-    } = body
-
-    // Allow manual campaign creation - quotation_id is optional
-    // If quotation_id is provided, it means campaign was created from approved quotation
-    // If not provided, it's a manual campaign creation by staff
-
-    // Validation
-    if (!name || !description || !budget || !start_date || !end_date) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
-
-    // Additional validation for manual campaign creation
-    if (!quotation_id && !brand_id) {
-      return NextResponse.json({ 
-        error: 'Either quotation_id or brand_id is required for campaign creation' 
-      }, { status: 400 })
-    }
-
-    const newCampaign = {
-      id: `campaign_${Date.now()}`,
-      name,
-      description,
-      budget: Number(budget),
-      start_date,
-      end_date,
-      brand_id,
-      brand_name,
-      target_niches: target_niches || [],
-      target_platforms: target_platforms || [],
-      status: 'ACTIVE',
-      spent: 0,
-      assigned_influencers: 0,
-      completed_deliverables: 0,
-      pending_payments: 0,
-      estimated_reach: 0,
-      actual_reach: 0,
-      engagement_rate: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      total_invited: 0,
-      invitations_accepted: 0,
-      invitations_pending: 0,
-      invitations_declined: 0,
-      created_from_quotation: !!quotation_id, // True if created from quotation
-      quotation_id: quotation_id || null
-    }
-
-    campaigns.push(newCampaign)
-
-    return NextResponse.json({ 
-      message: quotation_id 
-        ? 'Campaign created successfully from approved quotation'
-        : 'Campaign created successfully',
-      campaign: newCampaign 
-    }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating campaign:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// PUT - Bulk update campaigns
-export async function PUT(request: NextRequest) {
-  try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { campaignIds, updates } = body
-
-    if (!campaignIds || !Array.isArray(campaignIds) || !updates) {
-      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 })
-    }
-
-    const updatedCampaigns = []
     
-    for (const campaignId of campaignIds) {
-      const campaignIndex = campaigns.findIndex(c => c.id === campaignId)
-      if (campaignIndex !== -1) {
-        campaigns[campaignIndex] = {
-          ...campaigns[campaignIndex],
-          ...updates,
-          updated_at: new Date().toISOString()
-        }
-        updatedCampaigns.push(campaigns[campaignIndex])
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const data = await request.json()
+    
+    // Validate required fields
+    const requiredFields = ['name', 'brand', 'description']
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return NextResponse.json(
+          { success: false, error: `Missing required field: ${field}` },
+          { status: 400 }
+        )
       }
     }
 
-    return NextResponse.json({
-      message: `${updatedCampaigns.length} campaigns updated successfully`,
-      campaigns: updatedCampaigns
-    })
-  } catch (error) {
-    console.error('Error bulk updating campaigns:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// DELETE - Bulk delete campaigns
-export async function DELETE(request: NextRequest) {
-  try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Create the campaign with default values for missing fields
+    const campaignData = {
+      name: data.name,
+      brand: data.brand,
+      status: data.status || 'draft',
+      description: data.description,
+      goals: data.goals || [],
+      timeline: {
+        startDate: data.timeline?.startDate || new Date().toISOString(),
+        endDate: data.timeline?.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        applicationDeadline: data.timeline?.applicationDeadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        contentDeadline: data.timeline?.contentDeadline || new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      budget: {
+        total: data.budget?.total || 0,
+        perInfluencer: data.budget?.perInfluencer || 0
+      },
+      requirements: {
+        minFollowers: data.requirements?.minFollowers || 1000,
+        maxFollowers: data.requirements?.maxFollowers || 1000000,
+        minEngagement: data.requirements?.minEngagement || 2.0,
+        platforms: data.requirements?.platforms || [],
+        demographics: data.requirements?.demographics || {},
+        contentGuidelines: data.requirements?.contentGuidelines || ''
+      },
+      deliverables: data.deliverables || []
     }
 
-    const { searchParams } = new URL(request.url)
-    const campaignIds = searchParams.get('ids')?.split(',') || []
-
-    if (campaignIds.length === 0) {
-      return NextResponse.json({ error: 'No campaign IDs provided' }, { status: 400 })
-    }
-
-    const deletedCount = campaigns.length
-    campaigns = campaigns.filter(c => !campaignIds.includes(c.id))
-    const actualDeletedCount = deletedCount - campaigns.length
-
-    return NextResponse.json({
-      message: `${actualDeletedCount} campaigns deleted successfully`,
-      deletedCount: actualDeletedCount
-    })
+    const campaign = await createCampaign(campaignData)
+    
+    return NextResponse.json({ 
+      success: true, 
+      campaign 
+    }, { status: 201 })
   } catch (error) {
-    console.error('Error bulk deleting campaigns:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error creating campaign:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to create campaign' },
+      { status: 500 }
+    )
   }
 } 

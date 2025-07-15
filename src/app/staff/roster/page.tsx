@@ -352,6 +352,29 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     return INITIAL_INFLUENCERS
   })
 
+  // Function to load influencers from the database
+  const loadInfluencers = async () => {
+    try {
+      const response = await fetch('/api/influencers')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setInfluencers(result.data)
+          return result.data
+        }
+      }
+      // Fallback - keep existing data if API fails
+      console.warn('API failed, keeping current data')
+    } catch (error) {
+      console.error('Error loading influencers:', error)
+    }
+  }
+
+  // Load real influencers on component mount
+  useEffect(() => {
+    loadInfluencers()
+  }, [])
+
   // Define the influencer type for consistency
   type InfluencerType = typeof influencers[0]
 
@@ -789,7 +812,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | null | undefined) => {
+    if (!num || num === 0) return '0'
     if (num >= 1000000) {
       return `${(num / 1000000).toFixed(1)}M`
     }
@@ -946,47 +970,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     console.log('Adding new influencer:', data)
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Generate new random ID
-      const newId = generateRandomId()
-      
-      // Calculate platform data (Only Instagram, YouTube, TikTok supported)
-      const platforms = [
-        ...(data.instagram_username ? ['INSTAGRAM' as Platform] : []),
-        ...(data.tiktok_username ? ['TIKTOK' as Platform] : []),
-        ...(data.youtube_username ? ['YOUTUBE' as Platform] : [])
-      ]
-      
-      // Create new influencer object
-      const newInfluencer = {
-        id: newId,
-        user_id: `user_${Date.now()}`,
-        display_name: data.display_name,
-        niches: data.niches,
-        total_followers: data.estimated_followers || 0,
-        total_engagement_rate: 3.5, // Default engagement rate
-        total_avg_views: data.average_views || 0,
-        estimated_promotion_views: Math.floor((data.average_views || 0) * 0.85),
-        influencer_type: data.influencer_type,
-        content_type: data.content_type || 'STANDARD', // Add content_type field
-        is_active: true,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        avatar_url: '', // Set to empty string instead of null
-        location_country: data.location_country || '',
-        location_city: data.location_city || '',
-        bio: data.bio || '',
-        website_url: data.website_url || '',
-        average_views: data.average_views || 0,
-        platforms,
-        platform_count: platforms.length,
-        agency_name: data.agency_name || undefined // Add agency_name for consistency
-      }
-      
-      // Add to state
-      setInfluencers(prev => [...prev, newInfluencer])
+      // Refresh the influencer list from the database to get latest data
+      // The AddInfluencerPanel already calls the API, so we just need to refresh
+      console.log('Refreshing influencer list from database...')
+      await loadInfluencers()
       
       // Switch to the appropriate tab to show the new influencer
       const getTargetTab = (type: string) => {
@@ -998,11 +985,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       const targetTab = getTargetTab(data.influencer_type)
       setActiveTab(targetTab)
       
-      alert(`✅ New influencer ${data.display_name} added successfully!\n\n📁 Added to ${data.influencer_type} category.\n🔄 Switched to ${targetTab} tab.`)
+      console.log(`✅ Influencer list refreshed and switched to ${targetTab} tab`)
       
     } catch (error) {
-      console.error('Error adding influencer:', error)
-      alert('❌ Error adding influencer. Please try again.')
+      console.error('Error refreshing influencer list:', error)
+      alert('❌ Error refreshing data. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -1526,7 +1513,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm font-semibold text-gray-900">
                       <TrendingUp size={14} className="mr-1 text-gray-400" />
-                      {influencer.total_engagement_rate.toFixed(1)}%
+                      {influencer.total_engagement_rate && Number(influencer.total_engagement_rate) > 0 
+                        ? (Number(influencer.total_engagement_rate) * 100).toFixed(1) 
+                        : '0.0'}%
                     </div>
                   </td>
 

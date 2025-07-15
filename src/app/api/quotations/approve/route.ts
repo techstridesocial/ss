@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
+import { approveQuotation } from '@/lib/db/queries/quotations'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { quotationId } = await request.json()
+    const { quotationId, notes } = await request.json()
 
     if (!quotationId) {
       return NextResponse.json(
@@ -25,43 +26,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update quotation status to APPROVED - no automatic campaign creation
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/quotations`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': request.headers.get('Authorization') || ''
-      },
-      body: JSON.stringify({
-        quotationId,
-        status: 'APPROVED'
-        // No create_campaign flag - staff must manually contact influencers first
-      })
-    })
-
-    const result = await response.json()
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to approve quotation')
+    // Get user info for the reviewedBy field
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
     }
 
-    // Log for debugging - in real implementation this would be in database
-    console.log('Brand approved quotation - ready for manual influencer contact:', {
-      quotationId,
-      approved_at: new Date().toISOString(),
-      status: 'APPROVED'
-    })
+    // Approve the quotation
+    const approvedQuotation = await approveQuotation(quotationId, userId, notes)
+    
+    if (!approvedQuotation) {
+      return NextResponse.json(
+        { error: 'Quotation not found' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Quotation approved - staff can now manually contact influencers',
-      quotation: result.quotation
+      message: 'Quotation approved successfully - ready for manual influencer contact',
+      quotation: approvedQuotation
     })
-
   } catch (error) {
     console.error('Error approving quotation:', error)
     return NextResponse.json(
-      { error: 'Failed to approve quotation' },
+      { success: false, error: 'Failed to approve quotation' },
       { status: 500 }
     )
   }

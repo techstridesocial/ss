@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
+import { updateCampaignInvitationResponse, addInfluencerToCampaign } from '@/lib/db/queries/campaigns'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,47 +17,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { invitationId, response, declineReason } = await request.json()
+    const { invitationId, response, message } = await request.json()
 
-    if (!invitationId || !response || !['accept', 'decline'].includes(response)) {
+    if (!invitationId || !response || !['accepted', 'declined'].includes(response)) {
       return NextResponse.json(
         { error: 'Invalid invitation response' },
         { status: 400 }
       )
     }
 
-    if (response === 'decline' && !declineReason) {
+    // Update the invitation response
+    const updatedInvitation = await updateCampaignInvitationResponse(
+      invitationId, 
+      response as 'accepted' | 'declined',
+      message
+    )
+
+    if (!updatedInvitation) {
       return NextResponse.json(
-        { error: 'Decline reason is required when declining' },
-        { status: 400 }
+        { error: 'Invitation not found' },
+        { status: 404 }
       )
     }
 
-    // In a real implementation, this would:
-    // 1. Verify the invitation belongs to the current user
-    // 2. Update campaign_invitations table
-    // 3. If accepted, create campaign_influencers record
-    // 4. Send notification to staff
-    // 5. Update campaign statistics
-
-    // Mock response
-    const mockResponse = {
-      invitation_id: invitationId,
-      status: response === 'accept' ? 'ACCEPTED' : 'DECLINED',
-      responded_at: new Date().toISOString(),
-      decline_reason: response === 'decline' ? declineReason : null
+    // If accepted, add influencer to campaign
+    if (response === 'accepted') {
+      await addInfluencerToCampaign(
+        updatedInvitation.campaignId,
+        updatedInvitation.influencerId
+      )
     }
 
     return NextResponse.json({
       success: true,
-      invitation: mockResponse,
-      message: `Campaign invitation ${response}ed successfully`
+      invitation: updatedInvitation,
+      message: `Campaign invitation ${response} successfully`
     })
 
   } catch (error) {
     console.error('Error responding to campaign invitation:', error)
     return NextResponse.json(
-      { error: 'Failed to respond to invitation' },
+      { success: false, error: 'Failed to respond to invitation' },
       { status: 500 }
     )
   }
