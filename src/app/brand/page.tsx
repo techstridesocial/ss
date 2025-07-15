@@ -1,13 +1,14 @@
 import React from 'react'
 import { BrandProtectedRoute } from '../../components/auth/ProtectedRoute'
+import ModernBrandHeader from '../../components/nav/ModernBrandHeader'
 
 export default function BrandDashboard() {
   return (
     <BrandProtectedRoute>
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Brand Dashboard</h1>
-          
+      <div className="min-h-screen bg-gray-50">
+        <ModernBrandHeader />
+        
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900">Influencers</h3>

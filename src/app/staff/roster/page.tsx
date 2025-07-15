@@ -1048,6 +1048,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Platform Icon Component with SVG logos (Only Instagram, YouTube, TikTok)
   const PlatformIcon = ({ platform, size = 20 }: { platform: string, size?: number }) => {
+    // Safety check to ensure platform is a string
+    if (!platform || typeof platform !== 'string') {
+      return null;
+    }
+    
     switch (platform.toLowerCase()) {
       case 'instagram':
         return (
@@ -1474,8 +1479,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   {/* Platforms */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-2">
-                      {influencer.platforms.map((platform: Platform) => (
-                        <div key={platform} className="flex items-center">
+                      {(influencer.platforms || []).filter(Boolean).map((platform: Platform, index: number) => (
+                        <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
                           <PlatformIcon platform={platform} size={24} />
                         </div>
                       ))}
