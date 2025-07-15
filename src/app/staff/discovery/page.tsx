@@ -208,7 +208,8 @@ function DiscoverySearchInterface({
   onSearch,
   isLoading,
   searchQuery,
-  onSearchQueryChange
+  onSearchQueryChange,
+  onFiltersChange
 }: { 
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
   setSelectedPlatform: React.Dispatch<React.SetStateAction<'instagram' | 'tiktok' | 'youtube'>>
@@ -216,6 +217,7 @@ function DiscoverySearchInterface({
   isLoading?: boolean
   searchQuery?: string
   onSearchQueryChange?: (query: string) => void
+  onFiltersChange?: (filters: any) => void
 }) {
   const [locationTarget, setLocationTarget] = useState<'creator' | 'audience'>('creator')
   const [genderTarget, setGenderTarget] = useState<'creator' | 'audience'>('creator')
@@ -282,6 +284,96 @@ function DiscoverySearchInterface({
   const [fakeFollowers, setFakeFollowers] = useState('')
   const [lastPosted, setLastPosted] = useState('')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+
+  // Function to collect all current filter values
+  const getCurrentFilters = () => {
+    const filters: any = {
+      platform: selectedPlatform
+    }
+
+    // Performance filters
+    if (followersMin || followersMax) {
+      if (followersMin) filters.followersMin = parseFollowerValue(followersMin)
+      if (followersMax) filters.followersMax = parseFollowerValue(followersMax)
+    }
+
+    if (engagement) {
+      // Parse engagement value (e.g., "greater_than_2" -> 2)
+      const match = engagement.match(/greater_than_(\d+(?:\.\d+)?)/)
+      if (match && match[1]) {
+        filters.engagementRate = parseFloat(match[1])
+      }
+    }
+
+    if (viewsMin || viewsMax) {
+      if (viewsMin) filters.avgViewsMin = parseFollowerValue(viewsMin)
+      if (viewsMax) filters.avgViewsMax = parseFollowerValue(viewsMax)
+    }
+
+    // Content filters
+    if (bio?.trim()) filters.bio = bio.trim()
+    if (hashtags?.trim()) filters.hashtags = hashtags.trim()
+    if (mentions?.trim()) filters.mentions = mentions.trim()
+    if (captions?.trim()) filters.captions = captions.trim()
+    if (topics?.trim()) filters.topics = topics.trim()
+    if (transcript?.trim()) filters.transcript = transcript.trim()
+    if (collaborations?.trim()) filters.collaborations = collaborations.trim()
+    if (selectedContentCategories.length > 0) filters.selectedContentCategories = selectedContentCategories
+
+    // Demographics
+    if (selectedLocation) filters.selectedLocation = selectedLocation
+    if (selectedGender) filters.selectedGender = selectedGender
+    if (selectedAge) filters.selectedAge = selectedAge
+    if (selectedLanguage) filters.selectedLanguage = selectedLanguage
+
+    // Account filters
+    if (accountType) filters.accountType = accountType
+    if (selectedSocials.length > 0) filters.selectedSocials = selectedSocials
+    if (fakeFollowers) filters.fakeFollowers = fakeFollowers
+    if (lastPosted) filters.lastPosted = lastPosted
+    if (verifiedOnly) filters.verifiedOnly = verifiedOnly
+
+    // Search options
+    if (emailAvailable) filters.emailAvailable = emailAvailable
+    if (hideProfilesInRoster) filters.hideProfilesInRoster = hideProfilesInRoster
+
+    return filters
+  }
+
+  // Helper function to parse follower/view values like "1k", "1m", etc.
+  const parseFollowerValue = (value: string | undefined): number | undefined => {
+    if (!value || value.trim() === '') return undefined
+    
+    const cleanValue = value.toLowerCase().replace(/[^0-9kmb.]/g, '')
+    if (!cleanValue) return undefined
+    
+    let result: number
+    if (cleanValue.includes('k')) {
+      result = parseFloat(cleanValue.replace('k', '')) * 1000
+    } else if (cleanValue.includes('m')) {
+      result = parseFloat(cleanValue.replace('m', '')) * 1000000
+    } else if (cleanValue.includes('b')) {
+      result = parseFloat(cleanValue.replace('b', '')) * 1000000000
+    } else {
+      result = parseFloat(cleanValue)
+    }
+    
+    return result
+  }
+
+  // Notify parent of filter changes
+  React.useEffect(() => {
+    if (onFiltersChange) {
+      const filters = getCurrentFilters()
+      onFiltersChange(filters)
+    }
+  }, [
+    selectedPlatform, followersMin, followersMax, engagement, viewsMin, viewsMax,
+    bio, hashtags, mentions, captions, topics, transcript, collaborations,
+    selectedContentCategories, selectedLocation, selectedGender, selectedAge,
+    selectedLanguage, accountType, selectedSocials, fakeFollowers, lastPosted,
+    verifiedOnly, emailAvailable, hideProfilesInRoster, onFiltersChange
+  ])
 
   // Collapsible section toggle function with debouncing
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -1529,35 +1621,138 @@ function DiscoveredInfluencersTable({
     return `Discovered Creators (${selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} Stats)`
   }
 
-
-
-  // Handle sorting
+  // Handle sorting - improved to handle different data structures
   const handleSort = (key: string) => {
-    setSortConfig(prev => ({
+    const newDirection = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+    
+    console.log('🔄 Sorting triggered:', {
+      column: key,
+      previousKey: sortConfig.key,
+      previousDirection: sortConfig.direction,
+      newDirection,
+      dataCount: discoveredCreators.length,
+      selectedPlatform
+    })
+    
+    setSortConfig({
       key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }))
+      direction: newDirection
+    })
   }
 
-  // Sort data
+  // Sort data - improved to handle different property names and nested data
   const sortedInfluencers = React.useMemo(() => {
     let sortableInfluencers = [...discoveredCreators]
     
     if (sortConfig.key) {
+      console.log('📊 Sorting data:', {
+        sortKey: sortConfig.key,
+        direction: sortConfig.direction,
+        totalItems: sortableInfluencers.length,
+        sampleData: sortableInfluencers.slice(0, 2).map(item => ({
+          name: item.displayName || item.display_name || item.username,
+          platforms: item.platforms ? Object.keys(item.platforms) : 'none',
+          directFollowers: item.followers,
+          directEngagement: item.engagement_rate
+        }))
+      })
+      
       sortableInfluencers.sort((a, b) => {
-        let aValue = a[sortConfig.key as keyof typeof a]
-        let bValue = b[sortConfig.key as keyof typeof b]
+        let aValue: any
+        let bValue: any
         
-        // Handle null/undefined values
-        if (aValue == null) aValue = ''
-        if (bValue == null) bValue = ''
+        // Handle different sorting keys with proper property mapping
+        switch (sortConfig.key) {
+          case 'display_name':
+            aValue = a.displayName || a.display_name || a.username || ''
+            bValue = b.displayName || b.display_name || b.username || ''
+            break
+          case 'followers':
+            // Get platform-specific followers with improved fallback logic
+            const aPlatformData = a.platforms?.[selectedPlatform] || 
+              (a.platforms ? Object.values(a.platforms)[0] : a)
+            const bPlatformData = b.platforms?.[selectedPlatform] || 
+              (b.platforms ? Object.values(b.platforms)[0] : b)
+            
+            // Convert to number explicitly and handle undefined/null cases
+            aValue = Number(aPlatformData?.followers || a.followers || 0) || 0
+            bValue = Number(bPlatformData?.followers || b.followers || 0) || 0
+            
+            console.log('👥 Followers comparison:', {
+              aName: a.displayName || a.username,
+              bName: b.displayName || b.username,
+              aValue,
+              bValue,
+              aPlatformData: aPlatformData?.followers,
+              bPlatformData: bPlatformData?.followers,
+              aDirect: a.followers,
+              bDirect: b.followers
+            })
+            break
+          case 'engagement_rate':
+            // Get platform-specific engagement rate with improved fallback logic
+            const aEngagementData = a.platforms?.[selectedPlatform] || 
+              (a.platforms ? Object.values(a.platforms)[0] : a)
+            const bEngagementData = b.platforms?.[selectedPlatform] || 
+              (b.platforms ? Object.values(b.platforms)[0] : b)
+            
+            // Convert to number explicitly and handle undefined/null cases
+            aValue = Number(aEngagementData?.engagement_rate || a.engagement_rate || 0) || 0
+            bValue = Number(bEngagementData?.engagement_rate || b.engagement_rate || 0) || 0
+            
+            console.log('📈 Engagement comparison:', {
+              aName: a.displayName || a.username,
+              bName: b.displayName || b.username,
+              aValue,
+              bValue,
+              aEngagementData: aEngagementData?.engagement_rate,
+              bEngagementData: bEngagementData?.engagement_rate,
+              aDirect: a.engagement_rate,
+              bDirect: b.engagement_rate
+            })
+            break
+          default:
+            aValue = a[sortConfig.key as keyof typeof a]
+            bValue = b[sortConfig.key as keyof typeof b]
+        }
         
-        // Handle string comparisons
+        // Handle null/undefined values with proper type checking
+        if (aValue == null || aValue === undefined) {
+          aValue = (sortConfig.key === 'followers' || sortConfig.key === 'engagement_rate') ? 0 : ''
+        }
+        if (bValue == null || bValue === undefined) {
+          bValue = (sortConfig.key === 'followers' || sortConfig.key === 'engagement_rate') ? 0 : ''
+        }
+        
+        // Handle numeric comparisons with explicit type checking
+        if (sortConfig.key === 'followers' || sortConfig.key === 'engagement_rate') {
+          // Ensure we're working with numbers
+          const numA = typeof aValue === 'number' ? aValue : Number(aValue) || 0
+          const numB = typeof bValue === 'number' ? bValue : Number(bValue) || 0
+          
+          const result = sortConfig.direction === 'asc' ? numA - numB : numB - numA
+          
+          if (sortConfig.key === 'followers') {
+            console.log('🔢 Final numeric sort result:', {
+              aName: a.displayName || a.username,
+              bName: b.displayName || b.username,
+              numA,
+              numB,
+              direction: sortConfig.direction,
+              result
+            })
+          }
+          
+          return result
+        }
+        
+        // Handle string comparisons (case insensitive)
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           aValue = aValue.toLowerCase()
           bValue = bValue.toLowerCase()
         }
         
+        // Handle general comparisons
         if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1
         }
@@ -1566,22 +1761,40 @@ function DiscoveredInfluencersTable({
         }
         return 0
       })
+      
+      console.log('✅ Sorting completed. First 3 results:', 
+        sortableInfluencers.slice(0, 3).map(item => ({
+          name: item.displayName || item.username,
+          followers: item.platforms?.[selectedPlatform]?.followers || item.followers,
+          engagement: item.platforms?.[selectedPlatform]?.engagement_rate || item.engagement_rate
+        }))
+      )
     }
     
     return sortableInfluencers
-  }, [discoveredCreators, sortConfig])
+  }, [discoveredCreators, sortConfig, selectedPlatform])
 
   // Sort icon component
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
-    if (sortConfig.key !== columnKey) {
-      return <ChevronUp size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+    const isActive = sortConfig.key === columnKey
+    const isAsc = sortConfig.direction === 'asc'
+    
+    if (!isActive) {
+      return (
+        <div className="flex flex-col">
+          <ChevronUp size={12} className="text-gray-300 group-hover:text-gray-400 transition-colors -mb-1" />
+          <ChevronDown size={12} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+        </div>
+      )
     }
-    return sortConfig.direction === 'asc' 
-      ? <ChevronUp size={14} className="text-gray-600" />
-      : <ChevronDown size={14} className="text-gray-600" />
+    
+    return (
+      <div className="flex flex-col">
+        <ChevronUp size={12} className={`transition-colors -mb-1 ${isAsc ? 'text-blue-600' : 'text-gray-300'}`} />
+        <ChevronDown size={12} className={`transition-colors ${!isAsc ? 'text-blue-600' : 'text-gray-300'}`} />
+      </div>
+    )
   }
-
-
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -1857,6 +2070,9 @@ function DiscoveryPageClient() {
   // Search query state
   const [searchQuery, setSearchQuery] = useState('')
   
+  // Current filters state
+  const [currentFilters, setCurrentFilters] = useState<any>({})
+  
   // Function to refresh credits from API
   const refreshCredits = async () => {
     setIsRefreshingCredits(true)
@@ -1890,7 +2106,9 @@ function DiscoveryPageClient() {
     setApiWarning(null)
     
     try {
+      // Combine current filters with search query
       const filters: any = {
+        ...currentFilters,
         platform: selectedPlatform,
       }
       
@@ -1899,38 +2117,31 @@ function DiscoveryPageClient() {
         filters.searchQuery = searchQuery.trim()
       }
       
-      console.log('🔍 Searching Modash API with filters:', filters)
-      console.log('🎯 Search mode:', searchQuery.trim() ? 'EXACT MATCH ONLY' : 'GENERAL DISCOVERY')
+      console.log('🔍 Searching:', {
+        platform: selectedPlatform,
+        mode: searchQuery.trim() ? 'Exact Match' : 'Discovery',
+        filtersApplied: Object.keys(filters).filter(k => filters[k] !== undefined && filters[k] !== '' && filters[k] !== false && k !== 'platform').length
+      })
       
-      // Use full URL to avoid any routing issues
-      const apiUrl = `${window.location.origin}/api/discovery/search`
-      console.log('🌐 API URL:', apiUrl)
-      
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${window.location.origin}/api/discovery/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(filters)
       })
       
-      console.log('📡 Response status:', response.status, response.statusText)
-      
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Response error:', errorText)
         throw new Error(`Search failed: ${response.status} ${response.statusText}`)
       }
       
       const result = await response.json()
-      console.log('📦 API Response:', result)
       
       if (result.success && result.data) {
         setSearchResults(result.data.results || [])
         
-        // If real API was used and credits were consumed, refresh the credit count from API
+        // If real API was used and credits were consumed, refresh the credit count
         if (result.data.creditsUsed && result.data.creditsUsed > 0 && !result.warning) {
-          console.log('💳 Credits used in this search:', result.data.creditsUsed)
-          // Refresh credits from API to get the most accurate count
-          setTimeout(() => refreshCredits(), 1000) // Small delay to ensure API is updated
+          setTimeout(() => refreshCredits(), 1000)
         }
         
         // Check if using mock data
@@ -1939,10 +2150,8 @@ function DiscoveryPageClient() {
         }
         
         console.log('✅ Search completed:', {
-          resultsCount: result.data.results?.length,
-          searchMode: result.searchMode,
-          creditsUsed: result.data.creditsUsed,
-          isExactMatch: !!searchQuery.trim()
+          resultsFound: result.data.results?.length || 0,
+          creditsUsed: result.data.creditsUsed || 0
         })
       } else {
         throw new Error(result.details || 'Search failed')
@@ -2172,7 +2381,10 @@ function DiscoveryPageClient() {
           isLoading={isSearching}
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
+          onFiltersChange={setCurrentFilters}
         />
+
+
 
         {/* API Status Alert */}
         {apiWarning && (
