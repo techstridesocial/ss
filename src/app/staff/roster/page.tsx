@@ -724,10 +724,40 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Mock function to generate detailed influencer data
   const generateDetailedInfluencerData = (basicInfluencer: any): InfluencerDetailView => {
+    // Add some mock management data to a few influencers for demonstration
+    const mockManagementData = {
+      'SC9K2L': {
+        assigned_to: 'sarah.manager@stridesocial.com',
+        labels: ['High Priority', 'Top Performer'],
+        notes: 'Excellent performance on recent campaigns. Very responsive and professional.'
+      },
+      'MT7B9X': {
+        assigned_to: 'mike.lead@stridesocial.com',
+        labels: ['Active Campaign', 'Follow Up'],
+        notes: 'Currently working on tech product launch. Need to follow up on content delivery timeline.'
+      },
+      'inf_9': {
+        assigned_to: '',
+        labels: ['New Contact'],
+        notes: 'Recently partnered. Great potential for UGC campaigns.'
+      }
+    }
+
+    const managementInfo = mockManagementData[basicInfluencer.id as keyof typeof mockManagementData] || {
+      assigned_to: '',
+      labels: [],
+      notes: ''
+    }
+
     return {
       ...basicInfluencer,
       price_per_post: Math.floor(basicInfluencer.total_followers * 0.01),
       last_synced_at: new Date(),
+      
+      // Add management fields
+      assigned_to: managementInfo.assigned_to,
+      labels: managementInfo.labels,
+      notes: managementInfo.notes,
       
       // Add missing profile properties
       bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${basicInfluencer.niches.join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,

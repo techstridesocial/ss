@@ -6,8 +6,9 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { BrandProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernBrandHeader from '../../../components/nav/ModernBrandHeader'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
+import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 import { Platform, InfluencerDetailView } from '../../../types/database'
-import { Search, Filter, Eye, Users, TrendingUp, MapPin, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, Filter, Eye, Users, TrendingUp, MapPin, ChevronDown, ChevronUp, Heart } from 'lucide-react'
 
 interface InfluencerTableProps {
   searchParams: {
@@ -25,6 +26,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [isLoading, setIsLoading] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Hearted influencers context
+  const { addHeartedInfluencer, removeHeartedInfluencer, isInfluencerHearted } = useHeartedInfluencers()
   
   // Router hooks for URL state management
   const router = useRouter()
@@ -259,6 +263,75 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         agency_name: 'MaxMedia Agency',
         platforms: ['INSTAGRAM' as Platform, 'YOUTUBE' as Platform],
         platform_count: 2
+      },
+      {
+        id: 'inf_7',
+        user_id: 'user_10',
+        display_name: 'UGCQueen',
+        niches: ['UGC', 'Product Reviews'],
+        total_followers: 45000,
+        total_engagement_rate: 6.2,
+        total_avg_views: 18000,
+        estimated_promotion_views: 15300,
+        influencer_type: 'PARTNERED',
+        content_type: 'UGC',
+        is_active: true,
+        first_name: 'Emma',
+        last_name: 'UGC',
+        avatar_url: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=150&h=150&fit=crop&crop=face',
+        location_country: 'United Kingdom',
+        location_city: 'Manchester',
+        bio: 'UGC specialist creating authentic product content',
+        website_url: 'https://ugcqueen.com',
+        average_views: 18000,
+        platforms: ['TIKTOK' as Platform, 'INSTAGRAM' as Platform],
+        platform_count: 2
+      },
+      {
+        id: 'inf_8',
+        user_id: 'user_11',
+        display_name: 'SeedingPro',
+        niches: ['Product Seeding', 'Reviews'],
+        total_followers: 72000,
+        total_engagement_rate: 3.9,
+        total_avg_views: 28000,
+        estimated_promotion_views: 23800,
+        influencer_type: 'SIGNED',
+        content_type: 'SEEDING',
+        is_active: true,
+        first_name: 'Jake',
+        last_name: 'Seeder',
+        avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+        location_country: 'Australia',
+        location_city: 'Melbourne',
+        bio: 'Product seeding specialist and unboxing expert',
+        website_url: 'https://seedingpro.com',
+        average_views: 28000,
+        platforms: ['YOUTUBE' as Platform, 'INSTAGRAM' as Platform],
+        platform_count: 2
+      },
+      {
+        id: 'inf_9',
+        user_id: 'user_12',
+        display_name: 'ContentCreatorAlex',
+        niches: ['UGC', 'Lifestyle'],
+        total_followers: 38000,
+        total_engagement_rate: 5.8,
+        total_avg_views: 16000,
+        estimated_promotion_views: 13600,
+        influencer_type: 'PARTNERED',
+        content_type: 'UGC',
+        is_active: true,
+        first_name: 'Alex',
+        last_name: 'Content',
+        avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        location_country: 'Canada',
+        location_city: 'Vancouver',
+        bio: 'UGC creator focused on lifestyle and everyday products',
+        website_url: 'https://alexcontent.com',
+        average_views: 16000,
+        platforms: ['TIKTOK' as Platform],
+        platform_count: 1
       }
     ]
     return INITIAL_INFLUENCERS
@@ -373,6 +446,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     return {
       ...influencer,
       platforms: influencer.platforms || ['INSTAGRAM'],
+      
+      // Management fields are not accessible to brands (empty/null)
+      assigned_to: null,
+      labels: [],
+      notes: null,
       audienceGrowth: {
         instagram: {
           past30days: Math.floor(Math.random() * 10000) + 1000,
@@ -573,6 +651,28 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     onPanelStateChange?.(false)
   }
 
+  // Handle heart button click
+  const handleHeartInfluencer = (influencer: any) => {
+    if (isInfluencerHearted(influencer.id)) {
+      removeHeartedInfluencer(influencer.id)
+    } else {
+      // Convert influencer data to HeartedInfluencer format
+      const heartedInfluencer = {
+        id: influencer.id,
+        displayName: influencer.display_name,
+        username: influencer.display_name, // Using display_name as username since we don't have a separate username field
+        platform: (influencer.platforms?.[0] || 'instagram') as 'instagram' | 'tiktok' | 'youtube',
+        followers: influencer.total_followers || 0,
+        engagement_rate: influencer.total_engagement_rate || 0,
+        profilePicture: influencer.avatar_url,
+        niches: influencer.niches || [],
+        location: `${influencer.location_city || ''}, ${influencer.location_country || ''}`.replace(/^, |, $/, ''),
+        bio: influencer.bio || ''
+      }
+      addHeartedInfluencer(heartedInfluencer)
+    }
+  }
+
   // Track panel state changes for the parent component
   useEffect(() => {
     const isAnyPanelOpen = detailPanelOpen
@@ -630,7 +730,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     
     return (
       <th 
-        className={`px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100/40 transition-colors ${className}`}
+        className={`px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100/40 transition-colors ${className}`}
         onClick={() => handleSort(sortKey)}
       >
         <div className="flex items-center space-x-1">
@@ -845,28 +945,28 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-white/40 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      {/* Influencer Table */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
+        <div className="overflow-hidden">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50/60 border-b border-gray-100/60">
               <tr>
-                <SortableHeader sortKey="display_name">Influencer</SortableHeader>
-                <SortableHeader sortKey="content_type">Content Type</SortableHeader>
-                <SortableHeader sortKey="platforms">Platforms</SortableHeader>
-                <SortableHeader sortKey="niches">Niches</SortableHeader>
-                <SortableHeader sortKey="total_followers">Followers</SortableHeader>
-                <SortableHeader sortKey="total_engagement_rate">Engagement</SortableHeader>
-                <SortableHeader sortKey="total_avg_views">Avg Views</SortableHeader>
-                <SortableHeader sortKey="location_city">Location</SortableHeader>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                <SortableHeader sortKey="display_name" className="w-1/5">Influencer</SortableHeader>
+                <SortableHeader sortKey="content_type" className="w-24">Content Type</SortableHeader>
+                <SortableHeader sortKey="platforms" className="w-20">Platforms</SortableHeader>
+                <SortableHeader sortKey="niches" className="w-32">Niches</SortableHeader>
+                <SortableHeader sortKey="total_followers" className="w-24">Followers</SortableHeader>
+                <SortableHeader sortKey="total_engagement_rate" className="w-24">Engagement</SortableHeader>
+                <SortableHeader sortKey="total_avg_views" className="w-24">Avg Views</SortableHeader>
+                <SortableHeader sortKey="location_city" className="w-28">Location</SortableHeader>
+                <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white/50 divide-y divide-gray-100/60">
               {paginatedInfluencers.map((influencer) => (
                 <tr key={influencer.id} className="hover:bg-white/70 transition-colors duration-150">
                   {/* Influencer Info */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
                         {influencer.avatar_url ? (
@@ -881,11 +981,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                           </div>
                         )}
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
                           {influencer.display_name}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 truncate">
                           {influencer.first_name} {influencer.last_name}
                         </div>
                       </div>
@@ -893,7 +993,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Content Type */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                       influencer.content_type === 'UGC' 
                         ? 'bg-purple-100 text-purple-800'
@@ -907,37 +1007,45 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Platforms */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-2">
-                      {(influencer.platforms || []).filter(Boolean).map((platform: Platform, index: number) => (
+                  <td className="px-3 py-4">
+                    <div className="flex gap-1">
+                      {(influencer.platforms || []).filter(Boolean).slice(0, 3).map((platform: Platform, index: number) => (
                         <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
-                          <PlatformIcon platform={platform} size={24} />
+                          <PlatformIcon platform={platform} size={20} />
                         </div>
                       ))}
                     </div>
                   </td>
 
                   {/* Niches */}
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {influencer.niches.slice(0, 2).map((niche: string) => (
+                      {influencer.niches.slice(0, 1).map((niche: string) => (
                         <span
                           key={niche}
-                          className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg"
+                          className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg truncate max-w-full"
                         >
                           {niche}
                         </span>
                       ))}
-                      {influencer.niches.length > 2 && (
-                        <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
-                          +{influencer.niches.length - 2}
-                        </span>
+                      {influencer.niches.length > 1 && (
+                        <div className="relative group">
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg cursor-help">
+                            +{influencer.niches.length - 1}
+                          </span>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
+                            {influencer.niches.slice(1).join(', ')}
+                            {/* Tooltip arrow */}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </td>
 
                   {/* Followers */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <div className="flex items-center text-sm font-semibold text-gray-900">
                       <Users size={14} className="mr-1 text-gray-400" />
                       {formatNumber(influencer.total_followers)}
@@ -945,7 +1053,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Engagement */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <div className="flex items-center text-sm font-semibold text-gray-900">
                       <TrendingUp size={14} className="mr-1 text-gray-400" />
                       {influencer.total_engagement_rate && Number(influencer.total_engagement_rate) > 0 
@@ -955,7 +1063,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Average Views */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <div className="flex items-center text-sm font-semibold text-gray-900">
                       <Eye size={14} className="mr-1 text-gray-400" />
                       {formatNumber(influencer.total_avg_views)}
@@ -963,18 +1071,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Location */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <div className="flex items-center text-sm text-gray-600">
-                      <MapPin size={14} className="mr-1 text-gray-400" />
-                      <div>
-                        <div className="font-medium">{influencer.location_city}</div>
-                        <div className="text-xs text-gray-500">{influencer.location_country}</div>
+                      <MapPin size={14} className="mr-1 text-gray-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{influencer.location_city}</div>
+                        <div className="text-xs text-gray-500 truncate">{influencer.location_country}</div>
                       </div>
                     </div>
                   </td>
 
                   {/* Actions */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 py-4 text-sm font-medium">
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={() => handleViewInfluencer(influencer)}
@@ -985,12 +1093,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                         <Eye size={16} />
                       </button>
                       <button
-                        className="text-green-600 hover:text-green-800 transition-colors"
-                        title="Add to Shortlist"
+                        onClick={() => handleHeartInfluencer(influencer)}
+                        className={`transition-colors ${
+                          isInfluencerHearted(influencer.id) 
+                            ? 'text-red-600 hover:text-red-800' 
+                            : 'text-gray-400 hover:text-red-600'
+                        }`}
+                        title={isInfluencerHearted(influencer.id) ? "Remove from Shortlist" : "Add to Shortlist"}
                       >
-                        <svg width={16} height={16} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
+                        <Heart 
+                          size={16} 
+                          fill={isInfluencerHearted(influencer.id) ? 'currentColor' : 'none'}
+                        />
                       </button>
                     </div>
                   </td>

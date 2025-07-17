@@ -559,7 +559,12 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation: initi
                         <span>•</span>
                         <div className="flex items-center space-x-1">
                           <DollarSign size={14} />
-                          <span>{quotation.budget_range}</span>
+                          <span>
+                            {quotation.budget_min && quotation.budget_max 
+                              ? `$${quotation.budget_min.toLocaleString()} - $${quotation.budget_max.toLocaleString()}`
+                              : quotation.budget_range || 'Budget not specified'
+                            }
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -657,11 +662,15 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation: initi
                               icon={<FileText size={18} />}
                             />
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                              <InfoField
-                                label="Budget Range"
-                                value={quotation.budget_range}
-                                icon={<DollarSign size={18} />}
-                              />
+                                                          <InfoField
+                              label="Budget Range"
+                              value={
+                                quotation.budget_min && quotation.budget_max 
+                                  ? `$${quotation.budget_min.toLocaleString()} - $${quotation.budget_max.toLocaleString()}`
+                                  : quotation.budget_range || 'Budget not specified'
+                              }
+                              icon={<DollarSign size={18} />}
+                            />
                               <InfoField
                                 label="Target Demographics"
                                 value={quotation.target_demographics}

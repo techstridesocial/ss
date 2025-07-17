@@ -150,4 +150,14 @@
   body::-webkit-scrollbar {
     display: none;
   }
+  
+  /* Scrollbar hide utility class */
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* WebKit browsers */
+  }
 }

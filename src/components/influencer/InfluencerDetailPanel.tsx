@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, MapPin, Shield, Instagram, Youtube, Video, Globe, Users, Heart, MessageCircle, Eye, TrendingUp, Calendar, UserCheck, Lock } from 'lucide-react'
+import { X, ExternalLink, MapPin, Shield, Instagram, Youtube, Video, Globe, Users, Heart, MessageCircle, Eye, TrendingUp, Calendar, Lock, Save, Edit3, Tag, User, FileText } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface InfluencerDetailPanelProps {
@@ -115,10 +115,30 @@ export default function InfluencerDetailPanel({
   loading
 }: InfluencerDetailPanelProps) {
   const [mounted, setMounted] = useState(false)
+  
+  // Management state (only used when onSave is available)
+  const [managementData, setManagementData] = useState({
+    assigned_to: '',
+    labels: [] as string[],
+    notes: ''
+  })
+  const [isEditingManagement, setIsEditingManagement] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Initialize management data when influencer changes
+  useEffect(() => {
+    if (influencer && onSave) {
+      setManagementData({
+        assigned_to: influencer.assigned_to || '',
+        labels: influencer.labels || [],
+        notes: influencer.notes || ''
+      })
+    }
+  }, [influencer, onSave])
 
   if (!mounted || !isOpen || !influencer) return null
 
@@ -142,6 +162,59 @@ export default function InfluencerDetailPanel({
   const currentPlatformData = isMultiPlatform 
     ? influencer.platforms?.[selectedPlatform || 'instagram'] || Object.values(influencer.platforms)[0]
     : influencer
+
+  // Management functions
+  const handleSaveManagement = async () => {
+    if (!onSave) return
+    
+    setIsSaving(true)
+    try {
+      await onSave(managementData)
+      setIsEditingManagement(false)
+    } catch (error) {
+      console.error('Error saving management data:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancelManagement = () => {
+    // Reset to original data
+    setManagementData({
+      assigned_to: influencer.assigned_to || '',
+      labels: influencer.labels || [],
+      notes: influencer.notes || ''
+    })
+    setIsEditingManagement(false)
+  }
+
+  const handleAddLabel = (label: string) => {
+    if (label && !managementData.labels.includes(label)) {
+      setManagementData(prev => ({
+        ...prev,
+        labels: [...prev.labels, label]
+      }))
+    }
+  }
+
+  const handleRemoveLabel = (labelToRemove: string) => {
+    setManagementData(prev => ({
+      ...prev,
+      labels: prev.labels.filter(label => label !== labelToRemove)
+    }))
+  }
+
+  // Predefined label options
+  const availableLabels = [
+    'High Priority',
+    'Follow Up',
+    'Active Campaign',
+    'Needs Review',
+    'Top Performer',
+    'New Contact',
+    'Potential Issue',
+    'VIP Client'
+  ]
 
   return createPortal(
     <AnimatePresence>
@@ -240,6 +313,164 @@ export default function InfluencerDetailPanel({
                   </div>
                 </div>
               </div>
+
+              {/* Management Section - Only shown when onSave is provided (Staff view) */}
+              {onSave && (
+                <div className="p-6 border-b border-gray-100 bg-gray-50/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Edit3 className="w-5 h-5 mr-2 text-blue-600" />
+                      Management
+                    </h3>
+                    {!isEditingManagement ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditingManagement(true)}
+                        className="flex items-center space-x-2"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>Edit</span>
+                      </Button>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCancelManagement}
+                          disabled={isSaving}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleSaveManagement}
+                          disabled={isSaving}
+                          className="flex items-center space-x-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4" />
+                              <span>Save</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Assigned To */}
+                    <div>
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <User className="w-4 h-4 mr-2" />
+                        Assigned To
+                      </label>
+                      {isEditingManagement ? (
+                        <select
+                          value={managementData.assigned_to}
+                          onChange={(e) => setManagementData(prev => ({ ...prev, assigned_to: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Unassigned</option>
+                          <option value="sarah.manager@stridesocial.com">Sarah Manager</option>
+                          <option value="mike.lead@stridesocial.com">Mike Lead</option>
+                          <option value="anna.coordinator@stridesocial.com">Anna Coordinator</option>
+                        </select>
+                      ) : (
+                        <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900">
+                          {managementData.assigned_to || 'Unassigned'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Labels */}
+                    <div>
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <Tag className="w-4 h-4 mr-2" />
+                        Labels
+                      </label>
+                      {isEditingManagement ? (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            {managementData.labels.map((label) => (
+                              <span
+                                key={label}
+                                className="inline-flex items-center px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+                              >
+                                {label}
+                                <button
+                                  onClick={() => handleRemoveLabel(label)}
+                                  className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <select
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                handleAddLabel(e.target.value)
+                                e.target.value = ''
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="">Add a label...</option>
+                            {availableLabels
+                              .filter(label => !managementData.labels.includes(label))
+                              .map((label) => (
+                                <option key={label} value={label}>{label}</option>
+                              ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {managementData.labels.length > 0 ? (
+                            managementData.labels.map((label) => (
+                              <Badge key={label} variant="default" size="sm">
+                                {label}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-sm text-gray-500">No labels assigned</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Internal Notes
+                      </label>
+                      {isEditingManagement ? (
+                        <textarea
+                          value={managementData.notes}
+                          onChange={(e) => setManagementData(prev => ({ ...prev, notes: e.target.value }))}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                          placeholder="Add internal notes about this influencer..."
+                        />
+                      ) : (
+                        <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 min-h-[80px]">
+                          {managementData.notes || (
+                            <span className="text-gray-500">No notes added</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Bio Section */}
               {influencer.bio && (
