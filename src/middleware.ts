@@ -29,6 +29,8 @@ export default clerkMiddleware(async (auth, req) => {
     await auth.protect()
   }
 
+  // Brand onboarding redirect will be handled at the page level
+
   return NextResponse.next()
 })
 

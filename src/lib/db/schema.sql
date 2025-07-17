@@ -49,6 +49,7 @@ CREATE TABLE user_profiles (
     location_country VARCHAR(100),
     location_city VARCHAR(100),
     timezone VARCHAR(50),
+    is_onboarded BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

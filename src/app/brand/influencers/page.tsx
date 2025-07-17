@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { BrandProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernBrandHeader from '../../../components/nav/ModernBrandHeader'
+import BrandOnboardingCheck from '../../../components/auth/BrandOnboardingCheck'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 import { Platform, InfluencerDetailView } from '../../../types/database'
@@ -1205,10 +1206,11 @@ export default function BrandInfluencersPage() {
 
   return (
     <BrandProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <ModernBrandHeader />
-        
-        <div className={`transition-all duration-300 ${isAnyPanelOpen ? 'mr-[600px]' : ''}`}>
+      <BrandOnboardingCheck>
+        <div className="min-h-screen bg-gray-50">
+          <ModernBrandHeader />
+          
+          <div className={`transition-all duration-300 ${isAnyPanelOpen ? 'mr-[600px]' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
             <InfluencerTable 
               searchParams={{}}
@@ -1217,6 +1219,7 @@ export default function BrandInfluencersPage() {
           </div>
         </div>
       </div>
+      </BrandOnboardingCheck>
     </BrandProtectedRoute>
   )
 } 
