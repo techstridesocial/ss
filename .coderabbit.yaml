@@ -1,0 +1,109 @@
+# CodeRabbit Configuration for Stride Social Dashboard
+# https://docs.coderabbit.ai/configuration
+
+# Language and framework specific settings
+language: typescript
+framework: nextjs
+
+# Review settings
+reviews:
+  # Enable high-level summary for each PR
+  high_level_summary: true
+  
+  # Enable poem-style summaries (fun feature)
+  poem: true
+  
+  # Enable walkthrough comments
+  walkthrough: true
+  
+  # Request changes for critical issues
+  request_changes: auto
+  
+  # Auto-approve PRs that only have minor issues
+  auto_approve: false
+
+# Ignore patterns - files that shouldn't be reviewed
+ignore:
+  - "*.lock"
+  - "*.log" 
+  - ".next/**"
+  - "dist/**"
+  - "build/**"
+  - "coverage/**"
+  - "node_modules/**"
+  - "public/**"
+  - "*.md"
+  - "*.svg"
+  - "*.png"
+  - "*.jpg"
+  - "*.jpeg"
+  - "*.gif"
+
+# Focus areas for reviews
+focus_areas:
+  - security
+  - performance
+  - maintainability
+  - best_practices
+  - type_safety
+  - accessibility
+
+# Custom rules for Next.js/React
+rules:
+  # Enforce React best practices
+  react:
+    - prefer_function_components
+    - use_strict_mode
+    - avoid_deprecated_apis
+    
+  # Next.js specific
+  nextjs:
+    - optimize_images
+    - use_next_link
+    - avoid_client_side_navigation_issues
+    
+  # TypeScript best practices
+  typescript:
+    - strict_type_checking
+    - avoid_any_type
+    - use_proper_interfaces
+    
+  # Performance considerations
+  performance:
+    - avoid_blocking_operations
+    - optimize_bundle_size
+    - use_proper_caching
+
+# Specific focus for dashboard/admin interfaces
+dashboard_specific:
+  - authentication_security
+  - role_based_access_control
+  - data_sanitization
+  - api_error_handling
+  - responsive_design
+
+# File-specific settings
+path_instructions:
+  "src/app/api/**":
+    focus: ["security", "error_handling", "validation"]
+    message: "Extra attention on API security and error handling"
+    
+  "src/components/auth/**":
+    focus: ["security", "authentication"]
+    message: "Critical security review for authentication components"
+    
+  "src/lib/db/**":
+    focus: ["security", "performance", "data_integrity"]
+    message: "Database security and performance review"
+    
+  "src/middleware.ts":
+    focus: ["security", "performance"]
+    message: "Middleware security and performance critical"
+
+# Enable specific checks for influencer marketing platform
+platform_specific:
+  - financial_data_handling
+  - oauth_security
+  - user_privacy
+  - gdpr_compliance
+  - api_rate_limiting 
