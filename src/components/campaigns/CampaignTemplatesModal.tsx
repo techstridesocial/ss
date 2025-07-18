@@ -4,7 +4,7 @@ import {
   X, 
   Plus, 
   Search, 
-  Filter,
+  FilterIcon,
   Star,
   Users,
   Target,

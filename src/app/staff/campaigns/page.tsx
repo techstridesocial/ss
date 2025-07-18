@@ -21,7 +21,7 @@ import {
   Target,
   TrendingUp,
   Package,
-  Filter,
+  FilterIcon,
   ChevronDown,
   ChevronUp,
   AlertCircle,
@@ -401,7 +401,7 @@ function CampaignsPageClient() {
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
-                <Filter size={20} />
+                <FilterIcon size={20} />
                 Filters
                 {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>

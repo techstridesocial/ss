@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, Filter } from 'lucide-react'
+import { Search, FilterIcon } from 'lucide-react'
 import { UserRole } from '../../types/database'
 
 interface UserFiltersProps {
@@ -69,7 +69,7 @@ export default function UserFilters({ currentSearch, currentRole }: UserFiltersP
 
         {/* Role Filter */}
         <div className="flex items-center space-x-2">
-          <Filter size={16} className="text-gray-400" />
+          <FilterIcon size={16} className="text-gray-400" />
           <select
             value={currentRole || ''}
             onChange={(e) => handleRoleChange(e.target.value)}

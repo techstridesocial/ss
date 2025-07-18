@@ -13,7 +13,7 @@ import {
   UserCheck,
   AlertCircle,
   ChevronDown,
-  Filter,
+  FilterIcon,
   UserMinus,
   UserPlus
 } from 'lucide-react'
@@ -386,7 +386,7 @@ export default function ReplaceInfluencersModal({
                         onClick={() => setShowFilters(!showFilters)}
                         className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                       >
-                        <Filter size={16} />
+                        <FilterIcon size={16} />
                         <span>Filters</span>
                         <ChevronDown size={14} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                       </button>
