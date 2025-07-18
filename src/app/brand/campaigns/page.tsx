@@ -23,7 +23,7 @@ import {
   TrendingUp,
   MapPin,
   Search,
-  Filter,
+  FilterIcon,
   MoreHorizontal,
   ArrowUpRight,
   Edit,
@@ -360,7 +360,7 @@ function CampaignsPageClient() {
           onClick={() => setIsFiltersOpen(!isFiltersOpen)}
           className="px-6 py-3 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 hover:bg-white transition-all duration-300 font-medium flex items-center gap-2"
         >
-          <Filter size={16} />
+                              <FilterIcon size={16} />
           Filters
         </button>
       </div>

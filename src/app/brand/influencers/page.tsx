@@ -9,7 +9,7 @@ import BrandOnboardingCheck from '../../../components/auth/BrandOnboardingCheck'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 import { Platform, InfluencerDetailView } from '../../../types/database'
-import { Search, Filter, Eye, Users, TrendingUp, MapPin, ChevronDown, ChevronUp, Heart } from 'lucide-react'
+import { Search, FilterIcon, Eye, Users, TrendingUp, MapPin, ChevronDown, ChevronUp, Heart } from 'lucide-react'
 
 interface InfluencerTableProps {
   searchParams: {
@@ -778,7 +778,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
           }`}
         >
-          <Filter size={16} />
+                              <FilterIcon size={16} />
           <span>Filters</span>
           {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
             <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">

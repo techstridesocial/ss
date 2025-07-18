@@ -8,7 +8,7 @@ import AddBrandPanel from '@/components/brands/AddBrandPanel'
 import ViewBrandPanel from '@/components/brands/ViewBrandPanel'
 import QuotationDetailPanel from '@/components/brands/QuotationDetailPanel'
 import CreateCampaignFromQuotationModal from '@/components/campaigns/CreateCampaignFromQuotationModal'
-import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, Filter, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
+import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, FilterIcon, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
 
 // Mock data for brands and their shortlists
 const MOCK_BRANDS = [
@@ -874,7 +874,7 @@ function BrandsPageClient() {
                     : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
                 }`}
               >
-                <Filter size={16} />
+                <FilterIcon size={16} />
                 <span>Filters</span>
             {activeFilterCount > 0 && (
                   <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">

@@ -8,7 +8,7 @@ import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import { Platform, InfluencerDetailView } from '../../../types/database'
-import { Search, Filter, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp } from 'lucide-react'
+import { Search, FilterIcon, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp } from 'lucide-react'
 
 interface InfluencerTableProps {
   searchParams: {
@@ -1175,7 +1175,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
           }`}
         >
-          <Filter size={16} />
+                                <FilterIcon size={16} />
           <span>Filters</span>
           {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
             <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
