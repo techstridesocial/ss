@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import CampaignDetailPanel from '../../../components/campaigns/CampaignDetailPanel'
 import EditCampaignModal from '../../../components/campaigns/EditCampaignModal'
+import CreateCampaignModal from '../../../components/campaigns/CreateCampaignModal'
 import { 
   Megaphone, 
   Users, 
@@ -72,6 +73,7 @@ function CampaignsPageClient() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [showDetailPanel, setShowDetailPanel] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationConfig, setNotificationConfig] = useState({
@@ -153,7 +155,7 @@ function CampaignsPageClient() {
     showNotificationModal(title, message, 'warning', onConfirm, confirmText, cancelText)
   }
 
-  const handleCreateCampaign = async (campaignData?: any) => {
+  const handleCreateCampaign = async (campaignData: any) => {
     try {
       const response = await fetch('/api/campaigns', {
         method: 'POST',
@@ -337,7 +339,8 @@ function CampaignsPageClient() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <ModernStaffHeader />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="p-4 lg:p-6 pt-0">
+        <div className="px-4 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
@@ -346,7 +349,7 @@ function CampaignsPageClient() {
           </div>
           <div className="flex gap-3 mt-4 lg:mt-0">
             <button
-              onClick={() => handleCreateCampaign()}
+              onClick={() => setShowCreateModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl flex items-center gap-2 transition-colors"
             >
               <Plus size={20} />
@@ -595,6 +598,17 @@ function CampaignsPageClient() {
         )}
       </AnimatePresence>
 
+      {/* Create Campaign Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <CreateCampaignModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onSave={handleCreateCampaign}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Edit Campaign Modal */}
       <AnimatePresence>
         {showEditModal && editingCampaignId && (
@@ -648,7 +662,8 @@ function CampaignsPageClient() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+        </div>
+      </div>
   )
 }
 

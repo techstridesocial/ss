@@ -7,7 +7,7 @@ import BulkApproveModal from '@/components/modals/BulkApproveModal'
 import AddBrandPanel from '@/components/brands/AddBrandPanel'
 import ViewBrandPanel from '@/components/brands/ViewBrandPanel'
 import QuotationDetailPanel from '@/components/brands/QuotationDetailPanel'
-import CreateCampaignModal from '@/components/modals/CreateCampaignModal'
+import CreateCampaignFromQuotationModal from '@/components/campaigns/CreateCampaignFromQuotationModal'
 import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, Filter, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
 
 // Mock data for brands and their shortlists
@@ -1281,17 +1281,14 @@ function BrandsPageClient() {
         )}
 
         {/* Create Campaign Modal */}
-        <CreateCampaignModal
+        <CreateCampaignFromQuotationModal
           isOpen={showCreateCampaignModal}
           onClose={() => {
             setShowCreateCampaignModal(false)
             setCampaignQuotation(null)
           }}
           onSave={handleCreateCampaign}
-          brands={[{ 
-            id: campaignQuotation?.brand_id || '', 
-            company_name: campaignQuotation?.brand_name || 'Unknown Brand' 
-          }]}
+          quotation={campaignQuotation}
         />
       </main>
     </div>

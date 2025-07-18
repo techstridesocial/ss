@@ -844,120 +844,52 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation: initi
                     {/* Campaign Creation Section for Approved Quotes */}
                     {quotation.status === 'approved' && (
                       <div className="border-t border-gray-200 pt-6 mt-6">
-                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="text-lg font-semibold text-orange-900 flex items-center mb-2">
-                                <Clock size={20} className="mr-2" />
-                                Ready for Manual Influencer Contact
+                            <div className="flex-1">
+                              <h4 className="text-lg font-semibold text-green-900 flex items-center mb-2">
+                                <CheckCircle size={20} className="mr-2" />
+                                Quotation Approved - Ready for Campaign Creation
                               </h4>
-                              <p className="text-sm text-orange-700 mb-4">
-                                This quotation has been approved by the brand. Staff must now manually contact each 
-                                selected influencer to confirm their participation before creating the campaign.
+                              <p className="text-sm text-green-700 mb-4">
+                                This quotation has been approved by the brand. You can now manually create a campaign 
+                                with all the quotation details pre-filled, or proceed with manual influencer contact.
                               </p>
-                              <div className="flex items-center space-x-4 text-sm text-orange-600">
+                              <div className="flex items-center space-x-4 text-sm text-green-600">
                                 <div className="flex items-center">
                                   <Users size={16} className="mr-1" />
-                                  <span>{quotation.influencer_count} influencers to contact</span>
+                                  <span>{quotation.influencer_count} influencers selected</span>
                                 </div>
                                 <div className="flex items-center">
                                   <DollarSign size={16} className="mr-1" />
                                   <span>${quotation.total_quote} approved budget</span>
                                 </div>
                                 <div className="flex items-center">
-                                  <Clock size={16} className="mr-1" />
-                                  <span>Awaiting contact</span>
+                                  <Calendar size={16} className="mr-1" />
+                                  <span>{quotation.campaign_duration}</span>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                        
-                        {/* Influencer Contact Tracking Section */}
-                        <div className="mt-6">
-                          <h4 className="text-lg font-semibold text-gray-900 mb-4">Influencer Contact Status</h4>
-                          <div className="space-y-4">
-                            {quotation.influencers?.map((influencer: any, index: number) => (
-                              <InfluencerContactCard
-                                key={`contact-${influencer.id || index}`}
-                                influencer={influencer}
-                                index={index}
-                                contactStatus={influencer.contact_status || 'pending'}
-                                onStatusChange={async (status) => {
-                                  // Update influencer contact status via API
-                                  console.log(`Updating ${influencer.name} contact status to: ${status}`)
-                                  
-                                  try {
-                                    const response = await fetch('/api/influencer-contact', {
-                                      method: 'PUT',
-                                      headers: {
-                                        'Content-Type': 'application/json',
-                                      },
-                                      body: JSON.stringify({
-                                        quotationId: quotation.id,
-                                        influencerIndex: index,
-                                        status: status
-                                      })
-                                    })
-
-                                    const result = await response.json()
-
-                                    if (!response.ok) {
-                                      throw new Error(result.error || 'Failed to update contact status')
-                                    }
-
-                                    // Update the local state properly with React state management
-                                    setQuotation((prevQuotation: any) => ({
-                                      ...prevQuotation,
-                                      influencers: prevQuotation.influencers.map((inf: any, idx: number) => 
-                                        idx === index 
-                                          ? { ...inf, contact_status: status }
-                                          : inf
-                                      )
-                                    }))
-                                    
-                                    console.log('Contact status updated successfully:', result)
-                                  } catch (error) {
-                                    console.error('Error updating contact status:', error)
-                                    // Better error handling - could be replaced with toast notifications
-                                    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-                                    alert(`Failed to update contact status: ${errorMessage}`)
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                          
-                          {/* Create Campaign Button - Only show if we have confirmed influencers */}
-                          {quotation.influencers?.some((inf: any) => inf.contact_status === 'confirmed') && (
-                            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h5 className="font-medium text-green-900">Ready to Create Campaign</h5>
-                                  <p className="text-sm text-green-700">
-                                    {quotation.influencers?.filter((inf: any) => inf.contact_status === 'confirmed').length} influencer(s) confirmed
-                                  </p>
-                                </div>
-                                                                 <button
-                                   onClick={() => {
-                                     const confirmedInfluencers = quotation.influencers?.filter((inf: any) => inf.contact_status === 'confirmed') || []
-                                     
-                                     if (confirmedInfluencers.length === 0) {
-                                       alert('No influencers confirmed yet. Please confirm at least one influencer before creating a campaign.')
-                                       return
-                                     }
-                                     
-                                     // Open the campaign creation modal and close the panel
-                                     handleCreateCampaign()
-                                     onClose()
-                                   }}
-                                   className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-                                 >
-                                   Create Campaign
-                                 </button>
-                              </div>
+                            <div className="ml-6">
+                              <button
+                                onClick={handleCreateCampaign}
+                                disabled={isCreatingCampaign}
+                                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2"
+                              >
+                                {isCreatingCampaign ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                    <span>Creating...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus size={16} />
+                                    <span>Create Campaign</span>
+                                  </>
+                                )}
+                              </button>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     )}

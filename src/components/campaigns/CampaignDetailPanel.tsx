@@ -467,25 +467,25 @@ export default function CampaignDetailPanel({
                           />
                           <InfoField
                             label="Budget"
-                            value={campaign.budget}
+                            value={campaign.budget.total}
                             type="currency"
                             icon={<DollarSign size={18} />}
                           />
                           <InfoField
                             label="Spent"
-                            value={campaign.spent}
+                            value={campaign.spent || 0}
                             type="currency"
                             icon={<TrendingUp size={18} />}
                           />
                           <InfoField
                             label="Start Date"
-                            value={campaign.start_date}
+                            value={campaign.timeline?.startDate || campaign.start_date}
                             type="date"
                             icon={<Calendar size={18} />}
                           />
                           <InfoField
                             label="End Date"
-                            value={campaign.end_date}
+                            value={campaign.timeline?.endDate || campaign.end_date}
                             type="date"
                             icon={<Calendar size={18} />}
                           />
@@ -633,7 +633,7 @@ export default function CampaignDetailPanel({
                           />
                           <InfoField
                             label="Cost Per Reach"
-                            value={campaign.actual_reach ? Math.round(campaign.spent / campaign.actual_reach * 1000) / 1000 : 0}
+                            value={campaign.actual_reach ? Math.round((campaign.spent || 0) / campaign.actual_reach * 1000) / 1000 : 0}
                             type="currency"
                             icon={<DollarSign size={18} />}
                           />
@@ -646,7 +646,7 @@ export default function CampaignDetailPanel({
                         <div className="text-center">
                           <div className="text-3xl font-bold text-blue-900 mb-2">
                             {campaign.actual_reach && campaign.budget 
-                              ? `${Math.round((campaign.actual_reach / campaign.budget) * 100)}%` 
+                              ? `${Math.round((campaign.actual_reach / campaign.budget.total) * 100)}%` 
                               : 'N/A'
                             }
                           </div>

@@ -1,5 +1,7 @@
 import React from 'react'
-import { requireStaffAccess } from '../../lib/auth/roles'
+import { auth } from '@clerk/nextjs/server'
+import { getCurrentUserRole } from '../../lib/auth/roles'
+import { redirect } from 'next/navigation'
 import ModernStaffHeader from '../../components/nav/ModernStaffHeader'
 import { Users, UserCheck, Activity, TrendingUp, Eye, UserPlus, Plus } from 'lucide-react'
 
@@ -73,127 +75,131 @@ function QuickActionCard({ title, description, href, icon, color }: QuickActionP
 }
 
 export default async function StaffDashboard() {
-  // Server-side protection
-  await requireStaffAccess()
+  try {
+    // Check authentication first
+    const { userId } = await auth()
+    
+    if (!userId) {
+      redirect('/sign-in')
+    }
 
-  // Mock data for testing
-  const mockUserStats = {
-    totalUsers: 247,
-    recentUsers: 12,
-    onboardedUsers: 198
-  }
+    // Get user role
+    const userRole = await getCurrentUserRole()
+    console.log('Staff Dashboard - User Role:', userRole)
+    
+    // Allow staff and admin roles
+    if (!userRole || (userRole !== 'STAFF' && userRole !== 'ADMIN')) {
+      console.log('Staff Dashboard - Access denied. User role:', userRole)
+      redirect('/unauthorized')
+    }
 
-  const mockInfluencerStats = {
-    activeInfluencers: 145,
-    totalInfluencers: 189,
-    averageFollowers: 125000,
-    averageEngagement: 3.2
-  }
+    // Mock data for testing
+    const mockUserStats = {
+      totalUsers: 247,
+      recentUsers: 12,
+      onboardedUsers: 198
+    }
 
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
-      <ModernStaffHeader />
-      
-      <main className="px-4 lg:px-8 pb-8">
+    const mockInfluencerStats = {
+      activeInfluencers: 145,
+      totalInfluencers: 189,
+      averageFollowers: 125000,
+      averageEngagement: 3.2
+    }
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Total Users"
-            value={mockUserStats.totalUsers}
-            icon={<Users size={24} />}
-            trend={`+${mockUserStats.recentUsers} this week`}
-            color="blue"
-          />
-          
-          <StatCard
-            title="Active Influencers"
-            value={mockInfluencerStats.activeInfluencers}
-            icon={<UserCheck size={24} />}
-            trend={`${mockInfluencerStats.totalInfluencers} total`}
-            color="green"
-          />
-          
-          <StatCard
-            title="Avg. Followers"
-            value={`${(mockInfluencerStats.averageFollowers / 1000).toFixed(1)}K`}
-            icon={<TrendingUp size={24} />}
-            trend={`${mockInfluencerStats.averageEngagement.toFixed(1)}% engagement`}
-            color="purple"
-          />
-          
-          <StatCard
-            title="Onboarded"
-            value={mockUserStats.onboardedUsers}
-            icon={<Activity size={24} />}
-            trend="Platform ready"
-            color="yellow"
-          />
-        </div>
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+        <ModernStaffHeader />
+        
+        <main className="px-4 lg:px-8 pb-8">
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <QuickActionCard
-            title="Manage Users"
-            description="View, create, and edit user accounts"
-            href="/staff/users"
-            icon={<Users size={20} className="text-blue-600" />}
-            color="blue"
-          />
-          
-          <QuickActionCard
-            title="Influencer Roster"
-            description="Manage and organize your influencer network with detailed analytics and performance metrics."
-            href="/staff/roster"
-            icon={<Eye size={20} className="text-green-600" />}
-            color="green"
-          />
-          
-          <QuickActionCard
-            title="Manage Quotations"
-            description="Review quotations and manage influencer contact workflow"
-            href="/staff/brands?tab=quotations"
-            icon={<UserPlus size={20} className="text-purple-600" />}
-            color="purple"
-          />
-          
-          <QuickActionCard
-            title="Create Campaign"
-            description="Manually create campaigns after influencer confirmations"
-            href="/staff/campaigns"
-            icon={<Plus size={20} className="text-orange-600" />}
-            color="orange"
-          />
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+          {/* Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard
+              title="Total Users"
+              value={mockUserStats.totalUsers}
+              icon={<Users size={24} />}
+              trend={`+${mockUserStats.recentUsers} this week`}
+              color="blue"
+            />
+            
+            <StatCard
+              title="Active Influencers"
+              value={mockInfluencerStats.activeInfluencers}
+              icon={<UserCheck size={24} />}
+              trend={`${mockInfluencerStats.totalInfluencers} total`}
+              color="green"
+            />
+            
+            <StatCard
+              title="Avg. Followers"
+              value={`${(mockInfluencerStats.averageFollowers / 1000).toFixed(1)}K`}
+              icon={<TrendingUp size={24} />}
+              trend={`${mockInfluencerStats.averageEngagement.toFixed(1)}% engagement`}
+              color="purple"
+            />
+            
+            <StatCard
+              title="Onboarded"
+              value={mockUserStats.onboardedUsers}
+              icon={<Activity size={24} />}
+              trend="Platform ready"
+              color="yellow"
+            />
           </div>
-          <div className="p-6">
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <QuickActionCard
+              title="Add New User"
+              description="Register brand or influencer"
+              href="/staff/users"
+              icon={<UserPlus size={20} />}
+              color="blue"
+            />
+            
+            <QuickActionCard
+              title="Create Campaign"
+              description="Set up new influencer campaign"
+              href="/staff/campaigns"
+              icon={<Plus size={20} />}
+              color="green"
+            />
+            
+            <QuickActionCard
+              title="Discover Influencers"
+              description="Find new talent via Modash"
+              href="/staff/discovery"
+              icon={<Eye size={20} />}
+              color="purple"
+            />
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-900">New influencer registered</p>
-                  <p className="text-xs text-gray-500">2 minutes ago</p>
+                  <p className="text-sm text-gray-900">New brand registered: TechStyle Co.</p>
+                  <p className="text-xs text-gray-500">2 hours ago</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-900">Campaign "Summer Collection" created</p>
-                  <p className="text-xs text-gray-500">1 hour ago</p>
+                  <p className="text-sm text-gray-900">Campaign "Summer Launch" created</p>
+                  <p className="text-xs text-gray-500">4 hours ago</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-900">Brand shortlist reviewed</p>
-                  <p className="text-xs text-gray-500">3 hours ago</p>
+                  <p className="text-sm text-gray-900">15 new influencers discovered</p>
+                  <p className="text-xs text-gray-500">6 hours ago</p>
                 </div>
               </div>
               
@@ -206,8 +212,44 @@ export default async function StaffDashboard() {
               </div>
             </div>
           </div>
+        </main>
+      </div>
+    )
+  } catch (error) {
+    console.error('Staff Dashboard Error:', error)
+    
+    // Return an error page for debugging
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+          <h1 className="text-xl font-bold text-red-600 mb-4">Staff Dashboard Error</h1>
+          <p className="text-gray-700 mb-4">
+            There was an error loading the staff dashboard. This might be due to:
+          </p>
+          <ul className="list-disc list-inside text-gray-600 space-y-2 mb-6">
+            <li>Your account doesn't have a staff role assigned</li>
+            <li>Database connection issues</li>
+            <li>Authentication configuration problems</li>
+          </ul>
+          <div className="space-y-3">
+            <a 
+              href="/dashboard" 
+              className="block w-full text-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+            >
+              Return to Dashboard
+            </a>
+            <a 
+              href="/sign-in" 
+              className="block w-full text-center bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
+            >
+              Sign In Again
+            </a>
+          </div>
+          <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
+            <strong>Error:</strong> {error instanceof Error ? error.message : 'Unknown error'}
+          </div>
         </div>
-      </main>
-    </div>
-  )
+      </div>
+    )
+  }
 } 
