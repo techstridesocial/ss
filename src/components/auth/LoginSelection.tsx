@@ -170,10 +170,10 @@ export default function LoginSelection() {
                 }
               }}
               afterSignInUrl={
-                mode === 'staff' ? '/staff' : 
-                mode === 'brand' ? '/brand' : 
-                mode === 'influencer' ? '/influencer' : 
-                '/dashboard'
+                mode === 'staff' ? '/' : 
+                mode === 'brand' ? '/' : 
+                mode === 'influencer' ? '/' : 
+                '/'
               }
             />
           </motion.div>

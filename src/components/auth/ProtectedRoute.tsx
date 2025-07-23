@@ -1,14 +1,13 @@
 'use client'
 
-import React, { useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { UserRole } from '../../lib/auth/roles'
+import { useUser } from '@clerk/nextjs'
 import { useUserRole, useCanAccessPortal } from '../../lib/auth/hooks'
 
 interface ProtectedRouteProps {
-  children: React.ReactNode
-  requiredRole?: UserRole
+  children: ReactNode
+  requiredRole?: string
   requiredPortal?: 'brand' | 'influencer' | 'staff' | 'admin'
 }
 
@@ -27,38 +26,38 @@ export function ProtectedRoute({
     
     // Redirect to sign-in if not authenticated
     if (!isSignedIn) {
-      router.push('/sign-in')
+      router.replace('/sign-in')
       return
     }
 
     // Check role-based access
     if (requiredRole && userRole !== requiredRole) {
-      router.push('/unauthorized')
+      router.replace('/unauthorized')
       return
     }
 
     // Check portal-based access
     if (requiredPortal && !canAccessPortal) {
-      router.push('/unauthorized')
+      router.replace('/unauthorized')
       return
     }
 
   }, [isLoaded, isSignedIn, userRole, requiredRole, requiredPortal, canAccessPortal, router])
 
-  // Show loading while Clerk is initializing
+  // Show minimal loading while Clerk is initializing
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
       </div>
     )
   }
 
-  // Show loading while redirecting
+  // Show minimal loading while redirecting
   if (!isSignedIn || (requiredRole && userRole !== requiredRole) || (requiredPortal && !canAccessPortal)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
       </div>
     )
   }
@@ -66,8 +65,8 @@ export function ProtectedRoute({
   return <>{children}</>
 }
 
-// Convenience components for specific portals
-export function BrandProtectedRoute({ children }: { children: React.ReactNode }) {
+// Specific protected route components for each portal
+export function BrandProtectedRoute({ children }: { children: ReactNode }) {
   return (
     <ProtectedRoute requiredPortal="brand">
       {children}
@@ -75,7 +74,7 @@ export function BrandProtectedRoute({ children }: { children: React.ReactNode })
   )
 }
 
-export function InfluencerProtectedRoute({ children }: { children: React.ReactNode }) {
+export function InfluencerProtectedRoute({ children }: { children: ReactNode }) {
   return (
     <ProtectedRoute requiredPortal="influencer">
       {children}
@@ -83,7 +82,7 @@ export function InfluencerProtectedRoute({ children }: { children: React.ReactNo
   )
 }
 
-export function StaffProtectedRoute({ children }: { children: React.ReactNode }) {
+export function StaffProtectedRoute({ children }: { children: ReactNode }) {
   return (
     <ProtectedRoute requiredPortal="staff">
       {children}
@@ -91,7 +90,7 @@ export function StaffProtectedRoute({ children }: { children: React.ReactNode })
   )
 }
 
-export function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
+export function AdminProtectedRoute({ children }: { children: ReactNode }) {
   return (
     <ProtectedRoute requiredPortal="admin">
       {children}

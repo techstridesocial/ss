@@ -111,7 +111,7 @@ function InfluencerOnboardingPageContent() {
       
       // Redirect to dashboard after success animation
       setTimeout(() => {
-        router.push('/influencer')
+        router.push('/influencer/campaigns')
       }, 3000)
     } catch (error) {
       console.error('Onboarding submission failed:', error)

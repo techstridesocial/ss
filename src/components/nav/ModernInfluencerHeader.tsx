@@ -105,20 +105,7 @@ export default function ModernInfluencerHeader() {
     const greeting = getGreeting()
     
     // Check current route and return appropriate header content
-    if (pathname === '/influencer' || pathname === '/influencer/campaigns') {
-      // For campaigns page (main dashboard), show personalized greeting
-      if (!isClient || !user || !userName) {
-        return {
-          title: '...', // Minimal loading indicator
-          subtitle: 'Your creative journey starts here'
-        }
-      }
-      return {
-        title: `${greeting}, ${userName}!`,
-        subtitle: 'Your creative journey starts here'
-      }
-    } else if (pathname.startsWith('/influencer/campaigns/')) {
-      // For specific campaign detail pages, show "My Campaigns"
+    if (pathname === '/influencer/campaigns' || pathname.startsWith('/influencer/campaigns/')) {
       return {
         title: 'My Campaigns',
         subtitle: 'View and manage your campaign invitations and active collaborations'
@@ -182,11 +169,7 @@ export default function ModernInfluencerHeader() {
                     key={item.href}
                     href={item.href}
                     label={item.label}
-                    isActive={
-                      item.href === '/influencer/campaigns' 
-                        ? pathname === '/influencer' || pathname === '/influencer/campaigns' || pathname.startsWith('/influencer/campaigns/')
-                        : pathname === item.href || pathname.startsWith(item.href + '/')
-                    }
+                    isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
                   />
                 ))}
               </nav>

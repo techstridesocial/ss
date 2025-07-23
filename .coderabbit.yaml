@@ -13,12 +13,14 @@ reviews:
   # Enable poem-style summaries (fun feature)
   poem: true
   
-  # Enable walkthrough comments
-  walkthrough: true
-  
-  # Request changes for critical issues
-  request_changes: auto
-  
+  poem: true
+
+  # Show walkthrough (collapsible section)
+  collapse_walkthrough: false   # set true to collapse
+
+  # Automatically switch review to “changes requested” on critical issues
+  request_changes_workflow: true
+
   # Auto-approve PRs that only have minor issues
   auto_approve: false
 

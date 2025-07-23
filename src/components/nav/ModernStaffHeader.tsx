@@ -50,7 +50,6 @@ export default function ModernStaffHeader() {
   // Navigation items based on role
   const getNavItems = () => {
     const baseItems = [
-      { href: '/staff', label: 'Overview' },
       { href: '/staff/roster', label: 'Roster' },
       { href: '/staff/brands', label: 'Brands' },
       { href: '/staff/campaigns', label: 'Campaigns' },
@@ -119,19 +118,7 @@ export default function ModernStaffHeader() {
     const greeting = getGreeting()
     
     // Check current route and return appropriate header content
-    if (pathname === '/staff') {
-      // For overview page, wait for user data before showing greeting
-      if (!isClient || !user || !userName) {
-        return {
-          title: '...', // Minimal loading indicator
-          subtitle: 'Ready to manage your influencer network'
-        }
-      }
-      return {
-        title: `${greeting}, ${userName}!`,
-        subtitle: 'Ready to manage your influencer network'
-      }
-    } else if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
+    if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
       return {
         title: 'Brand Management',
         subtitle: 'Manage brand clients, review shortlists, and generate reports'
@@ -152,7 +139,7 @@ export default function ModernStaffHeader() {
         subtitle: 'Discover, analyze, and import new influencers'
       }
     } else {
-      // Default fallback - for non-overview pages, show greeting format
+      // Default fallback - show greeting format
       return {
         title: userName ? `${greeting}, ${userName}!` : `${greeting}!`,
         subtitle: 'Ready to manage your influencer network'
@@ -179,7 +166,7 @@ export default function ModernStaffHeader() {
               
               {/* Left side - Logo */}
               <div className="flex items-center">
-                <Link href="/staff" className="flex items-center">
+                <Link href="/staff/roster" className="flex items-center">
                   <img 
                     src="https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/logo/logo-full-white-yyqQnjIujCXZTACVDaoHzFvyh3XDPF.webp"
                     alt="Stride Social"
@@ -195,11 +182,7 @@ export default function ModernStaffHeader() {
                     key={item.href}
                     href={item.href}
                     label={item.label}
-                    isActive={
-                      item.href === '/staff' 
-                        ? pathname === '/staff'
-                        : pathname === item.href || pathname.startsWith(item.href + '/')
-                    }
+                    isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
                   />
                 ))}
               </nav>

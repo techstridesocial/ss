@@ -49,7 +49,6 @@ export default function ModernBrandHeader() {
 
   // Navigation items for brands
   const navItems = [
-    { href: '/brand', label: 'Dashboard' },
     { href: '/brand/influencers', label: 'Influencers' },
     { href: '/brand/shortlists', label: 'Shortlists' },
     { href: '/brand/campaigns', label: 'Campaigns' }
@@ -106,19 +105,7 @@ export default function ModernBrandHeader() {
     const greeting = getGreeting()
     
     // Check current route and return appropriate header content
-    if (pathname === '/brand') {
-      // For dashboard page, wait for user data before showing greeting
-      if (!isClient || !user || !userName) {
-        return {
-          title: '...', // Minimal loading indicator
-          subtitle: 'Discover and connect with top influencers for your brand'
-        }
-      }
-      return {
-        title: `${greeting}, ${userName}!`,
-        subtitle: 'Discover and connect with top influencers for your brand'
-      }
-    } else if (pathname === '/brand/influencers' || pathname.startsWith('/brand/influencers/')) {
+    if (pathname === '/brand/influencers' || pathname.startsWith('/brand/influencers/')) {
       return {
         title: 'Discover Influencers',
         subtitle: 'Browse, filter, and analyze influencers to find the perfect match for your campaigns'
@@ -134,7 +121,7 @@ export default function ModernBrandHeader() {
         subtitle: 'Monitor your active campaigns and track influencer participation'
       }
     } else {
-      // Default fallback - for non-dashboard pages, show greeting format
+      // Default fallback - show greeting format
       return {
         title: userName ? `${greeting}, ${userName}!` : `${greeting}!`,
         subtitle: 'Discover and connect with top influencers for your brand'
@@ -161,7 +148,7 @@ export default function ModernBrandHeader() {
               
               {/* Left side - Logo */}
               <div className="flex items-center">
-                <Link href="/brand" className="flex items-center">
+                <Link href="/brand/influencers" className="flex items-center">
                   <img 
                     src="https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/logo/logo-full-white-yyqQnjIujCXZTACVDaoHzFvyh3XDPF.webp"
                     alt="Stride Social"
@@ -177,11 +164,7 @@ export default function ModernBrandHeader() {
                     key={item.href}
                     href={item.href}
                     label={item.label}
-                    isActive={
-                      item.href === '/brand' 
-                        ? pathname === '/brand'
-                        : pathname === item.href || pathname.startsWith(item.href + '/')
-                    }
+                    isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
                   />
                 ))}
               </nav>

@@ -9,13 +9,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // First check if user exists and is a brand
+    const userResult = await query<{ id: string, role: string }>(
+      'SELECT id, role FROM users WHERE clerk_id = $1',
+      [userId]
+    )
+
+    if (userResult.length === 0) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const user = userResult[0]
+    if (!user || user.role !== 'BRAND') {
+      // Non-brand users are considered "onboarded" for this check
+      return NextResponse.json({ is_onboarded: true })
+    }
+
     // Get user profile from database
     const result = await query<{ is_onboarded: boolean }>(
       `SELECT up.is_onboarded 
        FROM user_profiles up 
-       JOIN users u ON up.user_id = u.id 
-       WHERE u.clerk_id = $1`,
-      [userId]
+       WHERE up.user_id = $1`,
+      [user.id]
     )
 
     if (result.length === 0) {

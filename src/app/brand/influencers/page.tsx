@@ -1211,7 +1211,7 @@ export default function BrandInfluencersPage() {
           <ModernBrandHeader />
           
           <div className={`transition-all duration-300 ${isAnyPanelOpen ? 'mr-[600px]' : ''}`}>
-          <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
+          <div className="px-4 lg:px-8 py-8">
             <InfluencerTable 
               searchParams={{}}
               onPanelStateChange={setIsAnyPanelOpen}
