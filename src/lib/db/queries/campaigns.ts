@@ -1,24 +1,33 @@
-import { getDatabase } from '../connection';
+import { query } from '../connection';
 import { Campaign, CampaignInfluencer, CampaignStatus, CampaignInvitation } from '@/types';
+
+// Helper function to safely parse JSON fields
+function safeJsonParse(value: any, defaultValue: any = null) {
+  if (!value) return defaultValue;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return defaultValue;
+  }
+}
 
 // Campaign CRUD operations
 export async function getAllCampaigns(): Promise<Campaign[]> {
-  const db = getDatabase();
-  
   try {
     // First check what columns actually exist in the campaigns table
-    const schemaCheck = await db.query(`
+    const schemaCheck = await query(`
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_name = 'campaigns'
       ORDER BY ordinal_position
     `);
     
-    const availableColumns = schemaCheck.rows.map(row => row.column_name);
+    const availableColumns = schemaCheck.map(row => row.column_name);
     console.log('Available campaign columns:', availableColumns);
     
     // Use a more flexible query that works with the actual schema
-    const result = await db.query(`
+    const result = await query(`
       SELECT 
         c.*,
         b.company_name as brand_name,
@@ -32,13 +41,13 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       ORDER BY c.created_at DESC
     `);
     
-    return result.rows.map((row: any) => ({
+    return result.map((row: any) => ({
       id: row.id,
       name: row.name || 'Untitled Campaign',
       brand: row.brand_name || row.brand || 'Unknown Brand',
       status: (row.status || 'DRAFT') as CampaignStatus,
       description: row.description || '',
-      goals: [],
+      goals: safeJsonParse(row.goals, []),
       timeline: {
         startDate: row.start_date || new Date().toISOString(),
         endDate: row.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -53,11 +62,11 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
         minFollowers: parseInt(row.min_followers || '0'),
         maxFollowers: parseInt(row.max_followers || '1000000'),
         minEngagement: parseFloat(row.min_engagement || '0'),
-        platforms: [],
-        demographics: {},
+        platforms: safeJsonParse(row.platforms, []),
+        demographics: safeJsonParse(row.demographics, {}),
         contentGuidelines: row.content_guidelines || ''
       },
-      deliverables: [],
+      deliverables: safeJsonParse(row.deliverables, []),
       totalInfluencers: parseInt(row.total_influencers) || 0,
       acceptedCount: parseInt(row.accepted_count) || 0,
       pendingCount: parseInt(row.pending_count) || 0,
@@ -140,29 +149,28 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
 }
 
 export async function getCampaignById(id: string): Promise<Campaign | null> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     SELECT 
       c.*,
       COUNT(ci.id) as total_influencers,
-      COUNT(CASE WHEN ci.status = 'accepted' THEN 1 END) as accepted_count,
-      COUNT(CASE WHEN ci.status = 'pending' THEN 1 END) as pending_count
+      COUNT(CASE WHEN ci.status = 'ACCEPTED' THEN 1 END) as accepted_count,
+      COUNT(CASE WHEN ci.status = 'INVITED' THEN 1 END) as pending_count
     FROM campaigns c
     LEFT JOIN campaign_influencers ci ON c.id = ci.campaign_id
     WHERE c.id = $1
     GROUP BY c.id
   `, [id]);
   
-  if (result.rows.length === 0) return null;
+  if (result.length === 0) return null;
   
-  const row = result.rows[0];
+  const row = result[0];
   return {
     id: row.id,
     name: row.name,
     brand: row.brand,
     status: row.status as CampaignStatus,
     description: row.description,
-    goals: row.goals ? JSON.parse(row.goals) : [],
+    goals: safeJsonParse(row.goals, []),
     timeline: {
       startDate: row.start_date,
       endDate: row.end_date,
@@ -177,11 +185,11 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
       minFollowers: row.min_followers,
       maxFollowers: row.max_followers,
       minEngagement: row.min_engagement,
-      platforms: row.platforms ? JSON.parse(row.platforms) : [],
-      demographics: row.demographics ? JSON.parse(row.demographics) : {},
+      platforms: safeJsonParse(row.platforms, []),
+      demographics: safeJsonParse(row.demographics, {}),
       contentGuidelines: row.content_guidelines
     },
-    deliverables: row.deliverables ? JSON.parse(row.deliverables) : [],
+    deliverables: safeJsonParse(row.deliverables, []),
     totalInfluencers: parseInt(row.total_influencers) || 0,
     acceptedCount: parseInt(row.accepted_count) || 0,
     pendingCount: parseInt(row.pending_count) || 0,
@@ -191,8 +199,7 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
 }
 
 export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt' | 'updatedAt' | 'totalInfluencers' | 'acceptedCount' | 'pendingCount'>): Promise<Campaign> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     INSERT INTO campaigns (
       name, brand, status, description, goals, start_date, end_date, 
       application_deadline, content_deadline, total_budget, per_influencer_budget,
@@ -221,14 +228,14 @@ export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt'
     JSON.stringify(campaign.deliverables)
   ]);
 
-  const row = result.rows[0];
+  const row = result[0];
   return {
     id: row.id,
     name: row.name,
     brand: row.brand,
     status: row.status as CampaignStatus,
     description: row.description,
-    goals: row.goals ? JSON.parse(row.goals) : [],
+    goals: safeJsonParse(row.goals, []),
     timeline: {
       startDate: row.start_date,
       endDate: row.end_date,
@@ -243,11 +250,11 @@ export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt'
       minFollowers: row.min_followers,
       maxFollowers: row.max_followers,
       minEngagement: row.min_engagement,
-      platforms: row.platforms ? JSON.parse(row.platforms) : [],
-      demographics: row.demographics ? JSON.parse(row.demographics) : {},
+      platforms: safeJsonParse(row.platforms, []),
+      demographics: safeJsonParse(row.demographics, {}),
       contentGuidelines: row.content_guidelines
     },
-    deliverables: row.deliverables ? JSON.parse(row.deliverables) : [],
+    deliverables: safeJsonParse(row.deliverables, []),
     totalInfluencers: 0,
     acceptedCount: 0,
     pendingCount: 0,
@@ -257,7 +264,6 @@ export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt'
 }
 
 export async function updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | null> {
-  const db = getDatabase();
   const setClauses: string[] = [];
   const values: any[] = [];
   let paramCount = 1;
@@ -342,26 +348,25 @@ export async function updateCampaign(id: string, updates: Partial<Campaign>): Pr
   setClauses.push(`updated_at = NOW()`);
   values.push(id);
 
-  const result = await db.query(`
+  const result = await query(`
     UPDATE campaigns 
     SET ${setClauses.join(', ')}
     WHERE id = $${paramCount}
     RETURNING *
   `, values);
 
-  if (result.rows.length === 0) return null;
+  if (result.length === 0) return null;
 
   return getCampaignById(id);
 }
 
 export async function deleteCampaign(id: string): Promise<boolean> {
-  const db = getDatabase();
   // First delete related campaign_influencers
-  await db.query('DELETE FROM campaign_influencers WHERE campaign_id = $1', [id]);
+  await query('DELETE FROM campaign_influencers WHERE campaign_id = $1', [id]);
   
   // Then delete the campaign
-  const result = await db.query('DELETE FROM campaigns WHERE id = $1', [id]);
-  return result.rowCount !== null && result.rowCount > 0;
+  const result = await query('DELETE FROM campaigns WHERE id = $1', [id]);
+  return result.length > 0;
 }
 
 export async function duplicateCampaign(id: string, newName: string): Promise<Campaign | null> {
@@ -387,8 +392,7 @@ export async function duplicateCampaign(id: string, newName: string): Promise<Ca
 
 // Campaign Influencer operations
 export async function getCampaignInfluencers(campaignId: string): Promise<CampaignInfluencer[]> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     SELECT 
       ci.*,
       u.first_name,
@@ -405,7 +409,7 @@ export async function getCampaignInfluencers(campaignId: string): Promise<Campai
     ORDER BY ci.created_at DESC
   `, [campaignId]);
 
-  return result.rows.map((row: any) => ({
+  return result.map((row: any) => ({
     id: row.id,
     campaignId: row.campaign_id,
     influencerId: row.influencer_id,
@@ -433,14 +437,13 @@ export async function getCampaignInfluencers(campaignId: string): Promise<Campai
 }
 
 export async function addInfluencerToCampaign(campaignId: string, influencerId: string, rate?: number): Promise<CampaignInfluencer> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     INSERT INTO campaign_influencers (campaign_id, influencer_id, status, rate)
-    VALUES ($1, $2, 'pending', $3)
+    VALUES ($1, $2, 'INVITED', $3)
     RETURNING *
   `, [campaignId, influencerId, rate]);
 
-  const row = result.rows[0];
+  const row = result[0];
   return {
     id: row.id,
     campaignId: row.campaign_id,
@@ -464,19 +467,18 @@ export async function updateCampaignInfluencerStatus(
   status: string,
   notes?: string
 ): Promise<CampaignInfluencer | null> {
-  const db = getDatabase();
   const updateFields: string[] = ['status = $3', 'updated_at = NOW()'];
   const values: any[] = [campaignId, influencerId, status];
   let paramCount = 4;
 
   // Set timestamp fields based on status
-  if (status === 'accepted') {
+  if (status === 'ACCEPTED') {
     updateFields.push(`accepted_at = NOW()`);
-  } else if (status === 'declined') {
+  } else if (status === 'DECLINED') {
     updateFields.push(`declined_at = NOW()`);
-  } else if (status === 'content_submitted') {
+  } else if (status === 'CONTENT_SUBMITTED') {
     updateFields.push(`content_submitted_at = NOW()`);
-  } else if (status === 'paid') {
+  } else if (status === 'PAID') {
     updateFields.push(`paid_at = NOW()`);
   }
 
@@ -485,16 +487,16 @@ export async function updateCampaignInfluencerStatus(
     values.push(notes);
   }
 
-  const result = await db.query(`
+  const result = await query(`
     UPDATE campaign_influencers 
     SET ${updateFields.join(', ')}
     WHERE campaign_id = $1 AND influencer_id = $2
     RETURNING *
   `, values);
 
-  if (result.rows.length === 0) return null;
+  if (result.length === 0) return null;
 
-  const row = result.rows[0];
+  const row = result[0];
   return {
     id: row.id,
     campaignId: row.campaign_id,
@@ -513,19 +515,17 @@ export async function updateCampaignInfluencerStatus(
 }
 
 export async function removeInfluencerFromCampaign(campaignId: string, influencerId: string): Promise<boolean> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     DELETE FROM campaign_influencers 
     WHERE campaign_id = $1 AND influencer_id = $2
   `, [campaignId, influencerId]);
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return result.length > 0;
 }
 
 // Campaign Invitations
 export async function getCampaignInvitations(campaignId?: string): Promise<CampaignInvitation[]> {
-  const db = getDatabase();
-  let query = `
+  let queryString = `
     SELECT 
       ci.*,
       c.name as campaign_name,
@@ -544,15 +544,15 @@ export async function getCampaignInvitations(campaignId?: string): Promise<Campa
   
   const values: any[] = [];
   if (campaignId) {
-    query += ' WHERE ci.campaign_id = $1';
+    queryString += ' WHERE ci.campaign_id = $1';
     values.push(campaignId);
   }
   
-  query += ' ORDER BY ci.created_at DESC';
+  queryString += ' ORDER BY ci.created_at DESC';
 
-  const result = await db.query(query, values);
+  const result = await query(queryString, values);
 
-  return result.rows.map((row: any) => ({
+  return result.map((row: any) => ({
     id: row.id,
     campaignId: row.campaign_id,
     influencerId: row.influencer_id,
@@ -583,14 +583,13 @@ export async function createCampaignInvitation(
   influencerId: string, 
   email: string
 ): Promise<CampaignInvitation> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     INSERT INTO campaign_invitations (campaign_id, influencer_id, email, status, sent_at)
     VALUES ($1, $2, $3, 'sent', NOW())
     RETURNING *
   `, [campaignId, influencerId, email]);
 
-  const row = result.rows[0];
+  const row = result[0];
   return {
     id: row.id,
     campaignId: row.campaign_id,
@@ -610,17 +609,16 @@ export async function updateCampaignInvitationResponse(
   response: 'accepted' | 'declined',
   message?: string
 ): Promise<CampaignInvitation | null> {
-  const db = getDatabase();
-  const result = await db.query(`
+  const result = await query(`
     UPDATE campaign_invitations 
     SET status = $2, response = $3, responded_at = NOW(), updated_at = NOW()
     WHERE id = $1
     RETURNING *
   `, [invitationId, response, message]);
 
-  if (result.rows.length === 0) return null;
+  if (result.length === 0) return null;
 
-  const row = result.rows[0];
+  const row = result[0];
   return {
     id: row.id,
     campaignId: row.campaign_id,
