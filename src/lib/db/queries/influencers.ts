@@ -695,4 +695,87 @@ export async function getRosterInfluencerUsernames(): Promise<string[]> {
   
   return usernames
   */
+}
+
+/**
+ * Create influencer profile during onboarding
+ */
+export async function createInfluencerProfile(
+  user_id: string,
+  profileData: {
+    display_name: string;
+    first_name: string;
+    last_name: string;
+    phone_number?: string;
+    location: string;
+    website?: string;
+    profile_picture?: string;
+  }
+): Promise<DatabaseResponse<Influencer>> {
+  try {
+    const result = await transaction(async (client) => {
+      // Update or insert user profile
+      await client.query(`
+        INSERT INTO user_profiles (
+          user_id, first_name, last_name, avatar_url, phone, location_country, is_onboarded
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (user_id) 
+        DO UPDATE SET 
+          first_name = $2,
+          last_name = $3,
+          avatar_url = $4,
+          phone = $5,
+          location_country = $6,
+          is_onboarded = $7,
+          updated_at = NOW()
+      `, [
+        user_id,
+        profileData.first_name,
+        profileData.last_name,
+        profileData.profile_picture || null,
+        profileData.phone_number || null,
+        profileData.location,
+        true
+      ])
+
+      // Create or update influencer record
+      const influencerResult = await client.query(`
+        INSERT INTO influencers (
+          user_id, display_name, onboarding_completed, ready_for_campaigns
+        ) VALUES ($1, $2, $3, $4)
+        ON CONFLICT (user_id)
+        DO UPDATE SET 
+          display_name = $2,
+          onboarding_completed = $3,
+          updated_at = NOW()
+        RETURNING *
+      `, [
+        user_id,
+        profileData.display_name,
+        true,
+        false // Not ready for campaigns until staff approval
+      ])
+
+      // Update user status to indicate onboarding is complete
+      await client.query(`
+        UPDATE users 
+        SET status = 'ACTIVE', updated_at = NOW()
+        WHERE id = $1
+      `, [user_id])
+
+      return influencerResult.rows[0]
+    })
+
+    return {
+      success: true,
+      data: result
+    }
+
+  } catch (error) {
+    console.error('Error in createInfluencerProfile:', error)
+    return {
+      success: false,
+      error: 'Failed to create influencer profile'
+    }
+  }
 } 

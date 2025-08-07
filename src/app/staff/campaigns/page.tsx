@@ -501,6 +501,9 @@ function CampaignsPageClient() {
                     Influencers
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payments
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Timeline
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -534,6 +537,16 @@ function CampaignsPageClient() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {campaign.totalInfluencers}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="flex flex-col">
+                        <span className="text-green-600 font-medium">
+                          {campaign.paidCount || 0} Paid
+                        </span>
+                        <span className="text-yellow-600 text-xs">
+                          {campaign.paymentPendingCount || 0} Pending
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {new Date(campaign.timeline.startDate).toLocaleDateString()} - {new Date(campaign.timeline.endDate).toLocaleDateString()}

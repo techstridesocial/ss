@@ -33,7 +33,9 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
         b.company_name as brand_name,
         COUNT(ci.id) as total_influencers,
         COUNT(CASE WHEN ci.status = 'ACCEPTED' THEN 1 END) as accepted_count,
-        COUNT(CASE WHEN ci.status = 'INVITED' THEN 1 END) as pending_count
+        COUNT(CASE WHEN ci.status = 'INVITED' THEN 1 END) as pending_count,
+        COUNT(CASE WHEN ci.payment_status = 'PAID' THEN 1 END) as paid_count,
+        COUNT(CASE WHEN ci.payment_status = 'PENDING' THEN 1 END) as payment_pending_count
       FROM campaigns c
       LEFT JOIN brands b ON c.brand_id = b.id
       LEFT JOIN campaign_influencers ci ON c.id = ci.campaign_id
@@ -70,6 +72,8 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       totalInfluencers: parseInt(row.total_influencers) || 0,
       acceptedCount: parseInt(row.accepted_count) || 0,
       pendingCount: parseInt(row.pending_count) || 0,
+      paidCount: parseInt(row.paid_count) || 0,
+      paymentPendingCount: parseInt(row.payment_pending_count) || 0,
       createdAt: row.created_at ? new Date(row.created_at) : new Date(),
       updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }));
@@ -400,7 +404,9 @@ export async function getCampaignInfluencers(campaignId: string): Promise<Campai
       up.profile_image_url,
       i.username,
       i.niche,
-      i.tier
+      i.tier,
+      ci.payment_status,
+      ci.payment_date
     FROM campaign_influencers ci
     JOIN influencers i ON ci.influencer_id = i.id
     JOIN users u ON i.user_id = u.id
@@ -421,6 +427,8 @@ export async function getCampaignInfluencers(campaignId: string): Promise<Campai
     paidAt: row.paid_at,
     notes: row.notes,
     rate: row.rate,
+    paymentStatus: row.payment_status || 'PENDING',
+    paymentDate: row.payment_date,
     // Influencer info
     influencer: {
       id: row.influencer_id,
@@ -631,4 +639,148 @@ export async function updateCampaignInvitationResponse(
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+}
+
+/**
+ * Get campaigns assigned to a specific influencer
+ */
+export async function getInfluencerCampaigns(influencerId: string): Promise<any> {
+  try {
+    // Get campaign assignments for this influencer
+    const campaignsQuery = `
+      SELECT 
+        c.id as campaign_id,
+        c.name as campaign_name,
+        c.description,
+        c.brand,
+        c.total_budget,
+        c.per_influencer_budget,
+        c.start_date,
+        c.end_date,
+        c.content_deadline,
+        c.deliverables,
+        c.content_guidelines,
+        c.status as campaign_status,
+        ci.status as assignment_status,
+        ci.created_at as assigned_at,
+        ci.id as campaign_influencer_id
+      FROM campaign_influencers ci
+      JOIN campaigns c ON ci.campaign_id = c.id
+      WHERE ci.influencer_id = $1
+      ORDER BY ci.created_at DESC
+    `
+
+    const campaigns = await query(campaignsQuery, [influencerId])
+
+    // Get content submissions for each campaign
+    const contentQuery = `
+      SELECT 
+        cs.id,
+        cs.campaign_influencer_id,
+        cs.content_url,
+        cs.content_type,
+        cs.platform,
+        cs.title,
+        cs.description,
+        cs.caption,
+        cs.hashtags,
+        cs.views,
+        cs.likes,
+        cs.comments,
+        cs.shares,
+        cs.saves,
+        cs.status,
+        cs.submitted_at
+      FROM campaign_content_submissions cs
+      WHERE cs.campaign_influencer_id = ANY($1)
+      ORDER BY cs.submitted_at DESC
+    `
+
+    const campaignInfluencerIds = campaigns.map((c: any) => c.campaign_influencer_id)
+    const contentSubmissions = campaignInfluencerIds.length > 0 
+      ? await query(contentQuery, [campaignInfluencerIds])
+      : []
+
+    // Group content submissions by campaign
+    const contentByCampaign = contentSubmissions.reduce((acc: any, content: any) => {
+      const campaignId = content.campaign_influencer_id
+      if (!acc[campaignId]) {
+        acc[campaignId] = []
+      }
+      acc[campaignId].push(content)
+      return acc
+    }, {})
+
+    // Format the response
+    const formattedCampaigns = campaigns.map((campaign: any) => {
+      const content = contentByCampaign[campaign.campaign_influencer_id] || []
+      
+      return {
+        id: campaign.campaign_id,
+        campaign_name: campaign.campaign_name,
+        brand_name: campaign.brand,
+        description: campaign.description,
+        amount: campaign.per_influencer_budget || campaign.total_budget,
+        deadline: campaign.content_deadline || campaign.end_date,
+        deliverables: campaign.deliverables ? campaign.deliverables.split(',') : [],
+        status: mapCampaignStatus(campaign.campaign_status, campaign.assignment_status),
+        assigned_at: campaign.assigned_at,
+        content_guidelines: campaign.content_guidelines,
+        content_submissions: content.map((c: any) => ({
+          id: c.id,
+          content_url: c.content_url,
+          content_type: c.content_type,
+          platform: c.platform,
+          title: c.title,
+          description: c.description,
+          caption: c.caption,
+          hashtags: c.hashtags || [],
+          views: c.views || 0,
+          likes: c.likes || 0,
+          comments: c.comments || 0,
+          shares: c.shares || 0,
+          saves: c.saves || 0,
+          status: c.status,
+          submitted_at: c.submitted_at
+        }))
+      }
+    })
+
+    // Calculate summary statistics
+    const activeCampaigns = formattedCampaigns.filter((c: any) => c.status === 'active')
+    const completedCampaigns = formattedCampaigns.filter((c: any) => c.status === 'completed')
+    const totalEarned = completedCampaigns.reduce((sum: number, c: any) => sum + (c.amount || 0), 0)
+    const pendingPayment = activeCampaigns.reduce((sum: number, c: any) => sum + (c.amount || 0), 0)
+
+    return { success: true,
+      data: {
+        campaigns: formattedCampaigns,
+        summary: {
+          total_campaigns: formattedCampaigns.length,
+          active_campaigns: activeCampaigns.length,
+          completed_campaigns: completedCampaigns.length,
+          total_earned: totalEarned,
+          pending_payment: pendingPayment
+        }
+      },
+      message: 'Influencer campaigns retrieved successfully'
+    }
+
+  } catch (error) {
+    console.error('Error getting influencer campaigns:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Failed to retrieve influencer campaigns'
+    }
+  }
+}
+
+// Helper function to map campaign status
+function mapCampaignStatus(campaignStatus: string, assignmentStatus: string): string {
+  if (campaignStatus === 'COMPLETED') return 'completed'
+  if (assignmentStatus === 'ACCEPTED' && campaignStatus === 'ACTIVE') return 'active'
+  if (assignmentStatus === 'PENDING') return 'pending'
+  if (assignmentStatus === 'DECLINED') return 'declined'
+  return 'unknown'
 } 

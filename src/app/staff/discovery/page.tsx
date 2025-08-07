@@ -46,6 +46,30 @@ import {
 import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 
+// Add to roster functionality
+const addToRoster = async (discoveredId: string) => {
+  try {
+    const response = await fetch('/api/discovery/add-to-roster', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ discoveredId }),
+    })
+    
+    const data = await response.json()
+    
+    if (data.success) {
+      return { success: true, newInfluencerId: data.data.newInfluencerId }
+    } else {
+      throw new Error(data.error || 'Failed to add to roster')
+    }
+  } catch (error) {
+    console.error('Error adding to roster:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
 // Mock data for Modash credit usage and discovered influencers
 const MOCK_CREDIT_USAGE = {
   monthlyLimit: 3000,
@@ -1597,9 +1621,19 @@ function DiscoveredInfluencersTable({
   searchQuery?: string
   onViewProfile?: (influencer: any) => void
 }) {
+  const [addingToRoster, setAddingToRoster] = useState<string | null>(null)
+  const [rosterMessages, setRosterMessages] = useState<Record<string, { type: 'success' | 'error', message: string }>>({})
   // Use props or fallback to mock data
   const discoveredCreators = searchResults || MOCK_DISCOVERED_INFLUENCERS
   const showLoading = isLoading || false
+  
+  console.log('📊 DiscoveredInfluencersTable received:', {
+    searchResultsLength: searchResults?.length || 0,
+    discoveredCreatorsLength: discoveredCreators.length,
+    firstResult: discoveredCreators[0]?.username || 'No results',
+    isLoading,
+    searchQuery
+  })
   const showError = error || null
   
   // Sorting state
@@ -1647,6 +1681,57 @@ function DiscoveredInfluencersTable({
       
       console.log('❤️ Adding influencer to hearts:', heartedInfluencer)
       addHeartedInfluencer(heartedInfluencer)
+    }
+  }
+
+  // Add to roster functionality
+  const handleAddToRoster = async (influencer: any) => {
+    if (!influencer.discoveredId) {
+      console.error('No discovered ID for influencer:', influencer)
+      return
+    }
+
+    setAddingToRoster(influencer.discoveredId)
+    
+    try {
+      const result = await addToRoster(influencer.discoveredId)
+      
+      if (result.success) {
+        setRosterMessages(prev => ({
+          ...prev,
+          [influencer.discoveredId]: {
+            type: 'success',
+            message: 'Successfully added to roster!'
+          }
+        }))
+        
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setRosterMessages(prev => {
+            const newMessages = { ...prev }
+            delete newMessages[influencer.discoveredId]
+            return newMessages
+          })
+        }, 3000)
+      } else {
+        setRosterMessages(prev => ({
+          ...prev,
+          [influencer.discoveredId]: {
+            type: 'error',
+            message: result.error || 'Failed to add to roster'
+          }
+        }))
+      }
+    } catch (error) {
+      setRosterMessages(prev => ({
+        ...prev,
+        [influencer.discoveredId]: {
+          type: 'error',
+          message: 'Failed to add to roster'
+        }
+      }))
+    } finally {
+      setAddingToRoster(null)
     }
   }
 
@@ -2039,7 +2124,35 @@ function DiscoveredInfluencersTable({
                         >
                           <Eye size={16} />
                         </button>
+                        {creator.discoveredId && (
+                          <button 
+                            className={`p-2 transition-colors rounded-lg ${
+                              addingToRoster === creator.discoveredId
+                                ? 'text-blue-500 bg-blue-50'
+                                : 'text-green-400 hover:text-green-600 hover:bg-green-50'
+                            }`}
+                            title="Add to Roster"
+                            onClick={() => handleAddToRoster(creator)}
+                            disabled={addingToRoster === creator.discoveredId}
+                          >
+                            {addingToRoster === creator.discoveredId ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Plus size={16} />
+                            )}
+                          </button>
+                        )}
                       </div>
+                      {/* Roster message */}
+                      {creator.discoveredId && rosterMessages[creator.discoveredId] && (
+                        <div className={`mt-1 text-xs ${
+                          rosterMessages[creator.discoveredId]?.type === 'success' 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {rosterMessages[creator.discoveredId]?.message}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )
@@ -2126,10 +2239,93 @@ function DiscoveryPageClient() {
         }).length
       })
       
-      const response = await fetch(`${window.location.origin}/api/discovery/search`, {
+      // Smart API selection: use List Users for simple searches, Search Influencers for complex filtering
+      const activeFilters = Object.keys(currentFilters).filter(k => {
+        const value = currentFilters[k]
+        return value !== undefined && value !== '' && value !== false && !(Array.isArray(value) && value.length === 0)
+      })
+      const hasComplexFilters = activeFilters.length > 0
+      
+      console.log('🔍 Filter Analysis:', {
+        currentFilters,
+        activeFilterKeys: activeFilters,
+        activeFilterValues: activeFilters.map(k => ({ [k]: currentFilters[k] })),
+        hasComplexFilters
+      })
+      
+      let apiEndpoint = '/api/discovery/search'
+      let requestBody = filters
+      
+      // FORCE simple text searches to use List Users API - ignore filters for exact username searches
+      if (searchQuery.trim()) {
+        console.log('🔍 FORCED simple search (List Users API) for query:', searchQuery)
+        console.log('🔍 Ignoring complex filters for exact username search')
+        apiEndpoint = '/api/discovery/search'
+        // Send clean request body for simple searches - only essential fields
+        requestBody = {
+          platform: selectedPlatform,
+          searchQuery: searchQuery.trim(),
+          preferFreeAPI: true
+        }
+        console.log('🔍 Clean request body for simple search:', requestBody)
+      } else if (hasComplexFilters) {
+        console.log('🎯 Using advanced search (Search Influencers API)')
+        // Transform current filters to new API format
+        const searchFilters = {
+          influencer: {},
+          audience: {}
+        }
+        
+        // Map follower filters
+        if (currentFilters.follower_count) {
+          searchFilters.influencer.followers = {
+            min: currentFilters.follower_count.min,
+            max: currentFilters.follower_count.max
+          }
+        }
+        
+        // Map engagement rate
+        if (currentFilters.engagement_rate) {
+          searchFilters.influencer.engagementRate = currentFilters.engagement_rate / 100 // Convert percentage to decimal
+        }
+        
+        // Map verification
+        if (currentFilters.verified === true) {
+          searchFilters.influencer.isVerified = true
+        }
+        
+        // Map location if available
+        if (currentFilters.location_ids && currentFilters.location_ids.length > 0) {
+          searchFilters.influencer.location = currentFilters.location_ids
+        }
+        
+        // Map language
+        if (currentFilters.language) {
+          searchFilters.influencer.language = currentFilters.language
+        }
+        
+        // Map interests
+        if (currentFilters.interests && currentFilters.interests.length > 0) {
+          searchFilters.influencer.interests = currentFilters.interests
+        }
+        
+        // Add audience credibility (fake follower protection)
+        searchFilters.audience.credibility = 0.8 // 80% real followers minimum
+        
+        apiEndpoint = '/api/discovery/search-v2'
+        requestBody = {
+          page: 0,
+          sort: { field: 'followers', direction: 'desc' },
+          filter: searchFilters
+        }
+        
+        console.log('🎯 Advanced search filters:', searchFilters)
+      }
+
+      const response = await fetch(`${window.location.origin}${apiEndpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filters)
+        body: JSON.stringify(requestBody)
       })
       
       if (!response.ok) {
@@ -2139,25 +2335,60 @@ function DiscoveryPageClient() {
       
       const result = await response.json()
       
-      if (result.success && result.data) {
-        setSearchResults(result.data.results || [])
-        
-        // If real API was used and credits were consumed, refresh the credit count
-        if (result.data.creditsUsed && result.data.creditsUsed > 0 && !result.warning) {
-          setTimeout(() => refreshCredits(), 1000)
+      // Handle different response formats
+      let searchResults = []
+      let creditsUsed = 0
+      
+      if (apiEndpoint === '/api/discovery/search-v2') {
+        // New Search Influencers API format
+        if (result.success && result.influencers) {
+          searchResults = result.influencers
+          creditsUsed = result.influencers.length * 0.01 // 0.01 credits per result
+          
+          console.log('✅ Advanced search completed:', {
+            resultsFound: searchResults.length,
+            totalAvailable: result.pagination?.total || 0,
+            creditsUsed: creditsUsed,
+            isExactMatch: result.metadata?.isExactMatch
+          })
+        } else {
+          throw new Error(result.error || 'Advanced search failed')
         }
-        
-        // Check if using mock data
-        if (result.warning) {
-          setApiWarning(result.warning)
-        }
-        
-        console.log('✅ Search completed:', {
-          resultsFound: result.data.results?.length || 0,
-          creditsUsed: result.data.creditsUsed || 0
-        })
       } else {
-        throw new Error(result.details || 'Search failed')
+        // Legacy API format
+        if (result.success && result.data) {
+          searchResults = result.data.results || []
+          creditsUsed = result.data.creditsUsed || 0
+          
+          // Check if using mock data
+          if (result.warning) {
+            setApiWarning(result.warning)
+          }
+          
+          console.log('✅ Search completed:', {
+            resultsFound: searchResults.length,
+            creditsUsed: creditsUsed
+          })
+        } else {
+          throw new Error(result.details || 'Search failed')
+        }
+      }
+      
+      console.log('🎯 Setting search results:', {
+        searchResultsLength: searchResults.length,
+        firstResult: searchResults[0]?.username || 'No results',
+        firstResultFollowers: searchResults[0]?.followers || 'No followers',
+        searchQuery: searchQuery,
+        apiEndpoint: apiEndpoint,
+        resultFormat: result.data ? 'legacy' : 'v2',
+        searchMode: result.data?.searchMode || result.searchMode || 'unknown'
+      })
+      
+      setSearchResults(searchResults)
+      
+      // If real API was used and credits were consumed, refresh the credit count
+      if (creditsUsed > 0) {
+        setTimeout(() => refreshCredits(), 1000)
       }
       
     } catch (error) {
@@ -2246,6 +2477,28 @@ function DiscoveryPageClient() {
         return
       }
       
+      console.log('🔍 About to fetch profile for:', {
+        userId: userId,
+        platform: actualPlatform,
+        originalInfluencer: {
+          username: influencer.username,
+          handle: influencer.handle,
+          userId: influencer.userId,
+          followers: influencer.followers
+        }
+      })
+      
+      console.log('🔍 Full influencer object for debugging:', influencer)
+      console.log('🖼️ Profile picture debugging:', {
+        profile_picture: influencer.profile_picture,
+        profilePicture: influencer.profilePicture,
+        picture: influencer.picture,
+        avatar_url: influencer.avatar_url,
+        platformData_profile_picture: platformData?.profile_picture,
+        allInfluencerKeys: Object.keys(influencer),
+        platformDataKeys: platformData ? Object.keys(platformData) : 'No platform data'
+      })
+      
       // Try to fetch comprehensive influencer report with demographics
       try {
         console.log('📊 Fetching comprehensive influencer report...')
@@ -2255,7 +2508,20 @@ function DiscoveryPageClient() {
           body: JSON.stringify({
             userId: userId,
             platform: actualPlatform,
-            includeReport: true // Request full report with demographics
+            includeReport: true,
+            includePerformanceData: true, // Request real performance data
+            // Pass the real search result data to be enhanced
+            searchResultData: {
+              username: influencer.username,
+              handle: influencer.handle,
+              followers: influencer.followers,
+              engagement_rate: influencer.engagement_rate,
+              platform: actualPlatform,
+              // Try multiple profile picture fields from different APIs
+              profile_picture: influencer.profile_picture || influencer.profilePicture || influencer.picture || influencer.avatar_url || platformData?.profile_picture,
+              location: influencer.location,
+              verified: influencer.verified
+            }
           })
         })
         
@@ -2265,22 +2531,49 @@ function DiscoveryPageClient() {
             // Merge the comprehensive data with the existing influencer data
             const enhancedInfluencer = {
               ...influencer,
+              // Override with enhanced data if available
+              followers: result.data.followers || influencer.followers,
+              engagement_rate: result.data.engagementRate || influencer.engagement_rate,
+              
               // Add demographic and audience data
               audience: result.data.audience || {},
               demographics: result.data.demographics || {},
               engagement: result.data.engagement || {},
+              
               // Add engagement metrics
               avgLikes: result.data.avgLikes || 0,
               avgComments: result.data.avgComments || 0,
               avgShares: result.data.avgShares || 0,
+              
+              // Enhanced engagement metrics
+              fake_followers_percentage: result.data.fake_followers_percentage,
+              fake_followers_quality: result.data.fake_followers_quality,
+              estimated_impressions: result.data.estimated_impressions,
+              estimated_reach: result.data.estimated_reach,
+              
+              // Growth trends
+              growth_trends: result.data.growth_trends,
+              
+              // Content performance breakdown
+              content_performance: result.data.content_performance,
+              
+              // Paid vs organic performance
+              paid_vs_organic: result.data.paid_vs_organic,
+              
               // Add additional metadata that might be in the API response
               accountType: result.data.accountType || influencer.accountType,
               country: result.data.country || influencer.country,
               ageGroup: result.data.ageGroup || influencer.ageGroup,
               isPrivate: result.data.isPrivate || influencer.isPrivate,
               postCount: result.data.postCount || influencer.postCount,
+              
               // Keep recent posts if available
-              recentPosts: result.data.recentPosts || []
+              recentPosts: result.data.recentPosts || [],
+              
+              // Legacy compatibility
+              paidPostPerformance: result.data.paidPostPerformance,
+              sponsoredPostsMedianLikes: result.data.sponsoredPostsMedianLikes,
+              nonSponsoredPostsMedianLikes: result.data.nonSponsoredPostsMedianLikes
             }
             
             // Update the detail influencer with enhanced data
@@ -2288,6 +2581,8 @@ function DiscoveryPageClient() {
             console.log('📊 Enhanced influencer data with demographics:', enhancedInfluencer)
           } else {
             console.log('📊 Using basic influencer data, no enhanced report available')
+            // Use the basic influencer data without enhancement
+            setDetailInfluencer(influencer)
           }
         } else {
           console.warn('⚠️ Comprehensive report API returned:', response.status, response.statusText)

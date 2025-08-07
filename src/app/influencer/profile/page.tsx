@@ -81,58 +81,132 @@ export default function InfluencerProfile() {
     niches: []
   })
 
-  // Mock connected accounts data (in real app, this would come from API)
-  const [connectedAccounts] = useState<ConnectedAccount[]>([
-    {
-      platform: 'instagram',
-      username: '@your_handle',
-      followers: 0,
-      isConnected: false,
-      lastSync: null,
-      profileUrl: null
-    },
-    {
-      platform: 'tiktok',
-      username: '@your_handle',
-      followers: 0,
-      isConnected: false,
-      lastSync: null,
-      profileUrl: null
-    },
-    {
-      platform: 'youtube',
-      username: 'Your Channel',
-      followers: 0,
-      isConnected: false,
-      lastSync: null,
-      profileUrl: null
-    }
-  ])
+  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([])
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
   // Load user data when component mounts
   useEffect(() => {
-    if (isLoaded && user) {
-      setProfileData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        displayName: user.fullName || '',
-        email: user.primaryEmailAddress?.emailAddress || '',
-        phone: user.phoneNumbers?.[0]?.phoneNumber || '',
-        bio: '',
-        website: '',
-        location: '',
-        niches: []
-      })
+    const loadProfileData = async () => {
+      if (isLoaded && user) {
+        try {
+          setIsLoadingProfile(true)
+          
+          // Load profile data from API
+          const response = await fetch('/api/influencer/profile')
+          if (response.ok) {
+            const data = await response.json()
+            if (data.success && data.data) {
+              const profile = data.data
+              
+              // Update profile form data
+              setProfileData({
+                firstName: profile.first_name || '',
+                lastName: profile.last_name || '',
+                displayName: profile.display_name || '',
+                email: profile.email || '',
+                phone: profile.phone || '',
+                bio: profile.bio || '',
+                website: '',
+                location: profile.location_country || '',
+                niches: profile.niches || []
+              })
+              
+              // Update connected accounts
+              if (profile.connected_accounts) {
+                setConnectedAccounts(profile.connected_accounts.map((acc: any) => ({
+                  platform: acc.platform,
+                  username: acc.username || '@your_handle',
+                  followers: acc.followers || 0,
+                  isConnected: acc.is_connected || false,
+                  lastSync: acc.last_sync,
+                  profileUrl: null
+                })))
+              }
+            }
+          } else {
+            console.error('Failed to load profile data')
+            // Fallback to Clerk user data
+            setProfileData({
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
+              displayName: user.fullName || '',
+              email: user.primaryEmailAddress?.emailAddress || '',
+              phone: user.phoneNumbers?.[0]?.phoneNumber || '',
+              bio: '',
+              website: '',
+              location: '',
+              niches: []
+            })
+          }
+        } catch (error) {
+          console.error('Error loading profile:', error)
+          // Fallback to Clerk user data
+          setProfileData({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            displayName: user.fullName || '',
+            email: user.primaryEmailAddress?.emailAddress || '',
+            phone: user.phoneNumbers?.[0]?.phoneNumber || '',
+            bio: '',
+            website: '',
+            location: '',
+            niches: []
+          })
+        } finally {
+          setIsLoadingProfile(false)
+        }
+      }
     }
+
+    loadProfileData()
   }, [isLoaded, user])
 
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      // Here you would typically save to your backend
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-      setIsEditing(false)
-      // Show success message
+      // Save profile data to API
+      const response = await fetch('/api/influencer/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          display_name: profileData.displayName,
+          bio: profileData.bio,
+          phone: profileData.phone,
+          location_country: profileData.location,
+          location_city: '',
+          niches: profileData.niches
+        })
+      })
+
+      if (response.ok) {
+        setIsEditing(false)
+        // Reload profile data to get updated information
+        const loadResponse = await fetch('/api/influencer/profile')
+        if (loadResponse.ok) {
+          const data = await loadResponse.json()
+          if (data.success && data.data) {
+            const profile = data.data
+            setProfileData(prev => ({
+              ...prev,
+              firstName: profile.first_name || prev.firstName,
+              lastName: profile.last_name || prev.lastName,
+              displayName: profile.display_name || prev.displayName,
+              bio: profile.bio || prev.bio,
+              phone: profile.phone || prev.phone,
+              location: profile.location_country || prev.location,
+              niches: profile.niches || prev.niches
+            }))
+          }
+        }
+        // Show success message
+      } else {
+        console.error('Failed to save profile')
+        // Show error message
+      }
     } catch (error) {
       console.error('Error saving profile:', error)
       // Show error message

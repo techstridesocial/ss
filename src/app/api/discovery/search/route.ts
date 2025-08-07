@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { modashService } from '../../../../lib/services/modash'
 import { getRosterInfluencerUsernames } from '../../../../lib/db/queries/influencers'
+import { 
+  storeDiscoveredInfluencer, 
+  storeDiscoverySearch, 
+  checkInfluencerInRoster,
+  getDiscoveryStats 
+} from '../../../../lib/db/queries/discovery'
+import { auth } from '@clerk/nextjs/server'
+
+// Helper function to check if the search has complex filters that require the old API
+function hasComplexFilters(body: DiscoverySearchBody): boolean {
+  const complexFilters = [
+    'followersMin', 'followersMax', 'engagementRate', 'avgViewsMin', 'avgViewsMax',
+    'followersGrowth', 'totalLikesGrowth', 'viewsGrowth', 'sharesMin', 'sharesMax',
+    'bio', 'hashtags', 'mentions', 'captions', 'topics', 'transcript', 'collaborations',
+    'hasSponsoredPosts', 'selectedContentCategories', 'accountType', 'selectedSocials',
+    'fakeFollowers', 'lastPosted', 'verifiedOnly', 'locationCountries', 'locationCities',
+    'audienceGender', 'audienceAge', 'audienceLanguages', 'audienceInterests',
+    'genderPercentage', 'agePercentage', 'languagePercentage', 'interestPercentage'
+  ]
+  
+  return complexFilters.some(filter => 
+    body[filter as keyof DiscoverySearchBody] !== undefined && 
+    body[filter as keyof DiscoverySearchBody] !== null &&
+    body[filter as keyof DiscoverySearchBody] !== ''
+  )
+}
 
 interface DiscoverySearchBody {
   platform: 'instagram' | 'tiktok' | 'youtube' // This will now be ignored, we'll search all platforms
@@ -70,19 +96,144 @@ interface MergedCreator {
   bio: string
   profilePicture: string
   score: number
+  demographics?: any
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body: DiscoverySearchBody = await request.json()
     
-    console.log('🔍 Discovery search:', {
+    console.log('🔍 Discovery search request body:', {
       platform: body.platform,
-      hasQuery: !!body.searchQuery,
-      filtersCount: Object.keys(body).filter(k => body[k as keyof DiscoverySearchBody] !== undefined && k !== 'platform').length
+      searchQuery: body.searchQuery,
+      hasSearchQuery: !!body.searchQuery,
+      searchQueryTrimmed: body.searchQuery?.trim(),
+      hasComplexFiltersResult: hasComplexFilters(body),
+      requestBodyKeys: Object.keys(body),
+      fullBody: body
     })
     
-    // Search all three platforms in parallel
+    // For simple text searches, use the new List Users API (more efficient)
+    const shouldUseListUsers = body.searchQuery?.trim() && !hasComplexFilters(body)
+    console.log('🤔 Should use List Users API?', {
+      hasSearchQuery: !!body.searchQuery?.trim(),
+      hasComplexFilters: hasComplexFilters(body),
+      decision: shouldUseListUsers
+    })
+    
+    if (shouldUseListUsers) {
+      console.log('🆕 Using new List Users API for simple search:', body.searchQuery)
+      
+      try {
+        const result = await modashService.listUsers(body.searchQuery.trim(), 50)
+        
+        if (result.error || !result.users || result.users.length === 0) {
+          console.error('❌ List Users API failed or returned no results, falling back to Search Influencers API:', {
+            error: result.error,
+            message: result.message,
+            userCount: result.users?.length || 0,
+            searchQuery: body.searchQuery
+          })
+          // Fall through to complex search which should find "cristiano"
+        } else {
+          // Transform List Users API response to match our expected format
+          let transformedResults = result.users.map(user => ({
+            userId: user.userId,
+            username: user.username,
+            display_name: user.username, // Use username as display name
+            handle: user.username, // Add handle field for consistency
+            platform: 'instagram',
+            followers: user.followers,
+            engagement_rate: null, // Will be fetched from Performance Data API
+            profile_picture: user.profile_picture || user.picture || '', // Try both fields
+            verified: user.isVerified || false,
+            location: 'Unknown',
+            score: 0,
+            already_imported: false
+          }))
+          
+          // For exact search mode, filter to show only exact username match
+          const searchTerm = body.searchQuery.trim().toLowerCase()
+          console.log('🔍 Looking for exact match:', {
+            searchTerm,
+            availableUsernames: transformedResults.map(u => u.username.toLowerCase()),
+            totalResults: transformedResults.length
+          })
+          
+          const exactMatch = transformedResults.find(user => {
+            const match = user.username.toLowerCase() === searchTerm
+            console.log('🎯 Checking user:', { username: user.username, searchTerm, isExactMatch: match })
+            return match
+          })
+          
+          if (exactMatch) {
+            console.log('🎯 Exact match found, filtering to show only exact result:', exactMatch.username)
+            
+            // ALWAYS fetch real engagement rate for exact matches using Performance Data API
+            try {
+              const instagramUrl = `https://www.instagram.com/${exactMatch.username}/`
+              console.log('📊 Fetching REAL engagement data from Performance Data API:', instagramUrl)
+              
+              const performanceResult = await modashService.getPerformanceData(instagramUrl, 2) // Allow 2 retries
+              
+              if (performanceResult.success && performanceResult.data) {
+                // Update with REAL API data
+                exactMatch.engagement_rate = performanceResult.data.engagementRate || 0
+                
+                console.log('✅ GOT REAL ENGAGEMENT DATA:', {
+                  username: exactMatch.username,
+                  realEngagementRate: performanceResult.data.engagementRate,
+                  avgLikes: performanceResult.data.avgLikes,
+                  avgComments: performanceResult.data.avgComments,
+                  dataSource: 'Performance Data API'
+                })
+              } else {
+                console.log('⚠️ Performance Data API failed, setting engagement to 0:', performanceResult.error)
+                exactMatch.engagement_rate = 0 // Better than hardcoded value
+              }
+            } catch (error) {
+              console.log('❌ Error fetching real engagement rate:', error)
+              exactMatch.engagement_rate = 0 // Fallback to 0, not hardcoded
+            }
+            
+            transformedResults = [exactMatch] // Only show the exact match
+          } else {
+            console.log('⚠️ No exact match found for:', searchTerm)
+            console.log('📝 Available usernames:', transformedResults.map(u => u.username))
+            // Keep all results if no exact match found
+          }
+          
+          console.log('✅ List Users API success:', {
+            query: body.searchQuery,
+            resultsCount: transformedResults.length,
+            firstResult: transformedResults[0]?.username,
+            firstResultFollowers: transformedResults[0]?.followers,
+            firstResultProfilePicture: transformedResults[0]?.profile_picture,
+            rawFirstUser: result.users[0]
+          })
+          
+          return NextResponse.json({
+            success: true,
+            data: {
+              results: transformedResults,
+              total: transformedResults.length,
+              creditsUsed: 0,
+              searchMode: 'list_users_api'
+            }
+          })
+        }
+      } catch (error) {
+        console.error('❌ List Users API error, falling back to old search:', error)
+      }
+    }
+
+    // Fall back to complex search for advanced filtering or if List Users API fails
+    console.log('🔍 Using complex discovery search with filters')
     const platforms = ['instagram', 'tiktok', 'youtube'] as const
     
     try {
@@ -114,6 +265,22 @@ export async function POST(request: NextRequest) {
       })
       
       const platformResults = await Promise.all(searchPromises)
+      
+      // Check if any platform searches succeeded
+      const successfulSearches = platformResults.filter(r => r.success)
+      const failedSearches = platformResults.filter(r => !r.success)
+      
+      console.log('Search results:', {
+        successful: successfulSearches.length,
+        failed: failedSearches.length,
+        totalCreditsUsed: platformResults.reduce((sum, r) => sum + (r.creditsUsed || 0), 0)
+      })
+      
+      // If all searches failed, fall back to mock data
+      if (successfulSearches.length === 0) {
+        console.warn('⚠️ All platform searches failed, using mock data')
+        throw new Error('All platform searches failed')
+      }
       
       // Merge results by creator
       let mergedCreators = mergeCreatorResults(platformResults)
@@ -163,12 +330,82 @@ export async function POST(request: NextRequest) {
       // Calculate totals
       const totalResults = mergedCreators.length
       const successfulPlatforms = platformResults.filter(r => r.success).length
+      const totalCreditsUsed = platformResults.reduce((sum, r) => sum + (r.creditsUsed || 0), 0)
       
       console.log('✅ Search completed:', {
         totalCreators: totalResults,
         successfulPlatforms,
-        platformResults: platformResults.map(r => ({ platform: r.platform, success: r.success, count: r.data?.length || 0 }))
+        totalCreditsUsed,
+        platformResults: platformResults.map(r => ({ 
+          platform: r.platform, 
+          success: r.success, 
+          count: r.data?.length || 0,
+          creditsUsed: r.creditsUsed || 0
+        }))
       })
+
+      // Store discovery search in history
+      try {
+        await storeDiscoverySearch(
+          body.searchQuery || '',
+          body,
+          totalResults,
+          totalCreditsUsed,
+          userId
+        )
+        console.log('📊 Discovery search stored in history')
+      } catch (error) {
+        console.error('❌ Failed to store discovery search:', error)
+        // Continue without failing the entire request
+      }
+
+      // Store discovered influencers in database for enrichment
+      try {
+        const storedInfluencers = []
+        for (const creator of mergedCreators) {
+          for (const [platform, platformData] of Object.entries(creator.platforms)) {
+            if (platformData && platformData.username) {
+              // Check if already in roster
+              const inRoster = await checkInfluencerInRoster(platformData.username, platform)
+              
+              // Store discovered influencer
+              const discoveredId = await storeDiscoveredInfluencer(
+                platformData.username,
+                platform,
+                platformData.followers || 0,
+                platformData.engagement_rate || 0,
+                creator.demographics || {},
+                {
+                  ...platformData,
+                  displayName: creator.displayName,
+                  totalFollowers: creator.totalFollowers,
+                  averageEngagement: creator.averageEngagement,
+                  verified: creator.verified,
+                  location: creator.location,
+                  bio: creator.bio,
+                  profilePicture: creator.profilePicture,
+                  score: creator.score,
+                  inRoster
+                }
+              )
+              storedInfluencers.push(discoveredId)
+            }
+          }
+        }
+        console.log(`💾 Stored ${storedInfluencers.length} discovered influencers`)
+      } catch (error) {
+        console.error('❌ Failed to store discovered influencers:', error)
+        // Continue without failing the entire request
+      }
+
+      // Get discovery statistics
+      let discoveryStats = null
+      try {
+        discoveryStats = await getDiscoveryStats()
+        console.log('📈 Discovery stats retrieved')
+      } catch (error) {
+        console.error('❌ Failed to get discovery stats:', error)
+      }
       
       return NextResponse.json({
         success: true,
@@ -178,16 +415,28 @@ export async function POST(request: NextRequest) {
           page: body.page || 0,
           limit: body.limit || 20,
           hasMore: false, // We'll implement pagination later if needed
-          creditsUsed: platformResults.reduce((sum, r) => sum + (r.creditsUsed || 0), 0)
+          creditsUsed: totalCreditsUsed
         },
         platformResults: platformResults.map(r => ({
           platform: r.platform,
           success: r.success,
           count: r.data?.length || 0,
+          creditsUsed: r.creditsUsed || 0,
           error: r.error
         })),
         note: 'Multi-platform search results merged by creator',
-        searchMode: body.searchQuery ? 'exact_match' : 'general_discovery'
+        searchMode: body.searchQuery ? 'exact_match' : 'general_discovery',
+        apiStatus: {
+          successfulPlatforms,
+          failedPlatforms: failedSearches.length,
+          totalCreditsUsed
+        },
+        discoveryStats,
+        enrichment: {
+          storedInfluencers: true,
+          historyTracked: true,
+          duplicateDetection: true
+        }
       })
       
     } catch (error) {
@@ -243,9 +492,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: mockResponse,
-        note: 'Mock multi-platform data - Modash API credentials pending activation',
-        warning: 'Using mock data while Modash API access is being configured',
-        searchMode: body.searchQuery ? 'exact_match' : 'general_discovery'
+        note: 'Mock multi-platform data - Modash API connection issues detected',
+        warning: 'Using mock data due to API connection problems',
+        searchMode: body.searchQuery ? 'exact_match' : 'general_discovery',
+        apiStatus: {
+          successfulPlatforms: 0,
+          failedPlatforms: 3,
+          totalCreditsUsed: 0,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
       })
     }
     

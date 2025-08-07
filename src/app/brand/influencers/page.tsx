@@ -119,223 +119,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }, [urlSearchParams])
 
-  const [influencers, setInfluencers] = useState(() => {
-    // Initialize with mock data
-    const INITIAL_INFLUENCERS = [
-      {
-        id: 'SC9K2L',
-        user_id: 'user_3',
-        display_name: 'Sarah Creator',
-        niches: ['Lifestyle', 'Fashion'],
-        total_followers: 125000,
-        total_engagement_rate: 3.8,
-        total_avg_views: 45000,
-        estimated_promotion_views: 38250,
-        influencer_type: 'SIGNED',
-        content_type: 'STANDARD',
-        tier: 'SILVER' as const,
-        is_active: true,
-        first_name: 'Sarah',
-        last_name: 'Creator',
-        avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face',
-        location_country: 'United Kingdom',
-        location_city: 'Birmingham',
-        bio: 'Fashion and lifestyle content creator based in Birmingham',
-        website_url: 'https://sarahcreator.com',
-        average_views: 45000,
-        platforms: ['INSTAGRAM' as Platform, 'TIKTOK' as Platform],
-        platform_count: 2
-      },
-      {
-        id: 'MT7B9X',
-        user_id: 'user_4',
-        display_name: 'Mike Tech',
-        niches: ['Tech', 'Gaming'],
-        total_followers: 89000,
-        total_engagement_rate: 4.2,
-        total_avg_views: 32000,
-        estimated_promotion_views: 27200,
-        influencer_type: 'SIGNED',
-        content_type: 'STANDARD',
-        tier: 'SILVER' as const,
-        is_active: true,
-        first_name: 'Mike',
-        last_name: 'Content',
-        avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        location_country: 'United States',
-        location_city: 'New York',
-        bio: 'Tech reviews and gaming content',
-        website_url: 'https://miketech.com',
-        average_views: 32000,
-        platforms: ['YOUTUBE' as Platform],
-        platform_count: 1
-      },
-      {
-        id: 'inf_3',
-        user_id: 'user_6',
-        display_name: 'FitnessFiona',
-        niches: ['Fitness', 'Health'],
-        total_followers: 156000,
-        total_engagement_rate: 5.1,
-        total_avg_views: 62000,
-        estimated_promotion_views: 52700,
-        influencer_type: 'SIGNED',
-        content_type: 'UGC',
-        tier: 'GOLD' as const,
-        is_active: true,
-        first_name: 'Fiona',
-        last_name: 'Fit',
-        avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-        location_country: 'Australia',
-        location_city: 'Sydney',
-        bio: 'Fitness coach and healthy lifestyle advocate',
-        website_url: 'https://fitnessfiona.com',
-        average_views: 62000,
-        platforms: ['INSTAGRAM' as Platform, 'YOUTUBE' as Platform],
-        platform_count: 2
-      },
-      {
-        id: 'inf_4',
-        user_id: 'user_7',
-        display_name: 'BeautyByBella',
-        niches: ['Beauty'],
-        total_followers: 234000,
-        total_engagement_rate: 3.6,
-        total_avg_views: 78000,
-        estimated_promotion_views: 66300,
-        influencer_type: 'PARTNERED',
-        content_type: 'STANDARD',
-        tier: 'GOLD' as const,
-        is_active: true,
-        first_name: 'Bella',
-        last_name: 'Beauty',
-        avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-        location_country: 'United Kingdom',
-        location_city: 'London',
-        bio: 'Beauty enthusiast and makeup tutorials',
-        website_url: 'https://beautybybella.com',
-        average_views: 78000,
-        platforms: ['INSTAGRAM' as Platform, 'TIKTOK' as Platform, 'YOUTUBE' as Platform],
-        platform_count: 3
-      },
-      {
-        id: 'inf_5',
-        user_id: 'user_8',
-        display_name: 'TravelWithTom',
-        niches: ['Travel', 'Lifestyle'],
-        total_followers: 67000,
-        total_engagement_rate: 2.9,
-        total_avg_views: 25000,
-        estimated_promotion_views: 21250,
-        influencer_type: 'SIGNED',
-        content_type: 'SEEDING',
-        is_active: false,
-        first_name: 'Tom',
-        last_name: 'Explorer',
-        avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        location_country: 'Canada',
-        location_city: 'Toronto',
-        bio: 'Travel blogger exploring the world one city at a time',
-        website_url: 'https://travelwithtom.com',
-        average_views: 25000,
-        platforms: ['INSTAGRAM' as Platform],
-        platform_count: 1
-      },
-      {
-        id: 'inf_6',
-        user_id: 'user_9',
-        display_name: 'AgencyMax',
-        niches: ['Business', 'Marketing'],
-        total_followers: 95000,
-        total_engagement_rate: 4.1,
-        total_avg_views: 38000,
-        estimated_promotion_views: 32300,
-        influencer_type: 'AGENCY_PARTNER',
-        content_type: 'STANDARD',
-        is_active: true,
-        first_name: 'Max',
-        last_name: 'Agency',
-        avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
-        location_country: 'United States',
-        location_city: 'Los Angeles',
-        bio: 'Digital marketing expert and agency partner',
-        website_url: 'https://agencymax.com',
-        average_views: 38000,
-        agency_name: 'MaxMedia Agency',
-        platforms: ['INSTAGRAM' as Platform, 'YOUTUBE' as Platform],
-        platform_count: 2
-      },
-      {
-        id: 'inf_7',
-        user_id: 'user_10',
-        display_name: 'UGCQueen',
-        niches: ['UGC', 'Product Reviews'],
-        total_followers: 45000,
-        total_engagement_rate: 6.2,
-        total_avg_views: 18000,
-        estimated_promotion_views: 15300,
-        influencer_type: 'PARTNERED',
-        content_type: 'UGC',
-        is_active: true,
-        first_name: 'Emma',
-        last_name: 'UGC',
-        avatar_url: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=150&h=150&fit=crop&crop=face',
-        location_country: 'United Kingdom',
-        location_city: 'Manchester',
-        bio: 'UGC specialist creating authentic product content',
-        website_url: 'https://ugcqueen.com',
-        average_views: 18000,
-        platforms: ['TIKTOK' as Platform, 'INSTAGRAM' as Platform],
-        platform_count: 2
-      },
-      {
-        id: 'inf_8',
-        user_id: 'user_11',
-        display_name: 'SeedingPro',
-        niches: ['Product Seeding', 'Reviews'],
-        total_followers: 72000,
-        total_engagement_rate: 3.9,
-        total_avg_views: 28000,
-        estimated_promotion_views: 23800,
-        influencer_type: 'SIGNED',
-        content_type: 'SEEDING',
-        is_active: true,
-        first_name: 'Jake',
-        last_name: 'Seeder',
-        avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-        location_country: 'Australia',
-        location_city: 'Melbourne',
-        bio: 'Product seeding specialist and unboxing expert',
-        website_url: 'https://seedingpro.com',
-        average_views: 28000,
-        platforms: ['YOUTUBE' as Platform, 'INSTAGRAM' as Platform],
-        platform_count: 2
-      },
-      {
-        id: 'inf_9',
-        user_id: 'user_12',
-        display_name: 'ContentCreatorAlex',
-        niches: ['UGC', 'Lifestyle'],
-        total_followers: 38000,
-        total_engagement_rate: 5.8,
-        total_avg_views: 16000,
-        estimated_promotion_views: 13600,
-        influencer_type: 'PARTNERED',
-        content_type: 'UGC',
-        is_active: true,
-        first_name: 'Alex',
-        last_name: 'Content',
-        avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        location_country: 'Canada',
-        location_city: 'Vancouver',
-        bio: 'UGC creator focused on lifestyle and everyday products',
-        website_url: 'https://alexcontent.com',
-        average_views: 16000,
-        platforms: ['TIKTOK' as Platform],
-        platform_count: 1
-      }
-    ]
-    return INITIAL_INFLUENCERS
+  const [influencers, setInfluencers] = useState<any[]>(() => {
+    // Initialize with empty array - will be populated from API
+    return []
   })
 
   // Function to load influencers from the database
@@ -363,7 +149,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const page = parseInt(searchParams.page || '1')
   const search = searchParams.search || searchQuery
-  const nicheFilter = searchParams.niche
+      const nicheFilter = searchParams.niche as string
   const platformFilter = searchParams.platform
   
   // Add filter change handlers
@@ -531,7 +317,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         influencer.last_name?.toLowerCase().includes(searchLower) ||
         influencer.location_city?.toLowerCase().includes(searchLower) ||
         influencer.location_country?.toLowerCase().includes(searchLower) ||
-        influencer.niches?.some(niche => niche.toLowerCase().includes(searchLower))
+        influencer.niches?.some((niche: string) => niche.toLowerCase().includes(searchLower))
       
       if (!matchesSearch) return false
     }

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone } from 'lucide-react'
+import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone, CreditCard } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PaymentManagementPanel from './PaymentManagementPanel'
 
 interface CampaignDetailPanelProps {
   isOpen: boolean
@@ -231,6 +232,7 @@ export default function CampaignDetailPanel({
   onPauseCampaign,
   onResumeCampaign
 }: CampaignDetailPanelProps) {
+  const [showPaymentPanel, setShowPaymentPanel] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'influencers' | 'analytics'>('overview')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -688,6 +690,16 @@ export default function CampaignDetailPanel({
                   )}
                   
                   <motion.button
+                    onClick={() => setShowPaymentPanel(true)}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center space-x-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <CreditCard size={16} />
+                    <span>Manage Payments</span>
+                  </motion.button>
+                  
+                  <motion.button
                     onClick={onClose}
                     className="px-6 py-3 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-gray-700 font-medium shadow-sm hover:shadow-md"
                     whileHover={{ scale: 1.02 }}
@@ -701,6 +713,18 @@ export default function CampaignDetailPanel({
           </motion.div>
         </>
       )}
+
+      {/* Payment Management Panel */}
+      <PaymentManagementPanel
+        isOpen={showPaymentPanel}
+        campaignId={campaign.id}
+        campaignName={campaign.name}
+        onClose={() => setShowPaymentPanel(false)}
+        onPaymentUpdated={() => {
+          // Refresh campaign data if needed
+          setShowPaymentPanel(false)
+        }}
+      />
     </AnimatePresence>
   )
 } 

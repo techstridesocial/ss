@@ -2,10 +2,67 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { addInfluencerToCampaign, updateCampaignInfluencerStatus } from '@/lib/db/queries/campaigns'
+import { 
+  getCampaignInfluencersWithDetails, 
+  assignInfluencerToCampaign as assignInfluencer,
+  updateCampaignInfluencerStatus as updateStatus,
+  updateProductShipmentStatus,
+  updateContentPostingStatus,
+  updatePaymentReleaseStatus,
+  getCampaignStatistics,
+  getCampaignTimeline
+} from '@/lib/db/queries/campaign-influencers'
 
 interface RouteParams {
   params: {
     id: string
+  }
+}
+
+// GET - Get campaign influencers with enhanced details
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const includeStats = searchParams.get('stats') === 'true'
+    const includeTimeline = searchParams.get('timeline') === 'true'
+
+    const campaignId = params.id
+
+    // Get influencers with details
+    const influencers = await getCampaignInfluencersWithDetails(campaignId)
+
+    // Get additional data if requested
+    let stats = null
+    let timeline = null
+
+    if (includeStats) {
+      stats = await getCampaignStatistics(campaignId)
+    }
+
+    if (includeTimeline) {
+      timeline = await getCampaignTimeline(campaignId)
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        influencers,
+        stats,
+        timeline
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching campaign influencers:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch campaign influencers' },
+      { status: 500 }
+    )
   }
 }
 
@@ -43,19 +100,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Add influencer to campaign with the specified status
-    const campaignInfluencer = await addInfluencerToCampaign(
+    // Add influencer to campaign with enhanced tracking
+    const campaignInfluencer = await assignInfluencer(
       campaignId,
       influencerId,
-      rate
+      rate,
+      data.deadline ? new Date(data.deadline) : undefined,
+      notes
     )
 
     // Update the status if it's not pending (default)
     if (status !== 'pending') {
-      await updateCampaignInfluencerStatus(
+      await updateStatus(
         campaignId,
         influencerId,
-        status,
+        status as any,
         notes
       )
     }
@@ -133,6 +192,86 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     console.error('Error updating campaign influencer status:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update influencer status' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Update product shipment status
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id: campaignId } = params
+    const data = await request.json()
+    const { action, influencerId, ...actionData } = data
+
+    if (!influencerId) {
+      return NextResponse.json(
+        { error: 'Influencer ID is required' },
+        { status: 400 }
+      )
+    }
+
+    let success = false
+    let message = ''
+
+    switch (action) {
+      case 'ship_product':
+        success = await updateProductShipmentStatus(
+          campaignId,
+          influencerId,
+          actionData.shipped,
+          actionData.trackingNumber
+        )
+        message = `Product shipment status updated`
+        break
+
+      case 'post_content':
+        success = await updateContentPostingStatus(
+          campaignId,
+          influencerId,
+          actionData.posted,
+          actionData.postUrl
+        )
+        message = `Content posting status updated`
+        break
+
+      case 'release_payment':
+        success = await updatePaymentReleaseStatus(
+          campaignId,
+          influencerId,
+          actionData.released
+        )
+        message = `Payment release status updated`
+        break
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        )
+    }
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Failed to update status' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message
+    })
+
+  } catch (error) {
+    console.error('Error updating campaign influencer tracking:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to update tracking status' },
       { status: 500 }
     )
   }

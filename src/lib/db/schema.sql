@@ -352,6 +352,53 @@ CREATE TABLE oauth_tokens (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Content submission status enum
+CREATE TYPE content_submission_status AS ENUM (
+    'PENDING',
+    'SUBMITTED',
+    'APPROVED',
+    'REJECTED',
+    'REVISION_REQUESTED'
+);
+
+-- Campaign content submissions table
+CREATE TABLE campaign_content_submissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_influencer_id UUID REFERENCES campaign_influencers(id) ON DELETE CASCADE,
+    
+    -- Content details
+    content_url TEXT NOT NULL, -- URL to the posted content (Instagram post, TikTok video, etc.)
+    content_type VARCHAR(50) NOT NULL, -- 'post', 'story', 'reel', 'video', 'blog_post', etc.
+    platform VARCHAR(50) NOT NULL, -- 'instagram', 'tiktok', 'youtube', 'twitter', etc.
+    
+    -- Performance metrics (if available)
+    views INTEGER,
+    likes INTEGER,
+    comments INTEGER,
+    shares INTEGER,
+    saves INTEGER,
+    
+    -- Submission details
+    title VARCHAR(255),
+    description TEXT,
+    caption TEXT,
+    hashtags TEXT[], -- Array of hashtags used
+    
+    -- Approval workflow
+    status content_submission_status DEFAULT 'SUBMITTED',
+    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    reviewed_by UUID REFERENCES users(id), -- Staff/admin who reviewed
+    review_notes TEXT,
+    
+    -- Tracking
+    screenshot_url TEXT, -- Screenshot of the content for record keeping
+    short_link_id UUID REFERENCES tracking_links(id), -- If using tracking links
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Tracking links for campaigns and influencer management
 CREATE TABLE tracking_links (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -408,6 +455,12 @@ CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 
+-- Campaign content submissions indexes
+CREATE INDEX idx_campaign_content_submissions_campaign_influencer ON campaign_content_submissions(campaign_influencer_id);
+CREATE INDEX idx_campaign_content_submissions_status ON campaign_content_submissions(status);
+CREATE INDEX idx_campaign_content_submissions_platform ON campaign_content_submissions(platform);
+CREATE INDEX idx_campaign_content_submissions_submitted_at ON campaign_content_submissions(submitted_at);
+
 -- Tracking links indexes
 CREATE INDEX idx_tracking_links_influencer ON tracking_links(influencer_id);
 CREATE INDEX idx_tracking_links_short_io_id ON tracking_links(short_io_link_id);
@@ -437,4 +490,5 @@ CREATE TRIGGER update_campaign_influencers_updated_at BEFORE UPDATE ON campaign_
 CREATE TRIGGER update_shortlists_updated_at BEFORE UPDATE ON shortlists FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_influencer_payments_updated_at BEFORE UPDATE ON influencer_payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_oauth_tokens_updated_at BEFORE UPDATE ON oauth_tokens FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_campaign_content_submissions_updated_at BEFORE UPDATE ON campaign_content_submissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_tracking_links_updated_at BEFORE UPDATE ON tracking_links FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 

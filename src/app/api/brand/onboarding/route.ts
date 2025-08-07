@@ -7,8 +7,8 @@ interface OnboardingRequest {
   website: string
   industry: string
   company_size: string
-  description: string
-  logo_url?: string
+  description: string // Stored in brands table
+  logo_url?: string // Stored in brands table
   annual_budget: string
   preferred_niches: string[]
   target_regions: string[]
@@ -43,11 +43,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Enhanced validation
+    if (data.company_name.length < 2) {
+      return NextResponse.json(
+        { error: 'Company name must be at least 2 characters long' }, 
+        { status: 400 }
+      )
+    }
+
+    if (data.description.length < 10) {
+      return NextResponse.json(
+        { error: 'Company description must be at least 10 characters long' }, 
+        { status: 400 }
+      )
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(data.contact_email)) {
       return NextResponse.json(
         { error: 'Invalid email format' }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate website URL format
+    if (data.website && !data.website.startsWith('http')) {
+      data.website = 'https://' + data.website
+    }
+
+    // Validate arrays
+    if (!Array.isArray(data.preferred_niches) || data.preferred_niches.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one content niche must be selected' }, 
+        { status: 400 }
+      )
+    }
+
+    if (!Array.isArray(data.target_regions) || data.target_regions.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one target region must be selected' }, 
         { status: 400 }
       )
     }
@@ -108,15 +143,16 @@ export async function POST(request: NextRequest) {
       // Insert primary contact
       await client.query(`
         INSERT INTO brand_contacts (
-          brand_id, name, email, phone, role, is_primary
-        ) VALUES ($1, $2, $3, $4, $5, $6)
+          brand_id, name, email, phone, role, is_primary, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [
         brandId,
         data.contact_name,
         data.contact_email,
         data.contact_phone || null,
         data.contact_role,
-        true
+        true,
+        `Company description: ${data.description}`
       ])
 
       // Update user status to indicate onboarding is complete

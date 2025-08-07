@@ -154,7 +154,7 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
             {/* Influencer Info */}
             <div className="col-span-3 flex items-center space-x-3">
               <img
-                src={influencer.avatar_url || '/default-avatar.png'}
+                src={influencer.avatar_url || '/default-avatar.svg'}
                 alt={influencer.display_name}
                 className="w-10 h-10 rounded-full object-cover"
               />

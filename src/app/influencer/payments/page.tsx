@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
-import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save } from 'lucide-react'
+import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save, Loader2 } from 'lucide-react'
 
 interface PayPalDetails {
   email: string
@@ -24,11 +24,55 @@ interface BankDetails {
   currency: string // Added currency preference
 }
 
+interface PaymentInfo {
+  id: string
+  payment_method: 'PAYPAL' | 'BANK_TRANSFER'
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+  masked_details: {
+    email?: string
+    accountNumber?: string
+    accountHolderName?: string
+  }
+}
+
+interface PaymentSummary {
+  total_earned: number
+  pending_amount: number
+  paid_out: number
+  this_month: number
+}
+
+interface PaymentHistoryItem {
+  id: string
+  amount: number
+  currency: string
+  status: string
+  transaction_id?: string
+  processed_at?: string
+  created_at: string
+  campaign_name: string
+  brand_name: string
+}
+
 export default function InfluencerPayments() {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
   const [showPayPalForm, setShowPayPalForm] = useState(false)
   const [showBankForm, setShowBankForm] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Payment data from API
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null)
+  const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
+    total_earned: 0,
+    pending_amount: 0,
+    paid_out: 0,
+    this_month: 0
+  })
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([])
   
   // PayPal form state
   const [paypalDetails, setPaypalDetails] = useState<PayPalDetails>({
@@ -55,7 +99,40 @@ export default function InfluencerPayments() {
   const [savedPaypalDetails, setSavedPaypalDetails] = useState<PayPalDetails | null>(null)
   const [savedBankDetails, setSavedBankDetails] = useState<BankDetails | null>(null)
 
-  const handlePayPalSubmit = (e: React.FormEvent) => {
+  // Fetch payment data on component mount
+  useEffect(() => {
+    fetchPaymentData()
+  }, [])
+
+  const fetchPaymentData = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/influencer/payments')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch payment data')
+      }
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        setPaymentInfo(result.data.payment_info)
+        setPaymentSummary(result.data.payment_summary)
+        setPaymentHistory(result.data.payment_history)
+        
+        // Set payment method based on saved info
+        if (result.data.payment_info) {
+          setPaymentMethod(result.data.payment_info.payment_method.toLowerCase())
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching payment data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePayPalSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Basic validation
@@ -69,7 +146,29 @@ export default function InfluencerPayments() {
       return
     }
 
-    // Save details
+    try {
+      setIsSaving(true)
+      
+      const response = await fetch('/api/influencer/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_method: 'PAYPAL',
+          payment_details: paypalDetails
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save PayPal details')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Save details locally
     setSavedPaypalDetails(paypalDetails)
     setPaymentMethod('paypal')
     setShowPayPalForm(false)
@@ -77,11 +176,23 @@ export default function InfluencerPayments() {
     
     // Reset form
     setPaypalDetails({ email: '', firstName: '', lastName: '' })
+        
+        // Refresh payment data
+        await fetchPaymentData()
     
     alert('PayPal details saved successfully!')
+      } else {
+        throw new Error(result.error || 'Failed to save PayPal details')
+      }
+    } catch (error) {
+      console.error('Error saving PayPal details:', error)
+      alert(error instanceof Error ? error.message : 'Failed to save PayPal details')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const handleBankSubmit = (e: React.FormEvent) => {
+  const handleBankSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Basic validation
@@ -90,7 +201,29 @@ export default function InfluencerPayments() {
       return
     }
 
-    // Save details
+    try {
+      setIsSaving(true)
+      
+      const response = await fetch('/api/influencer/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_method: 'BANK_TRANSFER',
+          payment_details: bankDetails
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save bank details')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Save details locally
     setSavedBankDetails(bankDetails)
     setPaymentMethod('bank')
     setShowBankForm(false)
@@ -109,8 +242,20 @@ export default function InfluencerPayments() {
       country: '',
       currency: 'GBP'
     })
+        
+        // Refresh payment data
+        await fetchPaymentData()
     
     alert('Bank details saved successfully!')
+      } else {
+        throw new Error(result.error || 'Failed to save bank details')
+      }
+    } catch (error) {
+      console.error('Error saving bank details:', error)
+      alert(error instanceof Error ? error.message : 'Failed to save bank details')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleEdit = () => {
@@ -156,7 +301,14 @@ export default function InfluencerPayments() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Total Earned</h3>
-                  <p className="text-3xl font-bold text-green-600 mt-2">£0.00</p>
+                  {isLoading ? (
+                    <div className="flex items-center mt-2">
+                      <Loader2 className="h-6 w-6 text-green-600 animate-spin mr-2" />
+                      <span className="text-gray-500">Loading...</span>
+                    </div>
+                  ) : (
+                    <p className="text-3xl font-bold text-green-600 mt-2">£{paymentSummary.total_earned.toFixed(2)}</p>
+                  )}
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
@@ -166,7 +318,14 @@ export default function InfluencerPayments() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Pending</h3>
-                  <p className="text-3xl font-bold text-orange-600 mt-2">£0.00</p>
+                  {isLoading ? (
+                    <div className="flex items-center mt-2">
+                      <Loader2 className="h-6 w-6 text-orange-600 animate-spin mr-2" />
+                      <span className="text-gray-500">Loading...</span>
+                    </div>
+                  ) : (
+                    <p className="text-3xl font-bold text-orange-600 mt-2">£{paymentSummary.pending_amount.toFixed(2)}</p>
+                  )}
                 </div>
                 <Clock className="h-8 w-8 text-orange-600" />
               </div>
@@ -176,7 +335,14 @@ export default function InfluencerPayments() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Paid Out</h3>
-                  <p className="text-3xl font-bold text-blue-600 mt-2">£0.00</p>
+                  {isLoading ? (
+                    <div className="flex items-center mt-2">
+                      <Loader2 className="h-6 w-6 text-blue-600 animate-spin mr-2" />
+                      <span className="text-gray-500">Loading...</span>
+                    </div>
+                  ) : (
+                    <p className="text-3xl font-bold text-blue-600 mt-2">£{paymentSummary.paid_out.toFixed(2)}</p>
+                  )}
                 </div>
                 <CheckCircle className="h-8 w-8 text-blue-600" />
               </div>
@@ -186,7 +352,14 @@ export default function InfluencerPayments() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">This Month</h3>
-                  <p className="text-3xl font-bold text-purple-600 mt-2">£0.00</p>
+                  {isLoading ? (
+                    <div className="flex items-center mt-2">
+                      <Loader2 className="h-6 w-6 text-purple-600 animate-spin mr-2" />
+                      <span className="text-gray-500">Loading...</span>
+                    </div>
+                  ) : (
+                    <p className="text-3xl font-bold text-purple-600 mt-2">£{paymentSummary.this_month.toFixed(2)}</p>
+                  )}
                 </div>
                 <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
                   <span className="text-purple-600 font-bold text-sm">£</span>
@@ -210,7 +383,12 @@ export default function InfluencerPayments() {
               )}
             </div>
 
-            {!paymentMethod ? (
+            {isLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-spin" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Loading payment information...</h4>
+              </div>
+            ) : !paymentInfo ? (
               <div className="text-center py-8">
                 <CreditCard className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h4 className="text-lg font-medium text-gray-900 mb-2">No payment method added</h4>
@@ -241,12 +419,12 @@ export default function InfluencerPayments() {
                     <CreditCard className="h-8 w-8 text-blue-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">
-                        {paymentMethod === 'paypal' ? 'PayPal Account' : 'Bank Account'}
+                        {paymentInfo.payment_method === 'PAYPAL' ? 'PayPal Account' : 'Bank Account'}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {paymentMethod === 'paypal' 
-                          ? savedPaypalDetails?.email 
-                          : `••••••••${savedBankDetails?.accountNumber?.slice(-4)}`
+                        {paymentInfo.payment_method === 'PAYPAL' 
+                          ? paymentInfo.masked_details.email
+                          : paymentInfo.masked_details.accountNumber
                         }
                       </p>
                     </div>
@@ -315,15 +493,21 @@ export default function InfluencerPayments() {
                   <div className="flex gap-4 pt-4">
                     <button
                       type="submit"
-                      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      disabled={isSaving}
+                      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
                       <Save className="h-4 w-4 mr-2" />
-                      Save PayPal Details
+                      )}
+                      {isSaving ? 'Saving...' : 'Save PayPal Details'}
                     </button>
                     <button
                       type="button"
                       onClick={cancelEdit}
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      disabled={isSaving}
+                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Cancel
                     </button>
@@ -514,15 +698,21 @@ export default function InfluencerPayments() {
                   <div className="flex gap-4 pt-4">
                     <button
                       type="submit"
-                      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      disabled={isSaving}
+                      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
                       <Save className="h-4 w-4 mr-2" />
-                      Save Bank Details
+                      )}
+                      {isSaving ? 'Saving...' : 'Save Bank Details'}
                     </button>
                     <button
                       type="button"
                       onClick={cancelEdit}
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      disabled={isSaving}
+                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Cancel
                     </button>
@@ -536,6 +726,12 @@ export default function InfluencerPayments() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-6">Payment History</h3>
             
+            {isLoading ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-spin" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Loading payment history...</h4>
+              </div>
+            ) : paymentHistory.length === 0 ? (
             <div className="text-center py-12">
               <Clock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h4 className="text-lg font-medium text-gray-900 mb-2">No payments yet</h4>
@@ -543,6 +739,61 @@ export default function InfluencerPayments() {
                 Your payment history will appear here once you complete campaigns and receive payments.
               </p>
             </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Campaign
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{payment.campaign_name}</div>
+                            <div className="text-sm text-gray-500">{payment.brand_name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            £{payment.amount.toFixed(2)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            payment.status === 'completed' 
+                              ? 'bg-green-100 text-green-800'
+                              : payment.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : payment.status === 'processing'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(payment.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Important Notice */}

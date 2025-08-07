@@ -35,7 +35,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate email format if website provided
+    // Enhanced validation
+    if (data.first_name.length < 2) {
+      return NextResponse.json(
+        { error: 'First name must be at least 2 characters long' }, 
+        { status: 400 }
+      )
+    }
+
+    if (data.last_name.length < 2) {
+      return NextResponse.json(
+        { error: 'Last name must be at least 2 characters long' }, 
+        { status: 400 }
+      )
+    }
+
+    if (data.display_name.length < 3) {
+      return NextResponse.json(
+        { error: 'Display name must be at least 3 characters long' }, 
+        { status: 400 }
+      )
+    }
+
+    if (data.location.length < 2) {
+      return NextResponse.json(
+        { error: 'Location must be at least 2 characters long' }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate phone number format if provided
+    if (data.phone_number) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+      if (!phoneRegex.test(data.phone_number.replace(/[\s\-\(\)]/g, ''))) {
+        return NextResponse.json(
+          { error: 'Invalid phone number format' }, 
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate website URL format if provided
     if (data.website && !data.website.startsWith('http')) {
       data.website = 'https://' + data.website
     }

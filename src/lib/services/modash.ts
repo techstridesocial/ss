@@ -31,14 +31,60 @@ interface ModashReport {
   demographics: {
     age_ranges: Record<string, number>
     gender: Record<string, number>
-    locations: Array<{ country: string; percentage: number }>
+    locations: Array<{ country: string; city?: string; percentage: number }>
     languages: Array<{ language: string; percentage: number }>
+    interests?: Array<{ interest: string; percentage: number }>
   }
   engagement: {
     avg_likes: number
     avg_comments: number
     avg_shares?: number
     engagement_rate: number
+    fake_followers_percentage?: number
+    fake_followers_quality?: 'below_average' | 'average' | 'above_average'
+    estimated_impressions?: number
+    estimated_reach?: number
+  }
+  content_performance?: {
+    reels?: {
+      avg_plays?: number
+      engagement_rate?: number
+      avg_likes?: number
+      avg_comments?: number
+      avg_shares?: number
+    }
+    posts?: {
+      avg_likes?: number
+      avg_comments?: number
+      avg_shares?: number
+      engagement_rate?: number
+    }
+    stories?: {
+      estimated_reach?: number
+      estimated_impressions?: number
+    }
+  }
+  growth_trends?: {
+    follower_growth?: {
+      value: number
+      trend: 'up' | 'down' | 'stable'
+      percentage: number
+    }
+    engagement_growth?: {
+      value: number
+      trend: 'up' | 'down' | 'stable'
+      percentage: number
+    }
+    likes_growth?: {
+      value: number
+      trend: 'up' | 'down' | 'stable'
+      percentage: number
+    }
+  }
+  paid_vs_organic?: {
+    paid_engagement_rate?: number
+    organic_engagement_rate?: number
+    paid_performance_ratio?: number
   }
   recent_posts: Array<{
     url: string
@@ -46,7 +92,10 @@ interface ModashReport {
     caption: string
     likes: number
     comments: number
+    shares?: number
     posted_at: string
+    content_type?: 'reel' | 'post' | 'story'
+    is_sponsored?: boolean
   }>
 }
 
@@ -459,15 +508,100 @@ class ModashService {
   }
 
   /**
-   * Get comprehensive report for influencer
+   * Get comprehensive report for influencer by searching for their exact userId
+   * Since the report endpoint doesn't exist, we'll use search to get the data
    */
   async getInfluencerReport(userId: string): Promise<ModashReport | null> {
     try {
-      const response = await this.makeRequest(`/v1/discovery/profile/${userId}/report`)
-      return this.transformReportData(response)
+      console.log(`🔍 Getting influencer data for userId: ${userId}`)
+      
+      // Try to get the influencer by searching for them across all platforms
+      const platforms = ['instagram', 'tiktok', 'youtube'] as const
+      
+      for (const platform of platforms) {
+        try {
+          console.log(`🔍 Searching ${platform} for userId: ${userId}`)
+          
+          // Use the search endpoint to find this specific user
+          const searchResults = await this.searchDiscovery({
+            platform,
+            // Use minimal filters to find the user
+            followers: { min: 1 }
+          }, 0, 100) // Search more results to find the specific user
+          
+          // Look for the exact userId in the results
+          const exactMatch = searchResults.results.find((result: any) => 
+            result.userId === userId || 
+            result.userInfo?.userId === userId ||
+            result.profile?.userId === userId
+          )
+          
+          if (exactMatch) {
+            console.log(`✅ Found user ${userId} on ${platform}:`, exactMatch)
+            return this.transformSearchResultToReport(exactMatch, platform)
+          }
+        } catch (platformError) {
+          console.log(`⚠️ Failed to search ${platform}:`, platformError)
+          continue
+        }
+      }
+      
+      console.log(`❌ User ${userId} not found on any platform`)
+      return null
     } catch (error) {
       console.error(`Failed to get report for user ${userId}:`, error)
       return null
+    }
+  }
+
+  /**
+   * Transform search result to report format
+   */
+  private transformSearchResultToReport(searchResult: any, platform: string): ModashReport {
+    console.log(`🔄 Transforming search result to report format:`, searchResult)
+    
+    // Extract data from the search result
+    const profile = searchResult.profile || searchResult.userInfo || searchResult
+    const followers = profile.followers || searchResult.followers || 0
+    const engagementRate = profile.engagement_rate || searchResult.engagement_rate || 0
+    
+    // Calculate estimated metrics
+    const estimatedReach = Math.round(followers * 0.4)
+    const estimatedImpressions = Math.round(estimatedReach * 1.5)
+    
+    return {
+      userId: searchResult.userId || profile.userId,
+      demographics: {
+        age_ranges: profile.audienceAgeRanges || {},
+        gender: profile.audienceGender || {},
+        locations: profile.audienceLocations?.map((loc: any) => ({
+          country: loc.name || loc.country,
+          city: loc.city,
+          percentage: loc.weight * 100
+        })) || [],
+        languages: profile.audienceLanguages?.map((lang: any) => ({
+          language: lang.name || lang.language,
+          percentage: lang.weight * 100
+        })) || [],
+        interests: profile.audienceInterests?.map((interest: any) => ({
+          interest: interest.name || interest.category,
+          percentage: interest.weight * 100
+        })) || []
+      },
+      engagement: {
+        avg_likes: profile.avgLikes || searchResult.avgLikes || 0,
+        avg_comments: profile.avgComments || searchResult.avgComments || 0,
+        avg_shares: profile.avgShares || searchResult.avgShares || 0,
+        engagement_rate: engagementRate,
+        fake_followers_percentage: profile.fakeFollowersPercentage,
+        fake_followers_quality: profile.fakeFollowersPercentage 
+          ? (profile.fakeFollowersPercentage < 0.1 ? 'below_average' : 
+             profile.fakeFollowersPercentage < 0.2 ? 'average' : 'above_average')
+          : undefined,
+        estimated_impressions: estimatedImpressions,
+        estimated_reach: estimatedReach
+      },
+      recent_posts: profile.recentPosts || []
     }
   }
 
@@ -609,6 +743,604 @@ class ModashService {
   }
 
   /**
+   * List Users API - Search influencers using the new endpoint
+   * GET /instagram/users
+   */
+  async listUsers(query?: string, limit: number = 10): Promise<{
+    error: boolean
+    users: Array<{
+      userId: string
+      username: string
+      profile_picture?: string
+      followers: number
+      isVerified: boolean
+    }>
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/users${params.toString() ? '?' + params.toString() : ''}`
+      console.log('📋 List Users API request:', { endpoint, query, limit })
+      
+      const response = await this.makeRequest(endpoint)
+      
+      if (response.error) {
+        console.error('❌ List Users API error:', response)
+        return { error: true, users: [] }
+      }
+      
+      console.log('✅ List Users API success:', {
+        userCount: response.users?.length || 0,
+        hasUsers: !!response.users
+      })
+      
+      return {
+        error: false,
+        users: response.users || []
+      }
+    } catch (error) {
+      console.error('❌ Failed to list users:', error)
+      return { error: true, users: [] }
+    }
+  }
+
+  /**
+   * List Hashtags API - Search for hashtags
+   * GET /instagram/hashtags
+   * Free - No credits used
+   */
+  async listHashtags(query?: string, limit: number = 10): Promise<{
+    error: boolean;
+    tags: string[];
+    message?: string;
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/hashtags${params.toString() ? '?' + params.toString() : ''}`
+      
+      console.log('🏷️ Fetching hashtags:', { query, limit, endpoint })
+      
+      const result = await this.makeRequest(endpoint, { method: 'GET' })
+      
+      if (result.error) {
+        console.error('❌ List Hashtags API error:', result)
+        return {
+          error: true,
+          tags: [],
+          message: result.message || 'Failed to fetch hashtags'
+        }
+      }
+      
+      console.log('✅ List Hashtags API success:', {
+        query,
+        tagsCount: result.tags?.length || 0,
+        firstTags: result.tags?.slice(0, 3)
+      })
+      
+      return {
+        error: false,
+        tags: result.tags || []
+      }
+    } catch (error) {
+      console.error('❌ Error fetching hashtags:', error)
+      return {
+        error: true,
+        tags: [],
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * List Partnerships API - Search for brand partnerships
+   * GET /instagram/brands
+   * Free - No credits used
+   */
+  async listPartnerships(query?: string, limit: number = 10): Promise<{
+    error: boolean;
+    brands: Array<{
+      id: number;
+      name: string;
+      count: number;
+    }>;
+    total: number;
+    message?: string;
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/brands${params.toString() ? '?' + params.toString() : ''}`
+      
+      console.log('🤝 Fetching brand partnerships:', { query, limit, endpoint })
+      
+      const result = await this.makeRequest(endpoint, { method: 'GET' })
+      
+      if (result.error) {
+        console.error('❌ List Partnerships API error:', result)
+        return {
+          error: true,
+          brands: [],
+          total: 0,
+          message: result.message || 'Failed to fetch partnerships'
+        }
+      }
+      
+      console.log('✅ List Partnerships API success:', {
+        query,
+        brandsCount: result.brands?.length || 0,
+        total: result.total || 0,
+        firstBrands: result.brands?.slice(0, 3)?.map((b: any) => b.name)
+      })
+      
+      return {
+        error: false,
+        brands: result.brands || [],
+        total: result.total || 0
+      }
+    } catch (error) {
+      console.error('❌ Error fetching partnerships:', error)
+      return {
+        error: true,
+        brands: [],
+        total: 0,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * List Locations API - Search for geographic locations
+   * GET /instagram/locations
+   * Free - No credits used
+   */
+  async listLocations(query?: string, limit: number = 10): Promise<{
+    error: boolean;
+    locations: Array<{
+      id: number;
+      name: string;
+      title: string;
+    }>;
+    total: number;
+    message?: string;
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/locations${params.toString() ? '?' + params.toString() : ''}`
+      
+      console.log('📍 Fetching locations:', { query, limit, endpoint })
+      
+      const result = await this.makeRequest(endpoint, { method: 'GET' })
+      
+      if (result.error) {
+        console.error('❌ List Locations API error:', result)
+        return {
+          error: true,
+          locations: [],
+          total: 0,
+          message: result.message || 'Failed to fetch locations'
+        }
+      }
+      
+      console.log('✅ List Locations API success:', {
+        query,
+        locationsCount: result.locations?.length || 0,
+        total: result.total || 0,
+        firstLocations: result.locations?.slice(0, 3)?.map((l: any) => l.name)
+      })
+      
+      return {
+        error: false,
+        locations: result.locations || [],
+        total: result.total || 0
+      }
+    } catch (error) {
+      console.error('❌ Error fetching locations:', error)
+      return {
+        error: true,
+        locations: [],
+        total: 0,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * List Languages API - Search for languages
+   * GET /instagram/languages
+   * Free - No credits used
+   */
+  async listLanguages(query?: string, limit: number = 10): Promise<{
+    error: boolean;
+    languages: Array<{
+      code: string;
+      name: string;
+    }>;
+    total: number;
+    message?: string;
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/languages${params.toString() ? '?' + params.toString() : ''}`
+      
+      console.log('🌐 Fetching languages:', { query, limit, endpoint })
+      
+      const result = await this.makeRequest(endpoint, { method: 'GET' })
+      
+      if (result.error) {
+        console.error('❌ List Languages API error:', result)
+        return {
+          error: true,
+          languages: [],
+          total: 0,
+          message: result.message || 'Failed to fetch languages'
+        }
+      }
+      
+      console.log('✅ List Languages API success:', {
+        query,
+        languagesCount: result.languages?.length || 0,
+        total: result.total || 0,
+        firstLanguages: result.languages?.slice(0, 3)?.map((l: any) => l.name)
+      })
+      
+      return {
+        error: false,
+        languages: result.languages || [],
+        total: result.total || 0
+      }
+    } catch (error) {
+      console.error('❌ Error fetching languages:', error)
+      return {
+        error: true,
+        languages: [],
+        total: 0,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * List Interests API - Search for audience interests
+   * GET /instagram/interests
+   * Free - No credits used
+   */
+  async listInterests(query?: string, limit: number = 10): Promise<{
+    error: boolean;
+    interests: Array<{
+      id: number;
+      name: string;
+    }>;
+    total: number;
+    message?: string;
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/interests${params.toString() ? '?' + params.toString() : ''}`
+      
+      console.log('🎯 Fetching interests:', { query, limit, endpoint })
+      
+      const result = await this.makeRequest(endpoint, { method: 'GET' })
+      
+      if (result.error) {
+        console.error('❌ List Interests API error:', result)
+        return {
+          error: true,
+          interests: [],
+          total: 0,
+          message: result.message || 'Failed to fetch interests'
+        }
+      }
+      
+      console.log('✅ List Interests API success:', {
+        query,
+        interestsCount: result.interests?.length || 0,
+        total: result.total || 0,
+        firstInterests: result.interests?.slice(0, 3)?.map((i: any) => i.name)
+      })
+      
+      return {
+        error: false,
+        interests: result.interests || [],
+        total: result.total || 0
+      }
+    } catch (error) {
+      console.error('❌ Error fetching interests:', error)
+      return {
+        error: true,
+        interests: [],
+        total: 0,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * List Topics API - Search for content topics
+   * GET /instagram/topics
+   * Free - No credits used
+   */
+  async listTopics(query?: string, limit: number = 10): Promise<{
+    error: boolean;
+    tags: string[];
+    message?: string;
+  }> {
+    try {
+      const params = new URLSearchParams()
+      if (limit) params.append('limit', limit.toString())
+      if (query) params.append('query', query)
+      
+      const endpoint = `/v1/instagram/topics${params.toString() ? '?' + params.toString() : ''}`
+      
+      console.log('📝 Fetching topics:', { query, limit, endpoint })
+      
+      const result = await this.makeRequest(endpoint, { method: 'GET' })
+      
+      if (result.error) {
+        console.error('❌ List Topics API error:', result)
+        return {
+          error: true,
+          tags: [],
+          message: result.message || 'Failed to fetch topics'
+        }
+      }
+      
+      console.log('✅ List Topics API success:', {
+        query,
+        tagsCount: result.tags?.length || 0,
+        firstTags: result.tags?.slice(0, 3)
+      })
+      
+      return {
+        error: false,
+        tags: result.tags || []
+      }
+    } catch (error) {
+      console.error('❌ Error fetching topics:', error)
+      return {
+        error: true,
+        tags: [],
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * Audience Overlap Reports API - Compare audience overlap between influencers
+   * POST /v1/instagram/reports/audience/overlap
+   * Analyze shared audience segments between multiple influencers
+   */
+  async getAudienceOverlap(
+    userIds: string[],
+    options?: {
+      segments?: string[];
+      metrics?: string[];
+    }
+  ): Promise<{
+    success: boolean;
+    data?: {
+      overlap_data: any[];
+      summary: any;
+    };
+    error?: string;
+  }> {
+    try {
+      console.log('🎯 Fetching audience overlap report for users:', userIds)
+      
+      const requestBody = {
+        user_ids: userIds,
+        segments: options?.segments || ['gender', 'age', 'location'],
+        metrics: options?.metrics || ['overlap_percentage', 'unique_audience']
+      }
+      
+      const result = await this.makeRequest('/v1/instagram/reports/audience/overlap', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+      
+      console.log('✅ Audience overlap API success:', {
+        userIds,
+        overlapCount: result.overlap_data?.length || 0
+      })
+      
+      return {
+        success: true,
+        data: {
+          overlap_data: result.overlap_data || [],
+          summary: result.summary || {}
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Audience overlap API error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Audience overlap request failed'
+      }
+    }
+  }
+
+  /**
+   * Search Influencers API - Main discovery with comprehensive filtering
+   * POST /instagram/search
+   * Costs 0.01 credits per result (typically 0.15 credits for 15 credits)
+   */
+  async searchInfluencers(
+    filters: any,
+    page: number = 0,
+    sort?: any
+  ): Promise<{
+    success: boolean;
+    data?: {
+      total: number;
+      lookalikes: any[];
+      directs: any[];
+      isExactMatch: boolean;
+    };
+    error?: string;
+  }> {
+    try {
+      const requestBody = {
+        page,
+        calculationMethod: "median",
+        sort: sort || { field: "followers", direction: "desc" },
+        filter: filters
+      }
+
+      console.log('🔍 Searching influencers with new API:', { 
+        page, 
+        hasInfluencerFilters: !!filters.influencer,
+        hasAudienceFilters: !!filters.audience,
+        sortField: requestBody.sort.field
+      })
+
+      const result = await this.makeRequest('/v1/instagram/search', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+
+      if (result.error) {
+        console.error('❌ Search Influencers API error:', result)
+        return {
+          success: false,
+          error: result.message || 'Search failed'
+        }
+      }
+
+      console.log('✅ Search Influencers API success:', {
+        total: result.total,
+        directsCount: result.directs?.length || 0,
+        lookalikesCount: result.lookalikes?.length || 0,
+        isExactMatch: result.isExactMatch
+      })
+
+      return {
+        success: true,
+        data: {
+          total: result.total || 0,
+          lookalikes: result.lookalikes || [],
+          directs: result.directs || [],
+          isExactMatch: result.isExactMatch || false
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error searching influencers:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * Performance Data API - Get detailed performance statistics
+   * GET /instagram/performance-data
+   * Costs 0.25 credits per successful request
+   */
+  async getPerformanceData(url: string, maxRetries: number = 3): Promise<{
+    success: boolean
+    data?: {
+      posts: {
+        total: number
+        posts_with_hidden_likes: number
+        likes: any
+        comments: any
+        views: any
+        engagement_rate: any[]
+        posting_statistics: any
+      }
+      reels: {
+        total: number
+        reels_with_hidden_likes: number
+        likes: any
+        comments: any
+        views: any
+        engagement_rate: any[]
+        posting_statistics: any
+      }
+    }
+    status?: string
+    message?: string
+  }> {
+    try {
+      const params = new URLSearchParams({ url })
+      const endpoint = `/v1/instagram/performance-data?${params.toString()}`
+      
+      console.log('📊 Performance Data API request:', { endpoint, url, maxRetries })
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`📊 Attempt ${attempt}/${maxRetries} for performance data...`)
+        
+        const response = await this.makeRequest(endpoint)
+        
+        // Handle retry_later status
+        if (response.status === 'retry_later') {
+          console.log('⏳ Performance data is being processed, retry needed...')
+          if (attempt < maxRetries) {
+            console.log('⏳ Waiting 5 minutes before retry...')
+            await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)) // Wait 5 minutes
+            continue
+          } else {
+            return {
+              success: false,
+              status: 'retry_later',
+              message: 'Data still processing after maximum retries'
+            }
+          }
+        }
+        
+        // Handle error response
+        if (response.error) {
+          console.error('❌ Performance Data API error:', response)
+          return {
+            success: false,
+            message: response.message || 'Performance data request failed'
+          }
+        }
+        
+        // Success response
+        console.log('✅ Performance Data API success:', {
+          postsTotal: response.posts?.total,
+          reelsTotal: response.reels?.total,
+          hasPostsData: !!response.posts,
+          hasReelsData: !!response.reels
+        })
+        
+        return {
+          success: true,
+          data: response
+        }
+      }
+      
+      return {
+        success: false,
+        message: 'Maximum retries exceeded'
+      }
+    } catch (error) {
+      console.error('❌ Failed to get performance data:', error)
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
    * Get current credit usage
    */
   async getCreditUsage(): Promise<{
@@ -618,7 +1350,7 @@ class ModashService {
     resetDate: Date
   }> {
     try {
-      const response = await this.makeRequest('/v1/account')
+      const response = await this.makeRequest('/user/info')
       return {
         used: response.credits_used || 0,
         limit: response.credits_limit || 3000,
@@ -739,33 +1471,124 @@ class ModashService {
    * Transform Modash report data to internal format
    */
   private transformReportData(data: any): ModashReport {
+    // Helper function to calculate fake followers quality
+    const getFakeFollowersQuality = (percentage: number): 'below_average' | 'average' | 'above_average' => {
+      if (percentage < 10) return 'below_average'  // Good quality
+      if (percentage < 20) return 'average'        // Moderate quality
+      return 'above_average'                       // High fake followers
+    }
+
+    // Helper function to determine growth trend
+    const getTrend = (value: number): 'up' | 'down' | 'stable' => {
+      if (value > 5) return 'up'
+      if (value < -5) return 'down'
+      return 'stable'
+    }
+
+    // Calculate estimated impressions and reach based on followers and engagement
+    const followers = data.profile?.followers || data.followers || 0
+    const engagementRate = data.performance?.engagement_rate || 0
+    const estimatedReach = Math.round(followers * 0.4) // Conservative estimate: 40% of followers
+    const estimatedImpressions = Math.round(estimatedReach * 1.5) // Impressions typically 1.5x reach
+
     return {
       userId: data.userId,
       demographics: {
-        age_ranges: data.audience?.age || {},
-        gender: data.audience?.gender || {},
+        age_ranges: data.audience?.age || data.audience?.ageGroups || {},
+        gender: data.audience?.gender || data.audience?.genders || {},
         locations: data.audience?.geolocations?.map((loc: any) => ({
-          country: loc.name,
-          percentage: loc.weight * 100
+          country: loc.name || loc.country,
+          city: loc.city,
+          percentage: (loc.weight || loc.percentage || 0) * 100
+        })) || data.audience?.geoCountries?.map((loc: any) => ({
+          country: loc.name || loc.country,
+          city: loc.city,
+          percentage: (loc.weight || loc.percentage || 0) * 100
         })) || [],
         languages: data.audience?.languages?.map((lang: any) => ({
-          language: lang.name,  
-          percentage: lang.weight * 100
+          language: lang.name || lang.language,  
+          percentage: (lang.weight || lang.percentage || 0) * 100
+        })) || [],
+        interests: data.audience?.interests?.map((interest: any) => ({
+          interest: interest.name || interest.category,
+          percentage: (interest.weight || interest.percentage || 0) * 100
         })) || []
       },
       engagement: {
-        avg_likes: data.performance?.avg_likes || 0,
-        avg_comments: data.performance?.avg_comments || 0,
-        avg_shares: data.performance?.avg_shares,
-        engagement_rate: data.performance?.engagement_rate || 0
+        avg_likes: data.performance?.avg_likes || data.statsByContentType?.all?.avgLikes || 0,
+        avg_comments: data.performance?.avg_comments || data.statsByContentType?.all?.avgComments || 0,
+        avg_shares: data.performance?.avg_shares || data.statsByContentType?.all?.avgShares,
+        engagement_rate: data.performance?.engagement_rate || data.statsByContentType?.all?.engagementRate || 0,
+        fake_followers_percentage: data.audienceExtra?.fakeFollowersPercentage || data.fake_followers_percentage,
+        fake_followers_quality: data.audienceExtra?.fakeFollowersPercentage 
+          ? getFakeFollowersQuality(data.audienceExtra.fakeFollowersPercentage * 100)
+          : undefined,
+        estimated_impressions: estimatedImpressions,
+        estimated_reach: estimatedReach
       },
+      content_performance: {
+        reels: data.statsByContentType?.reels || data.content_performance?.reels ? {
+          avg_plays: data.statsByContentType?.reels?.avgViews || data.content_performance?.reels?.avg_plays,
+          engagement_rate: data.statsByContentType?.reels?.engagementRate || data.content_performance?.reels?.engagement_rate,
+          avg_likes: data.statsByContentType?.reels?.avgLikes || data.content_performance?.reels?.avg_likes,
+          avg_comments: data.statsByContentType?.reels?.avgComments || data.content_performance?.reels?.avg_comments,
+          avg_shares: data.statsByContentType?.reels?.avgShares || data.content_performance?.reels?.avg_shares
+        } : undefined,
+        posts: data.statsByContentType?.posts || data.content_performance?.posts ? {
+          avg_likes: data.statsByContentType?.posts?.avgLikes || data.content_performance?.posts?.avg_likes,
+          avg_comments: data.statsByContentType?.posts?.avgComments || data.content_performance?.posts?.avg_comments,
+          avg_shares: data.statsByContentType?.posts?.avgShares || data.content_performance?.posts?.avg_shares,
+          engagement_rate: data.statsByContentType?.posts?.engagementRate || data.content_performance?.posts?.engagement_rate
+        } : undefined,
+        stories: data.statsByContentType?.stories || data.content_performance?.stories ? {
+          estimated_reach: data.statsByContentType?.stories?.avgReach || data.content_performance?.stories?.estimated_reach,
+          estimated_impressions: data.statsByContentType?.stories?.avgImpressions || data.content_performance?.stories?.estimated_impressions
+        } : undefined
+      },
+      growth_trends: data.growth_trends || data.historical ? {
+        follower_growth: data.growth_trends?.follower_growth || data.historical?.follower_growth ? {
+          value: data.growth_trends?.follower_growth?.value || data.historical?.follower_growth?.rate || 0,
+          trend: getTrend(data.growth_trends?.follower_growth?.percentage || data.historical?.follower_growth?.percentage || 0),
+          percentage: data.growth_trends?.follower_growth?.percentage || data.historical?.follower_growth?.percentage || 0
+        } : undefined,
+        engagement_growth: data.growth_trends?.engagement_growth || data.historical?.engagement_growth ? {
+          value: data.growth_trends?.engagement_growth?.value || data.historical?.engagement_growth?.rate || 0,
+          trend: getTrend(data.growth_trends?.engagement_growth?.percentage || data.historical?.engagement_growth?.percentage || 0),
+          percentage: data.growth_trends?.engagement_growth?.percentage || data.historical?.engagement_growth?.percentage || 0
+        } : undefined,
+        likes_growth: data.growth_trends?.likes_growth || data.historical?.likes_growth ? {
+          value: data.growth_trends?.likes_growth?.value || data.historical?.likes_growth?.rate || 0,
+          trend: getTrend(data.growth_trends?.likes_growth?.percentage || data.historical?.likes_growth?.percentage || 0),
+          percentage: data.growth_trends?.likes_growth?.percentage || data.historical?.likes_growth?.percentage || 0
+        } : undefined
+      } : undefined,
+      paid_vs_organic: data.paid_vs_organic || data.sponsoredPostsPerformance ? {
+        paid_engagement_rate: data.paid_vs_organic?.paid_engagement_rate || data.sponsoredPostsPerformance?.engagementRate,
+        organic_engagement_rate: data.paid_vs_organic?.organic_engagement_rate || data.organicPostsPerformance?.engagementRate,
+        paid_performance_ratio: data.paidPostPerformance || data.sponsoredPostsMedianLikes 
+          ? (data.sponsoredPostsMedianLikes / (data.nonSponsoredPostsMedianLikes || 1))
+          : undefined
+      } : undefined,
       recent_posts: data.recent_posts?.map((post: any) => ({
         url: post.url,
         thumbnail: post.thumbnail,
         caption: post.caption,
         likes: post.likes,
         comments: post.comments,
-        posted_at: post.posted_at
+        shares: post.shares,
+        posted_at: post.posted_at,
+        content_type: post.content_type || post.type || 'post',
+        is_sponsored: post.is_sponsored || post.sponsored || false
+      })) || data.posts?.map((post: any) => ({
+        url: post.url,
+        thumbnail: post.thumbnail,
+        caption: post.caption,
+        likes: post.likes,
+        comments: post.comments,
+        shares: post.shares,
+        posted_at: post.posted_at || post.created_time,
+        content_type: post.content_type || post.type || 'post',
+        is_sponsored: post.is_sponsored || post.sponsored || false
       })) || []
     }
   }

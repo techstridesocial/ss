@@ -46,6 +46,79 @@ export interface NavItem {
 // Campaign types
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
 
+export type ParticipationStatus = 'INVITED' | 'ACCEPTED' | 'DECLINED' | 'IN_PROGRESS' | 'CONTENT_SUBMITTED' | 'COMPLETED' | 'PAID';
+
+// Content submission types
+export type ContentSubmissionStatus = 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED';
+
+export interface ContentSubmission {
+  id: string;
+  campaignInfluencerId: string;
+  contentUrl: string;
+  contentType: string;
+  platform: string;
+  views?: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  saves?: number;
+  title?: string;
+  description?: string;
+  caption?: string;
+  hashtags?: string[];
+  status: ContentSubmissionStatus;
+  submittedAt: Date;
+  reviewedAt?: Date;
+  reviewedBy?: string;
+  reviewNotes?: string;
+  screenshotUrl?: string;
+  shortLinkId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ContentSubmissionWithDetails extends ContentSubmission {
+  influencer: {
+    id: string;
+    displayName: string;
+    profileImageUrl?: string;
+  };
+  campaign: {
+    id: string;
+    name: string;
+    brand: string;
+  };
+  reviewer?: {
+    id: string;
+    name: string;
+  };
+  qualityScore?: number;
+  performanceMetrics?: {
+    engagementRate: number;
+    reachEstimate: number;
+    viralityScore: number;
+  };
+}
+
+export interface ContentQualityMetrics {
+  contentScore: number;
+  engagementScore: number;
+  brandAlignmentScore: number;
+  technicalQualityScore: number;
+  overallScore: number;
+  recommendations: string[];
+}
+
+export interface ContentSubmissionStats {
+  totalSubmissions: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  revisionRequestedCount: number;
+  averageQualityScore: number;
+  topPerformingContent: ContentSubmissionWithDetails[];
+}
+
 export interface Campaign {
   id: string;
   name: string;
@@ -75,6 +148,8 @@ export interface Campaign {
   totalInfluencers: number;
   acceptedCount: number;
   pendingCount: number;
+  paidCount?: number;
+  paymentPendingCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,7 +158,7 @@ export interface CampaignInfluencer {
   id: string;
   campaignId: string;
   influencerId: string;
-  status: string;
+  status: ParticipationStatus;
   appliedAt?: Date;
   acceptedAt?: Date;
   declinedAt?: Date;
@@ -91,6 +166,12 @@ export interface CampaignInfluencer {
   paidAt?: Date;
   notes?: string;
   rate?: number;
+  deadline?: Date;
+  productShipped?: boolean;
+  contentPosted?: boolean;
+  paymentReleased?: boolean;
+  paymentStatus?: 'PENDING' | 'PAID';
+  paymentDate?: Date;
   influencer?: {
     id: string;
     firstName: string;
@@ -127,7 +208,6 @@ export interface CampaignInvitation {
   updatedAt: Date;
 }
 
-// API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -135,7 +215,6 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
-// Form state types
 export interface FormError {
   field: string;
   message: string;

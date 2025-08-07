@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
     }
 
     const userRole = await getCurrentUserRole()
-    if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
+    if (!userRole || !['STAFF', 'ADMIN', 'BRAND'].includes(userRole)) {
       return NextResponse.json({ 
-        error: 'Only staff can view influencers' 
+        error: 'Access denied. Only staff, admin, and brand users can view influencers' 
       }, { status: 403 })
     }
 

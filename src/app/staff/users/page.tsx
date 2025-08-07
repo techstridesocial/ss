@@ -4,9 +4,9 @@ import React from 'react'
 import { requireStaffAccess } from '../../../lib/auth/roles'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import UserFilters from '../../../components/filters/UserFilters'
-import { getUsers } from '../../../lib/db/queries/users'
+import { getUsers, getUserStats } from '../../../lib/db/queries/users'
 import { UserRole } from '../../../types/database'
-import { Plus, Edit, Trash2, UserCheck, Mail, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, UserCheck, Mail, MapPin, Users } from 'lucide-react'
 
 interface UserTableProps {
   searchParams: {
@@ -225,6 +225,9 @@ export default async function StaffUsersPage({ searchParams }: StaffUsersPagePro
 
   // Provide defaults for searchParams
   const params = await searchParams
+  
+  // Get user statistics
+  const stats = await getUserStats()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -244,6 +247,57 @@ export default async function StaffUsersPage({ searchParams }: StaffUsersPagePro
           currentSearch={params.search}
           currentRole={params.role}
         />
+
+        {/* User Statistics */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <UserCheck className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Onboarded</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.onboardedUsers}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Users className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Recent (7 days)</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.recentUsers}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Users className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Brands</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.usersByRole.BRAND}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* User Table */}
         <React.Suspense fallback={

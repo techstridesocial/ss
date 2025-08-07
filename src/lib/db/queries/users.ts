@@ -134,36 +134,110 @@ export async function getUsers(
   limit: number = 20
 ): Promise<PaginatedResponse<UserWithProfile>> {
   
-  // TEMPORARY: Use mock data instead of database
-  console.log('getUsers: Using mock data (database not yet set up)')
-  
-  let filteredUsers = [...MOCK_USERS]
-  
-  // Apply filters
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase()
-    filteredUsers = filteredUsers.filter(user => 
-      user.email.toLowerCase().includes(searchLower) ||
-      user.profile?.first_name?.toLowerCase().includes(searchLower) ||
-      user.profile?.last_name?.toLowerCase().includes(searchLower)
-    )
-  }
-  
-  if (filters.roles && filters.roles.length > 0) {
-    filteredUsers = filteredUsers.filter(user => filters.roles!.includes(user.role))
-  }
-  
-  // Apply pagination
-  const total = filteredUsers.length
-  const offset = (page - 1) * limit
-  const paginatedUsers = filteredUsers.slice(offset, offset + limit)
-  
-  return {
-    data: paginatedUsers,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit)
+  try {
+    let whereConditions = ['1=1']
+    const params: any[] = []
+    let paramIndex = 1
+
+    // Apply filters
+    if (filters.search) {
+      whereConditions.push(`(
+        u.email ILIKE $${paramIndex} OR 
+        up.first_name ILIKE $${paramIndex} OR 
+        up.last_name ILIKE $${paramIndex}
+      )`)
+      params.push(`%${filters.search}%`)
+      paramIndex++
+    }
+
+    if (filters.roles && filters.roles.length > 0) {
+      const rolePlaceholders = filters.roles.map((_, i) => `$${paramIndex + i}`).join(',')
+      whereConditions.push(`u.role IN (${rolePlaceholders})`)
+      params.push(...filters.roles)
+      paramIndex += filters.roles.length
+    }
+
+    if (filters.is_onboarded !== undefined) {
+      whereConditions.push(`up.is_onboarded = $${paramIndex}`)
+      params.push(filters.is_onboarded)
+      paramIndex++
+    }
+
+    // Build the main query
+    const whereClause = whereConditions.join(' AND ')
+    
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE ${whereClause}
+    `
+    
+    const countResult = await query(countQuery, params)
+    const total = parseInt(countResult[0]?.total || '0')
+
+    // Get paginated data
+    const offset = (page - 1) * limit
+    const dataQuery = `
+      SELECT 
+        u.id,
+        u.email,
+        u.role,
+        u.created_at,
+        u.updated_at,
+        up.first_name,
+        up.last_name,
+        up.avatar_url,
+        up.phone,
+        up.location_country,
+        up.location_city,
+        up.bio,
+        up.is_onboarded
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE ${whereClause}
+      ORDER BY u.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `
+    
+    params.push(limit, offset)
+    const usersResult = await query(dataQuery, params)
+
+    // Transform the data to match the expected interface
+    const users: UserWithProfile[] = usersResult.map((row: any) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      profile: row.first_name || row.last_name ? {
+        user_id: row.id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        avatar_url: row.avatar_url,
+        phone: row.phone,
+        location_country: row.location_country,
+        location_city: row.location_city,
+        bio: row.bio,
+        website_url: null, // Not available in current schema
+        is_onboarded: row.is_onboarded || false,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      } : null
+    }))
+
+    return {
+      data: users,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+
+  } catch (error) {
+    console.error('Error in getUsers:', error)
+    throw new Error('Failed to fetch users')
   }
 }
 
@@ -427,21 +501,41 @@ export async function getUserStats(): Promise<{
   onboardedUsers: number;
 }> {
   
-  // TEMPORARY: Use mock data instead of database
-  console.log('getUserStats: Using mock data (database not yet set up)')
-  
-  const usersByRole: Record<UserRole, number> = {
-    BRAND: 1,
-    INFLUENCER_SIGNED: 1,
-    INFLUENCER_PARTNERED: 1,
-    STAFF: 1,
-    ADMIN: 1
-  }
+  try {
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN u.role = 'BRAND' THEN 1 END) as brand_count,
+        COUNT(CASE WHEN u.role = 'INFLUENCER_SIGNED' THEN 1 END) as influencer_signed_count,
+        COUNT(CASE WHEN u.role = 'INFLUENCER_PARTNERED' THEN 1 END) as influencer_partnered_count,
+        COUNT(CASE WHEN u.role = 'STAFF' THEN 1 END) as staff_count,
+        COUNT(CASE WHEN u.role = 'ADMIN' THEN 1 END) as admin_count,
+        COUNT(CASE WHEN u.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as recent,
+        COUNT(CASE WHEN up.is_onboarded = true THEN 1 END) as onboarded
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+    `
+    
+    const result = await query(statsQuery)
+    const stats = result[0]
 
-  return {
-    totalUsers: MOCK_USERS.length,
-    usersByRole,
-    recentUsers: 2, // Mock recent users in last 7 days
-    onboardedUsers: 4 // Mock onboarded users
+    const usersByRole: Record<UserRole, number> = {
+      BRAND: parseInt(stats.brand_count || '0'),
+      INFLUENCER_SIGNED: parseInt(stats.influencer_signed_count || '0'),
+      INFLUENCER_PARTNERED: parseInt(stats.influencer_partnered_count || '0'),
+      STAFF: parseInt(stats.staff_count || '0'),
+      ADMIN: parseInt(stats.admin_count || '0')
+    }
+
+    return {
+      totalUsers: parseInt(stats.total || '0'),
+      usersByRole,
+      recentUsers: parseInt(stats.recent || '0'),
+      onboardedUsers: parseInt(stats.onboarded || '0')
+    }
+
+  } catch (error) {
+    console.error('Error in getUserStats:', error)
+    throw new Error('Failed to fetch user statistics')
   }
 } 
