@@ -11,6 +11,8 @@ interface LanguageBreakdownSectionProps {
 export const LanguageBreakdownSection = ({ influencer }: LanguageBreakdownSectionProps) => {
   const languages = influencer.audience_languages || []
   const hasLanguages = languages.length > 0
+  
+
 
   if (!hasLanguages) {
     return (
@@ -52,8 +54,8 @@ export const LanguageBreakdownSection = ({ influencer }: LanguageBreakdownSectio
             </h4>
             <div className="space-y-2">
               {topLanguages.map((language, index) => {
-                // Mock percentage for visualization (in real implementation, this would come from API)
-                const percentage = Math.max(5, 60 - (index * 6))
+                // Use real percentage from Modash API
+                const percentage = typeof language === 'string' ? 0 : language.percentage || 0
                 const languageName = typeof language === 'string' ? language : language.name || 'Unknown'
                 
                 return (

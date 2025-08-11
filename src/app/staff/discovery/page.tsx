@@ -13,6 +13,7 @@ import TextInputFilter from '../../../components/filters/TextInputFilter'
 import ToggleFilter from '../../../components/filters/ToggleFilter'
 import CustomDropdown from '../../../components/filters/CustomDropdown'
 import MultiSelectDropdown from '../../../components/filters/MultiSelectDropdown'
+import AutocompleteInput from '../../../components/filters/AutocompleteInput'
 import { FOLLOWER_VIEW_OPTIONS } from '../../../constants/filterOptions'
 import { 
   Search, 
@@ -932,11 +933,11 @@ function DiscoverySearchInterface({
                           Audience
                         </button>
                       </div>
-                      <CustomDropdown
+                      <AutocompleteInput
                         value={selectedLocation}
                         onChange={setSelectedLocation}
-                        options={LOCATION_OPTIONS}
-                        placeholder="All Locations"
+                        placeholder="Search locations..."
+                        apiEndpoint="/api/discovery/locations"
                       />
                     </div>
                   </div>
@@ -1037,11 +1038,11 @@ function DiscoverySearchInterface({
                           Audience
                         </button>
                       </div>
-                      <CustomDropdown
+                      <AutocompleteInput
                         value={selectedLanguage}
                         onChange={setSelectedLanguage}
-                        options={LANGUAGE_OPTIONS}
-                        placeholder="Any Language"
+                        placeholder="Search languages..."
+                        apiEndpoint="/api/discovery/languages"
                       />
                     </div>
                   </div>
@@ -1200,22 +1201,14 @@ function DiscoverySearchInterface({
                   {selectedPlatform === 'tiktok' ? (
                     // TikTok-specific content layout
                     <div className="grid grid-cols-1 gap-4">
-                      {/* Hashtags */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Search</label>
-                            <input
-                              type="text"
-                              value={hashtags}
-                              onChange={(e) => setHashtags(e.target.value)}
-                              placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Hashtags with Autocomplete */}
+                      <AutocompleteInput
+                        value={hashtags}
+                        onChange={setHashtags}
+                        placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
+                        apiEndpoint="/api/discovery/hashtags"
+                        label={getContentOptions().hashtags}
+                      />
 
                       {/* Mentions */}
                       <div>
@@ -1254,22 +1247,14 @@ function DiscoverySearchInterface({
                   ) : selectedPlatform === 'youtube' ? (
                     // YouTube-specific content layout
                     <div className="grid grid-cols-1 gap-4">
-                      {/* Topics */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().topics}</label>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Search</label>
-                            <input
-                              type="text"
-                              value={topics}
-                              onChange={(e) => setTopics(e.target.value)}
-                              placeholder="Search topics..."
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Topics with Autocomplete */}
+                      <AutocompleteInput
+                        value={topics}
+                        onChange={setTopics}
+                        placeholder="Search topics..."
+                        apiEndpoint="/api/discovery/topics"
+                        label={getContentOptions().topics}
+                      />
 
                       {/* Transcript */}
                       <div>
@@ -1299,22 +1284,14 @@ function DiscoverySearchInterface({
                         onTargetChange={setContentCategoriesTarget}
                       />
 
-                      {/* Hashtags/Tags */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().hashtags}</label>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Search</label>
-                            <input
-                              type="text"
-                              value={hashtags}
-                              onChange={(e) => setHashtags(e.target.value)}
-                              placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Hashtags with Autocomplete */}
+                      <AutocompleteInput
+                        value={hashtags}
+                        onChange={setHashtags}
+                        placeholder={`Search ${getContentOptions().hashtags.toLowerCase()}...`}
+                        apiEndpoint="/api/discovery/hashtags"
+                        label={getContentOptions().hashtags}
+                      />
 
                       {/* Captions/Descriptions */}
                       <div>
@@ -2271,7 +2248,7 @@ function DiscoveryPageClient() {
       } else if (hasComplexFilters) {
         console.log('🎯 Using advanced search (Search Influencers API)')
         // Transform current filters to new API format
-        const searchFilters = {
+        const searchFilters: any = {
           influencer: {},
           audience: {}
         }
@@ -2499,10 +2476,10 @@ function DiscoveryPageClient() {
         platformDataKeys: platformData ? Object.keys(platformData) : 'No platform data'
       })
       
-      // Try to fetch comprehensive influencer report with demographics
+      // Fetch core profile data first (faster)
       try {
-        console.log('📊 Fetching comprehensive influencer report...')
-        const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
+        console.log('📊 Step 1: Fetching core influencer profile...')
+        const coreResponse = await fetch(`${window.location.origin}/api/discovery/profile`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2524,6 +2501,91 @@ function DiscoveryPageClient() {
             }
           })
         })
+        
+        // Process core data first to show basic profile immediately
+        if (coreResponse.ok) {
+          const coreResult = await coreResponse.json()
+          if (coreResult.success && coreResult.data) {
+            // Show basic profile immediately
+            const coreInfluencer = {
+              ...influencer,
+              // Pure Modash data - no .value wrappers
+              followers: coreResult.data.followers || influencer.followers,
+              engagement_rate: coreResult.data.engagementRate || influencer.engagement_rate,
+              avgLikes: coreResult.data.avgLikes || 0,
+              avgComments: coreResult.data.avgComments || 0,
+              avgShares: coreResult.data.avgShares || 0,
+              fake_followers_percentage: coreResult.data.fake_followers_percentage,
+              credibility: coreResult.data.credibility,
+              // Rich Modash audience data (already structured for UI)
+              audience: coreResult.data.audience,
+              audience_interests: coreResult.data.audience_interests,
+              audience_languages: coreResult.data.audience_languages,
+              relevant_hashtags: coreResult.data.relevant_hashtags,
+              brand_partnerships: coreResult.data.brand_partnerships,
+              content_topics: coreResult.data.content_topics,
+              // Raw Modash data for advanced features
+              genders: coreResult.data.genders,
+              ages: coreResult.data.ages,
+              geoCountries: coreResult.data.geoCountries,
+              languages: coreResult.data.languages,
+              interests: coreResult.data.interests
+            }
+            
+            setDetailInfluencer(coreInfluencer)
+            setDetailLoading(false) // Show basic profile
+            
+            console.log('✅ Step 1 complete: Core profile loaded')
+            
+            // Step 2: Fetch extended data in background
+            console.log('📊 Step 2: Fetching extended profile data...')
+            try {
+              const extendedResponse = await fetch(`${window.location.origin}/api/discovery/profile-extended`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: userId,
+                  platform: actualPlatform,
+                  sections: ['hashtags', 'partnerships', 'topics', 'interests', 'languages'] // Only request what we need
+                })
+              })
+              
+              if (extendedResponse.ok) {
+                const extendedResult = await extendedResponse.json()
+                if (extendedResult.success && extendedResult.data) {
+                  // Merge extended data with core data
+                  const fullInfluencer = {
+                    ...coreInfluencer,
+                    relevant_hashtags: extendedResult.data.hashtags?.value || [],
+                    brand_partnerships: extendedResult.data.partnerships?.value || [],
+                    content_topics: extendedResult.data.topics?.value || [],
+                    audience_interests: extendedResult.data.interests?.value || [],
+                    audience_languages: extendedResult.data.languages?.value || [],
+                    extendedDataConfidence: {
+                      hashtags: extendedResult.data.hashtags?.confidence || 'low',
+                      partnerships: extendedResult.data.partnerships?.confidence || 'low',
+                      topics: extendedResult.data.topics?.confidence || 'low',
+                      interests: extendedResult.data.interests?.confidence || 'low',
+                      languages: extendedResult.data.languages?.confidence || 'low'
+                    }
+                  }
+                  
+                  setDetailInfluencer(fullInfluencer)
+                  console.log('✅ Step 2 complete: Extended profile data loaded')
+                }
+              }
+            } catch (extendedError) {
+              console.warn('⚠️ Extended data fetch failed (non-critical):', extendedError)
+              // Core profile still works without extended data
+            }
+            
+            return // Exit here since we've handled the response
+          }
+        }
+        
+        // Fallback to old method if new tiered approach fails
+        console.log('⚠️ Tiered loading failed, falling back to single request...')
+        const response = coreResponse
         
         if (response.ok) {
           const result = await response.json()

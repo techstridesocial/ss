@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { modashService } from '../../../../lib/services/modash'
+import { listHashtags } from '../../../../lib/services/modash'
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     
     console.log('🔍 Hashtags API request:', { query, limit })
     
-    const result = await modashService.listHashtags(query, limit)
+    const result = await listHashtags(query || 'fitness', limit)
     
     return NextResponse.json(result)
   } catch (error) {

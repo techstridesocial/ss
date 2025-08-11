@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { modashService } from '../../../../lib/services/modash'
+import { listTopics } from '../../../../lib/services/modash'
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     
     console.log('🔍 Topics API request:', { query, limit })
     
-    const result = await modashService.listTopics(query, limit)
+    const result = await listTopics(query || 'lifestyle', limit)
     
     return NextResponse.json(result)
   } catch (error) {

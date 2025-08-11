@@ -11,6 +11,8 @@ interface AudienceInterestsSectionProps {
 export const AudienceInterestsSection = ({ influencer }: AudienceInterestsSectionProps) => {
   const interests = influencer.audience_interests || []
   const hasInterests = interests.length > 0
+  
+
 
   if (!hasInterests) {
     return (
@@ -52,8 +54,8 @@ export const AudienceInterestsSection = ({ influencer }: AudienceInterestsSectio
             </h4>
             <div className="space-y-2">
               {topInterests.map((interest, index) => {
-                // Mock percentage for visualization (in real implementation, this would come from API)
-                const percentage = Math.max(5, 45 - (index * 3))
+                // Use real percentage from Modash API
+                const percentage = typeof interest === 'string' ? 0 : interest.percentage || 0
                 return (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">

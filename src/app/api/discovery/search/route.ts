@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { modashService } from '../../../../lib/services/modash'
+import { searchInfluencers, getProfileReport, getPerformanceData } from '../../../../lib/services/modash'
 import { getRosterInfluencerUsernames } from '../../../../lib/db/queries/influencers'
 import { 
   storeDiscoveredInfluencer, 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       console.log('🆕 Using new List Users API for simple search:', body.searchQuery)
       
       try {
-        const result = await modashService.listUsers(body.searchQuery.trim(), 50)
+        const result = await searchInfluencers({ query: body.searchQuery.trim(), limit: 50 })
         
         if (result.error || !result.users || result.users.length === 0) {
           console.error('❌ List Users API failed or returned no results, falling back to Search Influencers API:', {
@@ -141,20 +141,70 @@ export async function POST(request: NextRequest) {
           })
           // Fall through to complex search which should find "cristiano"
         } else {
-          // Transform List Users API response to match our expected format
-          let transformedResults = result.users.map(user => ({
-            userId: user.userId,
-            username: user.username,
-            display_name: user.username, // Use username as display name
-            handle: user.username, // Add handle field for consistency
-            platform: 'instagram',
-            followers: user.followers,
-            engagement_rate: null, // Will be fetched from Performance Data API
-            profile_picture: user.profile_picture || user.picture || '', // Try both fields
-            verified: user.isVerified || false,
-            location: 'Unknown',
-            score: 0,
-            already_imported: false
+          // Transform List Users API response and enrich with profile report data
+          console.log('📊 Enriching search results with full profile reports...')
+          
+          let transformedResults = await Promise.all(result.users.map(async (user) => {
+            try {
+              // Fetch full profile report for each user to get engagement rate and complete data
+              const profileReport = await getProfileReport(user.userId, 'instagram')
+              
+              if (profileReport && !profileReport.error && profileReport.profile?.profile) {
+                const profileData = profileReport.profile.profile
+                console.log(`✅ Got profile data for @${user.username}: ${profileData.engagementRate} engagement`)
+                
+                return {
+                  userId: user.userId,
+                  username: user.username,
+                  display_name: profileData.fullname || user.username,
+                  handle: user.username,
+                  platform: 'instagram',
+                  followers: profileData.followers || user.followers,
+                  engagement_rate: profileData.engagementRate || 0,
+                  profile_picture: profileData.picture || user.picture || '',
+                  verified: profileData.isVerified || user.isVerified || false,
+                  location: 'Unknown', // Could be enhanced with location data from profile
+                  score: 0,
+                  already_imported: false,
+                  // Additional rich data available for the table
+                  avgLikes: profileData.avgLikes,
+                  avgComments: profileData.avgComments,
+                  fullname: profileData.fullname
+                }
+              } else {
+                console.log(`⚠️ Profile report failed for @${user.username}, using basic data`)
+                return {
+                  userId: user.userId,
+                  username: user.username,
+                  display_name: user.username,
+                  handle: user.username,
+                  platform: 'instagram',
+                  followers: user.followers,
+                  engagement_rate: 0, // Fallback when profile report fails
+                  profile_picture: user.picture || '',
+                  verified: user.isVerified || false,
+                  location: 'Unknown',
+                  score: 0,
+                  already_imported: false
+                }
+              }
+            } catch (error) {
+              console.log(`❌ Error enriching @${user.username}:`, error.message)
+              return {
+                userId: user.userId,
+                username: user.username,
+                display_name: user.username,
+                handle: user.username,
+                platform: 'instagram',
+                followers: user.followers,
+                engagement_rate: 0,
+                profile_picture: user.picture || '',
+                verified: user.isVerified || false,
+                location: 'Unknown',
+                score: 0,
+                already_imported: false
+              }
+            }
           }))
           
           // For exact search mode, filter to show only exact username match
@@ -174,32 +224,14 @@ export async function POST(request: NextRequest) {
           if (exactMatch) {
             console.log('🎯 Exact match found, filtering to show only exact result:', exactMatch.username)
             
-            // ALWAYS fetch real engagement rate for exact matches using Performance Data API
-            try {
-              const instagramUrl = `https://www.instagram.com/${exactMatch.username}/`
-              console.log('📊 Fetching REAL engagement data from Performance Data API:', instagramUrl)
-              
-              const performanceResult = await modashService.getPerformanceData(instagramUrl, 2) // Allow 2 retries
-              
-              if (performanceResult.success && performanceResult.data) {
-                // Update with REAL API data
-                exactMatch.engagement_rate = performanceResult.data.engagementRate || 0
-                
-                console.log('✅ GOT REAL ENGAGEMENT DATA:', {
-                  username: exactMatch.username,
-                  realEngagementRate: performanceResult.data.engagementRate,
-                  avgLikes: performanceResult.data.avgLikes,
-                  avgComments: performanceResult.data.avgComments,
-                  dataSource: 'Performance Data API'
-                })
-              } else {
-                console.log('⚠️ Performance Data API failed, setting engagement to 0:', performanceResult.error)
-                exactMatch.engagement_rate = 0 // Better than hardcoded value
-              }
-            } catch (error) {
-              console.log('❌ Error fetching real engagement rate:', error)
-              exactMatch.engagement_rate = 0 // Fallback to 0, not hardcoded
-            }
+            // Profile data already enriched above, no need to fetch again
+            console.log('✅ Using enriched profile data:', {
+              username: exactMatch.username,
+              engagementRate: exactMatch.engagement_rate,
+              followers: exactMatch.followers,
+              avgLikes: exactMatch.avgLikes,
+              fullname: exactMatch.fullname
+            })
             
             transformedResults = [exactMatch] // Only show the exact match
           } else {
@@ -242,7 +274,7 @@ export async function POST(request: NextRequest) {
           const filters = mapToModashFilters({ ...body, platform })
           
           console.log(`Searching ${platform}...`)
-          const result = await modashService.searchDiscovery(filters)
+          const result = await searchInfluencers(filters)
           
           return {
             platform,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { modashService } from '../../../../lib/services/modash'
+import { listLocations } from '../../../../lib/services/modash'
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     
     console.log('🔍 Locations API request:', { query, limit })
     
-    const result = await modashService.listLocations(query, limit)
+    const result = await listLocations(query || 'united states', limit)
     
     return NextResponse.json(result)
   } catch (error) {
