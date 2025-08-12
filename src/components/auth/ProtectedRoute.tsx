@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, ReactNode } from 'react'
+import { useEffect, ReactNode, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { useUserRole, useCanAccessPortal } from '../../lib/auth/hooks'
@@ -67,6 +67,87 @@ export function ProtectedRoute({
 
 // Specific protected route components for each portal
 export function BrandProtectedRoute({ children }: { children: ReactNode }) {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const [onboardingStatus, setOnboardingStatus] = useState<{
+    is_onboarded: boolean
+    loading: boolean
+    error?: string
+  }>({
+    is_onboarded: true, // Default to true to avoid flashing
+    loading: true
+  })
+
+  // Check onboarding status for brands
+  useEffect(() => {
+    async function checkOnboardingStatus() {
+      // Wait for Clerk to fully load
+      if (!isLoaded) {
+        return
+      }
+
+      if (!user) {
+        setOnboardingStatus({ is_onboarded: true, loading: false })
+        return
+      }
+
+      // Only check for brand users
+      const role = user.publicMetadata?.role as string
+      if (role !== 'BRAND') {
+        setOnboardingStatus({ is_onboarded: true, loading: false })
+        return
+      }
+
+      try {
+        const response = await fetch('/api/onboarding-status')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Set status first
+          setOnboardingStatus({
+            is_onboarded: data.is_onboarded,
+            loading: false
+          })
+
+          // Then handle redirect if needed
+          if (!data.is_onboarded && !window.location.pathname.includes('/onboarding')) {
+            // Use replace to avoid history stack issues
+            router.replace('/brand/onboarding')
+          }
+        } else {
+          setOnboardingStatus({ is_onboarded: true, loading: false })
+        }
+      } catch (error) {
+        console.error('Failed to check brand onboarding status:', error)
+        setOnboardingStatus({
+          is_onboarded: true,
+          loading: false,
+          error: 'Failed to check onboarding status'
+        })
+      }
+    }
+
+    checkOnboardingStatus()
+  }, [isLoaded, user, router])
+
+  // Show loading while checking onboarding
+  if (onboardingStatus.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+      </div>
+    )
+  }
+
+  // Show loading while redirecting to onboarding (but not if already on onboarding page)
+  if (!onboardingStatus.is_onboarded && !window.location.pathname.includes('/onboarding')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+      </div>
+    )
+  }
+
   return (
     <ProtectedRoute requiredPortal="brand">
       {children}
@@ -75,6 +156,87 @@ export function BrandProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 export function InfluencerProtectedRoute({ children }: { children: ReactNode }) {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const [onboardingStatus, setOnboardingStatus] = useState<{
+    is_onboarded: boolean
+    loading: boolean
+    error?: string
+  }>({
+    is_onboarded: true, // Default to true to avoid flashing
+    loading: true
+  })
+
+  // Check onboarding status for influencers
+  useEffect(() => {
+    async function checkOnboardingStatus() {
+      // Wait for Clerk to fully load
+      if (!isLoaded) {
+        return
+      }
+
+      if (!user) {
+        setOnboardingStatus({ is_onboarded: true, loading: false })
+        return
+      }
+
+      // Only check for influencer users
+      const role = user.publicMetadata?.role as string
+      if (!['INFLUENCER_SIGNED', 'INFLUENCER_PARTNERED'].includes(role)) {
+        setOnboardingStatus({ is_onboarded: true, loading: false })
+        return
+      }
+
+      try {
+        const response = await fetch('/api/onboarding-status')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Set status first
+          setOnboardingStatus({
+            is_onboarded: data.is_onboarded,
+            loading: false
+          })
+
+          // Then handle redirect if needed
+          if (!data.is_onboarded && !window.location.pathname.includes('/onboarding')) {
+            // Use replace to avoid history stack issues
+            router.replace('/influencer/onboarding')
+          }
+        } else {
+          setOnboardingStatus({ is_onboarded: true, loading: false })
+        }
+      } catch (error) {
+        console.error('Failed to check influencer onboarding status:', error)
+        setOnboardingStatus({
+          is_onboarded: true,
+          loading: false,
+          error: 'Failed to check onboarding status'
+        })
+      }
+    }
+
+    checkOnboardingStatus()
+  }, [isLoaded, user, router])
+
+  // Show loading while checking onboarding
+  if (onboardingStatus.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+      </div>
+    )
+  }
+
+  // Show loading while redirecting to onboarding (but not if already on onboarding page)
+  if (!onboardingStatus.is_onboarded && !window.location.pathname.includes('/onboarding')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+      </div>
+    )
+  }
+
   return (
     <ProtectedRoute requiredPortal="influencer">
       {children}

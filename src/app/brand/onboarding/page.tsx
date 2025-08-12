@@ -171,8 +171,17 @@ function BrandOnboardingPageContent() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Onboarding failed')
+        let errorMessage = 'Onboarding failed'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          // If JSON parsing fails, it's likely an HTML error page
+          const textError = await response.text()
+          console.error('Server error response:', textError)
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()

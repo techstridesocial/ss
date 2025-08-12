@@ -86,10 +86,14 @@ export async function getPaymentInfo(influencerId: string): Promise<DatabaseResp
       decryptedDetails = JSON.parse(decrypted)
     } catch (error) {
       console.error('Failed to decrypt payment details:', error)
+      console.error('Payment record ID:', payment.id)
+      console.error('Encrypted details (first 50 chars):', payment.encrypted_details?.substring(0, 50))
+      
+      // Instead of failing completely, return null to indicate no valid payment info
       return {
-        success: false,
-        error: 'Failed to decrypt payment details',
-        message: 'Payment information corrupted'
+        success: true,
+        data: null,
+        message: 'Payment information corrupted - please re-enter your payment details'
       }
     }
 

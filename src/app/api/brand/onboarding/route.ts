@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 
 interface OnboardingRequest {
@@ -51,12 +51,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (data.description.length < 10) {
-      return NextResponse.json(
-        { error: 'Company description must be at least 10 characters long' }, 
-        { status: 400 }
-      )
-    }
+
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -100,20 +95,51 @@ export async function POST(request: NextRequest) {
 
     const mappedBudget = budgetMapping[data.annual_budget] || data.annual_budget
 
-    // Get user_id from users table using clerk_id
-    const userResult = await query<{ id: string }>(
+    // Get user_id from users table using clerk_id, create if doesn't exist
+    let userResult = await query<{ id: string }>(
       'SELECT id FROM users WHERE clerk_id = $1',
       [userId]
     )
 
-    if (userResult.length === 0 || !userResult[0]) {
-      return NextResponse.json(
-        { error: 'User not found' }, 
-        { status: 404 }
-      )
-    }
+    let user_id: string
 
-    const user_id = userResult[0].id
+    if (userResult.length === 0 || !userResult[0]) {
+      // User doesn't exist, create one automatically
+      console.log('User not found, creating new brand record for clerk_id:', userId)
+      
+      try {
+        // Get user details from Clerk
+        const client = await clerkClient()
+        const clerkUser = await client.users.getUser(userId)
+        const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
+        const userRole = clerkUser.publicMetadata?.role as string || 'BRAND'
+        
+        console.log('Creating brand user with email:', userEmail, 'role:', userRole)
+        
+        const newUserResult = await query<{ id: string }>(
+          `INSERT INTO users (clerk_id, email, status, role) 
+           VALUES ($1, $2, $3, $4) 
+           RETURNING id`,
+          [userId, userEmail, 'ACTIVE', userRole]
+        )
+        
+        if (newUserResult.length === 0 || !newUserResult[0]) {
+          throw new Error('INSERT returned no results')
+        }
+        
+        user_id = newUserResult[0].id
+        console.log('✅ Created new brand user with ID:', user_id)
+        
+      } catch (createUserError: any) {
+        console.error('Error creating brand user:', createUserError)
+        return NextResponse.json(
+          { error: 'Database error: ' + (createUserError?.message || 'Could not create user record') }, 
+          { status: 500 }
+        )
+      }
+    } else {
+      user_id = userResult[0].id
+    }
 
     // Start transaction to create brand and contact records
     const result = await transaction(async (client) => {
@@ -162,21 +188,40 @@ export async function POST(request: NextRequest) {
         WHERE id = $1
       `, [user_id])
 
-      // Update or insert user profile
-      await client.query(`
-        INSERT INTO user_profiles (
-          user_id, first_name, last_name, is_onboarded
-        ) VALUES ($1, $2, $3, $4)
-        ON CONFLICT (user_id) 
-        DO UPDATE SET 
-          is_onboarded = $4,
-          updated_at = NOW()
-      `, [
-        user_id,
-        data.contact_name.split(' ')[0] || '',
-        data.contact_name.split(' ').slice(1).join(' ') || '',
-        true
-      ])
+      // Check if user profile exists and update or insert
+      const existingProfile = await client.query(
+        'SELECT id FROM user_profiles WHERE user_id = $1',
+        [user_id]
+      )
+
+      if (existingProfile.rows.length > 0) {
+        // Update existing profile
+        await client.query(`
+          UPDATE user_profiles SET 
+            first_name = $2,
+            last_name = $3,
+            is_onboarded = $4,
+            updated_at = NOW()
+          WHERE user_id = $1
+        `, [
+          user_id,
+          data.contact_name.split(' ')[0] || '',
+          data.contact_name.split(' ').slice(1).join(' ') || '',
+          true
+        ])
+      } else {
+        // Create new profile
+        await client.query(`
+          INSERT INTO user_profiles (
+            user_id, first_name, last_name, is_onboarded
+          ) VALUES ($1, $2, $3, $4)
+        `, [
+          user_id,
+          data.contact_name.split(' ')[0] || '',
+          data.contact_name.split(' ').slice(1).join(' ') || '',
+          true
+        ])
+      }
 
       return { brandId }
     })

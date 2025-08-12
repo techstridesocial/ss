@@ -100,8 +100,17 @@ function InfluencerOnboardingPageContent() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Onboarding failed')
+        let errorMessage = 'Onboarding failed'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          // If JSON parsing fails, it's likely an HTML error page
+          const textError = await response.text()
+          console.error('Server error response:', textError)
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
@@ -122,7 +131,14 @@ function InfluencerOnboardingPageContent() {
   }
 
   const updateFormData = (field: keyof OnboardingData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    // Special handling for phone number to prevent letters
+    if (field === 'phone_number') {
+      // Only allow numbers, spaces, dashes, parentheses, dots, and + symbol
+      const phoneValue = value.replace(/[^0-9\s\-\(\)\.\+]/g, '')
+      setFormData(prev => ({ ...prev, [field]: phoneValue }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
+    }
   }
 
   const canProceed = () => {
@@ -173,11 +189,17 @@ function InfluencerOnboardingPageContent() {
                </p>
              )}
              
-             {field === 'location' && (
-               <p className="text-cyan-200 text-sm text-center">
-                 Country or city (e.g., "London, UK" or "United States")
-               </p>
-             )}
+                         {field === 'phone_number' && (
+              <p className="text-cyan-200 text-sm text-center">
+                Numbers only - letters will be automatically removed
+              </p>
+            )}
+            
+            {field === 'location' && (
+              <p className="text-cyan-200 text-sm text-center">
+                Country or city (e.g., "London, UK" or "United States")
+              </p>
+            )}
            </motion.div>
          )
       
@@ -276,7 +298,7 @@ function InfluencerOnboardingPageContent() {
       case 'first_name': return 'Enter your first name'
       case 'last_name': return 'Enter your last name'
       case 'display_name': return 'e.g., Alex Thompson'
-      case 'phone_number': return '+44 7XXX XXXXXX (optional)'
+      case 'phone_number': return '+1234567890 or (123) 456-7890 (optional)'
       case 'location': return 'e.g., London, UK'
       case 'website': return 'https://yourwebsite.com (optional)'
       default: return ''

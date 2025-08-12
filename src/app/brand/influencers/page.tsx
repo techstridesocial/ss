@@ -807,7 +807,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   {/* Niches */}
                   <td className="px-3 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {influencer.niches.slice(0, 1).map((niche: string) => (
+                      {(influencer.niches || []).slice(0, 1).map((niche: string) => (
                         <span
                           key={niche}
                           className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg truncate max-w-full"
@@ -815,14 +815,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                           {niche}
                         </span>
                       ))}
-                      {influencer.niches.length > 1 && (
+                      {(influencer.niches || []).length > 1 && (
                         <div className="relative group">
                           <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg cursor-help">
-                            +{influencer.niches.length - 1}
+                            +{(influencer.niches || []).length - 1}
                           </span>
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
-                            {influencer.niches.slice(1).join(', ')}
+                            {(influencer.niches || []).slice(1).join(', ')}
                             {/* Tooltip arrow */}
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
                           </div>

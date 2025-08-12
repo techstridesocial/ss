@@ -56,13 +56,27 @@ export async function GET(request: NextRequest) {
     }
 
     // Get payment information, summary, and history
-    const [paymentInfoResult, paymentSummaryResult, paymentHistoryResult] = await Promise.all([
-      getPaymentInfo(influencer_id),
-      getPaymentSummary(influencer_id),
-      getPaymentHistory(influencer_id)
-    ])
+    console.log('Fetching payment data for influencer:', influencer_id)
+    
+    let paymentInfoResult, paymentSummaryResult, paymentHistoryResult
+    
+    try {
+      [paymentInfoResult, paymentSummaryResult, paymentHistoryResult] = await Promise.all([
+        getPaymentInfo(influencer_id),
+        getPaymentSummary(influencer_id),
+        getPaymentHistory(influencer_id)
+      ])
+    } catch (queryError) {
+      console.error('Error in Promise.all for payment queries:', queryError)
+      throw queryError
+    }
+
+    console.log('Payment info result:', paymentInfoResult)
+    console.log('Payment summary result:', paymentSummaryResult)
+    console.log('Payment history result:', paymentHistoryResult)
 
     if (!paymentInfoResult.success) {
+      console.error('Payment info query failed:', paymentInfoResult.error)
       return NextResponse.json(
         { error: paymentInfoResult.error || 'Failed to fetch payment information' },
         { status: 500 }
@@ -70,6 +84,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!paymentSummaryResult.success) {
+      console.error('Payment summary query failed:', paymentSummaryResult.error)
       return NextResponse.json(
         { error: paymentSummaryResult.error || 'Failed to fetch payment summary' },
         { status: 500 }
@@ -77,6 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!paymentHistoryResult.success) {
+      console.error('Payment history query failed:', paymentHistoryResult.error)
       return NextResponse.json(
         { error: paymentHistoryResult.error || 'Failed to fetch payment history' },
         { status: 500 }
@@ -94,8 +110,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching payment data:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('Full error stack:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch payment data' },
+      { 
+        error: 'Failed to fetch payment data',
+        details: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     )
   }
