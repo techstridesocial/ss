@@ -38,7 +38,7 @@ export function useBrandOnboardingCheck() {
       }
 
       try {
-        const response = await fetch('/api/influencer/onboarding-status')
+          const response = await fetch('/api/onboarding-status')
         if (response.ok) {
           const data = await response.json()
           

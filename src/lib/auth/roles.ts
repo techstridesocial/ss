@@ -15,8 +15,6 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
 
     // Role should be stored in public metadata
     const role = user.publicMetadata?.role as UserRole
-    console.log('getCurrentUserRole: user.publicMetadata =', user.publicMetadata)
-    console.log('getCurrentUserRole: extracted role =', role)
     
     return role || null
   } catch (error) {

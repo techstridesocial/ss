@@ -1,21 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getUserInfo } from '../../../../lib/services/modash'
+import { getCreditUsage } from '../../../../lib/services/modash'
 
 export async function GET() {
   try {
     console.log('💳 Fetching Modash credit usage...')
     
-    const response = await getUserInfo()
-    
-    // Parse the actual Modash API response structure
-    const credits = response.billing?.credits || 3000
-    const rawRequests = response.billing?.rawRequests || 0
-    const creditUsage = {
-      used: rawRequests,
-      limit: credits,
-      remaining: credits - rawRequests,
-      resetDate: new Date()
-    }
+    const creditUsage = await getCreditUsage()
     
     console.log('✅ Credit usage fetched:', creditUsage)
     
@@ -26,7 +16,7 @@ export async function GET() {
         limit: creditUsage.limit,
         remaining: creditUsage.remaining,
         resetDate: creditUsage.resetDate,
-        percentage: Math.round((creditUsage.used / creditUsage.limit) * 100)
+        percentage: creditUsage.limit > 0 ? Math.round((creditUsage.used / creditUsage.limit) * 100) : 0
       }
     })
     

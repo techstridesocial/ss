@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { modashService } from '../../../../lib/services/modash'
+import { searchDiscovery } from '../../../../lib/services/modash'
 
 export async function POST(request: Request) {
   try {
@@ -24,8 +24,13 @@ export async function POST(request: Request) {
       filter = {}
     } = body
 
-    // Call the new search influencers API
-    const result = await modashService.searchInfluencers(filter, page, sort)
+    // Call the platform-aware discovery API (default instagram for v2 for now)
+    const result = await searchDiscovery('instagram', {
+      page,
+      limit: 15,
+      sort,
+      filter
+    })
 
     if (!result.success) {
       console.error('❌ Search v2 failed:', result.error)
@@ -36,7 +41,9 @@ export async function POST(request: Request) {
     }
 
     // Transform results to match our expected format
-    const allResults = [...(result.data?.directs || []), ...(result.data?.lookalikes || [])]
+    const directs = (result as any)?.data?.directs || (result as any)?.results || []
+    const lookalikes = (result as any)?.data?.lookalikes || []
+    const allResults = [...directs, ...lookalikes]
     
     const transformedResults = allResults.map(influencer => ({
       id: influencer.userId,
@@ -55,7 +62,7 @@ export async function POST(request: Request) {
     }))
 
     console.log('✅ Search v2 success:', {
-      totalFound: result.data?.total || 0,
+      totalFound: (result as any)?.data?.total || (result as any)?.total || 0,
       resultsReturned: transformedResults.length,
       isExactMatch: result.data?.isExactMatch
     })
@@ -65,13 +72,13 @@ export async function POST(request: Request) {
       influencers: transformedResults,
       pagination: {
         page,
-        total: result.data?.total || 0,
+        total: (result as any)?.data?.total || (result as any)?.total || 0,
         hasMore: transformedResults.length >= 15 && (result.data?.total || 0) > (page + 1) * 15
       },
       metadata: {
-        isExactMatch: result.data?.isExactMatch,
-        directsCount: result.data?.directs?.length || 0,
-        lookalikesCount: result.data?.lookalikes?.length || 0
+        isExactMatch: (result as any)?.data?.isExactMatch,
+        directsCount: directs.length || 0,
+        lookalikesCount: lookalikes.length || 0
       }
     })
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
+import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
@@ -1785,10 +1786,33 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         <InfluencerDetailPanel
           isOpen={detailPanelOpen}
           onClose={handleClosePanels}
-          influencer={selectedInfluencerDetail}
+          influencer={{
+            id: selectedInfluencerDetail.id,
+            name: selectedInfluencerDetail.display_name,
+            handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+            profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+            followers: selectedInfluencerDetail.total_followers || 0,
+            engagement_rate: selectedInfluencerDetail.total_engagement_rate,
+            avgViews: selectedInfluencerDetail.total_avg_views,
+            audience: {
+              locations: selectedInfluencerDetail.audience_locations?.map((loc: any) => ({
+                country: loc.country_name,
+                percentage: loc.percentage
+              })),
+              languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
+                language: (lang as any).language_name || (lang as any).name || String(lang),
+                percentage: (lang as any).percentage
+              }))
+            },
+            // Map to flexible types: allow names array if needed
+            audience_interests: [],
+            audience_languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
+              name: (lang as any).language_name || (lang as any).name || String(lang),
+              percentage: (lang as any).percentage
+            }))
+          }}
           selectedPlatform={selectedPlatform}
           onPlatformSwitch={handlePlatformSwitch}
-          onSave={handleSaveManagement}
         />
       )}
     </div>
@@ -1804,19 +1828,21 @@ export default function StaffRosterPage() {
   }, [])
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
-      <ModernStaffHeader />
-      
-      <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
-        isAnyPanelOpen ? 'mr-[400px]' : ''
-      }`}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <InfluencerTableClient 
-            searchParams={{}}
-            onPanelStateChange={handlePanelStateChange}
-          />
-        </Suspense>
-      </main>
-    </div>
+    <StaffProtectedRoute>
+      <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+        <ModernStaffHeader />
+        
+        <main className={`px-4 lg:px-8 pb-8 transition-all duration-300 ${
+          isAnyPanelOpen ? 'mr-[400px]' : ''
+        }`}>
+          <Suspense fallback={<div>Loading...</div>}>
+            <InfluencerTableClient 
+              searchParams={{}}
+              onPanelStateChange={handlePanelStateChange}
+            />
+          </Suspense>
+        </main>
+      </div>
+    </StaffProtectedRoute>
   )
 } 

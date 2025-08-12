@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { searchInfluencers, getProfileReport, getPerformanceData } from '../../../../lib/services/modash'
+import { searchInfluencers, getProfileReport, getPerformanceData, listUsers, searchDiscovery } from '../../../../lib/services/modash'
 import { getRosterInfluencerUsernames } from '../../../../lib/db/queries/influencers'
 import { 
   storeDiscoveredInfluencer, 
@@ -130,7 +130,23 @@ export async function POST(request: NextRequest) {
       console.log('🆕 Using new List Users API for simple search:', body.searchQuery)
       
       try {
-        const result = await searchInfluencers({ query: body.searchQuery.trim(), limit: 50 })
+        // Search all platforms in parallel using platform-aware listUsers
+        const platforms = ['instagram', 'tiktok', 'youtube'] as const
+        const listPromises = platforms.map(async (platform) => {
+          try {
+            const res = await listUsers(platform, { query: body.searchQuery!.trim(), limit: 50 })
+            return { platform, res }
+          } catch (e) {
+            return { platform, res: { users: [], error: (e as Error).message } }
+          }
+        })
+        const listResults = await Promise.all(listPromises)
+        const combinedUsers = listResults.flatMap(r => {
+          const { platform, res } = r as any
+          const users = res.users || []
+          return users.map((u: any) => ({ ...u, platform }))
+        })
+        const result = { users: combinedUsers }
         
         if (result.error || !result.users || result.users.length === 0) {
           console.error('❌ List Users API failed or returned no results, falling back to Search Influencers API:', {
@@ -141,13 +157,15 @@ export async function POST(request: NextRequest) {
           })
           // Fall through to complex search which should find "cristiano"
         } else {
-          // Transform List Users API response and enrich with profile report data
-          console.log('📊 Enriching search results with full profile reports...')
-          
-          let transformedResults = await Promise.all(result.users.map(async (user) => {
+          // Transform List Users API response and enrich with profile report data (credit-safe)
+          console.log('📊 Enriching top results with full profile reports (credit-safe)...')
+          const ENRICH_MAX = 10
+          const toEnrich = result.users.slice(0, ENRICH_MAX)
+          let transformedResults = await Promise.all(toEnrich.map(async (user) => {
             try {
               // Fetch full profile report for each user to get engagement rate and complete data
-              const profileReport = await getProfileReport(user.userId, 'instagram')
+               // Attempt to enrich based on known platform, default to instagram if unknown
+               const profileReport = await getProfileReport(user.userId, user.platform || 'instagram')
               
               if (profileReport && !profileReport.error && profileReport.profile?.profile) {
                 const profileData = profileReport.profile.profile
@@ -158,7 +176,7 @@ export async function POST(request: NextRequest) {
                   username: user.username,
                   display_name: profileData.fullname || user.username,
                   handle: user.username,
-                  platform: 'instagram',
+                   platform: user.platform || 'instagram',
                   followers: profileData.followers || user.followers,
                   engagement_rate: profileData.engagementRate || 0,
                   profile_picture: profileData.picture || user.picture || '',
@@ -178,7 +196,7 @@ export async function POST(request: NextRequest) {
                   username: user.username,
                   display_name: user.username,
                   handle: user.username,
-                  platform: 'instagram',
+                   platform: user.platform || 'instagram',
                   followers: user.followers,
                   engagement_rate: 0, // Fallback when profile report fails
                   profile_picture: user.picture || '',
@@ -274,14 +292,14 @@ export async function POST(request: NextRequest) {
           const filters = mapToModashFilters({ ...body, platform })
           
           console.log(`Searching ${platform}...`)
-          const result = await searchInfluencers(filters)
+          const result = await searchDiscovery(platform, { page: body.page || 0, limit: body.limit || 20, filter: filters })
           
           return {
             platform,
             success: true,
-            data: result.results || [],
-            total: result.total || 0,
-            creditsUsed: result.creditsUsed || 0
+            data: (result as any).results || (result as any).data || [],
+            total: (result as any).total || (result as any).data?.total || 0,
+            creditsUsed: (result as any).creditsUsed || 0
           }
         } catch (error) {
           console.error(`${platform} search failed:`, error)
@@ -751,20 +769,27 @@ function mapToModashFilters(body: DiscoverySearchBody) {
   
   // Location mapping (would need location ID mapping)
   if (body.selectedLocation && body.selectedLocation !== '') {
-    console.log('⚠️ Location filter temporarily disabled for debugging')
-    console.log('🔍 Received location:', body.selectedLocation)
-    // Map location names to Modash location IDs
-    const locationMapping = {
-      'united_kingdom': [826],
-      'united_states': [840], 
-      'canada': [124],
-      'australia': [36],
-      'germany': [276],
-      'france': [250]
+    // Map common slugs/names to ISO numeric codes expected by Modash
+    const locationMapping: Record<string, number[]> = {
+      united_kingdom: [826],
+      uk: [826],
+      great_britain: [826],
+      united_states: [840],
+      usa: [840],
+      us: [840],
+      canada: [124],
+      australia: [36],
+      germany: [276],
+      france: [250]
     }
-    // Temporarily disable location filtering
-    // filters.location = locationMapping[body.selectedLocation as keyof typeof locationMapping] || []
-    console.log('🔍 Location mapping would be:', locationMapping[body.selectedLocation as keyof typeof locationMapping])
+    const key = String(body.selectedLocation).toLowerCase().replace(/\s+/g, '_')
+    const mapped = locationMapping[key]
+    // Fallback: if user passed ISO2 like 'GB' or 'US', pass-through as array
+    if (mapped) {
+      ;(filters as any).location = mapped
+    } else if (typeof body.selectedLocation === 'string' && body.selectedLocation.length <= 3) {
+      ;(filters as any).location = [body.selectedLocation]
+    }
   }
   
   // Search query as relevance

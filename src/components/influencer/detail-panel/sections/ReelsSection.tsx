@@ -13,51 +13,71 @@ interface ReelsSectionProps {
 export const ReelsSection = ({ influencer }: ReelsSectionProps) => {
   const reelsData = influencer.content_performance?.reels
 
-  if (!reelsData) {
-    return null
+  // DEBUG: Check what data we have
+  console.log('🎬 ReelsSection Debug:', {
+    hasContentPerformance: !!influencer.content_performance,
+    contentPerformanceKeys: influencer.content_performance ? Object.keys(influencer.content_performance) : 'none',
+    hasReelsData: !!reelsData,
+    reelsTotal: reelsData?.total,
+    reelsKeys: reelsData ? Object.keys(reelsData) : 'none'
+  })
+
+  if (!reelsData || !reelsData.total || reelsData.total === 0) {
+    return (
+      <CollapsibleSection title="Reels Performance">
+        <div className="text-gray-500 text-sm italic">
+          No reels performance data available
+        </div>
+      </CollapsibleSection>
+    )
   }
 
+  // Extract median values from Modash API structure
+  const avgViews = reelsData.views?.median?.[0]?.value || reelsData.views?.mean?.[0]?.value
+  const avgLikes = reelsData.likes?.median?.[0]?.value || reelsData.likes?.mean?.[0]?.value  
+  const avgComments = reelsData.comments?.median?.[0]?.value || reelsData.comments?.mean?.[0]?.value
+  
+  // Calculate engagement rate if we have the data
+  const engagementRate = avgLikes && avgViews ? (avgLikes / avgViews) * 100 : null
+
   return (
-    <CollapsibleSection title="Reels">
+    <CollapsibleSection title="Reels Performance">
       <div className="space-y-1">
-        {reelsData.avg_plays && (
+        <MetricRow
+          icon={Video}
+          label="Total reels analyzed"
+          value={reelsData.total.toString()}
+        />
+        
+        {avgViews && (
           <MetricRow
             icon={Video}
-            label="Average reel plays"
-            value={formatNumber(reelsData.avg_plays)}
+            label="Average views"
+            value={formatNumber(avgViews)}
           />
         )}
         
-        {reelsData.engagement_rate && (
-          <MetricRow
-            icon={Heart}
-            label="Engagement rate"
-            value={formatPercentage(reelsData.engagement_rate)}
-            trend={influencer.growth_trends?.engagement_growth?.percentage}
-          />
-        )}
-        
-        {reelsData.avg_likes && (
+        {avgLikes && (
           <MetricRow
             icon={Heart}
             label="Average likes"
-            value={formatNumber(reelsData.avg_likes)}
+            value={formatNumber(avgLikes)}
           />
         )}
         
-        {reelsData.avg_comments && (
+        {avgComments && (
           <MetricRow
             icon={MessageCircle}
             label="Average comments"
-            value={formatNumber(reelsData.avg_comments)}
+            value={formatNumber(avgComments)}
           />
         )}
         
-        {reelsData.avg_shares && (
+        {engagementRate && (
           <MetricRow
-            icon={Share}
-            label="Average shares"
-            value={formatNumber(reelsData.avg_shares)}
+            icon={Heart}
+            label="Engagement rate"
+            value={formatPercentage(engagementRate / 100)}
           />
         )}
       </div>

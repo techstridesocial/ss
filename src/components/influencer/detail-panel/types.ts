@@ -105,11 +105,68 @@ export interface InfluencerData {
     name: string
     percentage?: number
   }> | string[]
-  audience_overlap?: Array<{
-    influencer_name: string
-    overlap_percentage: number
-    unique_audience?: number
+  
+  // 🆕 NEW: Missing fields from API
+  statHistory?: Array<{
+    month: string
+    followers: number
+    following: number
+    avgLikes: number
+    avgViews: number
+    avgComments: number
+    avgShares: number
   }>
+  postsCount?: number
+  postsCounts?: number
+  mentions?: Array<{
+    tag: string
+    weight: number
+  }>
+  statsByContentType?: {
+    all?: any
+    reels?: any
+  }
+  city?: string
+  state?: string
+  country?: string
+  ageGroup?: string
+  gender?: string
+  language?: {
+    code: string
+    name: string
+  }
+  contacts?: Array<{
+    type: string
+    value: string
+  }>
+  isPrivate?: boolean
+  accountType?: string
+  avgViews?: number
+  avgReelsPlays?: number
+  recentPosts?: Array<any>
+  popularPosts?: Array<any>
+  audience_notable?: number
+  audience_credibility?: number
+  audience_notable_users?: Array<any>
+  audience_lookalikes?: Array<any>
+  audience_ethnicities?: Array<any>
+  audience_reachability?: Array<any>
+  audience_types?: Array<any>
+  audience_genders_per_age?: Array<any>
+  audience_geo_cities?: Array<any>
+  audience_geo_states?: Array<any>
+  stats_compared?: any
+  audienceExtra?: any
+  paidPostPerformance?: number
+  paidPostPerformanceViews?: number
+  sponsoredPostsMedianViews?: number
+  sponsoredPostsMedianLikes?: number
+  nonSponsoredPostsMedianViews?: number
+  nonSponsoredPostsMedianLikes?: number
+  creator_interests?: Array<any>
+  creator_brand_affinity?: Array<any>
+  lookalikes?: Array<any>
+
 }
 
 export interface InfluencerDetailPanelProps {

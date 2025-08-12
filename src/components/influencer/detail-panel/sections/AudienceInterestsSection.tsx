@@ -9,7 +9,8 @@ interface AudienceInterestsSectionProps {
 }
 
 export const AudienceInterestsSection = ({ influencer }: AudienceInterestsSectionProps) => {
-  const interests = influencer.audience_interests || []
+  // Accept interests from multiple sources (normalized and raw Modash shape)
+  const interests = influencer.audience_interests || (influencer.audience?.interests ?? [])
   const hasInterests = interests.length > 0
   
 
@@ -55,7 +56,15 @@ export const AudienceInterestsSection = ({ influencer }: AudienceInterestsSectio
             <div className="space-y-2">
               {topInterests.map((interest, index) => {
                 // Use real percentage from Modash API
-                const percentage = typeof interest === 'string' ? 0 : interest.percentage || 0
+                // interest may be { name, weight } or { name, percentage }
+                let percentage = 0
+                if (typeof interest !== 'string') {
+                  if (typeof interest.percentage === 'number') {
+                    percentage = interest.percentage
+                  } else if (typeof interest.weight === 'number') {
+                    percentage = interest.weight * 100
+                  }
+                }
                 return (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
@@ -65,10 +74,10 @@ export const AudienceInterestsSection = ({ influencer }: AudienceInterestsSectio
                       <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-24">
                         <div 
                           className="bg-pink-500 h-2 rounded-full" 
-                          style={{ width: `${percentage}%` }}
+                          style={{ width: `${percentage.toFixed(2)}%` }}
                         ></div>
                       </div>
-                      <span className="text-xs text-gray-500 min-w-fit">{percentage}%</span>
+                      <span className="text-xs text-gray-500 min-w-fit">{percentage.toFixed(2)}%</span>
                     </div>
                   </div>
                 )

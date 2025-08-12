@@ -38,8 +38,9 @@ export default function Page() {
         <div className="w-full flex justify-center">
           <SignIn 
             appearance={appearance}
-            forceRedirectUrl="/dashboard"
-            signUpForceRedirectUrl="/dashboard"
+            afterSignInUrl="/"
+            afterSignUpUrl="/"
+            routing="hash"
           />
         </div>
       </div>

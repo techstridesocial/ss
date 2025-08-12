@@ -36,7 +36,7 @@ export default function Page() {
           </p>
         </div>
         <div className="w-full flex justify-center">
-          <SignUp appearance={appearance} />
+          <SignUp appearance={appearance} afterSignInUrl="/" afterSignUpUrl="/" />
         </div>
       </div>
     </div>

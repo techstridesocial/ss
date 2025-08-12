@@ -1,6 +1,6 @@
 'use client'
 
-import { Hash, Briefcase, Lightbulb } from 'lucide-react'
+import { Hash, Lightbulb } from 'lucide-react'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { InfluencerData } from '../types'
 
@@ -10,10 +10,9 @@ interface ContentStrategySectionProps {
 
 export const ContentStrategySection = ({ influencer }: ContentStrategySectionProps) => {
   const hashtags = influencer.relevant_hashtags || []
-  const partnerships = influencer.brand_partnerships || []
   const topics = influencer.content_topics || []
 
-  if (hashtags.length === 0 && partnerships.length === 0 && topics.length === 0) {
+  if (hashtags.length === 0 && topics.length === 0) {
     return null // Don't show section if no data
   }
 
@@ -29,14 +28,18 @@ export const ContentStrategySection = ({ influencer }: ContentStrategySectionPro
               <span className="font-medium text-gray-700">Relevant Hashtags</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              {hashtags.slice(0, 8).map((hashtag, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
-                >
-                  {hashtag.startsWith('#') ? hashtag : `#${hashtag}`}
-                </span>
-              ))}
+              {hashtags.slice(0, 8).map((hashtag, index) => {
+                // Handle both string hashtags and Modash hashtag objects
+                const tag = typeof hashtag === 'string' ? hashtag : hashtag?.tag || ''
+                return (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
+                  >
+                    {tag && tag.startsWith('#') ? tag : `#${tag}`}
+                  </span>
+                )
+              })}
             </div>
           </div>
         )}
@@ -61,30 +64,7 @@ export const ContentStrategySection = ({ influencer }: ContentStrategySectionPro
           </div>
         )}
 
-        {/* Brand Partnerships */}
-        {partnerships.length > 0 && (
-          <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <Briefcase className="w-4 h-4 text-purple-600" />
-              <span className="font-medium text-gray-700">Brand Partnerships</span>
-            </div>
-            <div className="space-y-1">
-              {partnerships.slice(0, 5).map((brand, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-200"
-                >
-                  <span className="text-sm font-medium text-purple-900">{brand.name}</span>
-                  {brand.count && (
-                    <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                      {brand.count.toLocaleString()} mentions
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
       </div>
     </CollapsibleSection>

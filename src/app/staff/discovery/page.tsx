@@ -1210,6 +1210,15 @@ function DiscoverySearchInterface({
                         label={getContentOptions().hashtags}
                       />
 
+                      {/* Interests (Audience Interests) */}
+                      <AutocompleteInput
+                        value={topics}
+                        onChange={setTopics}
+                        placeholder="Search interests..."
+                        apiEndpoint="/api/discovery/interests"
+                        label="Interests"
+                      />
+
                       {/* Mentions */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().mentions}</label>
@@ -1310,22 +1319,14 @@ function DiscoverySearchInterface({
                         </div>
                       </div>
 
-                      {/* Collaborations */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{getContentOptions().collaborations}</label>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Search</label>
-                            <input
-                              type="search"
-                              value={collaborations}
-                              onChange={(e) => setCollaborations(e.target.value)}
-                              placeholder="Start typing to search for brands"
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Collaborations (Brand Partnerships) with Autocomplete */}
+                      <AutocompleteInput
+                        value={collaborations}
+                        onChange={setCollaborations}
+                        placeholder="Search brand partnerships..."
+                        apiEndpoint="/api/discovery/partnerships"
+                        label={getContentOptions().collaborations}
+                      />
 
                       {/* Sponsored Content Toggle */}
                       <ToggleFilter
@@ -1927,18 +1928,25 @@ function DiscoveredInfluencersTable({
                 const primaryPlatformData = creator.platforms?.[selectedPlatform] || 
                   (creator.platforms ? Object.values(creator.platforms)[0] : creator)
                 
+                // Helpers to mirror popup logic
+                const displayName = creator.name || creator.displayName || creator.display_name || creator.username
+                const handle = creator.username || (primaryPlatformData as any)?.username
+                const pictureSrc = creator.picture || creator.profilePicture || creator.profile_picture
+                const toPct = (n: any): string => {
+                  const num = Number(n)
+                  if (!num) return '0.00%'
+                  return num > 1 ? `${num.toFixed(2)}%` : `${(num * 100).toFixed(2)}%`
+                }
+                const engagementRaw = (creator as any).engagementRate ?? (primaryPlatformData as any)?.engagement_rate ?? (creator as any).engagement_rate ?? (primaryPlatformData as any)?.engagementRate
+                
                 return (
                   <tr key={creator.creatorId || creator.userId || `creator-${index}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img 
-                          src={creator.profilePicture || creator.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.displayName || creator.display_name || creator.username)}&background=random&size=150&color=fff`} 
-                          alt={creator.displayName || creator.display_name || creator.username}
+                          src={pictureSrc} 
+                          alt={displayName || ''}
                           className="w-10 h-10 rounded-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.displayName || creator.display_name || creator.username)}&background=random&size=150&color=fff`;
-                          }}
                         />
                       </div>
                     </td>
@@ -1946,7 +1954,7 @@ function DiscoveredInfluencersTable({
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900 flex items-center">
-                            {creator.displayName || creator.display_name || creator.username}
+                            {displayName || creator.username}
                             {creator.verified && (
                               <CheckCircle size={14} className="ml-2 text-blue-500" />
                             )}
@@ -1963,7 +1971,7 @@ function DiscoveredInfluencersTable({
                             </div>
                           ) : (
                             <div className="text-sm text-gray-500">
-                              @{creator.username || (creator.platforms && Object.values(creator.platforms)[0] as any)?.username}
+                              @{handle}
                             </div>
                           )}
                         </div>
@@ -2062,7 +2070,7 @@ function DiscoveredInfluencersTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatNumber(primaryPlatformData.followers || creator.followers || 0)}
+                        {formatNumber((creator as any).followers ?? (primaryPlatformData as any)?.followers ?? 0)}
                       </div>
                       {isMultiPlatform && (
                         <div className="text-xs text-gray-500">
@@ -2072,7 +2080,7 @@ function DiscoveredInfluencersTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {(primaryPlatformData.engagement_rate || creator.engagement_rate || 0).toFixed(2)}%
+                        {toPct(engagementRaw)}
                       </div>
                       {isMultiPlatform && (
                         <div className="text-xs text-gray-500">{selectedPlatform} only</div>
@@ -2524,6 +2532,13 @@ function DiscoveryPageClient() {
               relevant_hashtags: coreResult.data.relevant_hashtags,
               brand_partnerships: coreResult.data.brand_partnerships,
               content_topics: coreResult.data.content_topics,
+              // Brand and sponsorship data for popup
+              sponsoredPosts: coreResult.data.brand_partnerships || [], // sponsoredPosts comes from brand_partnerships
+              brandAffinity: coreResult.data.brand_affinity || [],
+              mentions: coreResult.data.brand_mentions || [],
+              sponsored_performance: coreResult.data.sponsored_performance || {},
+              // Performance data for reels/stories sections
+              content_performance: coreResult.data.content_performance || null,
               // Raw Modash data for advanced features
               genders: coreResult.data.genders,
               ages: coreResult.data.ages,
@@ -2539,36 +2554,53 @@ function DiscoveryPageClient() {
             
             // Step 2: Fetch extended data in background
             console.log('📊 Step 2: Fetching extended profile data...')
-            try {
+              try {
               const extendedResponse = await fetch(`${window.location.origin}/api/discovery/profile-extended`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   userId: userId,
                   platform: actualPlatform,
-                  sections: ['hashtags', 'partnerships', 'topics', 'interests', 'languages'] // Only request what we need
+                    sections: ['hashtags', 'partnerships', 'topics', 'interests', 'languages', 'overlap'] // Include overlap for audience analysis
                 })
               })
               
               if (extendedResponse.ok) {
                 const extendedResult = await extendedResponse.json()
                 if (extendedResult.success && extendedResult.data) {
+                  // DEBUG: Check extended API overlap data
+                  console.log('🔗 Extended API Debug - Overlap Data:', {
+                    hasOverlapData: !!extendedResult.data.overlap,
+                    overlapValue: extendedResult.data.overlap?.value,
+                    overlapValueLength: extendedResult.data.overlap?.value?.length || 0,
+                    overlapConfidence: extendedResult.data.overlap?.confidence,
+                    overlapSource: extendedResult.data.overlap?.source
+                  })
+                  
                   // Merge extended data with core data
                   const fullInfluencer = {
                     ...coreInfluencer,
                     relevant_hashtags: extendedResult.data.hashtags?.value || [],
-                    brand_partnerships: extendedResult.data.partnerships?.value || [],
+                    // Keep original brand_partnerships from core API (has proper sponsors structure)
+                    // brand_partnerships: extendedResult.data.partnerships?.value || coreInfluencer.brand_partnerships,
                     content_topics: extendedResult.data.topics?.value || [],
                     audience_interests: extendedResult.data.interests?.value || [],
                     audience_languages: extendedResult.data.languages?.value || [],
+
+                    // Enhanced sponsorship data from extended API (prefer extended data with full sponsor details)
+                    sponsoredPosts: extendedResult.data.partnerships?.value || coreInfluencer.sponsoredPosts,
+                    partnerships_aggregate_metrics: extendedResult.data.partnerships?.aggregate_metrics || {},
                     extendedDataConfidence: {
                       hashtags: extendedResult.data.hashtags?.confidence || 'low',
                       partnerships: extendedResult.data.partnerships?.confidence || 'low',
                       topics: extendedResult.data.topics?.confidence || 'low',
                       interests: extendedResult.data.interests?.confidence || 'low',
-                      languages: extendedResult.data.languages?.confidence || 'low'
+                      languages: extendedResult.data.languages?.confidence || 'low',
+
                     }
                   }
+                  
+
                   
                   setDetailInfluencer(fullInfluencer)
                   console.log('✅ Step 2 complete: Extended profile data loaded')
@@ -2631,6 +2663,13 @@ function DiscoveryPageClient() {
               
               // Keep recent posts if available
               recentPosts: result.data.recentPosts || [],
+              
+              // Brand and sponsorship data
+              brand_partnerships: result.data.brand_partnerships || [],
+              sponsoredPosts: result.data.brand_partnerships || [],
+              brandAffinity: result.data.brand_affinity || [],
+              mentions: result.data.brand_mentions || [],
+              sponsored_performance: result.data.sponsored_performance || {},
               
               // Legacy compatibility
               paidPostPerformance: result.data.paidPostPerformance,

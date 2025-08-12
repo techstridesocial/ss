@@ -9,23 +9,12 @@ type LoginMode = 'selection' | 'brand' | 'influencer' | 'staff'
 
 export default function LoginSelection() {
   const [mode, setMode] = useState<LoginMode>('selection')
-  const [showStaffAccess, setShowStaffAccess] = useState(false)
-  const [staffCode, setStaffCode] = useState('')
 
   const handleStaffAccess = () => {
-    setShowStaffAccess(true)
+    setMode('staff')
   }
 
-  const handleStaffCodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Simple access code check (in production, this would be more secure)
-    if (staffCode === 'stride2024' || staffCode === 'admin') {
-      setMode('staff')
-    } else {
-      alert('Invalid access code')
-      setStaffCode('')
-    }
-  }
+  // Removed plaintext staff access code. Clicking the button reveals a staff-themed sign-in.
 
   // Custom Clerk appearance for staff login
   const staffAppearance = {
@@ -170,7 +159,7 @@ export default function LoginSelection() {
                 }
               }}
               afterSignInUrl={
-                mode === 'staff' ? '/' : 
+                mode === 'staff' ? '/staff/roster' : 
                 mode === 'brand' ? '/' : 
                 mode === 'influencer' ? '/' : 
                 '/'
@@ -195,51 +184,7 @@ export default function LoginSelection() {
     )
   }
 
-  if (showStaffAccess) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen flex items-center justify-center bg-slate-900 p-4"
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8"
-        >
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">Team Access</h2>
-            <p className="text-sm text-gray-500">Enter your access code</p>
-          </div>
-          
-          <form onSubmit={handleStaffCodeSubmit} className="space-y-4">
-            <input
-              type="password"
-              placeholder="Access code"
-              value={staffCode}
-              onChange={(e) => setStaffCode(e.target.value)}
-              className="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
-              autoFocus
-            />
-            <button
-              type="submit"
-              className="w-full bg-slate-800 text-white py-2.5 rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm"
-            >
-              Continue
-            </button>
-          </form>
-          
-          <button
-            onClick={() => setShowStaffAccess(false)}
-            className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Cancel
-          </button>
-        </motion.div>
-      </motion.div>
-    )
-  }
+  // Removed intermediate staff access modal; gear button now opens staff SignIn directly
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">

@@ -7,6 +7,13 @@
 // Global test setup for Jest
 import '@testing-library/jest-dom'
 
+// Polyfill TextEncoder/TextDecoder for Node test envs
+import { TextEncoder, TextDecoder } from 'util'
+// @ts-ignore
+global.TextEncoder = TextEncoder
+// @ts-ignore
+global.TextDecoder = TextDecoder
+
 // Mock Next.js router
 const mockPush = jest.fn()
 const mockReplace = jest.fn()

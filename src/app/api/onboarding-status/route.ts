@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user profile from database
     const result = await query<{ is_onboarded: boolean }>(
       `SELECT up.is_onboarded 
        FROM user_profiles up 
@@ -19,7 +18,6 @@ export async function GET(request: NextRequest) {
     )
 
     if (result.length === 0) {
-      // No profile found = not onboarded
       return NextResponse.json({ is_onboarded: false })
     }
 
@@ -28,10 +26,11 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error checking influencer onboarding status:', error)
+    console.error('Error checking onboarding status:', error)
     return NextResponse.json(
       { error: 'Internal server error' }, 
       { status: 500 }
     )
   }
-} 
+}
+

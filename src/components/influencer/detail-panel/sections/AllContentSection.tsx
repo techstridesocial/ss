@@ -43,9 +43,12 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
     influencer.engagement?.avg_shares
   )
 
+  // Pull image/picture fallback for header contexts if needed by consumers
+  const profileImage = (influencer as any).picture || (influencer as any).profilePicture || (influencer as any).profile_picture
+
   return (
     <CollapsibleSection title="All content" defaultOpen={true}>
-      <div className="space-y-1">
+      <div className="space-y-3 md:space-y-2">
         {engagementRate > 0 && (
           <MetricRow
             icon={Heart}

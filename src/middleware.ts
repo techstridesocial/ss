@@ -45,13 +45,14 @@ const SECURITY_HEADERS = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.dev https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com",
-    "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.dev https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com",
+    // Avoid unsafe-eval; keep inline for Clerk if necessary, prefer nonces in future
+    "script-src 'self' 'unsafe-inline' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com",
+    "script-src-elem 'self' 'unsafe-inline' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://api.clerk.dev https://www.google-analytics.com https://va.vercel-scripts.com https://vercel.live https://analytics.google.com",
-    "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev",
+    "connect-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://api.clerk.dev https://www.google-analytics.com https://va.vercel-scripts.com https://vercel.live https://analytics.google.com",
+    "frame-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -107,25 +108,26 @@ export default clerkMiddleware(async (auth, request) => {
     return response
   }
 
-  // Rate limiting for API routes
-  if (pathname.startsWith('/api/')) {
-    const clientIP = getClientIP(request)
-    
-    if (!checkRateLimit(clientIP)) {
-      return new NextResponse(
-        JSON.stringify({ 
-          error: 'Rate limit exceeded. Please try again later.',
-          retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000)
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': Math.ceil(RATE_LIMIT_WINDOW / 1000).toString(),
-            ...SECURITY_HEADERS
+  // Rate limiting for API routes (disabled in production without a shared store)
+  if (process.env.NODE_ENV !== 'production') {
+    if (pathname.startsWith('/api/')) {
+      const clientIP = getClientIP(request)
+      if (!checkRateLimit(clientIP)) {
+        return new NextResponse(
+          JSON.stringify({ 
+            error: 'Rate limit exceeded',
+            retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000)
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': Math.ceil(RATE_LIMIT_WINDOW / 1000).toString(),
+              ...SECURITY_HEADERS
+            }
           }
-        }
-      )
+        )
+      }
     }
   }
 

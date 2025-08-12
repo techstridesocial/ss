@@ -10,7 +10,8 @@ interface HashtagStrategySectionProps {
 
 export const HashtagStrategySection = ({ influencer }: HashtagStrategySectionProps) => {
   const hashtags = influencer.relevant_hashtags || []
-  const hasHashtags = hashtags.length > 0
+  const modashHashtags = influencer.hashtags || [] // From Modash API
+  const hasHashtags = hashtags.length > 0 || modashHashtags.length > 0
 
   if (!hasHashtags) {
     return (
@@ -22,9 +23,10 @@ export const HashtagStrategySection = ({ influencer }: HashtagStrategySectionPro
     )
   }
 
-  // Calculate hashtag insights
-  const totalHashtags = hashtags.length
-  const topHashtags = hashtags.slice(0, 8) // Show top 8 hashtags
+  // Use Modash hashtags if available, otherwise fall back to relevant_hashtags
+  const displayHashtags = modashHashtags.length > 0 ? modashHashtags : hashtags
+  const totalHashtags = displayHashtags.length
+  const topHashtags = displayHashtags.slice(0, 8) // Show top 8 hashtags
 
   return (
     <CollapsibleSection title="Hashtag Strategy">
@@ -51,15 +53,25 @@ export const HashtagStrategySection = ({ influencer }: HashtagStrategySectionPro
               Most Used Hashtags
             </h4>
             <div className="flex flex-wrap gap-2">
-              {topHashtags.map((hashtag, index) => (
-                <span 
-                  key={index} 
-                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                >
-                  <Hash className="w-3 h-3 mr-1" />
-                  {hashtag.replace('#', '')}
-                </span>
-              ))}
+              {topHashtags.map((hashtag, index) => {
+                // Handle both string hashtags and Modash hashtag objects
+                const tag = typeof hashtag === 'string' ? hashtag : hashtag.tag
+                const weight = typeof hashtag === 'object' ? hashtag.weight : null
+                
+                return (
+                  <div key={index} className="flex flex-col">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                      <Hash className="w-3 h-3 mr-1" />
+                      {tag ? tag.replace('#', '') : 'No tag'}
+                    </span>
+                    {weight && (
+                      <span className="text-xs text-gray-500 text-center mt-1">
+                        {(weight * 100).toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

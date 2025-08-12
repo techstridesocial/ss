@@ -68,10 +68,10 @@ export const LanguageBreakdownSection = ({ influencer }: LanguageBreakdownSectio
                       <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-20">
                         <div 
                           className="bg-blue-500 h-2 rounded-full" 
-                          style={{ width: `${percentage}%` }}
+                          style={{ width: `${percentage.toFixed(2)}%` }}
                         ></div>
                       </div>
-                      <span className="text-xs text-gray-500 min-w-fit">{percentage}%</span>
+                      <span className="text-xs text-gray-500 min-w-fit">{percentage.toFixed(2)}%</span>
                     </div>
                   </div>
                 )

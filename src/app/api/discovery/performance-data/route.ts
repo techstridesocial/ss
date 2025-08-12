@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { modashService } from '../../../../lib/services/modash'
+import { getPerformanceData } from '../../../../lib/services/modash'
 
 export async function GET(request: Request) {
   try {
@@ -16,32 +16,36 @@ export async function GET(request: Request) {
     console.log('📊 Performance Data API called:', { url })
 
     // Call the new Performance Data API
-    const result = await modashService.getPerformanceData(url, 3)
+    const result = await getPerformanceData(url, 3)
+    console.log('📊 Raw result from getPerformanceData:', { 
+      result: typeof result,
+      hasResult: !!result,
+      keys: result ? Object.keys(result) : 'none',
+      hasError: !!result?.error,
+      postsTotal: result?.posts?.total,
+      reelsTotal: result?.reels?.total
+    })
 
-    if (!result.success) {
-      if (result.status === 'retry_later') {
-        return NextResponse.json({
-          success: false,
-          status: 'retry_later',
-          message: result.message || 'Data is being processed. Please retry in 5 minutes.'
-        })
-      }
-
+    // Modash API returns { error, posts, reels } directly
+    if (result?.error) {
       return NextResponse.json(
-        { success: false, error: result.message || 'Failed to fetch performance data' },
+        { success: false, error: result.error || 'Failed to fetch performance data' },
         { status: 500 }
       )
     }
 
     console.log('✅ Performance Data API success:', {
-      postsTotal: result.data?.posts?.total,
-      reelsTotal: result.data?.reels?.total,
-      hasData: !!result.data
+      postsTotal: result?.posts?.total,
+      reelsTotal: result?.reels?.total,
+      hasData: !!(result?.posts || result?.reels)
     })
 
     return NextResponse.json({
       success: true,
-      data: result.data
+      data: {
+        posts: result?.posts,
+        reels: result?.reels
+      }
     })
 
   } catch (error) {
@@ -66,26 +70,22 @@ export async function POST(request: Request) {
 
     console.log('📊 Performance Data API (POST) called:', { url })
 
-    const result = await modashService.getPerformanceData(url, 3)
+    const result = await getPerformanceData(url, 3)
 
-    if (!result.success) {
-      if (result.status === 'retry_later') {
-        return NextResponse.json({
-          success: false,
-          status: 'retry_later',
-          message: result.message || 'Data is being processed. Please retry in 5 minutes.'
-        })
-      }
-
+    // Modash API returns { error, posts, reels } directly
+    if (result?.error) {
       return NextResponse.json(
-        { success: false, error: result.message || 'Failed to fetch performance data' },
+        { success: false, error: result.error || 'Failed to fetch performance data' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      data: result.data
+      data: {
+        posts: result?.posts,
+        reels: result?.reels
+      }
     })
 
   } catch (error) {
