@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { TrendingUp, Calendar, Users, ExternalLink } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { InfluencerData } from '../types'
 import { formatNumber } from '../utils'

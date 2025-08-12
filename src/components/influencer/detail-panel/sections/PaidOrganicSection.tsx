@@ -1,6 +1,7 @@
 'use client'
 
 import { Heart, Eye, TrendingUp, BarChart3 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { MetricRow } from '../components/MetricRow'
 import { InfluencerData } from '../types'
@@ -196,25 +197,86 @@ export const PaidOrganicSection = ({ influencer }: PaidOrganicSectionProps) => {
           />
         )}
         
-        {/* 🆕 NEW: Performance Comparison */}
+        {/* 📊 SPONSORED VS ORGANIC COMPARISON CHART */}
         {(influencer as any).sponsoredPostsMedianViews > 0 && (influencer as any).nonSponsoredPostsMedianViews > 0 && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <h4 className="text-sm font-semibold text-blue-800 mb-2">Performance Comparison</h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-blue-700">Views Ratio:</span>
-                <span className="font-medium text-blue-900">
-                  {((influencer as any).sponsoredPostsMedianViews / (influencer as any).nonSponsoredPostsMedianViews).toFixed(2)}x
-                </span>
-              </div>
-              {(influencer as any).sponsoredPostsMedianLikes > 0 && (influencer as any).nonSponsoredPostsMedianLikes > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm font-semibold text-gray-800 mb-4">📊 Sponsored vs Organic Performance</h4>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    {
+                      metric: 'Views',
+                      Sponsored: (influencer as any).sponsoredPostsMedianViews,
+                      Organic: (influencer as any).nonSponsoredPostsMedianViews,
+                    },
+                    {
+                      metric: 'Likes',
+                      Sponsored: (influencer as any).sponsoredPostsMedianLikes || 0,
+                      Organic: (influencer as any).nonSponsoredPostsMedianLikes || 0,
+                    }
+                  ]}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="metric" 
+                    tick={{ fontSize: 12 }}
+                    stroke="#6b7280"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    stroke="#6b7280"
+                    tickFormatter={(value) => formatNumber(value)}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      formatNumber(value), 
+                      name === 'Sponsored' ? '💰 Sponsored' : '🌱 Organic'
+                    ]}
+                    labelStyle={{ color: '#374151' }}
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="Sponsored" 
+                    fill="#f59e0b" 
+                    radius={[4, 4, 0, 0]}
+                    name="Sponsored"
+                  />
+                  <Bar 
+                    dataKey="Organic" 
+                    fill="#10b981" 
+                    radius={[4, 4, 0, 0]}
+                    name="Organic"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Performance Ratios */}
+            <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-green-50 rounded-lg">
+              <h5 className="text-sm font-semibold text-gray-800 mb-2">Performance Ratios</h5>
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Likes Ratio:</span>
-                  <span className="font-medium text-blue-900">
-                    {((influencer as any).sponsoredPostsMedianLikes / (influencer as any).nonSponsoredPostsMedianLikes).toFixed(2)}x
+                  <span className="text-gray-700">Views Ratio:</span>
+                  <span className="font-medium text-amber-700">
+                    {((influencer as any).sponsoredPostsMedianViews / (influencer as any).nonSponsoredPostsMedianViews).toFixed(2)}x
                   </span>
                 </div>
-              )}
+                {(influencer as any).sponsoredPostsMedianLikes > 0 && (influencer as any).nonSponsoredPostsMedianLikes > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-700">Likes Ratio:</span>
+                    <span className="font-medium text-green-700">
+                      {((influencer as any).sponsoredPostsMedianLikes / (influencer as any).nonSponsoredPostsMedianLikes).toFixed(2)}x
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

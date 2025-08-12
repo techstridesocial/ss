@@ -24,7 +24,7 @@ import { AudienceInterestsSection } from './sections/AudienceInterestsSection'
 import { LanguageBreakdownSection } from './sections/LanguageBreakdownSection'
 
 import { ContentAnalyticsSection } from './sections/ContentAnalyticsSection'
-import { HistoricalGrowthSection } from './sections/HistoricalGrowthSection'
+import { HistoricalGrowthSection } from './sections/HistoricalGrowthSectionWithCharts'
 import { RecentContentSection } from './sections/RecentContentSection'
 import { CreatorInsightsSection } from './sections/CreatorInsightsSection'
 

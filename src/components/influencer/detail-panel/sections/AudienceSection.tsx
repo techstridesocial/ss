@@ -4,6 +4,7 @@ import { CollapsibleSection } from '../components/CollapsibleSection'
 import { InfluencerData } from '../types'
 import { hasAudienceData, formatNumber } from '../utils'
 import { useMemo } from 'react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 
 interface AudienceSectionProps {
   influencer: InfluencerData
@@ -432,15 +433,62 @@ export const AudienceSection = ({ influencer }: AudienceSectionProps) => {
         {/* Original Language breakdown */}
         {audience?.languages && <LanguageBreakdown languages={audience.languages} />}
 
-        {/* 🆕 NEW: GENDER BREAKDOWN (from audience.genders) */}
+        {/* 📊 GENDER BREAKDOWN WITH PIE CHART */}
         {audienceData.genders && (
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">Gender Breakdown</h4>
+            <h4 className="font-medium text-gray-900 mb-4">📊 Gender Breakdown</h4>
+            
+            {/* Pie Chart */}
+            <div className="h-48 w-full mb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={audienceData.genders.map((g: any) => ({
+                      name: g.code || 'Unknown',
+                      value: (g.weight || 0) * 100,
+                      count: g.weight || 0
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {audienceData.genders.map((_: any, index: number) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={index === 0 ? '#3b82f6' : index === 1 ? '#ef4444' : '#10b981'} 
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Percentage']}
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Legend */}
             <div className="space-y-2">
               {audienceData.genders.map((g: any, index: number) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm capitalize">{g.code || 'unknown'}</span>
-                  <span className="font-medium">{((g.weight || 0) * 100).toFixed(2)}%</span>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ 
+                        backgroundColor: index === 0 ? '#3b82f6' : index === 1 ? '#ef4444' : '#10b981' 
+                      }}
+                    ></div>
+                    <span className="text-sm capitalize">{g.code || 'unknown'}</span>
+                  </div>
+                  <span className="font-medium">{((g.weight || 0) * 100).toFixed(1)}%</span>
                 </div>
               ))}
             </div>
