@@ -236,7 +236,7 @@ function InfluencerHeader({ influencer }: { influencer: typeof MOCK_INFLUENCER_D
 
           {/* Niches */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {influencer.niches.map((niche) => (
+            {(influencer.niches || []).map((niche) => (
               <span key={niche} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 <Target size={12} className="mr-1" />
                 {niche}

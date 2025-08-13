@@ -29,7 +29,7 @@ function hasComplexFilters(body: DiscoverySearchBody): boolean {
 }
 
 interface DiscoverySearchBody {
-  platform: 'instagram' | 'tiktok' | 'youtube' // This will now be ignored, we'll search all platforms
+  platform: 'instagram' | 'tiktok' | 'youtube' // Platform to search
   
   // Performance filters
   followersMin?: number
@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
       console.log('🆕 Using new List Users API for simple search:', body.searchQuery)
       
       try {
-        // Search all platforms in parallel using platform-aware listUsers
-        const platforms = ['instagram', 'tiktok', 'youtube'] as const
+        // Search ONLY the selected platform using platform-aware listUsers
+        const platforms = [body.platform] as const // Use only the selected platform!
         const listPromises = platforms.map(async (platform) => {
           try {
             const res = await listUsers(platform, { query: body.searchQuery!.trim(), limit: 50 })
@@ -148,10 +148,8 @@ export async function POST(request: NextRequest) {
         })
         const result = { users: combinedUsers }
         
-        if (result.error || !result.users || result.users.length === 0) {
+        if (!result.users || result.users.length === 0) {
           console.error('❌ List Users API failed or returned no results, falling back to Search Influencers API:', {
-            error: result.error,
-            message: result.message,
             userCount: result.users?.length || 0,
             searchQuery: body.searchQuery
           })
@@ -165,7 +163,7 @@ export async function POST(request: NextRequest) {
             try {
               // Fetch full profile report for each user to get engagement rate and complete data
                // Attempt to enrich based on known platform, default to instagram if unknown
-               const profileReport = await getProfileReport(user.userId, user.platform || 'instagram')
+               const profileReport = await getProfileReport(user.userId, user.platform || 'instagram') as any
               
               if (profileReport && !profileReport.error && profileReport.profile?.profile) {
                 const profileData = profileReport.profile.profile
@@ -207,7 +205,7 @@ export async function POST(request: NextRequest) {
                 }
               }
             } catch (error) {
-              console.log(`❌ Error enriching @${user.username}:`, error.message)
+              console.log(`❌ Error enriching @${user.username}:`, error instanceof Error ? error.message : 'Unknown error')
               return {
                 userId: user.userId,
                 username: user.username,
@@ -226,7 +224,7 @@ export async function POST(request: NextRequest) {
           }))
           
           // For exact search mode, filter to show only exact username match
-          const searchTerm = body.searchQuery.trim().toLowerCase()
+          const searchTerm = body.searchQuery?.trim().toLowerCase() || ''
           console.log('🔍 Looking for exact match:', {
             searchTerm,
             availableUsernames: transformedResults.map(u => u.username.toLowerCase()),
@@ -284,15 +282,22 @@ export async function POST(request: NextRequest) {
 
     // Fall back to complex search for advanced filtering or if List Users API fails
     console.log('🔍 Using complex discovery search with filters')
-    const platforms = ['instagram', 'tiktok', 'youtube'] as const
+    const platforms = [platform] as const // Only search the selected platform!
     
     try {
       const searchPromises = platforms.map(async (platform) => {
         try {
-          const filters = mapToModashFilters({ ...body, platform })
+          const filters = platform === 'tiktok' 
+            ? mapToTikTokFilters({ ...body, platform })
+            : mapToModashFilters({ ...body, platform })
           
-          console.log(`Searching ${platform}...`)
-          const result = await searchDiscovery(platform, { page: body.page || 0, limit: body.limit || 20, filter: filters })
+          console.log(`🔍 Searching ${platform} with filters:`, filters)
+          const result = await searchDiscovery(platform, filters)
+          console.log(`✅ ${platform} search returned:`, {
+            resultCount: (result as any).results?.length || (result as any).data?.length || 0,
+            firstResult: (result as any).results?.[0] || (result as any).data?.[0],
+            fullResponse: result
+          })
           
           return {
             platform,
@@ -800,10 +805,149 @@ function mapToModashFilters(body: DiscoverySearchBody) {
   return filters
 }
 
+function mapToTikTokFilters(body: DiscoverySearchBody) {
+  const influencerFilters: any = {}
+  const audienceFilters: any = {}
+  
+  // Performance filters
+  if (body.followersMin || body.followersMax) {
+    influencerFilters.followers = {}
+    if (body.followersMin) influencerFilters.followers.min = body.followersMin
+    if (body.followersMax) influencerFilters.followers.max = body.followersMax
+  }
+  
+  if (body.engagementRate && body.engagementRate > 0) {
+    influencerFilters.engagementRate = body.engagementRate
+  }
+  
+  if (body.avgViewsMin || body.avgViewsMax) {
+    influencerFilters.views = {}
+    if (body.avgViewsMin) influencerFilters.views.min = body.avgViewsMin
+    if (body.avgViewsMax) influencerFilters.views.max = body.avgViewsMax
+  }
+  
+  // TikTok-specific metrics
+  if (body.sharesMin || body.sharesMax) {
+    influencerFilters.shares = {}
+    if (body.sharesMin) influencerFilters.shares.min = body.sharesMin
+    if (body.sharesMax) influencerFilters.shares.max = body.sharesMax
+  }
+  
+  if (body.savesMin || body.savesMax) {
+    influencerFilters.saves = {}
+    if (body.savesMin) influencerFilters.saves.min = body.savesMin
+    if (body.savesMax) influencerFilters.saves.max = body.savesMax
+  }
+  
+  // Content filters - Bio
+  if (body.bio?.trim()) {
+    influencerFilters.bio = body.bio.trim()
+  }
+  
+  // Text tags (hashtags and mentions) 
+  const textTags: Array<{type: string, value: string}> = []
+  if (body.hashtags?.trim()) {
+    const hashtags = body.hashtags.split(',').map(tag => tag.trim()).filter(Boolean)
+    hashtags.forEach(tag => {
+      textTags.push({
+        type: "hashtag",
+        value: tag.replace('#', '') // Remove # if present
+      })
+    })
+  }
+  
+  if (body.mentions?.trim()) {
+    const mentions = body.mentions.split(',').map(mention => mention.trim()).filter(Boolean)
+    mentions.forEach(mention => {
+      textTags.push({
+        type: "mention", 
+        value: mention.replace('@', '') // Remove @ if present
+      })
+    })
+  }
+  
+  if (textTags.length > 0) {
+    influencerFilters.textTags = textTags
+  }
+  
+  // Search query as relevance
+  if (body.searchQuery?.trim()) {
+    influencerFilters.relevance = [body.searchQuery.trim()]
+  }
+  
+  // Account filters
+  if (body.verifiedOnly) {
+    influencerFilters.isVerified = true
+  }
+  
+  if (body.lastPosted) {
+    const days = parseInt(body.lastPosted)
+    if (!isNaN(days)) {
+      influencerFilters.lastposted = days
+    }
+  }
+  
+  // Location mapping for TikTok (same as Instagram for now)
+  if (body.selectedLocation && body.selectedLocation !== '') {
+    const locationMapping: Record<string, number[]> = {
+      united_kingdom: [826],
+      uk: [826], 
+      great_britain: [826],
+      united_states: [840],
+      usa: [840],
+      us: [840],
+      canada: [124],
+      australia: [36],
+      germany: [276],
+      france: [250]
+    }
+    const key = String(body.selectedLocation).toLowerCase().replace(/\s+/g, '_')
+    const mapped = locationMapping[key]
+    if (mapped) {
+      influencerFilters.location = mapped
+    } else if (typeof body.selectedLocation === 'string' && body.selectedLocation.length <= 3) {
+      influencerFilters.location = [body.selectedLocation]
+    }
+  }
+  
+  // Demographics for audience filters
+  if (body.selectedGender && body.selectedGender !== '') {
+    audienceFilters.gender = {
+      id: body.selectedGender.toUpperCase(),
+      weight: 0.5
+    }
+  }
+  
+  if (body.selectedAge && body.selectedAge !== '') {
+    audienceFilters.age = [{
+      id: body.selectedAge,
+      weight: 0.3
+    }]
+  }
+  
+  // Build final TikTok API structure
+  const tiktokFilters: any = {
+    page: body.page || 0,
+    calculationMethod: "median",
+    sort: {
+      field: "followers",
+      direction: "desc"
+    },
+    filter: {
+      influencer: influencerFilters,
+      ...(Object.keys(audienceFilters).length > 0 && { audience: audienceFilters })
+    }
+  }
+  
+  console.log('🎵 TikTok filters mapped:', JSON.stringify(tiktokFilters, null, 2))
+  
+  return tiktokFilters
+}
+
 export async function GET() {
   return NextResponse.json({
     message: 'Multi-platform discovery search API. Use POST method with search parameters.',
     platforms: ['instagram', 'tiktok', 'youtube'],
-    note: 'Searches all platforms simultaneously and merges results by creator'
+    note: 'Searches the selected platform based on search parameters'
   })
 } 

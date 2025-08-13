@@ -535,12 +535,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         const matchesSearch = influencer.display_name.toLowerCase().includes(searchLower) ||
                              influencer.first_name?.toLowerCase().includes(searchLower) ||
                              influencer.last_name?.toLowerCase().includes(searchLower) ||
-                             influencer.niches.some((niche: string) => niche.toLowerCase().includes(searchLower))
+                             (influencer.niches || []).some((niche: string) => niche.toLowerCase().includes(searchLower))
         if (!matchesSearch) return false
       }
 
       // Advanced filters
-      const matchesNiche = !rosterFilters.niche || influencer.niches.includes(rosterFilters.niche)
+      const matchesNiche = !rosterFilters.niche || (influencer.niches || []).includes(rosterFilters.niche)
       const matchesPlatform = !rosterFilters.platform || influencer.platforms.includes(rosterFilters.platform as Platform)
       const matchesFollowerRange = !rosterFilters.followerRange || checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
       const matchesEngagementRange = !rosterFilters.engagementRange || checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
@@ -585,11 +585,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         const matchesSearch = influencer.display_name.toLowerCase().includes(searchLower) ||
                              influencer.first_name?.toLowerCase().includes(searchLower) ||
                              influencer.last_name?.toLowerCase().includes(searchLower) ||
-                             influencer.niches.some((niche: string) => niche.toLowerCase().includes(searchLower))
+                             (influencer.niches || []).some((niche: string) => niche.toLowerCase().includes(searchLower))
         if (!matchesSearch) return false
       }
 
-      const matchesNiche = !rosterFilters.niche || influencer.niches.includes(rosterFilters.niche)
+      const matchesNiche = !rosterFilters.niche || (influencer.niches || []).includes(rosterFilters.niche)
       const matchesPlatform = !rosterFilters.platform || influencer.platforms.includes(rosterFilters.platform as Platform)
       const matchesFollowerRange = !rosterFilters.followerRange || checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
       const matchesEngagementRange = !rosterFilters.engagementRange || checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
@@ -761,7 +761,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       notes: managementInfo.notes,
       
       // Add missing profile properties
-      bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${basicInfluencer.niches.join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,
+      bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${(basicInfluencer.niches || ['lifestyle']).join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,
       website_url: basicInfluencer.website_url,
       email: `contact@${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
       
@@ -1521,7 +1521,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   {/* Niches */}
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {influencer.niches.slice(0, 2).map((niche: string) => (
+                      {(influencer.niches || []).slice(0, 2).map((niche: string) => (
                         <span
                           key={niche}
                           className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg"
@@ -1529,9 +1529,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                           {niche}
                         </span>
                       ))}
-                      {influencer.niches.length > 2 && (
+                      {(influencer.niches || []).length > 2 && (
                         <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
-                          +{influencer.niches.length - 2}
+                          +{(influencer.niches || []).length - 2}
                         </span>
                       )}
                     </div>

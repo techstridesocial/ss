@@ -46,14 +46,10 @@ export const getQualityText = (quality: 'below_average' | 'average' | 'above_ave
 }
 
 /**
- * Get safe metric value with fallbacks
+ * Get metric value prioritizing platform-specific data
  */
-export const getMetricValue = (
-  primary: number | undefined, 
-  secondary: number | undefined, 
-  fallback: number = 0
-): number => {
-  return primary ?? secondary ?? fallback
+export const getMetricValue = (primaryValue: any, fallbackValue?: any): any => {
+  return primaryValue !== undefined && primaryValue !== null ? primaryValue : fallbackValue
 }
 
 /**

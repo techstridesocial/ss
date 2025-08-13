@@ -14,6 +14,7 @@ import { AllContentSection } from './sections/AllContentSection'
 import { PaidOrganicSection } from './sections/PaidOrganicSection'
 import { ReelsSection } from './sections/ReelsSection'
 import { StoriesSection } from './sections/StoriesSection'
+import { TikTokVideosSection } from './sections/TikTokVideosSection'
 import { AudienceSection } from './sections/AudienceSection'
 import { ContentStrategySection } from './sections/ContentStrategySection'
 import { PerformanceStatusSection } from './sections/PerformanceStatusSection'
@@ -181,6 +182,15 @@ function InfluencerDetailPanel({
     ? platformsAny[selectedPlatform]
     : null
 
+  // DEBUG: Log data discrepancy for Charlie
+  console.log('🔍 Platform Data Debug:', {
+    selectedPlatform,
+    influencerFollowers: influencer.followers,
+    platformsAvailable: platformsAny ? Object.keys(platformsAny) : 'none',
+    currentPlatformData: currentPlatformData,
+    currentPlatformFollowers: currentPlatformData?.followers
+  })
+
   const panel = (
     <AnimatePresence>
       {isOpen && (
@@ -212,7 +222,7 @@ function InfluencerDetailPanel({
                       influencer={influencer} 
                       currentPlatformData={currentPlatformData} 
                     />
-                    <ContactInfoSection contacts={influencer.contacts} />
+                    <ContactInfoSection contacts={influencer.contacts || []} />
                   </div>
                   
                   {/* Content Performance Section Group */}
@@ -225,8 +235,17 @@ function InfluencerDetailPanel({
                       currentPlatformData={currentPlatformData} 
                     />
                     <PaidOrganicSection influencer={influencer} />
-                    <ReelsSection influencer={influencer} />
-                    <StoriesSection influencer={influencer} />
+                    
+                    {/* Platform-specific content sections */}
+                    {selectedPlatform === 'tiktok' ? (
+                      <TikTokVideosSection influencer={influencer} />
+                    ) : (
+                      <>
+                        <ReelsSection influencer={influencer} />
+                        <StoriesSection influencer={influencer} />
+                      </>
+                    )}
+                    
                     <RecentContentSection influencer={influencer} />
                   </div>
                   

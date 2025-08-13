@@ -62,8 +62,8 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
   )
 
   const engagementRate = getMetricValue(
-    influencer.engagement_rate,
-    influencer.engagementRate
+    currentPlatformData?.engagement_rate || currentPlatformData?.engagementRate,
+    influencer.engagement_rate || influencer.engagementRate
   )
 
   const estimatedReach = getMetricValue(
@@ -75,13 +75,23 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
   )
 
   const avgLikes = getMetricValue(
+    currentPlatformData?.avgLikes,
     influencer.avgLikes
   )
 
-  // Enhanced data extraction
-  const avgViews = getMetricValue(influencer.avgViews)
-  const avgReelsPlays = getMetricValue(influencer.avgReelsPlays)
-  const avgComments = getMetricValue(influencer.avgComments)
+  // Enhanced data extraction with platform-specific prioritization
+  const avgViews = getMetricValue(
+    currentPlatformData?.avgViews,
+    influencer.avgViews
+  )
+  const avgReelsPlays = getMetricValue(
+    currentPlatformData?.avgReelsPlays,
+    influencer.avgReelsPlays
+  )
+  const avgComments = getMetricValue(
+    currentPlatformData?.avgComments,
+    influencer.avgComments
+  )
   const postsCount = getMetricValue(
     influencer.postsCount || influencer.postsCounts
   )

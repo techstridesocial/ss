@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import MinMaxSelector from '../../../components/filters/MinMaxSelector'
@@ -811,14 +811,18 @@ function DiscoverySearchInterface({
             <button
               key={platform.id}
               onClick={() => setSelectedPlatform(platform.id)}
+              disabled={isLoading}
               className={`flex-1 flex items-center justify-center space-x-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                 selectedPlatform === platform.id
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span>{platform.logo}</span>
               <span className="font-bold capitalize">{platform.name}</span>
+              {isLoading && selectedPlatform === platform.id && (
+                <div className="ml-1 w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              )}
             </button>
           ))}
         </div>
@@ -1924,9 +1928,8 @@ function DiscoveredInfluencersTable({
                 // Check if this is a multi-platform creator
                 const isMultiPlatform = creator.platforms && Object.keys(creator.platforms).length > 1
                 
-                // Get platform-specific data for the selected platform
-                const primaryPlatformData = creator.platforms?.[selectedPlatform] || 
-                  (creator.platforms ? Object.values(creator.platforms)[0] : creator)
+                // Get platform-specific data ONLY for the selected platform - NO FALLBACKS!
+                const primaryPlatformData = creator.platforms?.[selectedPlatform] || creator
                 
                 // Helpers to mirror popup logic
                 const displayName = creator.name || creator.displayName || creator.display_name || creator.username
@@ -1937,7 +1940,7 @@ function DiscoveredInfluencersTable({
                   if (!num) return '0.00%'
                   return num > 1 ? `${num.toFixed(2)}%` : `${(num * 100).toFixed(2)}%`
                 }
-                const engagementRaw = (creator as any).engagementRate ?? (primaryPlatformData as any)?.engagement_rate ?? (creator as any).engagement_rate ?? (primaryPlatformData as any)?.engagementRate
+                const engagementRaw = (primaryPlatformData as any)?.engagement_rate ?? (primaryPlatformData as any)?.engagementRate ?? (creator as any).engagementRate ?? (creator as any).engagement_rate
                 
                 return (
                   <tr key={creator.creatorId || creator.userId || `creator-${index}`} className="hover:bg-gray-50 transition-colors">
@@ -2070,7 +2073,7 @@ function DiscoveredInfluencersTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatNumber((creator as any).followers ?? (primaryPlatformData as any)?.followers ?? 0)}
+                        {formatNumber((primaryPlatformData as any)?.followers ?? (creator as any).followers ?? 0)}
                       </div>
                       {isMultiPlatform && (
                         <div className="text-xs text-gray-500">
@@ -2196,6 +2199,15 @@ function DiscoveryPageClient() {
       setIsRefreshingCredits(false)
     }
   }
+  
+  // Auto-search when platform changes (only if there are existing results or search query)
+  useEffect(() => {
+    // Only trigger auto-search if we have existing search results or a search query
+    if ((searchResults.length > 0 || searchQuery.trim()) && !isSearching) {
+      console.log('🔄 Platform changed to:', selectedPlatform, '- Auto-refreshing search')
+      handleSearch()
+    }
+  }, [selectedPlatform])
   
   // Enhanced search function with full API integration
   const handleSearch = async () => {
@@ -2440,18 +2452,13 @@ function DiscoveryPageClient() {
     setDetailCountry(fallbackCountry)
     
     try {
-      // Get userId from the selected platform or fallback to any available platform
+      // Force the selected platform - NO fallbacks to prevent cross-platform contamination
       let platformData = influencer.platforms?.[selectedPlatform]
       let actualPlatform = selectedPlatform
       
-      // If no data for selected platform, use the first available platform
-      if (!platformData && influencer.platforms) {
-        const firstPlatform = Object.keys(influencer.platforms)[0] as 'instagram' | 'tiktok' | 'youtube'
-        if (firstPlatform) {
-          platformData = influencer.platforms[firstPlatform]
-          actualPlatform = firstPlatform
-          console.log(`📊 No data for ${selectedPlatform}, using ${firstPlatform} instead`)
-        }
+      // Don't fallback to other platforms - this causes wrong data to show!
+      if (!platformData) {
+        console.log(`📊 No ${selectedPlatform} data available, will fetch fresh data from ${selectedPlatform} API`)
       }
       
       const userId = platformData?.userId || influencer.userId
@@ -2841,6 +2848,7 @@ function DiscoveryPageClient() {
         influencer={detailInfluencer}
         isOpen={detailPanelOpen}
         onClose={() => setDetailPanelOpen(false)}
+        selectedPlatform={selectedPlatform}
         city={detailCity}
         country={detailCountry}
         loading={detailLoading}

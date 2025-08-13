@@ -42,10 +42,41 @@ export interface InfluencerData {
       avg_shares?: number
     }
     posts?: {
-      avg_likes?: number
-      avg_comments?: number
-      avg_shares?: number
-      engagement_rate?: number
+      total?: number
+      posts_with_hidden_comments?: number
+      likes?: {
+        mean?: Array<{ numberOfItems: number; value: number }>
+        min?: Array<{ numberOfItems: number; value: number }>
+        max?: Array<{ numberOfItems: number; value: number }>
+        median?: Array<{ numberOfItems: number; value: number }>
+      }
+      comments?: {
+        mean?: Array<{ numberOfItems: number; value: number }>
+        min?: Array<{ numberOfItems: number; value: number }>
+        max?: Array<{ numberOfItems: number; value: number }>
+        median?: Array<{ numberOfItems: number; value: number }>
+      }
+      views?: {
+        mean?: Array<{ numberOfItems: number; value: number }>
+        min?: Array<{ numberOfItems: number; value: number }>
+        max?: Array<{ numberOfItems: number; value: number }>
+        median?: Array<{ numberOfItems: number; value: number }>
+      }
+      shares?: {
+        mean?: Array<{ numberOfItems: number; value: number }>
+        min?: Array<{ numberOfItems: number; value: number }>
+        max?: Array<{ numberOfItems: number; value: number }>
+        median?: Array<{ numberOfItems: number; value: number }>
+      }
+      engagement_rate?: Array<{ numberOfItems: number; value: number }>
+      posting_statistics?: {
+        weekDayHour?: {
+          mean?: { numberOfItems: number; value: number }
+        }
+        daily?: {
+          mean?: { numberOfItems: number; value: number }
+        }
+      }
     }
     stories?: {
       estimated_reach?: number
@@ -141,7 +172,6 @@ export interface InfluencerData {
   }>
   isPrivate?: boolean
   accountType?: string
-  avgViews?: number
   avgReelsPlays?: number
   recentPosts?: Array<any>
   popularPosts?: Array<any>
