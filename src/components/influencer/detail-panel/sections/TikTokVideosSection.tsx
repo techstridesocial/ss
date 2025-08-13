@@ -1,6 +1,6 @@
 'use client'
 
-import { Heart, MessageCircle, Share, Eye } from 'lucide-react'
+import { Heart, MessageCircle, Share, Eye, Bookmark } from 'lucide-react'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { MetricRow } from '../components/MetricRow'
 import { InfluencerData } from '../types'
@@ -23,7 +23,7 @@ export const TikTokVideosSection = ({ influencer }: TikTokVideosSectionProps) =>
     videosKeys: videosData ? Object.keys(videosData) : 'none'
   })
 
-  if (!videosData || !videosData.total || videosData.total === 0) {
+  if (!videosData || videosData.total === null || videosData.total === undefined || videosData.total === 0) {
     return (
       <CollapsibleSection title="TikTok Videos Performance">
         <div className="text-gray-500 text-sm italic">
@@ -38,8 +38,9 @@ export const TikTokVideosSection = ({ influencer }: TikTokVideosSectionProps) =>
   const avgLikes = videosData.likes?.median?.[0]?.value || videosData.likes?.mean?.[0]?.value  
   const avgComments = videosData.comments?.median?.[0]?.value || videosData.comments?.mean?.[0]?.value
   
-  // TikTok has shares in the standard structure, but we'll also check for any additional metrics
+  // TikTok has shares and saves in the standard structure
   const avgShares = videosData.shares?.median?.[0]?.value || videosData.shares?.mean?.[0]?.value
+  const avgSaves = videosData.saves?.median?.[0]?.value || videosData.saves?.mean?.[0]?.value
   
   // Extract TikTok-specific engagement rate from the API response
   const engagementRateFromAPI = videosData.engagement_rate?.[0]?.value
@@ -56,9 +57,15 @@ export const TikTokVideosSection = ({ influencer }: TikTokVideosSectionProps) =>
     <CollapsibleSection title="TikTok Videos Performance">
       <div className="space-y-2">
         <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-          <span className="text-sm font-medium text-gray-600">
-            Total Videos: {formatNumber(videosData.total)}
-          </span>
+          {videosData.total && videosData.total > 0 ? (
+            <span className="text-sm font-medium text-gray-600">
+              Total Videos: {formatNumber(videosData.total)}
+            </span>
+          ) : (
+            <span className="text-sm font-medium text-gray-600">
+              TikTok Performance Metrics
+            </span>
+          )}
           {engagementRate && (
             <span className="text-sm font-semibold text-blue-600">
               {formatPercentage(engagementRate)} ER
@@ -95,6 +102,14 @@ export const TikTokVideosSection = ({ influencer }: TikTokVideosSectionProps) =>
             icon={Share}
             label="Avg shares"
             value={formatNumber(avgShares)}
+          />
+        )}
+
+        {avgSaves && (
+          <MetricRow
+            icon={Bookmark}
+            label="Avg saves"
+            value={formatNumber(avgSaves)}
           />
         )}
 

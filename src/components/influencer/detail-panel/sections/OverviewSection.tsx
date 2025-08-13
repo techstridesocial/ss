@@ -2,7 +2,7 @@
 
 import { 
   Users, AlertTriangle, TrendingUp, Eye, Target, CheckCircle, User, 
-  Lock, Video, MessageSquare, Grid, MapPin, Calendar, Globe, Mail, FileText 
+  Lock, Video, MessageSquare, Grid, MapPin, Calendar, Globe, Mail, FileText, Heart 
 } from 'lucide-react'
 import { CollapsibleSection } from '../components/CollapsibleSection'
 import { MetricRow } from '../components/MetricRow'
@@ -12,44 +12,11 @@ import { formatNumber, formatPercentage, getMetricValue } from '../utils'
 interface OverviewSectionProps {
   influencer: InfluencerData
   currentPlatformData?: any
+  selectedPlatform?: 'instagram' | 'tiktok' | 'youtube'
 }
 
-export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSectionProps) => {
-  // 🔍 DEBUG: Log all available fields to see what's missing
-  console.log('🔍 OverviewSection - All available fields:', {
-    bio: influencer.bio,
-    city: influencer.city,
-    state: influencer.state,
-    country: influencer.country,
-    ageGroup: influencer.ageGroup,
-    gender: influencer.gender,
-    language: influencer.language,
-    contacts: influencer.contacts,
-    isPrivate: influencer.isPrivate,
-    accountType: influencer.accountType,
-    isVerified: influencer.isVerified,
-    postsCount: influencer.postsCount,
-    postsCounts: influencer.postsCounts,
-    avgViews: influencer.avgViews,
-    avgReelsPlays: influencer.avgReelsPlays,
-    allFieldsCount: Object.keys(influencer).length,
-    fieldNames: Object.keys(influencer)
-  })
-  console.log('🔍 OverviewSection received data:', {
-    followers: influencer.followers,
-    fake_followers_percentage: influencer.fake_followers_percentage,
-    fake_followers_quality: influencer.fake_followers_quality,
-    currentPlatformData: currentPlatformData,
-    profile: influencer.profile,
-    demographics: {
-      city: influencer.city,
-      state: influencer.state,
-      country: influencer.country,
-      ageGroup: influencer.ageGroup,
-      gender: influencer.gender,
-      language: influencer.language
-    }
-  })
+export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatform }: OverviewSectionProps) => {
+
 
   const followersCount = getMetricValue(
     currentPlatformData?.followers, 
@@ -152,6 +119,39 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
             value={formatNumber(estimatedImpressions)}
           />
         )}
+
+        {/* TikTok-specific additional stats */}
+        {influencer.engagements && (
+          <MetricRow
+            icon={Heart}
+            label="Total Engagements"
+            value={formatNumber(influencer.engagements)}
+          />
+        )}
+
+        {influencer.totalLikes && (
+          <MetricRow
+            icon={Heart}
+            label="Total Likes"
+            value={formatNumber(influencer.totalLikes)}
+          />
+        )}
+
+        {influencer.postsCount && (
+          <MetricRow
+            icon={Grid}
+            label="Posts Count"
+            value={formatNumber(influencer.postsCount)}
+          />
+        )}
+
+        {influencer.averageViews && (
+          <MetricRow
+            icon={Eye}
+            label="Average Views"
+            value={formatNumber(influencer.averageViews)}
+          />
+        )}
         
         {(fakeFollowersPercentage !== undefined && fakeFollowersPercentage !== null) && (
           <MetricRow
@@ -221,20 +221,12 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
           />
         )}
         
-        {/* 🆕 NEW: DEMOGRAPHICS */}
+        {/* 🔧 STREAMLINED: Personal Information (NO DUPLICATES) */}
         {(influencer.city || influencer.state || influencer.country) && (
           <MetricRow
             icon={MapPin}
             label="Location"
             value={[influencer.city, influencer.state, influencer.country].filter(Boolean).join(', ')}
-          />
-        )}
-        
-        {influencer.ageGroup && (
-          <MetricRow
-            icon={Calendar}
-            label="Age Group"
-            value={influencer.ageGroup}
           />
         )}
         
@@ -246,6 +238,14 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
           />
         )}
         
+        {influencer.ageGroup && (
+          <MetricRow
+            icon={Calendar}
+            label="Age Group"
+            value={influencer.ageGroup}
+          />
+        )}
+        
         {influencer.language && (
           <MetricRow
             icon={Globe}
@@ -254,7 +254,7 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
           />
         )}
         
-        {/* 🆕 NEW: CONTACT INFO */}
+        {/* 🔧 STREAMLINED: Contact Information (consolidated from ContactInfoSection) */}
         {influencer.contacts && influencer.contacts.length > 0 && (
           <MetricRow
             icon={Mail}
@@ -270,50 +270,7 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
           />
         )}
         
-        {/* 🆕 NEW: ACCOUNT STATUS */}
-        {influencer.isPrivate !== undefined && (
-          <MetricRow
-            icon={Lock}
-            label="Account Type"
-            value={influencer.isPrivate ? "Private" : "Public"}
-          />
-        )}
-        
-        {influencer.accountType && (
-          <MetricRow
-            icon={User}
-            label="Account Category"
-            value={influencer.accountType}
-          />
-        )}
-        
-        {/* 🆕 NEW: LOCATION DETAILS */}
-        {(influencer.city || influencer.state || influencer.country) && (
-          <MetricRow
-            icon={MapPin}
-            label="Location"
-            value={[influencer.city, influencer.state, influencer.country].filter(Boolean).join(", ")}
-          />
-        )}
-        
-        {/* 🆕 NEW: CONTENT METRICS */}
-        {influencer.avgViews > 0 && (
-          <MetricRow
-            icon={Eye}
-            label="Average Views"
-            value={formatNumber(influencer.avgViews)}
-          />
-        )}
-        
-        {influencer.avgReelsPlays > 0 && (
-          <MetricRow
-            icon={Video}
-            label="Average Reels Plays"
-            value={formatNumber(influencer.avgReelsPlays)}
-          />
-        )}
-        
-        {/* 🆕 NEW: BIO */}
+        {/* 🔧 STREAMLINED: Bio (single instance) */}
         {influencer.bio && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-start space-x-3">
@@ -326,28 +283,6 @@ export const OverviewSection = ({ influencer, currentPlatformData }: OverviewSec
               </div>
             </div>
           </div>
-        )}
-        
-        {/* 🆕 NEW: BIO */}
-        {influencer.bio && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-start space-x-3">
-              <User className="w-4 h-4 text-gray-400 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Bio</div>
-                <div className="text-sm text-gray-600 leading-relaxed">{influencer.bio}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 🆕 NEW: LOCATION (city, state, country) */}
-        {(influencer.city || influencer.state || influencer.country) && (
-          <MetricRow 
-            icon={MapPin} 
-            label="Location" 
-            value={[influencer.city, influencer.state, influencer.country].filter(Boolean).join(", ")} 
-          />
         )}
 
         {/* 🆕 NEW: MENTIONS */}

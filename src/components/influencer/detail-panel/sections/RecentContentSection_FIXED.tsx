@@ -30,31 +30,8 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
   }
 
   const PostCard = ({ post, type, isPopular = false }: { post: any, type: 'recent' | 'popular', isPopular?: boolean }) => {
-    // Debug: Log the post structure to see what image fields are available
-    console.log(`🖼️ ${type} Post Debug (General):`, {
-      postKeys: Object.keys(post),
-      thumbnail: post.thumbnail,
-      picture: post.picture,
-      image: post.image,
-      cover: post.cover,
-      url: post.url,
-      media_url: post.media_url,
-      fullPost: post
-    })
-    
     // Try different possible image field names from Modash API
-    const imageUrl = post.thumbnail || post.picture || post.image || post.cover || 
-                     post.previewUrl || post.preview_url || post.thumbnailUrl || post.thumbnail_url ||
-                     post.imageUrl || post.image_url || post.mediaUrl || post.media_url || 
-                     post.coverImage || post.cover_image || post.photoUrl || post.photo_url ||
-                     post.url
-    
-    const handlePlayClick = (e: React.MouseEvent) => {
-      e.stopPropagation() // Prevent opening the modal
-      if (post.url) {
-        window.open(post.url, '_blank', 'noopener,noreferrer')
-      }
-    }
+    const imageUrl = post.thumbnail || post.picture || post.image || post.cover || post.url || post.media_url
     
     return (
       <div 
@@ -78,16 +55,11 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
               />
               {/* Play/View Overlay */}
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                <button
-                  onClick={handlePlayClick}
-                  className={`rounded-full p-4 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 hover:scale-110 ${
-                    isPopular ? 'bg-yellow-400 bg-opacity-90 hover:bg-opacity-100' : 'bg-white bg-opacity-90 hover:bg-opacity-100'
-                  }`}
-                  title={post.url ? "Play video" : "No video URL available"}
-                  disabled={!post.url}
-                >
+                <div className={`rounded-full p-4 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 ${
+                  isPopular ? 'bg-yellow-400 bg-opacity-90' : 'bg-white bg-opacity-90'
+                }`}>
                   <Play className="w-8 h-8 text-gray-800" />
-                </button>
+                </div>
               </div>
               {/* Expand Icon */}
               <div className={`absolute top-3 right-3 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
@@ -162,18 +134,12 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
               {post.created ? new Date(post.created).toLocaleDateString() : 'Unknown date'}
             </div>
             {post.url && (
-              <a
-                href={post.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className={`flex items-center text-xs hover:underline ${
-                  isPopular ? 'text-orange-600 group-hover:text-orange-800' : 'text-blue-600 group-hover:text-blue-800'
-                }`}
-              >
+              <div className={`flex items-center text-xs ${
+                isPopular ? 'text-orange-600 group-hover:text-orange-800' : 'text-blue-600 group-hover:text-blue-800'
+              }`}>
                 <ExternalLink className="w-3 h-3 mr-1" />
                 View
-              </a>
+              </div>
             )}
           </div>
 
@@ -203,43 +169,6 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
       <CollapsibleSection title="Recent & Popular Content" defaultOpen={false}>
         <div className="space-y-8">
           
-          {/* Popular Posts */}
-          {popularPosts.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-gray-900">Top Performing Posts</h4>
-                {popularPosts.length > 2 && (
-                  <button
-                    onClick={() => openModal(popularPosts, 'Top Performing Content')}
-                    className="text-sm text-orange-600 hover:text-orange-800 font-medium flex items-center"
-                  >
-                    View All ({popularPosts.length})
-                    <Maximize2 className="w-4 h-4 ml-1" />
-                  </button>
-                )}
-              </div>
-              
-              {/* 2-Grid Layout for Popular Posts */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {popularPosts.slice(0, 2).map((post: any, index: number) => (
-                  <PostCard key={`popular-${index}`} post={post} type="popular" isPopular={true} />
-                ))}
-              </div>
-              
-              {popularPosts.length > 2 && (
-                <div className="mt-4 text-center">
-                  <button
-                    onClick={() => openModal(popularPosts, 'Top Performing Content')}
-                    className="inline-flex items-center px-4 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium"
-                  >
-                    <Maximize2 className="w-4 h-4 mr-2" />
-                    View {popularPosts.length - 2} More Top Posts
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Recent Posts */}
           {recentPosts.length > 0 && (
             <div>
@@ -271,6 +200,43 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
                   >
                     <Maximize2 className="w-4 h-4 mr-2" />
                     View {recentPosts.length - 2} More Recent Posts
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Popular Posts */}
+          {popularPosts.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-gray-900">Top Performing Posts</h4>
+                {popularPosts.length > 2 && (
+                  <button
+                    onClick={() => openModal(popularPosts, 'Top Performing Content')}
+                    className="text-sm text-orange-600 hover:text-orange-800 font-medium flex items-center"
+                  >
+                    View All ({popularPosts.length})
+                    <Maximize2 className="w-4 h-4 ml-1" />
+                  </button>
+                )}
+              </div>
+              
+              {/* 2-Grid Layout for Popular Posts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {popularPosts.slice(0, 2).map((post: any, index: number) => (
+                  <PostCard key={`popular-${index}`} post={post} type="popular" isPopular={true} />
+                ))}
+              </div>
+              
+              {popularPosts.length > 2 && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => openModal(popularPosts, 'Top Performing Content')}
+                    className="inline-flex items-center px-4 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium"
+                  >
+                    <Maximize2 className="w-4 h-4 mr-2" />
+                    View {popularPosts.length - 2} More Top Posts
                   </button>
                 </div>
               )}

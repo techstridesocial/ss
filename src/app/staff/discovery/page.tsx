@@ -1940,7 +1940,15 @@ function DiscoveredInfluencersTable({
                   if (!num) return '0.00%'
                   return num > 1 ? `${num.toFixed(2)}%` : `${(num * 100).toFixed(2)}%`
                 }
-                const engagementRaw = (primaryPlatformData as any)?.engagement_rate ?? (primaryPlatformData as any)?.engagementRate ?? (creator as any).engagementRate ?? (creator as any).engagement_rate
+                // Use EXACT same logic as popup OverviewSection (getMetricValue function)
+                const getMetricValue = (primaryValue: any, fallbackValue?: any): any => {
+                  return primaryValue !== undefined && primaryValue !== null ? primaryValue : fallbackValue
+                }
+                
+                const engagementRaw = getMetricValue(
+                  (primaryPlatformData as any)?.engagement_rate || (primaryPlatformData as any)?.engagementRate,
+                  (creator as any).engagement_rate || (creator as any).engagementRate
+                )
                 
                 return (
                   <tr key={creator.creatorId || creator.userId || `creator-${index}`} className="hover:bg-gray-50 transition-colors">
@@ -2539,8 +2547,31 @@ function DiscoveryPageClient() {
               relevant_hashtags: coreResult.data.relevant_hashtags,
               brand_partnerships: coreResult.data.brand_partnerships,
               content_topics: coreResult.data.content_topics,
+              
+              // 🚨 FIX: Add missing TikTok fields from API response
+              engagements: coreResult.data.engagements,
+              totalLikes: coreResult.data.totalLikes,
+              averageViews: coreResult.data.averageViews,
+              postsCount: coreResult.data.postsCount,
+              gender: coreResult.data.gender,
+              ageGroup: coreResult.data.ageGroup,
+              city: coreResult.data.city,
+              state: coreResult.data.state,
+              country: coreResult.data.country,
+              bio: coreResult.data.bio,
+              recentPosts: coreResult.data.recentPosts,
+              popularPosts: coreResult.data.popularPosts,
+              sponsoredPosts: coreResult.data.sponsoredPosts,
+              statHistory: coreResult.data.statHistory,
+              paidPostPerformance: coreResult.data.paidPostPerformance,
+              paidPostPerformanceViews: coreResult.data.paidPostPerformanceViews,
+              sponsoredPostsMedianViews: coreResult.data.sponsoredPostsMedianViews,
+              sponsoredPostsMedianLikes: coreResult.data.sponsoredPostsMedianLikes,
+              nonSponsoredPostsMedianViews: coreResult.data.nonSponsoredPostsMedianViews,
+              nonSponsoredPostsMedianLikes: coreResult.data.nonSponsoredPostsMedianLikes,
+              audienceExtra: coreResult.data.audienceExtra,
+              statsByContentType: coreResult.data.statsByContentType,
               // Brand and sponsorship data for popup
-              sponsoredPosts: coreResult.data.brand_partnerships || [], // sponsoredPosts comes from brand_partnerships
               brandAffinity: coreResult.data.brand_affinity || [],
               mentions: coreResult.data.brand_mentions || [],
               sponsored_performance: coreResult.data.sponsored_performance || {},
@@ -2853,6 +2884,24 @@ function DiscoveryPageClient() {
         country={detailCountry}
         loading={detailLoading}
       />
+      {/* 🚨 DEBUG: Log what's being passed to the panel */}
+      {detailPanelOpen && selectedPlatform === 'tiktok' && (
+        <div style={{ display: 'none' }}>
+          {console.log('🚨 Discovery Page - Data being passed to TikTok popup:', {
+            selectedPlatform,
+            detailInfluencer,
+            hasEngagements: detailInfluencer?.engagements,
+            hasTotalLikes: detailInfluencer?.totalLikes,
+            hasPostsCount: detailInfluencer?.postsCount,
+            hasAverageViews: detailInfluencer?.averageViews,
+            hasGender: detailInfluencer?.gender,
+            hasAgeGroup: detailInfluencer?.ageGroup,
+            hasRecentPosts: detailInfluencer?.recentPosts,
+            hasPopularPosts: detailInfluencer?.popularPosts,
+            hasPaidData: detailInfluencer?.paidPostPerformance
+          })}
+        </div>
+      )}
     </div>
   )
 }

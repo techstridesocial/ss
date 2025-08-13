@@ -169,24 +169,100 @@ export const PerformanceStatusSection = ({ influencer }: PerformanceStatusSectio
           </div>
         )}
         
-        {/* 🆕 NEW: ENGAGEMENT DISTRIBUTION */}
+        {/* 🆕 NEW: ENGAGEMENT DISTRIBUTION CHART */}
         {engagementDistribution.length > 0 && (
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">Engagement Rate Distribution</h4>
-            <div className="space-y-2">
-              {engagementDistribution.map((dist: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm">{dist.min}% - {dist.max}%</span>
-                    {dist.median && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                        MEDIAN
-                      </span>
+            <h4 className="font-medium text-gray-900 mb-1">Engagement rate distribution</h4>
+            <p className="text-sm text-gray-500 mb-4">Distribution by engagement rate for influencers with &gt; 1M followers.</p>
+            
+            <div className="relative">
+              {/* Chart Container */}
+              <div className="flex items-end space-x-1 h-40 bg-gray-50 p-4 rounded-lg">
+                {engagementDistribution.map((dist: any, index: number) => {
+                  // Calculate bar height as percentage of max
+                  const maxTotal = Math.max(...engagementDistribution.map((d: any) => d.total))
+                  const heightPercent = (dist.total / maxTotal) * 100
+                  
+                  // Check if this is the current influencer's position (you'll need to add logic for this)
+                  const currentInfluencerER = influencer.engagementRate || 0
+                  const isCurrentInfluencer = currentInfluencerER >= (dist.min || 0) && currentInfluencerER <= (dist.max || 100)
+                  const isMedian = dist.median
+                  
+                  return (
+                    <div key={index} className="flex flex-col items-center flex-1 group relative">
+                      {/* Profile Picture for Current Influencer */}
+                      {isCurrentInfluencer && influencer.picture && (
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
+                          <img 
+                            src={influencer.picture} 
+                            alt={influencer.fullname || influencer.username}
+                            className="w-6 h-6 rounded-full border-2 border-blue-500 shadow-lg"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Bar */}
+                      <div 
+                        className={`w-full rounded-t transition-all duration-200 group-hover:opacity-80 ${
+                          isCurrentInfluencer 
+                            ? 'bg-blue-500' 
+                            : isMedian 
+                              ? 'bg-gray-800' 
+                              : 'bg-gray-300'
+                        }`}
+                        style={{ 
+                          height: `${Math.max(heightPercent, 5)}%`,
+                          minHeight: '8px'
+                        }}
+                      />
+                      
+                      {/* Median Label */}
+                      {isMedian && (
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+                          <span className="text-xs text-gray-700 font-medium whitespace-nowrap">Median</span>
+                        </div>
+                      )}
+                      
+                      {/* Tooltip on Hover */}
+                      <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                        {(dist.min * 100).toFixed(1)}% - {(dist.max * 100).toFixed(1)}%<br/>
+                        {formatNumber(dist.total)} creators
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* X-axis labels */}
+              <div className="flex justify-between text-xs text-gray-500 mt-2 px-4">
+                {engagementDistribution.map((dist: any, index: number) => (
+                  <span key={index} className="text-center" style={{ width: `${100/engagementDistribution.length}%` }}>
+                    {index === 0 && '0%'}
+                    {index === Math.floor(engagementDistribution.length / 2) && (
+                      <>
+                        {((dist.min + dist.max) / 2 * 100).toFixed(0)}%
+                      </>
                     )}
-                  </div>
-                  <span className="font-medium">{dist.total} creators</span>
-                </div>
-              ))}
+                    {index === engagementDistribution.length - 1 && `${(dist.max * 100).toFixed(0)}%`}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            {/* Legend */}
+            <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                <span className="text-gray-700">This influencer</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-gray-800 rounded"></div>
+                <span className="text-gray-700">Median</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-gray-300 rounded"></div>
+                <span className="text-gray-700">Other influencers</span>
+              </div>
             </div>
           </div>
         )}

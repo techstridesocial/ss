@@ -25,18 +25,38 @@ export async function POST(request: Request) {
       avgComments: profile.avgComments,
       credibility: audience.credibility
     })
+
+    // 🚨 DEBUG: Log the FULL raw Modash response structure for TikTok
+    if (platform === 'tiktok') {
+      console.log('🚨 FULL TIKTOK MODASH RESPONSE:', JSON.stringify(modashResponse, null, 2))
+      console.log('🚨 TikTok profile keys:', Object.keys(modashResponse.profile || {}))
+      console.log('🚨 Looking for TikTok fields:', {
+        paidPostPerformance: modashResponse.profile?.paidPostPerformance,
+        recentPosts: modashResponse.profile?.recentPosts,
+        popularPosts: modashResponse.profile?.popularPosts,
+        statHistory: modashResponse.profile?.statHistory,
+        postsCount: modashResponse.profile?.postsCount,
+        engagements: modashResponse.profile?.engagements,
+        totalLikes: modashResponse.profile?.totalLikes,
+        averageViews: modashResponse.profile?.averageViews,
+        gender: modashResponse.profile?.gender,
+        ageGroup: modashResponse.profile?.ageGroup
+      })
+    }
     
-    // Optionally fetch performance data for reels/stories sections
+    // Fetch performance data for enhanced post information (especially important for TikTok thumbnails)
     let performanceData = null
-    if (includePerformanceData && profile.username) {
+    if ((includePerformanceData || platform === 'tiktok') && profile.username) {
       try {
-        console.log('📊 Fetching performance data for enhanced metrics...')
-        const perfResult = await getPerformanceData(profile.username, 5) as any
+        console.log('📊 Fetching performance data for enhanced metrics and thumbnails...')
+        const perfResult = await getPerformanceData(profile.username, 10) as any // Get more posts for better thumbnails
         if (perfResult && (perfResult.posts || perfResult.reels)) {
           performanceData = perfResult
           console.log('✅ Performance data fetched:', {
             posts_total: performanceData.posts?.total || 0,
-            reels_total: performanceData.reels?.total || 0
+            posts_with_data: performanceData.posts?.data?.length || 0,
+            reels_total: performanceData.reels?.total || 0,
+            has_thumbnail_data: performanceData.posts?.data?.[0]?.thumbnail || 'none'
           })
         }
       } catch (perfError) {
@@ -150,8 +170,20 @@ export async function POST(request: Request) {
         avgViews: modashResponse.profile?.avgViews || 0,
         avgReelsPlays: modashResponse.profile?.avgReelsPlays || 0,
         
-        // 🆕 NEW: Content data - FIXED PATHS
-        recentPosts: modashResponse.profile?.recentPosts || [],
+        // 🚨 FIX: Add missing fields from the actual API response structure
+        engagements: modashResponse.profile?.statsByContentType?.all?.engagements || 0,
+        averageViews: modashResponse.profile?.statsByContentType?.all?.avgViews || 0,
+        totalLikes: modashResponse.profile?.totalLikes || 0,
+        
+        // 🆕 NEW: Content data - Enhanced with performance data for better thumbnails
+        recentPosts: (() => {
+          // Try performance data first (has thumbnails), fallback to profile data
+          const perfPosts = performanceData?.posts?.data?.slice(0, 10) || []
+          const profilePosts = modashResponse.profile?.recentPosts || []
+          
+          // If performance data has posts, use it; otherwise use profile data
+          return perfPosts.length > 0 ? perfPosts : profilePosts
+        })(),
         popularPosts: modashResponse.profile?.popularPosts || [],
         
         // 🆕 NEW: Enhanced audience data
@@ -199,7 +231,20 @@ export async function POST(request: Request) {
           posts: performanceData.posts,
           reels: performanceData.reels,
           stories: null // Stories data not provided by this API
-        } : null
+        } : (modashResponse.profile?.statsByContentType?.all ? {
+          // 🚨 FIX: Use statsByContentType data if no performance data
+          posts: {
+            total: modashResponse.profile?.postsCount || 
+                   (modashResponse.profile?.recentPosts?.length || 0) + (modashResponse.profile?.popularPosts?.length || 0) ||
+                   0,
+            likes: { median: [{ value: modashResponse.profile?.statsByContentType?.all?.avgLikes || 0 }] },
+            comments: { median: [{ value: modashResponse.profile?.statsByContentType?.all?.avgComments || 0 }] },
+            views: { median: [{ value: modashResponse.profile?.statsByContentType?.all?.avgViews || 0 }] },
+            shares: { median: [{ value: modashResponse.profile?.statsByContentType?.all?.avgShares || 0 }] },
+            saves: { median: [{ value: modashResponse.profile?.statsByContentType?.all?.avgSaves || modashResponse.profile?.statHistory?.[modashResponse.profile.statHistory.length - 1]?.avgSaves || 0 }] },
+            engagement_rate: [{ value: modashResponse.profile?.statsByContentType?.all?.engagementRate || 0 }]
+          }
+        } : null)
       },
       source: 'modash',
       timestamp: new Date().toISOString(),

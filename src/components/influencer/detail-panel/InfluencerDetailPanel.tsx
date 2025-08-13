@@ -15,6 +15,8 @@ import { PaidOrganicSection } from './sections/PaidOrganicSection'
 import { ReelsSection } from './sections/ReelsSection'
 import { StoriesSection } from './sections/StoriesSection'
 import { TikTokVideosSection } from './sections/TikTokVideosSection'
+import { TikTokPaidOrganicSection } from './sections/TikTokPaidOrganicSection'
+import { TikTokPostsSection } from './sections/TikTokPostsSection'
 import { AudienceSection } from './sections/AudienceSection'
 import { ContentStrategySection } from './sections/ContentStrategySection'
 import { PerformanceStatusSection } from './sections/PerformanceStatusSection'
@@ -29,7 +31,7 @@ import { HistoricalGrowthSection } from './sections/HistoricalGrowthSectionWithC
 import { RecentContentSection } from './sections/RecentContentSection'
 import { CreatorInsightsSection } from './sections/CreatorInsightsSection'
 
-import { ContactInfoSection } from './sections/ContactInfoSection'
+
 
 // Helper function to format follower counts properly
 const formatFollowerCount = (count: number): string => {
@@ -220,9 +222,9 @@ function InfluencerDetailPanel({
                   <div className="bg-gradient-to-b from-gray-50 to-white">
                     <OverviewSection 
                       influencer={influencer} 
-                      currentPlatformData={currentPlatformData} 
+                      currentPlatformData={currentPlatformData}
+                      selectedPlatform={selectedPlatform}
                     />
-                    <ContactInfoSection contacts={influencer.contacts || []} />
                   </div>
                   
                   {/* Content Performance Section Group */}
@@ -234,22 +236,29 @@ function InfluencerDetailPanel({
                       influencer={influencer} 
                       currentPlatformData={currentPlatformData} 
                     />
-                    <PaidOrganicSection influencer={influencer} />
+                    {/* Platform-specific paid/organic analysis */}
+                    {selectedPlatform === 'tiktok' ? (
+                      <TikTokPaidOrganicSection influencer={influencer} />
+                    ) : (
+                      <PaidOrganicSection influencer={influencer} />
+                    )}
                     
                     {/* Platform-specific content sections */}
                     {selectedPlatform === 'tiktok' ? (
-                      <TikTokVideosSection influencer={influencer} />
+                      <>
+                        <TikTokVideosSection influencer={influencer} />
+                        <TikTokPostsSection influencer={influencer} />
+                      </>
                     ) : (
                       <>
                         <ReelsSection influencer={influencer} />
                         <StoriesSection influencer={influencer} />
+                        <RecentContentSection influencer={influencer} />
                       </>
                     )}
-                    
-                    <RecentContentSection influencer={influencer} />
                   </div>
                   
-                  {/* Audience Intelligence Section Group */}
+                  {/* Audience Intelligence Section Group - NOW AVAILABLE FOR TIKTOK! */}
                   <div className="bg-gray-50/50">
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Audience Intelligence</h2>
@@ -259,7 +268,7 @@ function InfluencerDetailPanel({
                     <LanguageBreakdownSection influencer={influencer} />
                   </div>
                   
-                  {/* Brand Partnerships & Strategy Section Group */}
+                  {/* Brand Partnerships & Strategy Section Group - NOW AVAILABLE FOR TIKTOK! */}
                   <div className="bg-white">
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Brand Partnerships & Strategy</h2>
@@ -267,10 +276,13 @@ function InfluencerDetailPanel({
                     <BrandPartnershipsSection influencer={influencer} />
                     <ContentStrategySection influencer={influencer} />
                     <HashtagStrategySection influencer={influencer} />
+                  </div>
+                  
+                  <div className="bg-white">
                     <ContentTopicsSection influencer={influencer} />
                   </div>
                   
-                  {/* Analytics & Growth Section Group */}
+                  {/* Analytics & Growth Section Group - NOW AVAILABLE FOR TIKTOK! */}
                   <div className="bg-gray-50/50">
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Analytics & Growth</h2>
@@ -281,7 +293,7 @@ function InfluencerDetailPanel({
                     <CreatorInsightsSection influencer={influencer} />
                   </div>
                   
-                  {/* 🔍 DEBUG: Temporary Data Check */}
+
 
                   
                   {/* Bottom spacing for better scrolling experience */}

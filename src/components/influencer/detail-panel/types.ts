@@ -68,6 +68,12 @@ export interface InfluencerData {
         max?: Array<{ numberOfItems: number; value: number }>
         median?: Array<{ numberOfItems: number; value: number }>
       }
+      saves?: {
+        mean?: Array<{ numberOfItems: number; value: number }>
+        min?: Array<{ numberOfItems: number; value: number }>
+        max?: Array<{ numberOfItems: number; value: number }>
+        median?: Array<{ numberOfItems: number; value: number }>
+      }
       engagement_rate?: Array<{ numberOfItems: number; value: number }>
       posting_statistics?: {
         weekDayHour?: {
@@ -88,6 +94,18 @@ export interface InfluencerData {
     organic_engagement_rate?: number
     paid_performance_ratio?: number
   }
+  // TikTok-specific paid performance data
+  paidPostPerformance?: number
+  paidPostPerformanceViews?: number
+  sponsoredPostsMedianViews?: number
+  sponsoredPostsMedianLikes?: number
+  nonSponsoredPostsMedianViews?: number
+  nonSponsoredPostsMedianLikes?: number
+  
+  // TikTok profile additional data
+  engagements?: number
+  averageViews?: number
+  totalLikes?: number
   audience?: {
     gender?: Record<string, number>
     age_ranges?: Record<string, number>
@@ -187,12 +205,6 @@ export interface InfluencerData {
   audience_geo_states?: Array<any>
   stats_compared?: any
   audienceExtra?: any
-  paidPostPerformance?: number
-  paidPostPerformanceViews?: number
-  sponsoredPostsMedianViews?: number
-  sponsoredPostsMedianLikes?: number
-  nonSponsoredPostsMedianViews?: number
-  nonSponsoredPostsMedianLikes?: number
   creator_interests?: Array<any>
   creator_brand_affinity?: Array<any>
   lookalikes?: Array<any>
