@@ -1940,31 +1940,7 @@ function DiscoveredInfluencersTable({
                   if (!num) return '0.00%'
                   return num > 1 ? `${num.toFixed(2)}%` : `${(num * 100).toFixed(2)}%`
                 }
-                
-                // Platform-specific engagement rate calculation
-                let engagementRaw = null
-                if (selectedPlatform === 'tiktok') {
-                  // For TikTok, prioritize platform-specific engagement data
-                  engagementRaw = (primaryPlatformData as any)?.engagement_rate ?? 
-                                 (primaryPlatformData as any)?.engagementRate ??
-                                 (creator as any).engagement_rate ??
-                                 (creator as any).engagementRate
-                  console.log('📊 TikTok engagement debug:', {
-                    platform: selectedPlatform,
-                    primaryPlatformEngagement: (primaryPlatformData as any)?.engagement_rate,
-                    primaryPlatformEngagementAlt: (primaryPlatformData as any)?.engagementRate,
-                    creatorEngagement: (creator as any).engagement_rate,
-                    creatorEngagementAlt: (creator as any).engagementRate,
-                    finalEngagement: engagementRaw,
-                    username: (primaryPlatformData as any)?.username || creator.username
-                  })
-                } else {
-                  // For Instagram/YouTube, use existing logic
-                  engagementRaw = (primaryPlatformData as any)?.engagement_rate ?? 
-                                 (primaryPlatformData as any)?.engagementRate ?? 
-                                 (creator as any).engagementRate ?? 
-                                 (creator as any).engagement_rate
-                }
+                const engagementRaw = (primaryPlatformData as any)?.engagement_rate ?? (primaryPlatformData as any)?.engagementRate ?? (creator as any).engagementRate ?? (creator as any).engagement_rate
                 
                 return (
                   <tr key={creator.creatorId || creator.userId || `creator-${index}`} className="hover:bg-gray-50 transition-colors">
