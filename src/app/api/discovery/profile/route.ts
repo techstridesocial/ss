@@ -206,8 +206,29 @@ export async function POST(request: Request) {
           avgComments: modashResponse.profile?.stats?.avgComments || {}
         },
         
-        // 🆕 NEW: Advanced audience analytics
-        audienceExtra: modashResponse.profile?.audienceExtra || {},
+        // 🆕 NEW: Advanced audience analytics - Map from actual TikTok report structure
+        audienceExtra: {
+          engagementRateDistribution: modashResponse.profile?.audience?.engagementRateDistribution || 
+                                     modashResponse.profile?.engagementRateDistribution ||
+                                     [],
+          credibilityDistribution: modashResponse.profile?.audience?.credibilityDistribution || 
+                                  modashResponse.profile?.credibilityDistribution ||
+                                  [],
+          followersRange: modashResponse.profile?.audience?.followersRange || 
+                         modashResponse.profile?.followersRange ||
+                         {}
+        },
+        
+        // 🔍 DEBUG: Log what's actually in the TikTok report structure
+        ...((() => {
+          console.log('🔍 Raw Modash response structure:', {
+            profileKeys: Object.keys(modashResponse.profile || {}),
+            audienceKeys: modashResponse.profile?.audience ? Object.keys(modashResponse.profile.audience) : 'no audience',
+            hasEngagementDist: !!modashResponse.profile?.audience?.engagementRateDistribution || !!modashResponse.profile?.engagementRateDistribution,
+            engagementDistSample: (modashResponse.profile?.audience?.engagementRateDistribution || modashResponse.profile?.engagementRateDistribution || []).slice(0, 2)
+          })
+          return {}
+        })()),
         
         // 🆕 NEW: Paid content performance
         paidPostPerformance: modashResponse.profile?.paidPostPerformance || 0,

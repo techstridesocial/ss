@@ -16,11 +16,34 @@ export const PerformanceStatusSection = ({ influencer }: PerformanceStatusSectio
   const performanceStatus = influencer.performance_data_status
   const stats = influencer.stats || {}
   
+  // Debug: Check what data we have for this influencer
+  console.log('🔍 Full influencer data check:', {
+    influencerKeys: Object.keys(influencer),
+    hasAudienceExtra: !!influencer.audienceExtra,
+    hasStats: !!influencer.stats,
+    engagementRate: influencer.engagementRate,
+    audienceExtraStructure: influencer.audienceExtra ? Object.keys(influencer.audienceExtra) : 'none'
+  })
+  
   // Enhanced benchmarking data
   const audienceExtra = influencer.audienceExtra || {}
-  const engagementDistribution = audienceExtra.engagementRateDistribution || []
+  const rawEngagementDistribution = audienceExtra.engagementRateDistribution || []
+  
+  // ONLY use real API data - no fallback sample data
+  const engagementDistribution = rawEngagementDistribution
+  
   const credibilityDistribution = audienceExtra.credibilityDistribution || []
   const followersRange = audienceExtra.followersRange || {}
+  
+  console.log('🔍 Benchmark data check:', {
+    hasRawData: rawEngagementDistribution.length > 0,
+    usingMockData: rawEngagementDistribution.length === 0,
+    distributionLength: engagementDistribution.length,
+    rawData: rawEngagementDistribution,
+    finalData: engagementDistribution,
+    audienceExtraKeys: Object.keys(audienceExtra),
+    fullAudienceExtra: audienceExtra
+  })
   
   // Check if we have any performance or benchmarking data
   const hasAnyData = hasPerformanceData || performanceStatus || 
@@ -179,13 +202,39 @@ export const PerformanceStatusSection = ({ influencer }: PerformanceStatusSectio
               {/* Chart Container */}
               <div className="flex items-end space-x-1 h-40 bg-gray-50 p-4 rounded-lg">
                 {engagementDistribution.map((dist: any, index: number) => {
-                  // Calculate bar height as percentage of max
-                  const maxTotal = Math.max(...engagementDistribution.map((d: any) => d.total))
-                  const heightPercent = (dist.total / maxTotal) * 100
+                  // Debug: Log the distribution data
+                  console.log('📊 Distribution data:', {
+                    index,
+                    total: dist.total,
+                    min: dist.min,
+                    max: dist.max,
+                    median: dist.median,
+                    fullDist: dist
+                  })
                   
-                  // Check if this is the current influencer's position (you'll need to add logic for this)
-                  const currentInfluencerER = influencer.engagementRate || 0
-                  const isCurrentInfluencer = currentInfluencerER >= (dist.min || 0) && currentInfluencerER <= (dist.max || 100)
+                  // Calculate bar height as percentage of max
+                  const maxTotal = Math.max(...engagementDistribution.map((d: any) => d.total || 0))
+                  const currentTotal = dist.total || 0
+                  const heightPercent = maxTotal > 0 ? (currentTotal / maxTotal) * 100 : 10
+                  
+                  console.log('📊 Height calculation:', {
+                    currentTotal,
+                    maxTotal,
+                    heightPercent
+                  })
+                  
+                  // Check if this is the current influencer's position
+                  const currentInfluencerER = (influencer.engagementRate || 0) / 100 // Convert to decimal if needed
+                  
+                  console.log('🎯 Influencer position check:', {
+                    index,
+                    influencerER: currentInfluencerER,
+                    rangeMin: dist.min,
+                    rangeMax: dist.max,
+                    isInRange: currentInfluencerER >= (dist.min || 0) && currentInfluencerER <= (dist.max || 1)
+                  })
+                  
+                  const isCurrentInfluencer = currentInfluencerER >= (dist.min || 0) && currentInfluencerER <= (dist.max || 1)
                   const isMedian = dist.median
                   
                   return (
@@ -204,16 +253,17 @@ export const PerformanceStatusSection = ({ influencer }: PerformanceStatusSectio
                       {/* Bar */}
                       <div 
                         className={`w-full rounded-t transition-all duration-200 group-hover:opacity-80 ${
-                          isCurrentInfluencer 
+                          isCurrentInfluencer
                             ? 'bg-blue-500' 
                             : isMedian 
                               ? 'bg-gray-800' 
                               : 'bg-gray-300'
                         }`}
                         style={{ 
-                          height: `${Math.max(heightPercent, 5)}%`,
-                          minHeight: '8px'
+                          height: `${Math.max(heightPercent, 8)}%`,
+                          minHeight: '12px'
                         }}
+                        title={`Range: ${(dist.min * 100).toFixed(1)}% - ${(dist.max * 100).toFixed(1)}% | ${currentTotal} creators (${heightPercent.toFixed(1)}%)`}
                       />
                       
                       {/* Median Label */}

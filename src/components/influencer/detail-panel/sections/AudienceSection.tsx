@@ -394,18 +394,44 @@ export const AudienceSection = ({ influencer }: AudienceSectionProps) => {
         {/* Enhanced Geographic Breakdown */}
         <EnhancedGeographicBreakdown audienceData={audienceData} />
 
-        {/* 🆕 NEW: COUNTRY BREAKDOWN (from geoCountries) */}
-        {audienceData.geoCountries && (
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Top Countries</h4>
-            <div className="space-y-2">
-              {audienceData.geoCountries.slice(0, 10).map((country: any, index: number) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">{country.name || country.code || 'Unknown'}</span>
-                  <span className="font-medium">{((country.weight || 0) * 100).toFixed(2)}%</span>
+        {/* 🆕 NEW: GEOGRAPHY & LANGUAGES SIDE-BY-SIDE */}
+        {(audienceData.geoCountries || audience?.languages) && (
+          <div className="md:w-1/2 md:ml-auto space-y-6">
+            {/* Countries */}
+            {audienceData.geoCountries && (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Countries</h4>
+                <div className="space-y-2">
+                  {audienceData.geoCountries.slice(0, 10).map((country: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{country.name || country.code || 'Unknown'}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {((country.weight || 0) * 100).toFixed(2)}%
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Languages */}
+            {audience?.languages && (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Languages</h4>
+                <div className="space-y-2">
+                  {audience.languages.slice(0, 10).map((language: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{language.language || language.name}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {language.percentage !== undefined
+                          ? `${language.percentage.toFixed(2)}%`
+                          : `${((language.weight || 0) * 100).toFixed(2)}%`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         
@@ -430,8 +456,10 @@ export const AudienceSection = ({ influencer }: AudienceSectionProps) => {
           <EthnicityBreakdown ethnicities={audienceData.ethnicities} />
         )}
 
-        {/* Original Language breakdown */}
-        {audience?.languages && <LanguageBreakdown languages={audience.languages} />}
+        {/* Original Language breakdown (fallback if not shown in grid above) */}
+        {audience?.languages && !(audienceData.geoCountries || audience?.languages) && (
+          <LanguageBreakdown languages={audience.languages} />
+        )}
 
         {/* 📊 GENDER BREAKDOWN WITH PIE CHART */}
         {audienceData.genders && (
