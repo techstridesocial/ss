@@ -95,9 +95,23 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
               }`}>
                 <Maximize2 className="w-4 h-4 text-white" />
               </div>
+              {/* Content Type Badge for YouTube */}
+              {post.type && (
+                <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-bold capitalize">
+                  {post.type === 'video' ? 'VIDEO' : post.type === 'short' ? 'SHORT' : post.type === 'stream' ? 'LIVE' : post.type.toUpperCase()}
+                </div>
+              )}
+              
               {/* Popular Badge */}
-              {isPopular && (
+              {isPopular && !post.type && (
                 <div className="absolute top-3 left-3 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  TOP
+                </div>
+              )}
+              
+              {/* Both badges for popular YouTube content */}
+              {isPopular && post.type && (
+                <div className="absolute top-3 right-3 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                   TOP
                 </div>
               )}
@@ -150,8 +164,23 @@ export const RecentContentSection = ({ influencer }: RecentContentSectionProps) 
 
         {/* Content Preview */}
         <div className="p-4 bg-white">
-          {post.text && (
+          {/* YouTube Video Title */}
+          {post.title && (
+            <h4 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2 leading-relaxed">
+              {post.title}
+            </h4>
+          )}
+          
+          {/* Post Description/Text */}
+          {post.text && !post.title && (
             <p className="text-sm text-gray-700 line-clamp-2 mb-3 leading-relaxed">
+              {post.text}
+            </p>
+          )}
+          
+          {/* Show text as description if we have both title and text */}
+          {post.text && post.title && (
+            <p className="text-xs text-gray-600 line-clamp-1 mb-3 leading-relaxed">
               {post.text}
             </p>
           )}

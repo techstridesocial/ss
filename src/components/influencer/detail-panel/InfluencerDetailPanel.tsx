@@ -17,6 +17,10 @@ import { StoriesSection } from './sections/StoriesSection'
 import { TikTokVideosSection } from './sections/TikTokVideosSection'
 import { TikTokPaidOrganicSection } from './sections/TikTokPaidOrganicSection'
 import { TikTokPostsSection } from './sections/TikTokPostsSection'
+import { YouTubeVideosSection } from './sections/YouTubeVideosSection'
+import { YouTubeShortsSection } from './sections/YouTubeShortsSection'
+import { YouTubeStreamsSection } from './sections/YouTubeStreamsSection'
+import { YouTubePaidOrganicSection } from './sections/YouTubePaidOrganicSection'
 import { AudienceSection } from './sections/AudienceSection'
 import { ContentStrategySection } from './sections/ContentStrategySection'
 import { PerformanceStatusSection } from './sections/PerformanceStatusSection'
@@ -239,6 +243,8 @@ function InfluencerDetailPanel({
                     {/* Platform-specific paid/organic analysis */}
                     {selectedPlatform === 'tiktok' ? (
                       <TikTokPaidOrganicSection influencer={influencer} />
+                    ) : selectedPlatform === 'youtube' ? (
+                      <YouTubePaidOrganicSection influencer={influencer} />
                     ) : (
                       <PaidOrganicSection influencer={influencer} />
                     )}
@@ -248,6 +254,13 @@ function InfluencerDetailPanel({
                       <>
                         <TikTokVideosSection influencer={influencer} />
                         <TikTokPostsSection influencer={influencer} />
+                      </>
+                    ) : selectedPlatform === 'youtube' ? (
+                      <>
+                        <YouTubeVideosSection influencer={influencer} />
+                        <YouTubeShortsSection influencer={influencer} />
+                        <YouTubeStreamsSection influencer={influencer} />
+                        <RecentContentSection influencer={influencer} />
                       </>
                     ) : (
                       <>

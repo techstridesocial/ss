@@ -52,26 +52,42 @@ export async function getProfileReport(userId: string, platform: string) {
   return modashApiRequest(`/${platform}/profile/${userId}/report`)
 }
 
-// Performance data (if confirmed valid)
-export async function getPerformanceData(url: string, postLimit = 5) {
+// Performance data (platform-aware)
+export async function getPerformanceData(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  url: string, 
+  postLimit = 5
+) {
   // Note: postLimit parameter is not supported by the API, but kept for compatibility
-  return modashApiRequest(`/instagram/performance-data`, { url })
+  return modashApiRequest(`/${platform}/performance-data`, { url })
 }
 
-// Hashtags based on content
-export async function listHashtags(query: string, limit = 10) {
-  return modashApiRequest(`/instagram/hashtags`, { query, limit })
+// Hashtags based on content (platform-aware)
+export async function listHashtags(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  query: string, 
+  limit = 10
+) {
+  return modashApiRequest(`/${platform}/hashtags`, { query, limit })
 }
 
-// Brand partnerships
-export async function listPartnerships(query: string, limit = 5) {
+// Brand partnerships (platform-aware)
+export async function listPartnerships(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  query: string, 
+  limit = 5
+) {
   // Per documentation, brands endpoint lists brand partnerships
-  return modashApiRequest(`/instagram/brands`, { query, limit })
+  return modashApiRequest(`/${platform}/brands`, { query, limit })
 }
 
-// Content topics based on creator
-export async function listTopics(query: string, limit = 8) {
-  return modashApiRequest(`/instagram/topics`, { query, limit })
+// Content topics based on creator (platform-aware)
+export async function listTopics(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  query: string, 
+  limit = 8
+) {
+  return modashApiRequest(`/${platform}/topics`, { query, limit })
 }
 
 // User info for credit usage
@@ -120,19 +136,31 @@ export async function getAudienceOverlap(
   }
 }
 
-// List locations
-export async function listLocations(query: string, limit = 10) {
-  return modashApiRequest('/instagram/locations', { query, limit })
+// List locations (platform-aware)
+export async function listLocations(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  query: string, 
+  limit = 10
+) {
+  return modashApiRequest(`/${platform}/locations`, { query, limit })
 }
 
-// List languages
-export async function listLanguages(query: string, limit = 10) {
-  return modashApiRequest('/instagram/languages', { query, limit })
+// List languages (platform-aware)
+export async function listLanguages(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  query: string, 
+  limit = 10
+) {
+  return modashApiRequest(`/${platform}/languages`, { query, limit })
 }
 
-// List interests
-export async function listInterests(query: string, limit = 10) {
-  return modashApiRequest('/instagram/interests', { query, limit })
+// List interests (platform-aware)
+export async function listInterests(
+  platform: 'instagram' | 'tiktok' | 'youtube',
+  query: string, 
+  limit = 10
+) {
+  return modashApiRequest(`/${platform}/interests`, { query, limit })
 }
 
 // Helper: credit usage derived from user info

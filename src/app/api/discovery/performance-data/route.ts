@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const url = searchParams.get('url')
+    const platform = searchParams.get('platform') || 'instagram'
 
     if (!url) {
       return NextResponse.json(
@@ -13,10 +14,10 @@ export async function GET(request: Request) {
       )
     }
 
-    console.log('📊 Performance Data API called:', { url })
+    console.log('📊 Performance Data API called:', { url, platform })
 
-    // Call the new Performance Data API
-    const result = await getPerformanceData(url, 3)
+    // Call the platform-aware Performance Data API
+    const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
     console.log('📊 Raw result from getPerformanceData:', { 
       result: typeof result,
       hasResult: !!result,
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { url } = await request.json()
+    const { url, platform = 'instagram' } = await request.json()
 
     if (!url) {
       return NextResponse.json(
@@ -68,9 +69,9 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('📊 Performance Data API (POST) called:', { url })
+    console.log('📊 Performance Data API (POST) called:', { url, platform })
 
-    const result = await getPerformanceData(url, 3)
+    const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
 
     // Modash API returns { error, posts, reels } directly
     if (result?.error) {

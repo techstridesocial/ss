@@ -14,9 +14,13 @@ interface HistoricalGrowthSectionProps {
 export const HistoricalGrowthSection = ({ influencer }: HistoricalGrowthSectionProps) => {
   const statHistory = influencer.statHistory || []
   const lookalikes = influencer.lookalikes || []
+  const lookalikesByTopics = (influencer as any).lookalikesByTopics || []
+  
+  // Combine all lookalikes data
+  const allLookalikes = [...lookalikes, ...lookalikesByTopics]
   
   // Check if we have any growth or lookalike data
-  const hasAnyData = statHistory.length > 0 || lookalikes.length > 0
+  const hasAnyData = statHistory.length > 0 || allLookalikes.length > 0
   
   if (!hasAnyData) {
     return null
@@ -212,11 +216,11 @@ export const HistoricalGrowthSection = ({ influencer }: HistoricalGrowthSectionP
         )}
         
         {/* 🆕 LOOKALIKE CREATORS */}
-        {lookalikes.length > 0 && (
+        {allLookalikes.length > 0 && (
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">👥 Similar Creators</h4>
+            <h4 className="font-medium text-gray-900 mb-3">👥 Similar Creators {lookalikesByTopics.length > 0 && <span className="text-sm text-gray-500">(by topics & audience)</span>}</h4>
             <div className="space-y-3">
-              {lookalikes.slice(0, 5).map((creator: any, index: number) => (
+              {allLookalikes.slice(0, 5).map((creator: any, index: number) => (
                 <div 
                   key={index} 
                   className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
@@ -241,10 +245,10 @@ export const HistoricalGrowthSection = ({ influencer }: HistoricalGrowthSectionP
                 </div>
               ))}
               
-              {lookalikes.length > 5 && (
+              {allLookalikes.length > 5 && (
                 <div className="text-center py-2">
                   <span className="text-sm text-gray-500">
-                    +{lookalikes.length - 5} more similar creators
+                    +{allLookalikes.length - 5} more similar creators
                   </span>
                 </div>
               )}

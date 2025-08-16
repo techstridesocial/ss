@@ -5,6 +5,8 @@ export interface InfluencerData {
   handle: string
   profilePicture?: string
   bio?: string
+  url?: string // Profile URL
+  description?: string // Channel/profile description
   followers: number
   engagement_rate?: number
   avgViews?: number
@@ -106,21 +108,61 @@ export interface InfluencerData {
   engagements?: number
   averageViews?: number
   totalLikes?: number
+  
+  // YouTube-specific profile data (extends existing fields)
+  totalViews?: number // Total channel views (YouTube-specific)
   audience?: {
+    notable?: number
     gender?: Record<string, number>
+    genders?: Array<{
+      code: string
+      weight: number
+    }>
     age_ranges?: Record<string, number>
+    ages?: Array<{
+      code: string
+      weight: number
+    }>
     locations?: Array<{
       country: string
       city?: string
       percentage: number
     }>
+    geoCountries?: Array<{
+      name: string
+      weight: number
+      code: string
+    }>
     languages?: Array<{
       language: string
       percentage: number
     }>
+    gendersPerAge?: Array<{
+      code: string
+      male: number
+      female: number
+    }>
     interests?: Array<{
       interest: string
       percentage: number
+    }>
+    notableUsers?: Array<{
+      userId: string
+      fullname: string
+      username: string
+      url: string
+      picture: string
+      followers: number
+      engagements: number
+    }>
+    audienceLookalikes?: Array<{
+      userId: string
+      fullname: string
+      username: string
+      url: string
+      picture: string
+      followers: number
+      engagements: number
     }>
   }
   engagement?: {
@@ -172,8 +214,43 @@ export interface InfluencerData {
     weight: number
   }>
   statsByContentType?: {
-    all?: any
+    all?: {
+      engagements?: number
+      engagementRate?: number
+      avgLikes?: number
+      avgComments?: number
+      avgPosts4weeks?: number
+      statHistory?: Array<{
+        month: string
+        avgEngagements?: number
+        avgViews?: number
+        avgShares?: number
+        avgSaves?: number
+      }>
+    }
     reels?: any
+    // YouTube-specific content types
+    videos?: {
+      engagements?: number
+      engagementRate?: number
+      avgLikes?: number
+      avgComments?: number
+      avgViews?: number
+    }
+    shorts?: {
+      engagements?: number
+      engagementRate?: number
+      avgLikes?: number
+      avgComments?: number
+      avgViews?: number
+    }
+    streams?: {
+      engagements?: number
+      engagementRate?: number
+      avgLikes?: number
+      avgComments?: number
+      avgViews?: number
+    }
   }
   city?: string
   state?: string
@@ -191,12 +268,93 @@ export interface InfluencerData {
   isPrivate?: boolean
   accountType?: string
   avgReelsPlays?: number
-  recentPosts?: Array<any>
+  recentPosts?: Array<{
+    id: string
+    text?: string
+    url: string
+    created: string
+    likes?: number
+    comments?: number
+    views?: number
+    video?: string
+    thumbnail?: string // YouTube-specific
+    type: string // YouTube: 'video', 'short', 'stream'
+    title?: string // YouTube-specific
+  }>
   popularPosts?: Array<any>
+  sponsoredPosts?: Array<{
+    id: string
+    text?: string
+    url: string
+    created: string
+    likes?: number
+    comments?: number
+    views?: number
+    video?: string
+    thumbnail?: string
+    type: string
+    title?: string
+    sponsors?: Array<{
+      domain: string
+      logo_url: string
+      name: string
+    }>
+  }>
   audience_notable?: number
   audience_credibility?: number
   audience_notable_users?: Array<any>
   audience_lookalikes?: Array<any>
+  
+  // YouTube API additional audience fields
+  audienceCommenters?: {
+    notable?: number
+    genders?: Array<{
+      code: string
+      weight: number
+    }>
+    geoCountries?: Array<{
+      name: string
+      weight: number
+      code: string
+    }>
+    ages?: Array<{
+      code: string
+      weight: number
+    }>
+    gendersPerAge?: Array<{
+      code: string
+      male: number
+      female: number
+    }>
+    languages?: Array<{
+      code: string
+      name: string
+      weight: number
+    }>
+    notableUsers?: Array<any>
+    audienceLookalikes?: Array<any>
+  }
+  lookalikesByTopics?: Array<{
+    userId: string
+    fullname: string
+    username: string
+    url: string
+    picture: string
+    followers: number
+    engagements: number
+  }>
+  audienceExtra?: {
+    followersRange?: {
+      leftNumber: number
+      rightNumber: number
+    }
+    engagementRateDistribution?: Array<{
+      min: number
+      max: number
+      total: number
+      median?: boolean
+    }>
+  }
   audience_ethnicities?: Array<any>
   audience_reachability?: Array<any>
   audience_types?: Array<any>
@@ -204,7 +362,6 @@ export interface InfluencerData {
   audience_geo_cities?: Array<any>
   audience_geo_states?: Array<any>
   stats_compared?: any
-  audienceExtra?: any
   creator_interests?: Array<any>
   creator_brand_affinity?: Array<any>
   lookalikes?: Array<any>
@@ -215,8 +372,8 @@ export interface InfluencerDetailPanelProps {
   influencer: InfluencerData | null
   isOpen: boolean
   onClose: () => void
-  selectedPlatform?: string
-  onPlatformSwitch?: (platform: string) => void
+  selectedPlatform?: 'instagram' | 'tiktok' | 'youtube'
+  onPlatformSwitch?: (platform: 'instagram' | 'tiktok' | 'youtube') => void
   onSave?: (data: InfluencerData) => void
   city?: string
   country?: string

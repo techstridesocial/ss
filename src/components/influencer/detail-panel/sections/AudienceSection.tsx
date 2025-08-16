@@ -364,6 +364,8 @@ export const AudienceSection = ({ influencer }: AudienceSectionProps) => {
     audienceLookalikes: (influencer as any).audience_lookalikes || audience?.audienceLookalikes,
     audienceReachability: (influencer as any).audience_reachability || audience?.audienceReachability,
     audienceTypes: (influencer as any).audience_types || audience?.audienceTypes,
+    // 🎯 YOUTUBE-SPECIFIC: Enhanced audience data
+    ...((influencer as any).audienceCommenters || {}),
   }
   const brandAffinity = (influencer as any).brandAffinity || audienceData.brandAffinity || []
 

@@ -18,15 +18,9 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
     influencer.engagement?.engagement_rate
   )
 
-  const estimatedImpressions = getMetricValue(
-    influencer.estimated_impressions,
-    influencer.engagement?.estimated_impressions
-  )
-
-  const estimatedReach = getMetricValue(
-    influencer.estimated_reach,
-    influencer.engagement?.estimated_reach
-  )
+  // ❌ REMOVED: These fields are not available in YouTube API
+  const estimatedImpressions = null // Not available for YouTube
+  const estimatedReach = null // Not available for YouTube
 
   const avgLikes = getMetricValue(
     influencer.avgLikes,
@@ -38,10 +32,8 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
     influencer.engagement?.avg_comments
   )
 
-  const avgShares = getMetricValue(
-    influencer.avgShares,
-    influencer.engagement?.avg_shares
-  )
+  // ❌ REMOVED: avgShares not available in YouTube API 
+  const avgShares = null // Not available for YouTube
 
   // Pull image/picture fallback for header contexts if needed by consumers
   const profileImage = (influencer as any).picture || (influencer as any).profilePicture || (influencer as any).profile_picture

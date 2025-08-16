@@ -6,10 +6,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('query') || undefined
     const limit = parseInt(searchParams.get('limit') || '10')
+    const platform = searchParams.get('platform') || 'instagram'
     
-    console.log('🔍 Hashtags API request:', { query, limit })
+    console.log('🔍 Hashtags API request:', { query, limit, platform })
     
-    const result = await listHashtags(query || 'fitness', limit)
+    const result = await listHashtags(platform as 'instagram' | 'tiktok' | 'youtube', query || 'fitness', limit)
     
     return NextResponse.json(result)
   } catch (error) {

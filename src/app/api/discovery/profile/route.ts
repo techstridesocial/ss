@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     if ((includePerformanceData || platform === 'tiktok') && profile.username) {
       try {
         console.log('📊 Fetching performance data for enhanced metrics and thumbnails...')
-        const perfResult = await getPerformanceData(profile.username, 10) as any // Get more posts for better thumbnails
+        const perfResult = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', profile.username, 10) as any // Get more posts for better thumbnails
         if (perfResult && (perfResult.posts || perfResult.reels)) {
           performanceData = perfResult
           console.log('✅ Performance data fetched:', {
@@ -156,7 +156,14 @@ export async function POST(request: Request) {
         
         // 🆕 NEW: Missing core profile data - FIXED PATHS
         mentions: modashResponse.profile?.mentions || [],
-        statsByContentType: modashResponse.profile?.statsByContentType || { all: {}, reels: {} },
+        statsByContentType: {
+          all: modashResponse.profile?.statsByContentType?.all || {},
+          reels: modashResponse.profile?.statsByContentType?.reels || {},
+          // 🎯 YOUTUBE-SPECIFIC: Video content types
+          videos: modashResponse.profile?.statsByContentType?.videos || {},
+          shorts: modashResponse.profile?.statsByContentType?.shorts || {},
+          streams: modashResponse.profile?.statsByContentType?.streams || {}
+        },
         city: modashResponse.profile?.city || null,
         state: modashResponse.profile?.state || null,
         country: modashResponse.profile?.country || null,
@@ -174,6 +181,12 @@ export async function POST(request: Request) {
         engagements: modashResponse.profile?.statsByContentType?.all?.engagements || 0,
         averageViews: modashResponse.profile?.statsByContentType?.all?.avgViews || 0,
         totalLikes: modashResponse.profile?.totalLikes || 0,
+        
+        // 🎯 YOUTUBE-SPECIFIC: Critical missing fields from YouTube API
+        totalViews: modashResponse.profile?.totalViews || 0, // Total channel views
+        handle: modashResponse.profile?.profile?.handle || modashResponse.profile?.handle || null, // Channel handle (@username)
+        description: modashResponse.profile?.profile?.description || modashResponse.profile?.description || null, // Channel description
+        url: modashResponse.profile?.profile?.url || modashResponse.profile?.url || null, // Channel URL
         
         // 🆕 NEW: Content data - Enhanced with performance data for better thumbnails
         recentPosts: (() => {
@@ -206,15 +219,17 @@ export async function POST(request: Request) {
           avgComments: modashResponse.profile?.stats?.avgComments || {}
         },
         
-        // 🆕 NEW: Advanced audience analytics - Map from actual TikTok report structure
+        // 🆕 NEW: Advanced audience analytics - Enhanced for YouTube
         audienceExtra: {
-          engagementRateDistribution: modashResponse.profile?.audience?.engagementRateDistribution || 
+          engagementRateDistribution: modashResponse.profile?.audienceExtra?.engagementRateDistribution ||
+                                     modashResponse.profile?.audience?.engagementRateDistribution || 
                                      modashResponse.profile?.engagementRateDistribution ||
                                      [],
           credibilityDistribution: modashResponse.profile?.audience?.credibilityDistribution || 
                                   modashResponse.profile?.credibilityDistribution ||
                                   [],
-          followersRange: modashResponse.profile?.audience?.followersRange || 
+          followersRange: modashResponse.profile?.audienceExtra?.followersRange ||
+                         modashResponse.profile?.audience?.followersRange || 
                          modashResponse.profile?.followersRange ||
                          {}
         },
@@ -242,6 +257,23 @@ export async function POST(request: Request) {
         creator_interests: modashResponse.profile?.interests || [],
         creator_brand_affinity: modashResponse.profile?.brandAffinity || [],
         lookalikes: modashResponse.profile?.lookalikes || [],
+        
+        // 🎯 YOUTUBE-SPECIFIC: Advanced audience fields from YouTube API
+        audienceCommenters: modashResponse.profile?.audienceCommenters || {
+          notable: modashResponse.profile?.audience?.notable || 0,
+          genders: modashResponse.profile?.audience?.genders || [],
+          geoCountries: modashResponse.profile?.audience?.geoCountries || [],
+          ages: modashResponse.profile?.audience?.ages || [],
+          gendersPerAge: modashResponse.profile?.audience?.gendersPerAge || [],
+          languages: modashResponse.profile?.audience?.languages || [],
+          notableUsers: modashResponse.profile?.audience?.notableUsers || [],
+          audienceLookalikes: modashResponse.profile?.audience?.audienceLookalikes || []
+        },
+        lookalikesByTopics: modashResponse.profile?.lookalikesByTopics || [],
+        sponsoredPosts: (modashResponse.profile?.sponsoredPosts || []).map((post: any) => ({
+          ...post,
+          sponsors: post.sponsors || []
+        })),
         
         // 🆕 NEW: Missing historical and profile data - FIXED PATHS
         statHistory: modashResponse.profile?.statHistory || [],

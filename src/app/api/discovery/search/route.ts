@@ -119,10 +119,12 @@ export async function POST(request: NextRequest) {
     })
     
     // For simple text searches, use the new List Users API (more efficient)
-    const shouldUseListUsers = body.searchQuery?.trim() && !hasComplexFilters(body)
+    // Note: YouTube doesn't have a /users endpoint, only /search
+    const shouldUseListUsers = body.searchQuery?.trim() && !hasComplexFilters(body) && body.platform !== 'youtube'
     console.log('🤔 Should use List Users API?', {
       hasSearchQuery: !!body.searchQuery?.trim(),
       hasComplexFilters: hasComplexFilters(body),
+      platform: body.platform,
       decision: shouldUseListUsers
     })
     
@@ -282,28 +284,47 @@ export async function POST(request: NextRequest) {
 
     // Fall back to complex search for advanced filtering or if List Users API fails
     console.log('🔍 Using complex discovery search with filters')
-    const platforms = [platform] as const // Only search the selected platform!
+    const platforms = [body.platform] as const // Only search the selected platform!
     
     try {
       const searchPromises = platforms.map(async (platform) => {
         try {
           const filters = platform === 'tiktok' 
             ? mapToTikTokFilters({ ...body, platform })
+            : platform === 'youtube'
+            ? mapToYouTubeFilters({ ...body, platform })
             : mapToModashFilters({ ...body, platform })
           
           console.log(`🔍 Searching ${platform} with filters:`, filters)
           const result = await searchDiscovery(platform, filters)
+          // Handle platform-specific response structures
+          let resultData = []
+          let totalCount = 0
+          
+          if (platform === 'youtube') {
+            // YouTube returns { lookalikes: [], directs: [], total: number }
+            const lookalikes = (result as any).lookalikes || []
+            const directs = (result as any).directs || []
+            resultData = [...lookalikes, ...directs]
+            totalCount = (result as any).total || resultData.length
+          } else {
+            // Instagram/TikTok return { results: [], total: number } or { data: [] }
+            resultData = (result as any).results || (result as any).data || []
+            totalCount = (result as any).total || resultData.length
+          }
+          
           console.log(`✅ ${platform} search returned:`, {
-            resultCount: (result as any).results?.length || (result as any).data?.length || 0,
-            firstResult: (result as any).results?.[0] || (result as any).data?.[0],
+            resultCount: resultData.length,
+            firstResult: resultData[0],
+            platform,
             fullResponse: result
           })
           
           return {
             platform,
             success: true,
-            data: (result as any).results || (result as any).data || [],
-            total: (result as any).total || (result as any).data?.total || 0,
+            data: resultData,
+            total: totalCount,
             creditsUsed: (result as any).creditsUsed || 0
           }
         } catch (error) {
@@ -339,6 +360,36 @@ export async function POST(request: NextRequest) {
       
       // Merge results by creator
       let mergedCreators = mergeCreatorResults(platformResults)
+      
+      // Apply exact matching for single-user searches (like Instagram/TikTok)
+      if (body.searchQuery?.trim()) {
+        const searchTerm = body.searchQuery.trim().toLowerCase()
+        console.log('🎯 Looking for exact match in merged results:', {
+          searchTerm,
+          totalResults: mergedCreators.length,
+          availableUsernames: mergedCreators.map(c => c.displayName.toLowerCase())
+        })
+        
+        const exactMatch = mergedCreators.find(creator => {
+          // Check display name
+          if (creator.displayName.toLowerCase() === searchTerm) return true
+          
+          // Check usernames from all platforms
+          return Object.values(creator.platforms).some(platformData => {
+            if (!platformData || !platformData.username) return false
+            return platformData.username.toLowerCase() === searchTerm
+          })
+        })
+        
+        if (exactMatch) {
+          console.log('🎯 Exact match found, filtering to show only exact result:', exactMatch.displayName)
+          mergedCreators = [exactMatch] // Only show the exact match
+        } else {
+          console.log('⚠️ No exact match found for:', searchTerm)
+          console.log('📝 Available creators:', mergedCreators.map(c => c.displayName))
+          // Keep all results if no exact match found
+        }
+      }
       
       // Apply roster filtering if requested
       if (body.hideProfilesInRoster) {
@@ -942,6 +993,122 @@ function mapToTikTokFilters(body: DiscoverySearchBody) {
   console.log('🎵 TikTok filters mapped:', JSON.stringify(tiktokFilters, null, 2))
   
   return tiktokFilters
+}
+
+function mapToYouTubeFilters(body: DiscoverySearchBody) {
+  const influencerFilters: any = {}
+  const audienceFilters: any = {}
+  
+  // Performance filters
+  if (body.followersMin || body.followersMax) {
+    influencerFilters.followers = {}
+    if (body.followersMin) influencerFilters.followers.min = body.followersMin
+    if (body.followersMax) influencerFilters.followers.max = body.followersMax
+  }
+  
+  if (body.engagementRate && body.engagementRate > 0) {
+    influencerFilters.engagementRate = body.engagementRate
+  }
+  
+  if (body.avgViewsMin || body.avgViewsMax) {
+    influencerFilters.views = {}
+    if (body.avgViewsMin) influencerFilters.views.min = body.avgViewsMin
+    if (body.avgViewsMax) influencerFilters.views.max = body.avgViewsMax
+  }
+  
+  // Bio and keywords search
+  if (body.bio?.trim()) {
+    influencerFilters.bio = body.bio.trim()
+  }
+  
+  // Keywords for video content search
+  if (body.captions?.trim() || body.topics?.trim() || body.transcript?.trim()) {
+    const keywords = [body.captions, body.topics, body.transcript]
+      .filter(k => k?.trim())
+      .join(' ')
+      .trim()
+    if (keywords) {
+      influencerFilters.keywords = keywords
+    }
+  }
+  
+  // Relevance search (hashtags, mentions, search query)
+  const relevanceTerms = []
+  if (body.hashtags?.trim()) {
+    const hashtags = body.hashtags.split(',').map(tag => tag.trim()).filter(Boolean)
+    relevanceTerms.push(...hashtags.map(tag => tag.startsWith('#') ? tag : `#${tag}`))
+  }
+  if (body.mentions?.trim()) {
+    const mentions = body.mentions.split(',').map(mention => mention.trim()).filter(Boolean)
+    relevanceTerms.push(...mentions.map(mention => mention.startsWith('@') ? mention : `@${mention}`))
+  }
+  if (body.searchQuery?.trim()) {
+    relevanceTerms.push(body.searchQuery.trim())
+  }
+  if (relevanceTerms.length > 0) {
+    influencerFilters.relevance = relevanceTerms
+  }
+  
+  // Account verification
+  if (body.verifiedOnly) {
+    influencerFilters.isVerified = true
+  }
+  
+  // Location mapping for YouTube
+  if (body.selectedLocation && body.selectedLocation !== '') {
+    const locationMapping: Record<string, number[]> = {
+      united_kingdom: [826],
+      uk: [826],
+      great_britain: [826],
+      united_states: [840],
+      usa: [840],
+      us: [840],
+      canada: [124],
+      australia: [36],
+      germany: [276],
+      france: [250]
+    }
+    const key = String(body.selectedLocation).toLowerCase().replace(/\s+/g, '_')
+    const mapped = locationMapping[key]
+    if (mapped) {
+      influencerFilters.location = mapped
+    } else if (typeof body.selectedLocation === 'string' && body.selectedLocation.length <= 3) {
+      influencerFilters.location = [body.selectedLocation]
+    }
+  }
+  
+  // Demographics for audience filters
+  if (body.selectedGender && body.selectedGender !== '') {
+    audienceFilters.gender = {
+      id: body.selectedGender.toUpperCase(),
+      weight: 0.5
+    }
+  }
+  
+  if (body.selectedAge && body.selectedAge !== '') {
+    audienceFilters.age = [{
+      id: body.selectedAge,
+      weight: 0.3
+    }]
+  }
+  
+  // Build final YouTube API structure according to documentation
+  const youtubeFilters: any = {
+    page: body.page || 0,
+    calculationMethod: "median",
+    sort: {
+      field: "followers",
+      direction: "desc"
+    },
+    filter: {
+      influencer: influencerFilters,
+      ...(Object.keys(audienceFilters).length > 0 && { audience: audienceFilters })
+    }
+  }
+  
+  console.log('🎬 YouTube filters mapped:', JSON.stringify(youtubeFilters, null, 2))
+  
+  return youtubeFilters
 }
 
 export async function GET() {

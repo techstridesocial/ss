@@ -1,7 +1,7 @@
 'use client'
 
 import { 
-  Users, AlertTriangle, TrendingUp, Eye, Target, CheckCircle, User, 
+  Users, AlertTriangle, TrendingUp, Eye as EyeIcon, Target, CheckCircle, User, 
   Lock, Video, MessageSquare, Grid, MapPin, Calendar, Globe, Mail, FileText, Heart 
 } from 'lucide-react'
 import { CollapsibleSection } from '../components/CollapsibleSection'
@@ -23,23 +23,25 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
     influencer.followers
   )
 
-  const fakeFollowersPercentage = getMetricValue(
+  // ❌ CONDITIONAL: fake_followers_percentage may not be available in YouTube API
+  const fakeFollowersPercentage = selectedPlatform !== 'youtube' ? getMetricValue(
     influencer.fake_followers_percentage, 
     influencer.audience?.fake_followers_percentage
-  )
+  ) : null
 
   const engagementRate = getMetricValue(
     currentPlatformData?.engagement_rate || currentPlatformData?.engagementRate,
     influencer.engagement_rate || influencer.engagementRate
   )
 
-  const estimatedReach = getMetricValue(
+  // ❌ REMOVED: estimated_reach and estimated_impressions not available in YouTube API
+  const estimatedReach = selectedPlatform !== 'youtube' ? getMetricValue(
     influencer.estimated_reach
-  )
+  ) : null
 
-  const estimatedImpressions = getMetricValue(
+  const estimatedImpressions = selectedPlatform !== 'youtube' ? getMetricValue(
     influencer.estimated_impressions
-  )
+  ) : null
 
   const avgLikes = getMetricValue(
     currentPlatformData?.avgLikes,
@@ -51,16 +53,27 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
     currentPlatformData?.avgViews,
     influencer.avgViews
   )
-  const avgReelsPlays = getMetricValue(
+  // ❌ REMOVED: avgReelsPlays not available in YouTube API (Instagram-specific)
+  const avgReelsPlays = selectedPlatform !== 'youtube' ? getMetricValue(
     currentPlatformData?.avgReelsPlays,
     influencer.avgReelsPlays
-  )
+  ) : null
   const avgComments = getMetricValue(
     currentPlatformData?.avgComments,
     influencer.avgComments
   )
   const postsCount = getMetricValue(
     influencer.postsCount || influencer.postsCounts
+  )
+
+  // YouTube-specific metrics
+  const totalViews = getMetricValue(
+    currentPlatformData?.totalViews,
+    influencer.totalViews
+  )
+  const handle = getMetricValue(
+    currentPlatformData?.handle,
+    influencer.handle
   )
 
   console.log('🔍 Computed overview values:', {
@@ -73,7 +86,9 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
     avgViews,
     avgReelsPlays,
     avgComments,
-    postsCount
+    postsCount,
+    totalViews,
+    handle
   })
 
   return (
@@ -104,17 +119,19 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
           />
         )}
 
-        {(estimatedReach !== undefined && estimatedReach !== null && estimatedReach > 0) && (
+        {/* ❌ HIDDEN FOR YOUTUBE: estimated_reach not available in YouTube API */}
+        {selectedPlatform !== 'youtube' && (estimatedReach !== undefined && estimatedReach !== null && estimatedReach > 0) && (
           <MetricRow
-            icon={Eye}
+            icon={EyeIcon}
             label="Estimated Reach"
             value={formatNumber(estimatedReach)}
           />
         )}
 
-        {(estimatedImpressions !== undefined && estimatedImpressions !== null && estimatedImpressions > 0) && (
+        {/* ❌ HIDDEN FOR YOUTUBE: estimated_impressions not available in YouTube API */}
+        {selectedPlatform !== 'youtube' && (estimatedImpressions !== undefined && estimatedImpressions !== null && estimatedImpressions > 0) && (
           <MetricRow
-            icon={Eye}
+            icon={EyeIcon}
             label="Estimated Impressions"
             value={formatNumber(estimatedImpressions)}
           />
@@ -145,15 +162,10 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
           />
         )}
 
-        {influencer.averageViews && (
-          <MetricRow
-            icon={Eye}
-            label="Average Views"
-            value={formatNumber(influencer.averageViews)}
-          />
-        )}
+        {/* ❌ REMOVED: Duplicate field - this is covered by avgViews above */}
         
-        {(fakeFollowersPercentage !== undefined && fakeFollowersPercentage !== null) && (
+        {/* ❌ HIDDEN FOR YOUTUBE: fake_followers_percentage not available in YouTube API */}
+        {selectedPlatform !== 'youtube' && (fakeFollowersPercentage !== undefined && fakeFollowersPercentage !== null) && (
           <MetricRow
             icon={AlertTriangle}
             label="Fake followers"
@@ -191,13 +203,14 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
         {/* 🆕 NEW: CONTENT PERFORMANCE */}
         {(avgViews !== undefined && avgViews !== null && avgViews > 0) && (
           <MetricRow
-            icon={Eye}
-            label="Avg Views"
+            icon={EyeIcon}
+            label={selectedPlatform === 'youtube' ? 'Avg Video Views' : 'Avg Views'}
             value={formatNumber(avgViews)}
           />
         )}
         
-        {(avgReelsPlays !== undefined && avgReelsPlays !== null && avgReelsPlays > 0) && (
+        {/* ❌ HIDDEN FOR YOUTUBE: avgReelsPlays not available in YouTube API (Instagram-specific) */}
+        {selectedPlatform !== 'youtube' && (avgReelsPlays !== undefined && avgReelsPlays !== null && avgReelsPlays > 0) && (
           <MetricRow
             icon={Video}
             label="Avg Reels Plays"
@@ -216,8 +229,25 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
         {(postsCount !== undefined && postsCount !== null && postsCount > 0) && (
           <MetricRow
             icon={Grid}
-            label="Total Posts"
+            label={selectedPlatform === 'youtube' ? 'Total Videos' : 'Total Posts'}
             value={formatNumber(postsCount)}
+          />
+        )}
+
+        {/* YouTube-specific metrics */}
+        {selectedPlatform === 'youtube' && (totalViews !== undefined && totalViews !== null && totalViews > 0) && (
+          <MetricRow
+            icon={EyeIcon}
+            label="Total Channel Views"
+            value={formatNumber(totalViews)}
+          />
+        )}
+
+        {selectedPlatform === 'youtube' && handle && (
+          <MetricRow
+            icon={Globe}
+            label="Channel Handle"
+            value={`@${handle}`}
           />
         )}
         
@@ -270,7 +300,7 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
           />
         )}
         
-        {/* 🔧 STREAMLINED: Bio (single instance) */}
+        {/* 🔧 STREAMLINED: Bio and Description */}
         {influencer.bio && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-start space-x-3">
@@ -279,6 +309,21 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
                 <div className="text-sm font-medium text-gray-700 mb-1">Bio</div>
                 <div className="text-sm text-gray-600 leading-relaxed">
                   {influencer.bio}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 🎯 YOUTUBE: Channel Description (separate from bio) */}
+        {selectedPlatform === 'youtube' && (influencer as any).description && (influencer as any).description !== influencer.bio && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-start space-x-3">
+              <FileText className="w-4 h-4 text-gray-400 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-1">Channel Description</div>
+                <div className="text-sm text-gray-600 leading-relaxed">
+                  {(influencer as any).description}
                 </div>
               </div>
             </div>
