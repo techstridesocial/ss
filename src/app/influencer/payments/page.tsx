@@ -803,7 +803,7 @@ export default function InfluencerPayments() {
               <div>
                 <h4 className="text-lg font-medium text-amber-800 mb-2">Payment Information</h4>
                 <ul className="text-sm text-amber-700 space-y-1">
-                  <li>• Payments are processed monthly on the 15th</li>
+                  <li>• Payments are processed weekly on Mondays</li>
                   <li>• Minimum payout amount is £50</li>
                   <li>• Tax forms may be required for payments over £600 annually</li>
                   <li>• Payment method must be verified before first payout</li>

@@ -6,9 +6,15 @@ interface InfluencerOnboardingRequest {
   first_name: string
   last_name: string
   display_name: string
-  phone_number?: string
+  email: string
+  phone_number: string
   location: string
   website?: string
+  instagram_handle?: string
+  tiktok_handle?: string
+  youtube_handle?: string
+  main_platform: string
+  niche: string
   profile_picture?: string
 }
 
@@ -23,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     const requiredFields: (keyof InfluencerOnboardingRequest)[] = [
-      'first_name', 'last_name', 'display_name', 'location'
+      'first_name', 'last_name', 'display_name', 'email', 'phone_number', 'location', 'main_platform', 'niche'
     ]
 
     for (const field of requiredFields) {
@@ -64,27 +70,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate phone number format if provided
-    if (data.phone_number && data.phone_number.trim() !== '') {
-      // Check for any letters first
-      if (/[a-zA-Z]/.test(data.phone_number)) {
-        return NextResponse.json(
-          { error: 'Phone number cannot contain letters' }, 
-          { status: 400 }
-        )
-      }
-      
-      // Clean the phone number (remove spaces, dashes, parentheses, dots)
-      const cleanPhone = data.phone_number.replace(/[\s\-\(\)\.]/g, '')
-      
-      // Strict phone regex: optional +, followed by 7-15 digits only
-      const phoneRegex = /^[\+]?[\d]{7,15}$/
-      if (!phoneRegex.test(cleanPhone)) {
-        return NextResponse.json(
-          { error: 'Phone number must contain only numbers, spaces, dashes, parentheses, and optionally start with +' }, 
-          { status: 400 }
-        )
-      }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(data.email)) {
+      return NextResponse.json(
+        { error: 'Please enter a valid email address' }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate phone number format (required and must start with +)
+    if (!data.phone_number.startsWith('+')) {
+      return NextResponse.json(
+        { error: 'Phone number must start with + and include country code' }, 
+        { status: 400 }
+      )
+    }
+    
+    // Remove any non-digit characters except +
+    const cleanPhone = data.phone_number.replace(/[^\d\+]/g, '')
+    
+    // Phone regex: + followed by 7-15 digits
+    const phoneRegex = /^\+\d{7,15}$/
+    if (!phoneRegex.test(cleanPhone)) {
+      return NextResponse.json(
+        { error: 'Phone number must be in format +country code followed by 7-15 digits' }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate platform and niche
+    const validPlatforms = ['INSTAGRAM', 'TIKTOK', 'YOUTUBE', 'TWITTER']
+    if (!validPlatforms.includes(data.main_platform)) {
+      return NextResponse.json(
+        { error: 'Invalid main platform selected' }, 
+        { status: 400 }
+      )
     }
 
     // Validate website URL format if provided
@@ -164,7 +185,7 @@ export async function POST(request: NextRequest) {
           data.first_name,
           data.last_name,
           data.profile_picture || null,
-          data.phone_number || null,
+          data.phone_number,
           data.location,
           true
         ])
@@ -179,7 +200,7 @@ export async function POST(request: NextRequest) {
           data.first_name,
           data.last_name,
           data.profile_picture || null,
-          data.phone_number || null,
+          data.phone_number,
           data.location,
           true
         ])
@@ -198,13 +219,17 @@ export async function POST(request: NextRequest) {
         const influencerResult = await client.query(`
           UPDATE influencers SET 
             display_name = $2,
-            onboarding_completed = $3,
+            niche_primary = $3,
+            niches = $4,
+            onboarding_completed = $5,
             updated_at = NOW()
           WHERE user_id = $1
           RETURNING id
         `, [
           user_id,
           data.display_name,
+          data.niche,
+          [data.niche],
           true
         ])
         influencerId = influencerResult.rows[0].id
@@ -212,16 +237,55 @@ export async function POST(request: NextRequest) {
         // Create new influencer
         const influencerResult = await client.query(`
           INSERT INTO influencers (
-            user_id, display_name, onboarding_completed, ready_for_campaigns
-          ) VALUES ($1, $2, $3, $4)
+            user_id, display_name, niche_primary, niches, onboarding_completed, ready_for_campaigns
+          ) VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING id
         `, [
           user_id,
           data.display_name,
+          data.niche,
+          [data.niche],
           true,
           false // Not ready for campaigns until staff approval
         ])
         influencerId = influencerResult.rows[0].id
+      }
+
+      // Create platform records for social handles
+      const platformHandles = [
+        { platform: 'INSTAGRAM', handle: data.instagram_handle },
+        { platform: 'TIKTOK', handle: data.tiktok_handle },
+        { platform: 'YOUTUBE', handle: data.youtube_handle }
+      ]
+
+      for (const { platform, handle } of platformHandles) {
+        if (handle && handle.trim() !== '') {
+          const platformLowerCase = platform.toLowerCase()
+          const profileUrl = platformLowerCase === 'instagram' 
+            ? `https://instagram.com/${handle}`
+            : platformLowerCase === 'tiktok'
+            ? `https://tiktok.com/@${handle}`
+            : platformLowerCase === 'youtube'
+            ? `https://youtube.com/@${handle}`
+            : ''
+
+          await client.query(`
+            INSERT INTO influencer_platforms (
+              influencer_id, platform, username, profile_url, is_connected
+            ) VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (influencer_id, platform) 
+            DO UPDATE SET 
+              username = $3,
+              profile_url = $4,
+              updated_at = NOW()
+          `, [
+            influencerId,
+            platform,
+            handle,
+            profileUrl,
+            false // Not connected via OAuth yet
+          ])
+        }
       }
 
       // Update user status to indicate onboarding is complete

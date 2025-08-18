@@ -16,16 +16,59 @@ import {
   Globe,
   Upload,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Hash,
+  Monitor
 } from 'lucide-react'
+
+// Platform and niche options
+const PLATFORM_OPTIONS = [
+  { value: 'INSTAGRAM', label: 'Instagram' },
+  { value: 'TIKTOK', label: 'TikTok' },
+  { value: 'YOUTUBE', label: 'YouTube' },
+  { value: 'TWITTER', label: 'Twitter' }
+]
+
+const NICHE_OPTIONS = [
+  { value: 'Lifestyle', label: 'Lifestyle' },
+  { value: 'Fashion', label: 'Fashion' },
+  { value: 'Beauty', label: 'Beauty' },
+  { value: 'Fitness', label: 'Fitness' },
+  { value: 'Health', label: 'Health' },
+  { value: 'Tech', label: 'Tech' },
+  { value: 'Gaming', label: 'Gaming' },
+  { value: 'Travel', label: 'Travel' },
+  { value: 'Food', label: 'Food' },
+  { value: 'Business', label: 'Business' },
+  { value: 'Marketing', label: 'Marketing' },
+  { value: 'UGC', label: 'UGC' },
+  { value: 'Product Reviews', label: 'Product Reviews' },
+  { value: 'Product Seeding', label: 'Product Seeding' },
+  { value: 'Entertainment', label: 'Entertainment' },
+  { value: 'Music', label: 'Music' },
+  { value: 'Sports', label: 'Sports' },
+  { value: 'Education', label: 'Education' },
+  { value: 'Home', label: 'Home' },
+  { value: 'Adventure', label: 'Adventure' },
+  { value: 'Family', label: 'Family' },
+  { value: 'Cleaning', label: 'Cleaning' },
+  { value: 'AI', label: 'AI' },
+  { value: 'Web', label: 'Web' }
+]
 
 interface OnboardingData {
   first_name: string
   last_name: string
   display_name: string
+  email: string
   phone_number: string
   location: string
   website: string
+  instagram_handle: string
+  tiktok_handle: string
+  youtube_handle: string
+  main_platform: string
+  niche: string
   profile_picture: string
 }
 
@@ -33,8 +76,14 @@ const STEPS = [
   { id: 'first_name', title: "What's your first name?", type: 'text' },
   { id: 'last_name', title: "And your last name?", type: 'text' },
   { id: 'display_name', title: "What should we call you publicly?", type: 'text' },
-  { id: 'phone_number', title: "Phone number (optional)", type: 'tel' },
+  { id: 'email', title: "What's your email address?", type: 'email' },
+  { id: 'phone_number', title: "What's your phone number?", type: 'tel' },
   { id: 'location', title: "Where are you based?", type: 'text' },
+  { id: 'instagram_handle', title: "What's your Instagram handle?", type: 'text' },
+  { id: 'tiktok_handle', title: "What's your TikTok handle?", type: 'text' },
+  { id: 'youtube_handle', title: "What's your YouTube handle?", type: 'text' },
+  { id: 'main_platform', title: "What's your main platform?", type: 'select' },
+  { id: 'niche', title: "What's your main content niche?", type: 'select' },
   { id: 'website', title: "Do you have a website or portfolio?", type: 'url' },
   { id: 'profile_picture', title: "Upload your profile picture", type: 'upload' },
   { id: 'review', title: "Final step: review your details", type: 'review' }
@@ -51,9 +100,15 @@ function InfluencerOnboardingPageContent() {
     first_name: user?.firstName || '',
     last_name: user?.lastName || '',
     display_name: '',
+    email: user?.primaryEmailAddress?.emailAddress || '',
     phone_number: '',
     location: '',
     website: '',
+    instagram_handle: '',
+    tiktok_handle: '',
+    youtube_handle: '',
+    main_platform: '',
+    niche: '',
     profile_picture: ''
   })
 
@@ -64,7 +119,8 @@ function InfluencerOnboardingPageContent() {
         ...prev,
         first_name: user.firstName || prev.first_name,
         last_name: user.lastName || prev.last_name,
-        display_name: prev.display_name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '')
+        display_name: prev.display_name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : ''),
+        email: user.primaryEmailAddress?.emailAddress || prev.email
       }))
     }
   }, [user])
@@ -131,11 +187,19 @@ function InfluencerOnboardingPageContent() {
   }
 
   const updateFormData = (field: keyof OnboardingData, value: string) => {
-    // Special handling for phone number to prevent letters
+    // Special handling for phone number to enforce +country code format
     if (field === 'phone_number') {
-      // Only allow numbers, spaces, dashes, parentheses, dots, and + symbol
-      const phoneValue = value.replace(/[^0-9\s\-\(\)\.\+]/g, '')
+      // Remove any non-digit characters except +
+      let phoneValue = value.replace(/[^0-9\+]/g, '')
+      // Ensure it starts with + if not empty
+      if (phoneValue && !phoneValue.startsWith('+')) {
+        phoneValue = '+' + phoneValue
+      }
       setFormData(prev => ({ ...prev, [field]: phoneValue }))
+    } else if (field === 'instagram_handle' || field === 'tiktok_handle' || field === 'youtube_handle') {
+      // Remove @ symbol if user enters it
+      const handleValue = value.replace('@', '')
+      setFormData(prev => ({ ...prev, [field]: handleValue }))
     } else {
       setFormData(prev => ({ ...prev, [field]: value }))
     }
@@ -146,8 +210,18 @@ function InfluencerOnboardingPageContent() {
     const field = currentStepData.id as keyof OnboardingData
     
     // Skip validation for optional fields
-    if (['phone_number', 'website', 'profile_picture'].includes(field)) {
+    if (['website', 'profile_picture'].includes(field)) {
       return true
+    }
+    
+    // Special validation for phone number (must start with +)
+    if (field === 'phone_number') {
+      return formData[field]?.trim() !== '' && formData[field]?.startsWith('+')
+    }
+    
+    // Special validation for email
+    if (field === 'email') {
+      return formData[field]?.trim() !== '' && formData[field]?.includes('@')
     }
     
     if (currentStepData.id === 'review') return true
@@ -159,49 +233,106 @@ function InfluencerOnboardingPageContent() {
     if (!currentStepData) return null
     const field = currentStepData.id as keyof OnboardingData
     
-    switch (currentStepData.type) {
-             case 'text':
-       case 'tel':
-       case 'url':
-         return (
-           <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             className="space-y-6"
-           >
-             <div className="relative">
-               {getFieldIcon(field)}
-               <input
-                 type={currentStepData.type === 'tel' ? 'tel' : currentStepData.type === 'url' ? 'url' : 'text'}
-                 value={formData[field]}
-                 onChange={(e) => updateFormData(field, e.target.value)}
-                 placeholder={getPlaceholder(field)}
-                 className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
-                   text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 
-                   focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
-                 autoFocus
-               />
-             </div>
-             
-             {field === 'display_name' && (
-               <p className="text-cyan-200 text-sm text-center">
-                 This is how your name will appear to brands and on your public profile
-               </p>
-             )}
-             
-                         {field === 'phone_number' && (
+        switch (currentStepData.type) {
+      case 'text':
+      case 'tel':
+      case 'url':
+      case 'email':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="relative">
+              {getFieldIcon(field)}
+              <input
+                type={currentStepData.type === 'tel' ? 'tel' : currentStepData.type === 'url' ? 'url' : currentStepData.type === 'email' ? 'email' : 'text'}
+                value={formData[field]}
+                onChange={(e) => updateFormData(field, e.target.value)}
+                placeholder={getPlaceholder(field)}
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                  text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 
+                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                autoFocus
+                required={!['website'].includes(field)}
+              />
+            </div>
+            
+            {field === 'display_name' && (
               <p className="text-cyan-200 text-sm text-center">
-                Numbers only - letters will be automatically removed
+                This is how your name will appear to brands and on your public profile
               </p>
             )}
             
+            {field === 'email' && (
+              <p className="text-cyan-200 text-sm text-center">
+                This should be your primary email address for communications
+              </p>
+            )}
+            
+            {field === 'phone_number' && (
+              <p className="text-cyan-200 text-sm text-center">
+                Required format: +country code followed by number (e.g., +447712345678)
+              </p>
+            )}
+           
             {field === 'location' && (
               <p className="text-cyan-200 text-sm text-center">
                 Country or city (e.g., "London, UK" or "United States")
               </p>
             )}
-           </motion.div>
-         )
+            
+            {(field === 'instagram_handle' || field === 'tiktok_handle' || field === 'youtube_handle') && (
+              <p className="text-cyan-200 text-sm text-center">
+                Enter your handle without the @ symbol (optional - can be added later)
+              </p>
+            )}
+          </motion.div>
+        )
+        
+      case 'select':
+        const options = field === 'main_platform' ? PLATFORM_OPTIONS : NICHE_OPTIONS
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="relative">
+              {getFieldIcon(field)}
+              <select
+                value={formData[field]}
+                onChange={(e) => updateFormData(field, e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                  text-white text-lg focus:outline-none focus:border-white/50 
+                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm appearance-none"
+                autoFocus
+              >
+                <option value="" className="bg-gray-800 text-white">
+                  {field === 'main_platform' ? 'Select your main platform' : 'Select your main niche'}
+                </option>
+                {options.map((option) => (
+                  <option key={option.value} value={option.value} className="bg-gray-800 text-white">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {field === 'main_platform' && (
+              <p className="text-cyan-200 text-sm text-center">
+                Choose the platform where you have the most followers or engagement
+              </p>
+            )}
+            
+            {field === 'niche' && (
+              <p className="text-cyan-200 text-sm text-center">
+                Select the category that best describes your primary content focus
+              </p>
+            )}
+          </motion.div>
+        )
       
              case 'upload':
          return (
@@ -253,38 +384,62 @@ function InfluencerOnboardingPageContent() {
              animate={{ opacity: 1, y: 0 }}
              className="space-y-6"
            >
-             <div className="bg-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm border border-white/20">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                   <p className="text-cyan-200 text-sm">Name</p>
-                   <p className="text-white text-lg">{formData.first_name} {formData.last_name}</p>
-                 </div>
-                 <div>
-                   <p className="text-cyan-200 text-sm">Display Name</p>
-                   <p className="text-white text-lg">{formData.display_name}</p>
-                 </div>
-                 <div>
-                   <p className="text-cyan-200 text-sm">Location</p>
-                   <p className="text-white text-lg">{formData.location}</p>
-                 </div>
-                 <div>
-                   <p className="text-cyan-200 text-sm">Email</p>
-                   <p className="text-white text-lg">{user?.primaryEmailAddress?.emailAddress}</p>
-                 </div>
-                 {formData.phone_number && (
-                   <div>
-                     <p className="text-cyan-200 text-sm">Phone</p>
-                     <p className="text-white text-lg">{formData.phone_number}</p>
-                   </div>
-                 )}
-                 {formData.website && (
-                   <div>
-                     <p className="text-cyan-200 text-sm">Website</p>
-                     <p className="text-white text-lg">{formData.website}</p>
-                   </div>
-                 )}
-               </div>
-             </div>
+                         <div className="bg-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm border border-white/20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-cyan-200 text-sm">Name</p>
+                  <p className="text-white text-lg">{formData.first_name} {formData.last_name}</p>
+                </div>
+                <div>
+                  <p className="text-cyan-200 text-sm">Display Name</p>
+                  <p className="text-white text-lg">{formData.display_name}</p>
+                </div>
+                <div>
+                  <p className="text-cyan-200 text-sm">Email</p>
+                  <p className="text-white text-lg">{formData.email}</p>
+                </div>
+                <div>
+                  <p className="text-cyan-200 text-sm">Phone</p>
+                  <p className="text-white text-lg">{formData.phone_number}</p>
+                </div>
+                <div>
+                  <p className="text-cyan-200 text-sm">Location</p>
+                  <p className="text-white text-lg">{formData.location}</p>
+                </div>
+                <div>
+                  <p className="text-cyan-200 text-sm">Main Platform</p>
+                  <p className="text-white text-lg">{formData.main_platform}</p>
+                </div>
+                <div>
+                  <p className="text-cyan-200 text-sm">Niche</p>
+                  <p className="text-white text-lg">{formData.niche}</p>
+                </div>
+                {formData.instagram_handle && (
+                  <div>
+                    <p className="text-cyan-200 text-sm">Instagram</p>
+                    <p className="text-white text-lg">@{formData.instagram_handle}</p>
+                  </div>
+                )}
+                {formData.tiktok_handle && (
+                  <div>
+                    <p className="text-cyan-200 text-sm">TikTok</p>
+                    <p className="text-white text-lg">@{formData.tiktok_handle}</p>
+                  </div>
+                )}
+                {formData.youtube_handle && (
+                  <div>
+                    <p className="text-cyan-200 text-sm">YouTube</p>
+                    <p className="text-white text-lg">@{formData.youtube_handle}</p>
+                  </div>
+                )}
+                {formData.website && (
+                  <div>
+                    <p className="text-cyan-200 text-sm">Website</p>
+                    <p className="text-white text-lg">{formData.website}</p>
+                  </div>
+                )}
+              </div>
+            </div>
            </motion.div>
          )
       
@@ -298,8 +453,12 @@ function InfluencerOnboardingPageContent() {
       case 'first_name': return 'Enter your first name'
       case 'last_name': return 'Enter your last name'
       case 'display_name': return 'e.g., Alex Thompson'
-      case 'phone_number': return '+1234567890 or (123) 456-7890 (optional)'
+      case 'email': return 'your.email@example.com'
+      case 'phone_number': return '+447712345678'
       case 'location': return 'e.g., London, UK'
+      case 'instagram_handle': return 'yourusername (optional)'
+      case 'tiktok_handle': return 'yourusername (optional)'
+      case 'youtube_handle': return 'yourusername (optional)'
       case 'website': return 'https://yourwebsite.com (optional)'
       default: return ''
     }
@@ -311,12 +470,21 @@ function InfluencerOnboardingPageContent() {
       case 'last_name':
       case 'display_name':
         return <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
+      case 'email':
+        return <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
       case 'phone_number':
         return <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
       case 'location':
         return <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
       case 'website':
         return <Globe className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
+      case 'instagram_handle':
+      case 'tiktok_handle':
+      case 'youtube_handle':
+        return <Hash className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
+      case 'main_platform':
+      case 'niche':
+        return <Monitor className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
       default:
         return <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-300 w-5 h-5" />
     }
