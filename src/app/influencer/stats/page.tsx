@@ -13,6 +13,7 @@ export default function InfluencerStats() {
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [showResults, setShowResults] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  const [refreshingPlatform, setRefreshingPlatform] = useState('')
 
   useEffect(() => {
     const loadStats = async () => {
@@ -93,6 +94,41 @@ export default function InfluencerStats() {
       }
     } catch (error) {
       console.error('Error selecting profile:', error)
+    }
+  }
+
+  const refreshPlatform = async (platform: string) => {
+    setRefreshingPlatform(platform)
+    
+    try {
+      // Find the platform data to get the influencer platform ID
+      const platformData = statsData?.platforms?.find((p: any) => p.platform === platform)
+      
+      const response = await fetch('/api/modash/refresh-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          influencerPlatformId: platformData?.id,
+          platform: platform
+        })
+      })
+      
+      if (response.ok) {
+        // Refresh the stats data
+        const statsResponse = await fetch('/api/influencer/stats')
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          if (statsData.success) {
+            setStatsData(statsData.data)
+            setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
+            setTimeout(() => setSuccessMessage(''), 5000)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing platform:', error)
+    } finally {
+      setRefreshingPlatform('')
     }
   }
 
@@ -181,11 +217,20 @@ export default function InfluencerStats() {
                       </div>
                     )}
                     {isConnected && platformData.cached_at && (
-                      <div className="flex justify-between pt-1">
+                      <div className="flex justify-between items-center pt-1">
                         <span className="text-xs text-gray-500">Last updated</span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(platformData.cached_at).toLocaleDateString()}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500">
+                            {new Date(platformData.cached_at).toLocaleDateString()}
+                          </span>
+                          <button
+                            onClick={() => refreshPlatform(platform)}
+                            disabled={refreshingPlatform === platform}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline disabled:text-gray-400 disabled:no-underline"
+                          >
+                            {refreshingPlatform === platform ? 'Refreshing...' : 'Refresh'}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

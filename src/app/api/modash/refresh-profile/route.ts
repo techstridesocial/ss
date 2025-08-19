@@ -12,13 +12,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user has staff or admin role
+    // Check if user has staff/admin role OR if they're refreshing their own profile
     const userRole = await hasRole(userId, ['STAFF', 'ADMIN'])
+    
     if (!userRole) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      )
+      // Allow influencers to refresh their own profiles
+      // We'll verify ownership in the query below
+      console.log('🔄 User is not staff/admin, checking if they own this profile...')
     }
 
     const { influencerPlatformId, platform, modashUserId } = await request.json()
@@ -32,9 +32,29 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔄 Manual refresh requested for platform ${platform}, ID: ${influencerPlatformId}`)
 
-    // Get the Modash user ID if not provided
+    // Get the Modash user ID and verify ownership if not staff/admin
     let targetModashUserId = modashUserId
-    if (!targetModashUserId) {
+    if (!userRole) {
+      // Verify this platform belongs to the current user
+      const ownershipQuery = `
+        SELECT ip.modash_profile_id, ip.username, i.user_id
+        FROM influencer_platforms ip
+        JOIN influencers i ON ip.influencer_id = i.id
+        JOIN users u ON i.user_id = u.id
+        WHERE ip.id = $1 AND u.clerk_id = $2
+      `
+      const ownershipResult = await query(ownershipQuery, [influencerPlatformId, userId])
+      
+      if (ownershipResult.length === 0) {
+        return NextResponse.json(
+          { error: 'You can only refresh your own profiles' },
+          { status: 403 }
+        )
+      }
+      
+      targetModashUserId = ownershipResult[0].modash_profile_id || ownershipResult[0].username
+    } else {
+      // Staff/Admin can refresh any profile
       const platformResult = await query(
         'SELECT modash_profile_id, username FROM influencer_platforms WHERE id = $1',
         [influencerPlatformId]
