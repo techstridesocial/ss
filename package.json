@@ -23,7 +23,9 @@
     "test:debug": "node scripts/run-tests.js --debug",
     "test:coverage-full": "node scripts/run-tests.js --coverage",
     "db:setup": "node scripts/setup-database.js",
-    "db:migrate-onboarding": "node scripts/migrate-onboarding.js"
+    "db:migrate-onboarding": "node scripts/migrate-onboarding.js",
+    "db:migrate-new-fields": "node scripts/migrate-new-onboarding-fields.js",
+    "db:migrate-influencer-fields": "node scripts/migrate-influencer-onboarding-fields.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.7.1",

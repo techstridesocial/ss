@@ -8,6 +8,7 @@ import ModernBrandHeader from '../../../components/nav/ModernBrandHeader'
 import BrandOnboardingCheck from '../../../components/auth/BrandOnboardingCheck'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
+import { AddToShortlistModal } from '../../../components/shortlists/AddToShortlistModal'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { Search, FilterIcon, Eye, Users, TrendingUp, MapPin, ChevronDown, ChevronUp, Heart } from 'lucide-react'
 
@@ -30,6 +31,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   
   // Hearted influencers context
   const { addHeartedInfluencer, removeHeartedInfluencer, isInfluencerHearted } = useHeartedInfluencers()
+  
+  // Add to shortlist modal state
+  const [addToShortlistModal, setAddToShortlistModal] = useState<{
+    isOpen: boolean
+    influencer: any | null
+  }>({ isOpen: false, influencer: null })
   
   // Router hooks for URL state management
   const router = useRouter()
@@ -456,7 +463,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         location: `${influencer.location_city || ''}, ${influencer.location_country || ''}`.replace(/^, |, $/, ''),
         bio: influencer.bio || ''
       }
-      addHeartedInfluencer(heartedInfluencer)
+      
+      // Open the add to shortlist modal
+      setAddToShortlistModal({ isOpen: true, influencer: heartedInfluencer })
     }
   }
 
@@ -968,11 +977,32 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       {/* Influencer Detail Panel */}
       {detailPanelOpen && selectedInfluencerDetail && (
         <InfluencerDetailPanel
-          influencer={selectedInfluencerDetail}
-          selectedPlatform={selectedPlatform}
-          onPlatformSwitch={setSelectedPlatform}
+          influencer={{
+            id: selectedInfluencerDetail.id,
+            handle: selectedInfluencerDetail.display_name,
+            followers: selectedInfluencerDetail.total_followers || 0,
+            profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+            bio: selectedInfluencerDetail.bio || undefined,
+            engagement_rate: selectedInfluencerDetail.total_engagement_rate || undefined,
+            avgViews: selectedInfluencerDetail.total_avg_views || undefined,
+          }}
+          selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
+          onPlatformSwitch={setSelectedPlatform as (platform: 'instagram' | 'tiktok' | 'youtube') => void}
           onClose={handleCloseDetailPanel}
           isOpen={detailPanelOpen}
+        />
+      )}
+
+      {/* Add to Shortlist Modal */}
+      {addToShortlistModal.isOpen && addToShortlistModal.influencer && (
+        <AddToShortlistModal
+          influencer={addToShortlistModal.influencer}
+          isOpen={addToShortlistModal.isOpen}
+          onClose={() => setAddToShortlistModal({ isOpen: false, influencer: null })}
+          onSuccess={() => {
+            setAddToShortlistModal({ isOpen: false, influencer: null })
+            // Optionally show a success message
+          }}
         />
       )}
     </div>

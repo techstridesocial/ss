@@ -1,4 +1,5 @@
 import { query } from '../connection'
+import { getCachedProfile } from '../../services/modash-cache'
 
 export interface DatabaseResponse<T> {
   success: boolean
@@ -39,6 +40,8 @@ export interface PlatformStats {
   is_connected: boolean
   last_synced?: Date
   status: string
+  data_source?: 'cached' | 'live' | 'mock'
+  cached_at?: Date
 }
 
 /**
@@ -153,28 +156,54 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
 
     const dbPlatforms = await query(platformsQuery, [influencer.influencer_id])
 
-    // Create platform stats with mock data for unconnected platforms
+    // Create platform stats with cached data for connected platforms
     const allPlatforms = ['instagram', 'tiktok', 'youtube']
-    const platformStats: PlatformStats[] = allPlatforms.map(platform => {
-      const dbPlatform = dbPlatforms.find(p => p.platform.toLowerCase() === platform)
-      
-      if (dbPlatform) {
-        // Use real data from database
-        return {
-          platform: dbPlatform.platform.toLowerCase(),
-          username: dbPlatform.username || `@${platform}_user`,
-          followers: dbPlatform.followers || 0,
-          engagement_rate: dbPlatform.engagement_rate || 0,
-          avg_views: dbPlatform.avg_views || 0,
-          is_connected: dbPlatform.is_connected || false,
-          last_synced: dbPlatform.last_synced,
-          status: dbPlatform.is_connected ? 'connected' : 'not_connected'
+    const platformStats: PlatformStats[] = await Promise.all(
+      allPlatforms.map(async platform => {
+        const dbPlatform = dbPlatforms.find(p => p.platform.toLowerCase() === platform)
+        
+        if (dbPlatform && dbPlatform.is_connected) {
+          // Check for cached Modash data first
+          const cachedData = await getCachedProfile(dbPlatform.id, platform)
+          
+          if (cachedData) {
+            // Use rich cached data from Modash
+            return {
+              platform: platform,
+              username: cachedData.username || dbPlatform.username || `@${platform}_user`,
+              followers: cachedData.followers || dbPlatform.followers || 0,
+              engagement_rate: cachedData.engagement_rate || dbPlatform.engagement_rate || 0,
+              avg_views: cachedData.avg_views || dbPlatform.avg_views || 0,
+              is_connected: true,
+              last_synced: cachedData.last_updated,
+              status: 'connected',
+              data_source: 'cached',
+              cached_at: cachedData.cached_at
+            }
+          } else {
+            // Use basic platform data from database
+            return {
+              platform: dbPlatform.platform.toLowerCase(),
+              username: dbPlatform.username || `@${platform}_user`,
+              followers: dbPlatform.followers || 0,
+              engagement_rate: dbPlatform.engagement_rate || 0,
+              avg_views: dbPlatform.avg_views || 0,
+              is_connected: true,
+              last_synced: dbPlatform.last_synced,
+              status: 'connected',
+              data_source: 'live'
+            }
+          }
+        } else {
+          // Generate mock data for platform not connected
+          const mockData = generateMockMetrics(platform, false)
+          return {
+            ...mockData,
+            data_source: 'mock'
+          }
         }
-      } else {
-        // Generate mock data for platform not in database
-        return generateMockMetrics(platform, false)
-      }
-    })
+      })
+    )
 
     // Calculate overall metrics
     const totalFollowers = platformStats.reduce((sum, p) => sum + p.followers, 0)

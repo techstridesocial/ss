@@ -35,10 +35,21 @@ interface OnboardingData {
   annual_budget: string
   preferred_niches: string[]
   target_regions: string[]
-  contact_name: string
-  contact_role: string
-  contact_email: string
-  contact_phone: string
+  // Brand Contact Information
+  brand_contact_name: string
+  brand_contact_role: string
+  brand_contact_email: string
+  brand_contact_phone: string
+  // New Optional Fields
+  primary_region: string
+  campaign_objective: string
+  product_service_type: string
+  preferred_contact_method: string
+  proactive_suggestions: string
+  // Stride Social Contact Information
+  stride_contact_name: string
+  stride_contact_email: string
+  stride_contact_phone: string
 }
 
 const STEPS = [
@@ -51,10 +62,18 @@ const STEPS = [
   { id: 'annual_budget', title: "What's your annual marketing budget?", type: 'radio' },
   { id: 'preferred_niches', title: "What content niches do you want to focus on?", type: 'multiselect' },
   { id: 'target_regions', title: "Where are your target customers located?", type: 'multiselect' },
-  { id: 'contact_name', title: "Who's your main point of contact?", type: 'text' },
-  { id: 'contact_role', title: "What's their role?", type: 'text' },
-  { id: 'contact_email', title: "Email address?", type: 'email' },
-  { id: 'contact_phone', title: "Phone number?", type: 'tel' },
+  { id: 'primary_region', title: "What's your primary region of operation?", type: 'select', optional: true },
+  { id: 'campaign_objective', title: "What's your main campaign objective?", type: 'select', optional: true },
+  { id: 'product_service_type', title: "What type of product/service do you offer?", type: 'select', optional: true },
+  { id: 'preferred_contact_method', title: "How would you prefer we contact you?", type: 'radio', optional: true },
+  { id: 'proactive_suggestions', title: "Would you like Stride to suggest creators proactively?", type: 'radio', optional: true },
+  { id: 'brand_contact_name', title: "Who's your main point of contact at your brand?", type: 'text' },
+  { id: 'brand_contact_role', title: "What's their role in your company?", type: 'text' },
+  { id: 'brand_contact_email', title: "Brand contact email address?", type: 'email' },
+  { id: 'brand_contact_phone', title: "Brand contact phone number?", type: 'tel' },
+  { id: 'stride_contact_name', title: "Who should be your main contact at Stride Social?", type: 'text', optional: true },
+  { id: 'stride_contact_email', title: "Stride Social contact email?", type: 'email', optional: true },
+  { id: 'stride_contact_phone', title: "Stride Social contact phone?", type: 'tel', optional: true },
   { id: 'review', title: "Final step: review your details", type: 'review' }
 ]
 
@@ -107,6 +126,38 @@ const REGION_OPTIONS = [
   'Africa', 'Asia Pacific', 'Middle East', 'Australia', 'Global'
 ]
 
+const PRIMARY_REGION_OPTIONS = [
+  'United Kingdom', 'United States', 'Canada', 'Germany', 'France', 
+  'Italy', 'Spain', 'Netherlands', 'Australia', 'New Zealand',
+  'Brazil', 'Mexico', 'Japan', 'South Korea', 'India', 'Singapore',
+  'UAE', 'South Africa', 'Other'
+]
+
+const CAMPAIGN_OBJECTIVE_OPTIONS = [
+  'Brand Awareness', 'Product Launch', 'Sales & Conversions', 
+  'Engagement & Community Building', 'Event Promotion', 
+  'Seasonal Campaign', 'User-Generated Content', 'Reviews & Testimonials',
+  'Educational Content', 'Lifestyle Integration', 'Other'
+]
+
+const PRODUCT_SERVICE_TYPE_OPTIONS = [
+  'Physical Product', 'Digital Product/Software', 'Service-Based Business',
+  'E-commerce', 'Subscription Service', 'Mobile App', 'Event/Experience',
+  'Consulting', 'Education/Course', 'Non-Profit', 'Other'
+]
+
+const CONTACT_METHOD_OPTIONS = [
+  { value: 'email', label: 'Email' },
+  { value: 'phone', label: 'Phone Call' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'any', label: 'Any method is fine' }
+]
+
+const PROACTIVE_SUGGESTIONS_OPTIONS = [
+  { value: 'yes', label: 'Yes, suggest creators proactively' },
+  { value: 'no', label: 'No, I\'ll browse and select myself' }
+]
+
 function BrandOnboardingPageContent() {
   const { user } = useUser()
   const router = useRouter()
@@ -124,18 +175,29 @@ function BrandOnboardingPageContent() {
     annual_budget: '',
     preferred_niches: [],
     target_regions: [],
-    contact_name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : '',
-    contact_role: '',
-    contact_email: user?.primaryEmailAddress?.emailAddress || '',
-    contact_phone: ''
+    // Brand Contact Information (auto-populated from Clerk)
+    brand_contact_name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : '',
+    brand_contact_role: '',
+    brand_contact_email: user?.primaryEmailAddress?.emailAddress || '',
+    brand_contact_phone: '',
+    // New Optional Fields
+    primary_region: '',
+    campaign_objective: '',
+    product_service_type: '',
+    preferred_contact_method: '',
+    proactive_suggestions: '',
+    // Stride Social Contact Information
+    stride_contact_name: '',
+    stride_contact_email: '',
+    stride_contact_phone: ''
   })
 
   // Auto-populate contact email when user loads
   useEffect(() => {
-    if (user?.primaryEmailAddress?.emailAddress && !formData.contact_email) {
+    if (user?.primaryEmailAddress?.emailAddress && !formData.brand_contact_email) {
       setFormData(prev => ({
         ...prev,
-        contact_email: user.primaryEmailAddress?.emailAddress || ''
+        brand_contact_email: user.primaryEmailAddress?.emailAddress || ''
       }))
     }
   }, [user])
@@ -209,6 +271,9 @@ function BrandOnboardingPageContent() {
     const step = currentStepData
     if (!step) return false
 
+    // Optional steps are always valid
+    if (step.optional) return true
+
     switch (step.id) {
       case 'company_name':
         return formData.company_name.trim().length > 0
@@ -221,22 +286,22 @@ function BrandOnboardingPageContent() {
       case 'description':
         return formData.description.trim().length > 0
       case 'logo_url':
-        return formData.logo_url.length > 0 // Now required
+        return formData.logo_url.length > 0 // Required
       case 'annual_budget':
         return formData.annual_budget.length > 0
       case 'preferred_niches':
         return formData.preferred_niches.length > 0
       case 'target_regions':
         return formData.target_regions.length > 0
-      case 'contact_name':
-        return formData.contact_name.trim().length > 0
-      case 'contact_role':
-        return formData.contact_role.trim().length > 0
-      case 'contact_email':
+      case 'brand_contact_name':
+        return formData.brand_contact_name.trim().length > 0
+      case 'brand_contact_role':
+        return formData.brand_contact_role.trim().length > 0
+      case 'brand_contact_email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        return emailRegex.test(formData.contact_email)
-      case 'contact_phone':
-        return formData.contact_phone.trim().length > 0 // Now required
+        return emailRegex.test(formData.brand_contact_email)
+      case 'brand_contact_phone':
+        return formData.brand_contact_phone.trim().length > 0 // Required
       case 'review':
         return true
       default:
@@ -538,7 +603,163 @@ function BrandOnboardingPageContent() {
           </motion.div>
         )
 
-      case 'contact_name':
+      case 'primary_region':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {PRIMARY_REGION_OPTIONS.map((region) => (
+                <motion.button
+                  key={region}
+                  onClick={() => updateFormData('primary_region', region)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl text-left transition-all duration-200 ${
+                    formData.primary_region === region
+                      ? 'bg-white text-blue-600 shadow-lg'
+                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                  }`}
+                >
+                  <span className="font-medium">{region}</span>
+                </motion.button>
+              ))}
+            </div>
+            <p className="text-blue-200 text-sm text-center">
+              Optional - Select your primary region of operation
+            </p>
+          </motion.div>
+        )
+
+      case 'campaign_objective':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {CAMPAIGN_OBJECTIVE_OPTIONS.map((objective) => (
+                <motion.button
+                  key={objective}
+                  onClick={() => updateFormData('campaign_objective', objective)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl text-left transition-all duration-200 ${
+                    formData.campaign_objective === objective
+                      ? 'bg-white text-blue-600 shadow-lg'
+                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                  }`}
+                >
+                  <span className="font-medium">{objective}</span>
+                </motion.button>
+              ))}
+            </div>
+            <p className="text-blue-200 text-sm text-center">
+              Optional - What's your main campaign objective?
+            </p>
+          </motion.div>
+        )
+
+      case 'product_service_type':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {PRODUCT_SERVICE_TYPE_OPTIONS.map((type) => (
+                <motion.button
+                  key={type}
+                  onClick={() => updateFormData('product_service_type', type)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl text-left transition-all duration-200 ${
+                    formData.product_service_type === type
+                      ? 'bg-white text-blue-600 shadow-lg'
+                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                  }`}
+                >
+                  <span className="font-medium">{type}</span>
+                </motion.button>
+              ))}
+            </div>
+            <p className="text-blue-200 text-sm text-center">
+              Optional - What type of product/service do you offer?
+            </p>
+          </motion.div>
+        )
+
+      case 'preferred_contact_method':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {CONTACT_METHOD_OPTIONS.map((option) => (
+              <motion.button
+                key={option.value}
+                onClick={() => updateFormData('preferred_contact_method', option.value)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full p-6 rounded-xl text-left transition-all duration-200 ${
+                  formData.preferred_contact_method === option.value
+                    ? 'bg-white text-blue-600 shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-lg">{option.label}</span>
+                  {formData.preferred_contact_method === option.value && (
+                    <Check className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+              </motion.button>
+            ))}
+            <p className="text-blue-200 text-sm text-center">
+              Optional - How would you prefer we contact you?
+            </p>
+          </motion.div>
+        )
+
+      case 'proactive_suggestions':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {PROACTIVE_SUGGESTIONS_OPTIONS.map((option) => (
+              <motion.button
+                key={option.value}
+                onClick={() => updateFormData('proactive_suggestions', option.value)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full p-6 rounded-xl text-left transition-all duration-200 ${
+                  formData.proactive_suggestions === option.value
+                    ? 'bg-white text-blue-600 shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-lg">{option.label}</span>
+                  {formData.proactive_suggestions === option.value && (
+                    <Check className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+              </motion.button>
+            ))}
+            <p className="text-blue-200 text-sm text-center">
+              Optional - Would you like Stride to suggest creators proactively?
+            </p>
+          </motion.div>
+        )
+
+      case 'brand_contact_name':
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -549,8 +770,8 @@ function BrandOnboardingPageContent() {
               <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
               <input
                 type="text"
-                value={formData.contact_name}
-                onChange={(e) => updateFormData('contact_name', e.target.value)}
+                value={formData.brand_contact_name}
+                onChange={(e) => updateFormData('brand_contact_name', e.target.value)}
                 placeholder="John Smith"
                 className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
                   text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
@@ -561,7 +782,7 @@ function BrandOnboardingPageContent() {
           </motion.div>
         )
 
-      case 'contact_role':
+      case 'brand_contact_role':
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -572,8 +793,8 @@ function BrandOnboardingPageContent() {
               <Tag className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
               <input
                 type="text"
-                value={formData.contact_role}
-                onChange={(e) => updateFormData('contact_role', e.target.value)}
+                value={formData.brand_contact_role}
+                onChange={(e) => updateFormData('brand_contact_role', e.target.value)}
                 placeholder="e.g. Marketing Manager"
                 className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
                   text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
@@ -584,7 +805,7 @@ function BrandOnboardingPageContent() {
           </motion.div>
         )
 
-      case 'contact_email':
+      case 'brand_contact_email':
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -595,8 +816,8 @@ function BrandOnboardingPageContent() {
               <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
               <input
                 type="email"
-                value={formData.contact_email}
-                onChange={(e) => updateFormData('contact_email', e.target.value)}
+                value={formData.brand_contact_email}
+                onChange={(e) => updateFormData('brand_contact_email', e.target.value)}
                 placeholder="john@company.com"
                 className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
                   text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
@@ -607,7 +828,7 @@ function BrandOnboardingPageContent() {
           </motion.div>
         )
 
-      case 'contact_phone':
+      case 'brand_contact_phone':
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -618,8 +839,8 @@ function BrandOnboardingPageContent() {
               <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
               <input
                 type="tel"
-                value={formData.contact_phone}
-                onChange={(e) => updateFormData('contact_phone', e.target.value)}
+                value={formData.brand_contact_phone}
+                onChange={(e) => updateFormData('brand_contact_phone', e.target.value)}
                 placeholder="+44 20 1234 5678"
                 className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
                   text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
@@ -627,6 +848,84 @@ function BrandOnboardingPageContent() {
                 autoFocus
               />
             </div>
+          </motion.div>
+        )
+
+      case 'stride_contact_name':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
+              <input
+                type="text"
+                value={formData.stride_contact_name}
+                onChange={(e) => updateFormData('stride_contact_name', e.target.value)}
+                placeholder="Jane Williams"
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                  text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
+                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                autoFocus
+              />
+            </div>
+            <p className="text-blue-200 text-sm text-center">
+              Optional - Leave blank if you don't have a specific preference
+            </p>
+          </motion.div>
+        )
+
+      case 'stride_contact_email':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
+              <input
+                type="email"
+                value={formData.stride_contact_email}
+                onChange={(e) => updateFormData('stride_contact_email', e.target.value)}
+                placeholder="jane@stridesocial.com"
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                  text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
+                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                autoFocus
+              />
+            </div>
+            <p className="text-blue-200 text-sm text-center">
+              Optional - Stride Social team member's email
+            </p>
+          </motion.div>
+        )
+
+      case 'stride_contact_phone':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
+              <input
+                type="tel"
+                value={formData.stride_contact_phone}
+                onChange={(e) => updateFormData('stride_contact_phone', e.target.value)}
+                placeholder="+44 20 9876 5432"
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                  text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
+                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                autoFocus
+              />
+            </div>
+            <p className="text-blue-200 text-sm text-center">
+              Optional - Stride Social team member's phone
+            </p>
           </motion.div>
         )
 
@@ -660,9 +959,9 @@ function BrandOnboardingPageContent() {
                   <p className="text-white">{BUDGET_OPTIONS.find(o => o.value === formData.annual_budget)?.label}</p>
                 </div>
                 <div>
-                  <p className="text-blue-200 font-medium">Contact</p>
-                  <p className="text-white">{formData.contact_name}</p>
-                  <p className="text-white text-xs">{formData.contact_email}</p>
+                  <p className="text-blue-200 font-medium">Brand Contact</p>
+                  <p className="text-white">{formData.brand_contact_name}</p>
+                  <p className="text-white text-xs">{formData.brand_contact_email}</p>
                 </div>
               </div>
               
@@ -692,6 +991,56 @@ function BrandOnboardingPageContent() {
                   ))}
                 </div>
               </div>
+
+              {/* New Optional Fields */}
+              {formData.primary_region && (
+                <div>
+                  <p className="text-blue-200 font-medium">Primary Region</p>
+                  <p className="text-white text-sm">{formData.primary_region}</p>
+                </div>
+              )}
+
+              {formData.campaign_objective && (
+                <div>
+                  <p className="text-blue-200 font-medium">Campaign Objective</p>
+                  <p className="text-white text-sm">{formData.campaign_objective}</p>
+                </div>
+              )}
+
+              {formData.product_service_type && (
+                <div>
+                  <p className="text-blue-200 font-medium">Product/Service Type</p>
+                  <p className="text-white text-sm">{formData.product_service_type}</p>
+                </div>
+              )}
+
+              {formData.preferred_contact_method && (
+                <div>
+                  <p className="text-blue-200 font-medium">Preferred Contact Method</p>
+                  <p className="text-white text-sm">
+                    {CONTACT_METHOD_OPTIONS.find(o => o.value === formData.preferred_contact_method)?.label}
+                  </p>
+                </div>
+              )}
+
+              {formData.proactive_suggestions && (
+                <div>
+                  <p className="text-blue-200 font-medium">Proactive Creator Suggestions</p>
+                  <p className="text-white text-sm">
+                    {PROACTIVE_SUGGESTIONS_OPTIONS.find(o => o.value === formData.proactive_suggestions)?.label}
+                  </p>
+                </div>
+              )}
+
+              {/* Stride Social Contact Information */}
+              {(formData.stride_contact_name || formData.stride_contact_email || formData.stride_contact_phone) && (
+                <div>
+                  <p className="text-blue-200 font-medium">Stride Social Contact</p>
+                  {formData.stride_contact_name && <p className="text-white text-sm">{formData.stride_contact_name}</p>}
+                  {formData.stride_contact_email && <p className="text-white text-xs">{formData.stride_contact_email}</p>}
+                  {formData.stride_contact_phone && <p className="text-white text-xs">{formData.stride_contact_phone}</p>}
+                </div>
+              )}
             </div>
           </motion.div>
         )

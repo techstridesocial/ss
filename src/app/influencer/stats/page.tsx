@@ -8,6 +8,11 @@ import { BarChart3, TrendingUp, Users, Eye, Heart, MessageCircle, Share } from '
 export default function InfluencerStats() {
   const [statsData, setStatsData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [showResults, setShowResults] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
     const loadStats = async () => {
@@ -29,6 +34,67 @@ export default function InfluencerStats() {
 
     loadStats()
   }, [])
+
+  const searchProfiles = async () => {
+    if (!searchQuery.trim()) return
+    
+    setIsSearching(true)
+    setShowResults(false)
+    
+    try {
+      const response = await fetch('/api/discovery/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: searchQuery.replace('@', ''),
+          platform: 'all' // Search across all platforms
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.results) {
+          setSearchResults(data.results)
+          setShowResults(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error searching profiles:', error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const selectProfile = async (profile: any) => {
+    // Save selected profile and refresh stats
+    try {
+      const response = await fetch('/api/influencer/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedProfile: profile,
+          platform: profile.platform
+        })
+      })
+      
+      if (response.ok) {
+        // Refresh the stats data
+        const statsResponse = await fetch('/api/influencer/stats')
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          if (statsData.success) {
+            setStatsData(statsData.data)
+            setShowResults(false)
+            setSearchQuery('')
+            setSuccessMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
+            setTimeout(() => setSuccessMessage(''), 5000) // Clear message after 5 seconds
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error selecting profile:', error)
+    }
+  }
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -74,13 +140,24 @@ export default function InfluencerStats() {
                 <div key={platform} className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900 capitalize">{platform}</h3>
-                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`flex items-center space-x-2`}>
+                      {isConnected && (
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          platformData.data_source === 'cached' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {platformData.data_source === 'cached' ? 'Cached Data' : 'Live Data'}
+                        </span>
+                      )}
+                      <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Followers</span>
                       <span className="font-medium">
-                        {isConnected ? formatNumber(platformData.followers) : 'Not connected'}
+                        {isConnected ? formatNumber(platformData.followers) : 'Search to connect'}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -97,6 +174,20 @@ export default function InfluencerStats() {
                         {isConnected ? formatNumber(platformData.avg_views) : '-'}
                       </span>
                     </div>
+                    {isConnected && platformData.username && (
+                      <div className="flex justify-between pt-2 border-t border-gray-100">
+                        <span className="text-sm text-gray-600">Username</span>
+                        <span className="font-medium text-blue-600">@{platformData.username}</span>
+                      </div>
+                    )}
+                    {isConnected && platformData.cached_at && (
+                      <div className="flex justify-between pt-1">
+                        <span className="text-xs text-gray-500">Last updated</span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(platformData.cached_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -136,24 +227,91 @@ export default function InfluencerStats() {
             </div>
           </div>
 
-          {/* Connect Accounts CTA */}
+          {/* Find My Profile CTA */}
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Connect your social accounts</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Your Profile</h3>
             <p className="text-gray-600 mb-6">
-              Connect your Instagram, TikTok, and YouTube accounts to view detailed performance analytics and make yourself discoverable to brands.
+              Search for your social media profiles to view your real performance analytics and make yourself discoverable to brands.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all">
-                Connect Instagram
-              </button>
-              <button className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
-                Connect TikTok
-              </button>
-              <button className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                Connect YouTube
-              </button>
+            
+            {/* Search Interface */}
+            <div className="max-w-md mx-auto mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchProfiles()}
+                  placeholder="Enter your username (e.g., @johnsmith)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isSearching}
+                />
+                <button 
+                  onClick={searchProfiles}
+                  disabled={isSearching || !searchQuery.trim()}
+                  className="absolute right-2 top-2 px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {isSearching ? 'Searching...' : 'Search'}
+                </button>
+              </div>
             </div>
+            
+            <div className="text-sm text-gray-500 mb-4">
+              We'll search across Instagram, TikTok, and YouTube to find your profiles
+            </div>
+
+            {/* Success Message */}
+            {successMessage && (
+              <div className="max-w-md mx-auto mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800 text-center font-medium">
+                  {successMessage}
+                </p>
+              </div>
+            )}
+
+            {/* Search Results */}
+            {showResults && searchResults.length > 0 && (
+              <div className="max-w-2xl mx-auto mt-8 bg-gray-50 rounded-lg p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Found Profiles - Select Yours:</h4>
+                <div className="space-y-3">
+                  {searchResults.map((profile, index) => (
+                    <div key={index} className="bg-white rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-lg font-semibold text-gray-600">
+                              {profile.platform === 'instagram' ? '📷' : profile.platform === 'tiktok' ? '🎵' : '📹'}
+                            </span>
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-gray-900">@{profile.username}</h5>
+                            <p className="text-sm text-gray-600 capitalize">{profile.platform}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatNumber(profile.followers || 0)} followers • {formatPercentage(profile.engagement_rate || 0)} engagement
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => selectProfile(profile)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                        >
+                          This is me
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showResults && searchResults.length === 0 && (
+              <div className="max-w-md mx-auto mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800 text-center">
+                  No profiles found. Try a different username or make sure you have at least 1k followers.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

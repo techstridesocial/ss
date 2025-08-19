@@ -4,9 +4,31 @@ import React, { useState } from 'react'
 import { BrandProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernBrandHeader from '../../../components/nav/ModernBrandHeader'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
-import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
-import { Heart, Users, TrendingUp, Eye, MapPin, Trash2 } from 'lucide-react'
+import { useHeartedInfluencers, Shortlist } from '../../../lib/context/HeartedInfluencersContext'
+import { 
+  Heart, 
+  Users, 
+  TrendingUp, 
+  Eye, 
+  MapPin, 
+  Trash2, 
+  Plus, 
+  Edit3, 
+  Copy, 
+  MoreHorizontal,
+  FolderOpen,
+  Calendar,
+  Send,
+  ExternalLink
+} from 'lucide-react'
 import { Platform, InfluencerDetailView } from '../../../types/database'
+import { 
+  CreateShortlistModal, 
+  EditShortlistModal, 
+  DuplicateShortlistModal, 
+  DeleteShortlistModal 
+} from '../../../components/shortlists/ShortlistManagement'
+import CreateCampaignFromShortlistsModal from '../../../components/campaigns/CreateCampaignFromShortlistsModal'
 
 // Helper function to format numbers
 const formatNumber = (num: number): string => {
@@ -41,7 +63,7 @@ const generateDetailedInfluencerData = (heartedInfluencer: any): InfluencerDetai
     tier: 'GOLD' as const,
     is_active: true,
     price_per_post: null,
-    score: null,
+    // score: null, // Not in InfluencerDetailView type
     relationship_status: null,
     assigned_to: null,
     labels: [],
@@ -98,11 +120,27 @@ export default function BrandShortlistsPage() {
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
-  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null)
-  const [confirmClearAll, setConfirmClearAll] = useState(false)
+  
+  // Modal states
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [selectedShortlist, setSelectedShortlist] = useState<Shortlist | null>(null)
+  const [createCampaignModalOpen, setCreateCampaignModalOpen] = useState(false)
+  const [selectedShortlistsForCampaign, setSelectedShortlistsForCampaign] = useState<string[]>([])
+  
+  // Selected shortlist to view
+  const [currentShortlistId, setCurrentShortlistId] = useState<string>('default')
+  
+  // Removal confirmations
+  const [confirmRemove, setConfirmRemove] = useState<{ shortlistId: string; influencerId: string; name: string } | null>(null)
 
-  const { heartedInfluencers, removeHeartedInfluencer, clearHeartedInfluencers } = useHeartedInfluencers()
+  const { shortlists, isLoading, removeInfluencerFromShortlist } = useHeartedInfluencers()
 
+  // Get current shortlist
+  const currentShortlist = shortlists.find(s => s.id === currentShortlistId) || shortlists[0]
+  
   // Handle view influencer
   const handleViewInfluencer = (heartedInfluencer: any) => {
     const detailedInfluencer = generateDetailedInfluencerData(heartedInfluencer)
@@ -117,28 +155,74 @@ export default function BrandShortlistsPage() {
     setSelectedInfluencerDetail(null)
   }
 
-  // Handle remove from shortlist
-  const handleRemoveFromShortlist = (id: string, name: string) => {
-    setConfirmRemove({ id, name })
+  // Handle remove from current shortlist
+  const handleRemoveFromShortlist = (influencerId: string, name: string) => {
+    if (!currentShortlist) return
+    setConfirmRemove({ 
+      shortlistId: currentShortlist.id, 
+      influencerId, 
+      name 
+    })
   }
 
   // Confirm remove from shortlist
-  const confirmRemoveFromShortlist = () => {
+  const confirmRemoveFromShortlist = async () => {
     if (confirmRemove) {
-      removeHeartedInfluencer(confirmRemove.id)
-      setConfirmRemove(null)
+      try {
+        await removeInfluencerFromShortlist(confirmRemove.shortlistId, confirmRemove.influencerId)
+      } catch (error) {
+        console.error('Error removing influencer:', error)
+      } finally {
+        setConfirmRemove(null)
+      }
     }
   }
 
-  // Handle clear all
-  const handleClearAll = () => {
-    setConfirmClearAll(true)
+  // Handle shortlist actions
+  const handleEditShortlist = (shortlist: Shortlist) => {
+    setSelectedShortlist(shortlist)
+    setEditModalOpen(true)
   }
 
-  // Confirm clear all
-  const confirmClearAllInfluencers = () => {
-    clearHeartedInfluencers()
-    setConfirmClearAll(false)
+  const handleDuplicateShortlist = (shortlist: Shortlist) => {
+    setSelectedShortlist(shortlist)
+    setDuplicateModalOpen(true)
+  }
+
+  const handleDeleteShortlist = (shortlist: Shortlist) => {
+    setSelectedShortlist(shortlist)
+    setDeleteModalOpen(true)
+  }
+
+  const handleRequestQuote = (shortlist: Shortlist) => {
+    setSelectedShortlistsForCampaign([shortlist.id])
+    setCreateCampaignModalOpen(true)
+  }
+
+  const handleCreateCampaign = async (campaignData: any) => {
+    try {
+      console.log('Creating campaign from shortlists:', campaignData)
+      
+      // In a real app, this would make an API call to create the campaign
+      const response = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(campaignData)
+      })
+      
+      if (response.ok) {
+        alert(`Campaign "${campaignData.name}" created successfully!`)
+        setCreateCampaignModalOpen(false)
+        setSelectedShortlistsForCampaign([])
+      } else {
+        throw new Error('Failed to create campaign')
+      }
+    } catch (error) {
+      console.error('Error creating campaign:', error)
+      alert('Failed to create campaign. Please try again.')
+    }
   }
 
   return (
@@ -153,145 +237,304 @@ export default function BrandShortlistsPage() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Shortlists</h1>
                 <p className="text-gray-600">
-                  {heartedInfluencers.length} influencer{heartedInfluencers.length !== 1 ? 's' : ''} saved
+                  {shortlists.length} shortlist{shortlists.length !== 1 ? 's' : ''} with {shortlists.reduce((total, s) => total + s.influencers.length, 0)} total influencers
                 </p>
               </div>
-              {heartedInfluencers.length > 0 && (
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={handleClearAll}
-                  className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
+                  onClick={() => {
+                    setSelectedShortlistsForCampaign([])
+                    setCreateCampaignModalOpen(true)
+                  }}
+                  disabled={shortlists.length === 0}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Trash2 size={16} />
-                  Clear All
+                  <Send size={16} />
+                  Request Quote
                 </button>
-              )}
+                <button
+                  onClick={() => setCreateModalOpen(true)}
+                  className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  New Shortlist
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Empty State */}
-          {heartedInfluencers.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-xl border border-white/30 p-12 text-center">
-              <Heart size={64} className="mx-auto text-gray-400 mb-6" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">No influencers in your shortlist yet</h3>
-              <p className="text-gray-600 mb-6">
-                Start building your shortlist by browsing influencers and clicking the heart icon.
-              </p>
-              <a
-                href="/brand/influencers"
-                className="inline-flex items-center px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                Browse Influencers
-              </a>
+          {/* Shortlists Overview Grid */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <span className="ml-3 text-gray-600">Loading shortlists...</span>
             </div>
           ) : (
-            /* Shortlisted Influencers Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {heartedInfluencers.map((influencer) => (
-                <div key={influencer.id} className="bg-white rounded-2xl shadow-xl border border-white/30 overflow-hidden hover:shadow-2xl transition-shadow">
-                  {/* Header with avatar */}
-                  <div className="p-6 pb-4">
-                    <div className="flex items-center space-x-3 mb-4">
-                      {influencer.profilePicture ? (
-                        <img 
-                          src={influencer.profilePicture} 
-                          alt={influencer.displayName}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
-                          <Users size={24} className="text-gray-500" />
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {shortlists.map((shortlist) => (
+              <div key={shortlist.id} className="bg-white rounded-2xl shadow-xl border border-white/30 overflow-hidden hover:shadow-2xl transition-shadow">
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">{shortlist.name}</h3>
+                      {shortlist.description && (
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{shortlist.description}</p>
                       )}
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">{influencer.displayName}</h3>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <PlatformIcon platform={influencer.platform} size={16} />
-                          <span className="text-sm text-gray-500 capitalize">{influencer.platform}</span>
-                        </div>
-                      </div>
                     </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center text-sm text-gray-500 mb-1">
-                          <Users size={14} className="mr-1" />
-                          Followers
-                        </div>
-                        <div className="font-semibold text-gray-900">{formatNumber(influencer.followers)}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center text-sm text-gray-500 mb-1">
-                          <TrendingUp size={14} className="mr-1" />
-                          Engagement
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {(influencer.engagement_rate * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Niches */}
-                    {influencer.niches && influencer.niches.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-1">
-                          {influencer.niches.slice(0, 2).map((niche: string) => (
-                            <span
-                              key={niche}
-                              className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg"
-                            >
-                              {niche}
-                            </span>
-                          ))}
-                          {influencer.niches.length > 2 && (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
-                              +{influencer.niches.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Location */}
-                    {influencer.location && (
-                      <div className="flex items-center text-sm text-gray-600 mb-4">
-                        <MapPin size={14} className="mr-1 text-gray-400" />
-                        {influencer.location}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => handleViewInfluencer(influencer)}
-                        className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Eye size={16} />
-                        View Details
+                    
+                    {/* Dropdown Menu */}
+                    <div className="relative group">
+                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <MoreHorizontal size={16} className="text-gray-500" />
                       </button>
-                      <button
-                        onClick={() => handleRemoveFromShortlist(influencer.id, influencer.displayName)}
-                        className="px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors flex items-center justify-center rounded-lg"
-                        title="Remove from shortlist"
-                      >
-                        <Heart size={16} fill="currentColor" />
-                      </button>
+                      
+                      {/* Dropdown */}
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleEditShortlist(shortlist)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <Edit3 size={14} />
+                            Edit Details
+                          </button>
+                          <button
+                            onClick={() => handleDuplicateShortlist(shortlist)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <Copy size={14} />
+                            Duplicate
+                          </button>
+                          <button
+                            onClick={() => handleRequestQuote(shortlist)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                            disabled={shortlist.influencers.length === 0}
+                          >
+                            <Send size={14} />
+                            Request Quote
+                          </button>
+                          <hr className="my-1" />
+                          <button
+                            onClick={() => handleDeleteShortlist(shortlist)}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            disabled={shortlist.id === 'default'}
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users size={16} />
+                      <span>{shortlist.influencers.length} influencers</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar size={16} />
+                      <span>{new Date(shortlist.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => setCurrentShortlistId(shortlist.id)}
+                      className={`flex-1 px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                        currentShortlistId === shortlist.id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FolderOpen size={16} />
+                      {currentShortlistId === shortlist.id ? 'Viewing' : 'View'}
+                    </button>
+                    {shortlist.influencers.length > 0 && (
+                      <button
+                        onClick={() => handleRequestQuote(shortlist)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                      >
+                        <Send size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))}
+              </div>
+            ))}
+            </div>
+          )}
+
+          {/* Current Shortlist Details */}
+          {currentShortlist && (
+            <div className="bg-white rounded-2xl shadow-xl border border-white/30">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">{currentShortlist.name}</h2>
+                    {currentShortlist.description && (
+                      <p className="text-gray-600 mt-1">{currentShortlist.description}</p>
+                    )}
+                  </div>
+                  {currentShortlist.influencers.length > 0 && (
+                    <button
+                      onClick={() => handleRequestQuote(currentShortlist)}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Send size={16} />
+                      Request Quote
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Influencers Grid */}
+              {currentShortlist.influencers.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Heart size={64} className="mx-auto text-gray-400 mb-6" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">No influencers in this shortlist yet</h3>
+                  <p className="text-gray-600 mb-6">
+                    Start adding influencers by browsing the influencer directory and clicking the heart icon.
+                  </p>
+                  <a
+                    href="/brand/influencers"
+                    className="inline-flex items-center px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors gap-2"
+                  >
+                    <ExternalLink size={16} />
+                    Browse Influencers
+                  </a>
+                </div>
+              ) : (
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {currentShortlist.influencers.map((influencer) => (
+                      <div key={influencer.id} className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center space-x-3 mb-4">
+                          {influencer.profilePicture ? (
+                            <img 
+                              src={influencer.profilePicture} 
+                              alt={influencer.displayName}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
+                              <Users size={24} className="text-gray-500" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-gray-900 truncate">{influencer.displayName}</h4>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <PlatformIcon platform={influencer.platform} size={14} />
+                              <span className="text-sm text-gray-500 capitalize">@{influencer.username}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center text-xs text-gray-500 mb-1">
+                              <Users size={12} className="mr-1" />
+                              Followers
+                            </div>
+                            <div className="font-semibold text-gray-900 text-sm">{formatNumber(influencer.followers)}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="flex items-center justify-center text-xs text-gray-500 mb-1">
+                              <TrendingUp size={12} className="mr-1" />
+                              Engagement
+                            </div>
+                            <div className="font-semibold text-gray-900 text-sm">
+                              {(influencer.engagement_rate * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewInfluencer(influencer)}
+                            className="flex-1 px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm"
+                          >
+                            <Eye size={14} />
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleRemoveFromShortlist(influencer.id, influencer.displayName)}
+                            className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors flex items-center justify-center rounded-lg"
+                            title="Remove from shortlist"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
+        {/* Modals */}
+        <CreateShortlistModal
+          isOpen={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          onCreateSuccess={(newShortlistId) => setCurrentShortlistId(newShortlistId)}
+        />
+
+        <EditShortlistModal
+          shortlist={selectedShortlist}
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false)
+            setSelectedShortlist(null)
+          }}
+        />
+
+        <DuplicateShortlistModal
+          shortlist={selectedShortlist}
+          isOpen={duplicateModalOpen}
+          onClose={() => {
+            setDuplicateModalOpen(false)
+            setSelectedShortlist(null)
+          }}
+          onDuplicateSuccess={(newShortlistId) => setCurrentShortlistId(newShortlistId)}
+        />
+
+        <DeleteShortlistModal
+          shortlist={selectedShortlist}
+          isOpen={deleteModalOpen}
+          onClose={() => {
+            setDeleteModalOpen(false)
+            setSelectedShortlist(null)
+          }}
+          onDeleteConfirm={() => {
+            // Switch to default shortlist if current was deleted
+            if (selectedShortlist?.id === currentShortlistId) {
+              setCurrentShortlistId('default')
+            }
+          }}
+        />
+
         {/* Detail Panel */}
         {selectedInfluencerDetail && (
           <InfluencerDetailPanel
-            influencer={selectedInfluencerDetail}
+            influencer={{
+              id: selectedInfluencerDetail.id,
+              handle: selectedInfluencerDetail.display_name,
+              followers: selectedInfluencerDetail.total_followers || 0,
+              profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+              bio: selectedInfluencerDetail.bio || undefined,
+              engagement_rate: selectedInfluencerDetail.total_engagement_rate || undefined,
+              avgViews: selectedInfluencerDetail.total_avg_views || undefined,
+            }}
             isOpen={detailPanelOpen}
             onClose={handleCloseDetailPanel}
-            selectedPlatform={selectedPlatform}
-            onPlatformSwitch={setSelectedPlatform}
+            selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
+            onPlatformSwitch={setSelectedPlatform as (platform: 'instagram' | 'tiktok' | 'youtube') => void}
           />
         )}
 
@@ -301,7 +544,7 @@ export default function BrandShortlistsPage() {
             <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove from Shortlist</h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to remove <strong>{confirmRemove.name}</strong> from your shortlist?
+                Are you sure you want to remove <strong>{confirmRemove.name}</strong> from this shortlist?
               </p>
               <div className="flex space-x-3">
                 <button
@@ -321,31 +564,16 @@ export default function BrandShortlistsPage() {
           </div>
         )}
 
-        {/* Confirmation Modal - Clear All */}
-        {confirmClearAll && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Clear All Shortlists</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to remove all <strong>{heartedInfluencers.length} influencer{heartedInfluencers.length !== 1 ? 's' : ''}</strong> from your shortlist? This action cannot be undone.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setConfirmClearAll(false)}
-                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmClearAllInfluencers}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Clear All
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Create Campaign Modal */}
+        <CreateCampaignFromShortlistsModal
+          isOpen={createCampaignModalOpen}
+          onClose={() => {
+            setCreateCampaignModalOpen(false)
+            setSelectedShortlistsForCampaign([])
+          }}
+          onSave={handleCreateCampaign}
+          preSelectedShortlists={selectedShortlistsForCampaign}
+        />
       </div>
     </BrandProtectedRoute>
   )

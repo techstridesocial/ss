@@ -12,10 +12,21 @@ interface OnboardingRequest {
   annual_budget: string
   preferred_niches: string[]
   target_regions: string[]
-  contact_name: string
-  contact_role: string
-  contact_email: string
-  contact_phone?: string
+  // Brand Contact Information
+  brand_contact_name: string
+  brand_contact_role: string
+  brand_contact_email: string
+  brand_contact_phone?: string
+  // New Optional Fields
+  primary_region?: string
+  campaign_objective?: string
+  product_service_type?: string
+  preferred_contact_method?: string
+  proactive_suggestions?: string
+  // Stride Social Contact Information
+  stride_contact_name?: string
+  stride_contact_email?: string
+  stride_contact_phone?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -31,7 +42,7 @@ export async function POST(request: NextRequest) {
     const requiredFields: (keyof OnboardingRequest)[] = [
       'company_name', 'website', 'industry', 'company_size', 
       'description', 'annual_budget', 'preferred_niches', 
-      'target_regions', 'contact_name', 'contact_role', 'contact_email'
+      'target_regions', 'brand_contact_name', 'brand_contact_role', 'brand_contact_email'
     ]
 
     for (const field of requiredFields) {
@@ -53,11 +64,19 @@ export async function POST(request: NextRequest) {
 
 
 
-    // Validate email format
+    // Validate email format for brand contact
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(data.contact_email)) {
+    if (!emailRegex.test(data.brand_contact_email)) {
       return NextResponse.json(
-        { error: 'Invalid email format' }, 
+        { error: 'Invalid brand contact email format' }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate optional Stride contact email if provided
+    if (data.stride_contact_email && !emailRegex.test(data.stride_contact_email)) {
+      return NextResponse.json(
+        { error: 'Invalid Stride contact email format' }, 
         { status: 400 }
       )
     }
@@ -143,13 +162,15 @@ export async function POST(request: NextRequest) {
 
     // Start transaction to create brand and contact records
     const result = await transaction(async (client) => {
-      // Insert brand record
+      // Insert brand record with new optional fields
       const brandResult = await client.query(`
         INSERT INTO brands (
           user_id, company_name, industry, website_url, 
           company_size, annual_budget_range, preferred_niches, 
-          preferred_regions, description, logo_url
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          preferred_regions, description, logo_url,
+          primary_region, campaign_objective, product_service_type,
+          preferred_contact_method, proactive_suggestions
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING id
       `, [
         user_id,
@@ -161,25 +182,47 @@ export async function POST(request: NextRequest) {
         data.preferred_niches,
         data.target_regions,
         data.description,
-        data.logo_url || null
+        data.logo_url || null,
+        data.primary_region || null,
+        data.campaign_objective || null,
+        data.product_service_type || null,
+        data.preferred_contact_method || null,
+        data.proactive_suggestions || null
       ])
 
       const brandId = brandResult.rows[0].id
 
-      // Insert primary contact
+      // Insert brand primary contact
       await client.query(`
         INSERT INTO brand_contacts (
           brand_id, name, email, phone, role, is_primary, notes
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [
         brandId,
-        data.contact_name,
-        data.contact_email,
-        data.contact_phone || null,
-        data.contact_role,
+        data.brand_contact_name,
+        data.brand_contact_email,
+        data.brand_contact_phone || null,
+        data.brand_contact_role,
         true,
-        `Company description: ${data.description}`
+        `Brand contact for ${data.company_name}`
       ])
+
+      // Insert Stride Social contact if provided
+      if (data.stride_contact_name || data.stride_contact_email || data.stride_contact_phone) {
+        await client.query(`
+          INSERT INTO brand_contacts (
+            brand_id, name, email, phone, role, is_primary, notes
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          brandId,
+          data.stride_contact_name || 'Stride Team Member',
+          data.stride_contact_email || null,
+          data.stride_contact_phone || null,
+          'Stride Social Contact',
+          false,
+          `Stride Social team contact for ${data.company_name}`
+        ])
+      }
 
       // Update user status to indicate onboarding is complete
       await client.query(`
@@ -205,8 +248,8 @@ export async function POST(request: NextRequest) {
           WHERE user_id = $1
         `, [
           user_id,
-          data.contact_name.split(' ')[0] || '',
-          data.contact_name.split(' ').slice(1).join(' ') || '',
+          data.brand_contact_name.split(' ')[0] || '',
+          data.brand_contact_name.split(' ').slice(1).join(' ') || '',
           true
         ])
       } else {
@@ -217,8 +260,8 @@ export async function POST(request: NextRequest) {
           ) VALUES ($1, $2, $3, $4)
         `, [
           user_id,
-          data.contact_name.split(' ')[0] || '',
-          data.contact_name.split(' ').slice(1).join(' ') || '',
+          data.brand_contact_name.split(' ')[0] || '',
+          data.brand_contact_name.split(' ').slice(1).join(' ') || '',
           true
         ])
       }

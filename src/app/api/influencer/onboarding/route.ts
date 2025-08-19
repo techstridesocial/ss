@@ -221,7 +221,9 @@ export async function POST(request: NextRequest) {
             display_name = $2,
             niche_primary = $3,
             niches = $4,
-            onboarding_completed = $5,
+            main_platform = $5,
+            website_url = $6,
+            onboarding_completed = $7,
             updated_at = NOW()
           WHERE user_id = $1
           RETURNING id
@@ -230,6 +232,8 @@ export async function POST(request: NextRequest) {
           data.display_name,
           data.niche,
           [data.niche],
+          data.main_platform,
+          data.website || null,
           true
         ])
         influencerId = influencerResult.rows[0].id
@@ -237,14 +241,16 @@ export async function POST(request: NextRequest) {
         // Create new influencer
         const influencerResult = await client.query(`
           INSERT INTO influencers (
-            user_id, display_name, niche_primary, niches, onboarding_completed, ready_for_campaigns
-          ) VALUES ($1, $2, $3, $4, $5, $6)
+            user_id, display_name, niche_primary, niches, main_platform, website_url, onboarding_completed, ready_for_campaigns
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING id
         `, [
           user_id,
           data.display_name,
           data.niche,
           [data.niche],
+          data.main_platform,
+          data.website || null,
           true,
           false // Not ready for campaigns until staff approval
         ])
@@ -288,12 +294,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Update user status to indicate onboarding is complete
+      // Update user status and email to indicate onboarding is complete
       await client.query(`
         UPDATE users 
-        SET status = 'ACTIVE', updated_at = NOW()
+        SET email = $2, status = 'ACTIVE', updated_at = NOW()
         WHERE id = $1
-      `, [user_id])
+      `, [user_id, data.email])
 
       return { influencerId }
     })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
+import { cacheModashProfile } from '@/lib/services/modash-cache'
 
 // GET - Fetch influencer profile data
 export async function GET(request: NextRequest) {
@@ -191,6 +192,163 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating influencer profile:', error)
     return NextResponse.json(
       { error: 'Failed to update profile' },
+      { status: 500 }
+    )
+  }
+}
+
+// POST - Save selected Modash profile
+export async function POST(request: NextRequest) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { selectedProfile, platform } = await request.json()
+
+    if (!selectedProfile || !platform) {
+      return NextResponse.json(
+        { error: 'Missing selectedProfile or platform' },
+        { status: 400 }
+      )
+    }
+
+    // Get user_id from users table using clerk_id
+    const userResult = await query<{ id: string }>(
+      'SELECT id FROM users WHERE clerk_id = $1',
+      [userId]
+    )
+
+    if (userResult.length === 0) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    const user_id = userResult[0]?.id
+
+    // Get influencer_id
+    const influencerResult = await query<{ id: string }>(
+      'SELECT id FROM influencers WHERE user_id = $1',
+      [user_id]
+    )
+
+    if (influencerResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Influencer profile not found' },
+        { status: 404 }
+      )
+    }
+
+    const influencer_id = influencerResult[0]?.id
+
+    // Update or insert platform data
+    const result = await transaction(async (client) => {
+      // Check if platform record exists
+      const existing = await client.query(
+        'SELECT id FROM influencer_platforms WHERE influencer_id = $1 AND platform = $2',
+        [influencer_id, platform.toUpperCase()]
+      )
+
+      if (existing.length > 0) {
+        // Update existing record
+        await client.query(`
+          UPDATE influencer_platforms SET
+            username = $1,
+            followers = $2,
+            engagement_rate = $3,
+            avg_views = $4,
+            is_connected = true,
+            last_synced = NOW(),
+            modash_profile_id = $5,
+            updated_at = NOW()
+          WHERE influencer_id = $6 AND platform = $7
+        `, [
+          selectedProfile.username,
+          selectedProfile.followers || 0,
+          selectedProfile.engagement_rate || 0,
+          selectedProfile.avg_views || 0,
+          selectedProfile.profile_id || selectedProfile.id,
+          influencer_id,
+          platform.toUpperCase()
+        ])
+      } else {
+        // Insert new record
+        await client.query(`
+          INSERT INTO influencer_platforms (
+            influencer_id, platform, username, followers, 
+            engagement_rate, avg_views, is_connected, 
+            last_synced, modash_profile_id, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), $7, NOW(), NOW())
+        `, [
+          influencer_id,
+          platform.toUpperCase(),
+          selectedProfile.username,
+          selectedProfile.followers || 0,
+          selectedProfile.engagement_rate || 0,
+          selectedProfile.avg_views || 0,
+          selectedProfile.profile_id || selectedProfile.id
+        ])
+      }
+
+      // Update main influencer totals
+      const totalQuery = `
+        SELECT 
+          SUM(followers) as total_followers,
+          AVG(engagement_rate) as avg_engagement_rate,
+          AVG(avg_views) as avg_views
+        FROM influencer_platforms 
+        WHERE influencer_id = $1 AND is_connected = true
+      `
+      
+      const totals = await client.query(totalQuery, [influencer_id])
+      
+      if (totals.length > 0) {
+        await client.query(`
+          UPDATE influencers SET
+            total_followers = $1,
+            total_engagement_rate = $2,
+            total_avg_views = $3,
+            updated_at = NOW()
+          WHERE id = $4
+        `, [
+          totals[0].total_followers || 0,
+          totals[0].avg_engagement_rate || 0,
+          totals[0].avg_views || 0,
+          influencer_id
+        ])
+      }
+
+      return { success: true }
+    })
+
+    // Cache the full Modash profile data
+    console.log(`🔄 Caching full Modash profile for ${platform} user ${selectedProfile.username}`)
+    const cacheResult = await cacheModashProfile(
+      influencer_id,
+      selectedProfile.profile_id || selectedProfile.id || selectedProfile.username,
+      platform
+    )
+    
+    if (!cacheResult.success) {
+      console.warn(`⚠️ Failed to cache Modash profile: ${cacheResult.error}`)
+      // Continue anyway - basic profile was saved
+    } else {
+      console.log(`✅ Successfully cached full Modash profile for ${platform} user ${selectedProfile.username}`)
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Profile connected successfully',
+      cached: cacheResult.success
+    })
+
+  } catch (error) {
+    console.error('Error saving selected profile:', error)
+    return NextResponse.json(
+      { error: 'Failed to save profile' },
       { status: 500 }
     )
   }
