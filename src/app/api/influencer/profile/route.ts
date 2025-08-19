@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
       return { success: true }
     })
 
-    // Cache the full Modash profile data
+    // Cache the full Modash profile data ONCE (no auto-updates)
     console.log(`🔄 Caching full Modash profile for ${platform} user ${selectedProfile.username}`)
     const cacheResult = await cacheModashProfile(
       influencer_id,
@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
       console.warn(`⚠️ Failed to cache Modash profile: ${cacheResult.error}`)
       // Continue anyway - basic profile was saved
     } else {
-      console.log(`✅ Successfully cached full Modash profile for ${platform} user ${selectedProfile.username}`)
+      console.log(`✅ Successfully cached full Modash profile for ${platform} user ${selectedProfile.username} - NO AUTO-UPDATES`)
     }
 
     return NextResponse.json({

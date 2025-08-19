@@ -202,7 +202,7 @@ export async function getCachedProfile(
       LEFT JOIN modash_audience_cache mac ON mpc.id = mac.profile_cache_id
       WHERE mpc.influencer_platform_id = $1 
         AND mpc.platform = $2
-        AND mpc.expires_at > NOW()
+        -- AND mpc.expires_at > NOW()  -- LAZY MODE: Never expire cache
       ORDER BY mpc.last_updated DESC
       LIMIT 1
     `, [influencerPlatformId, platform.toUpperCase()])
