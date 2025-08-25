@@ -57,14 +57,14 @@ export async function getShortlistsByBrand(brandId: string): Promise<ShortlistWi
           json_build_object(
             'id', i.id,
             'display_name', i.display_name,
-            'username', i.first_name || ' ' || i.last_name,
-            'platform', i.platforms[1],
+            'username', i.display_name,
+            'platform', 'instagram',
             'followers', i.total_followers,
             'engagement_rate', i.total_engagement_rate,
-            'profile_picture', i.avatar_url,
+            'profile_picture', NULL,
             'niches', i.niches,
-            'location', COALESCE(i.location_city, '') || CASE WHEN i.location_city IS NOT NULL AND i.location_country IS NOT NULL THEN ', ' ELSE '' END || COALESCE(i.location_country, ''),
-            'bio', i.bio,
+            'location', '',
+            'bio', '',
             'added_at', si.added_at
           ) ORDER BY si.added_at DESC
         ) FILTER (WHERE i.id IS NOT NULL),
@@ -94,14 +94,14 @@ export async function getShortlistById(shortlistId: string): Promise<ShortlistWi
           json_build_object(
             'id', i.id,
             'display_name', i.display_name,
-            'username', i.first_name || ' ' || i.last_name,
-            'platform', i.platforms[1],
+            'username', i.display_name,
+            'platform', 'instagram',
             'followers', i.total_followers,
             'engagement_rate', i.total_engagement_rate,
-            'profile_picture', i.avatar_url,
+            'profile_picture', NULL,
             'niches', i.niches,
-            'location', COALESCE(i.location_city, '') || CASE WHEN i.location_city IS NOT NULL AND i.location_country IS NOT NULL THEN ', ' ELSE '' END || COALESCE(i.location_country, ''),
-            'bio', i.bio,
+            'location', '',
+            'bio', '',
             'added_at', si.added_at
           ) ORDER BY si.added_at DESC
         ) FILTER (WHERE i.id IS NOT NULL),

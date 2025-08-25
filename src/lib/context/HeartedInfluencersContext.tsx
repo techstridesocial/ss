@@ -91,12 +91,21 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           setShortlists(dbShortlists)
         }
       } else {
-        console.error('Failed to load shortlists from database')
-        // Fallback to localStorage for backward compatibility
-        loadFromLocalStorage()
+        // Handle authentication/authorization errors gracefully
+        if (response.status === 401 || response.status === 403) {
+          // User not authenticated or not authorized - silently fall back to localStorage
+          loadFromLocalStorage()
+        } else {
+          console.error('Failed to load shortlists from database:', response.status, response.statusText)
+          // Fallback to localStorage for backward compatibility
+          loadFromLocalStorage()
+        }
       }
     } catch (error) {
-      console.error('Error loading shortlists:', error)
+      // Only log actual errors, not expected authentication failures
+      if (error instanceof Error && !error.message.includes('fetch')) {
+        console.error('Unexpected error loading shortlists:', error)
+      }
       // Fallback to localStorage for backward compatibility
       loadFromLocalStorage()
     } finally {

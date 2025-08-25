@@ -160,8 +160,8 @@ export default function LoginSelection() {
               }}
               afterSignInUrl={
                 mode === 'staff' ? '/staff/roster' : 
-                mode === 'brand' ? '/' : 
-                mode === 'influencer' ? '/' : 
+                mode === 'brand' ? '/brand/influencers' : 
+                mode === 'influencer' ? '/influencer/campaigns' : 
                 '/'
               }
             />

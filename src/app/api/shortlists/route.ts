@@ -8,6 +8,34 @@ import {
   duplicateShortlist 
 } from '@/lib/db/queries/shortlists'
 import { getCurrentUserRole } from '@/lib/auth/roles'
+import { query } from '@/lib/db/connection'
+
+// Helper function to get brand_id from Clerk userId
+async function getBrandIdFromUserId(userId: string): Promise<string> {
+  // Get user ID from Clerk userId
+  const userResult = await query<{ id: string }>(
+    'SELECT id FROM users WHERE clerk_id = $1',
+    [userId]
+  )
+
+  if (userResult.length === 0) {
+    throw new Error('User not found')
+  }
+
+  const user_id = userResult[0]?.id
+
+  // Get brand ID from user ID
+  const brandResult = await query<{ id: string }>(
+    'SELECT id FROM brands WHERE user_id = $1',
+    [user_id]
+  )
+
+  if (brandResult.length === 0) {
+    throw new Error('Brand not found')
+  }
+
+  return brandResult[0]?.id
+}
 
 // GET /api/shortlists - Get all shortlists for the authenticated brand
 export async function GET() {
@@ -24,8 +52,22 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden - Brand access required' }, { status: 403 })
     }
 
-    // Get brand shortlists using Clerk userId
-    const shortlists = await getShortlistsByBrand(userId)
+    // Get brand ID from Clerk userId
+    let brand_id: string
+    try {
+      brand_id = await getBrandIdFromUserId(userId)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage === 'User not found') {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      } else if (errorMessage === 'Brand not found') {
+        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+      }
+      throw error
+    }
+
+    // Get brand shortlists using brand_id
+    const shortlists = await getShortlistsByBrand(brand_id)
     
     return NextResponse.json({
       success: true,
@@ -71,8 +113,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Source shortlist not found' }, { status: 404 })
       }
     } else {
+      // Get brand ID from Clerk userId
+      let brand_id: string
+      try {
+        brand_id = await getBrandIdFromUserId(userId)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        if (errorMessage === 'User not found') {
+          return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        } else if (errorMessage === 'Brand not found') {
+          return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+        }
+        throw error
+      }
+      
       // Create new shortlist
-      shortlist = await createShortlist(userId, name.trim(), description?.trim())
+      shortlist = await createShortlist(brand_id, name.trim(), description?.trim())
       
       // If this is a new shortlist, we need to get it with influencers structure
       shortlist = {
