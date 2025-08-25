@@ -46,6 +46,8 @@ import {
 } from 'lucide-react'
 import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
+import { useStaffSavedInfluencers } from '../../../lib/hooks/useStaffSavedInfluencers'
+import SavedInfluencersTable from '../../../components/staff/SavedInfluencersTable'
 
 // Add to roster functionality
 const addToRoster = async (discoveredId: string) => {
@@ -1594,7 +1596,9 @@ function DiscoveredInfluencersTable({
   isLoading, 
   error,
   searchQuery,
-  onViewProfile
+  onViewProfile,
+  isInfluencerSaved,
+  handleHeartToggle
 }: { 
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
   searchResults?: any[]
@@ -1602,6 +1606,8 @@ function DiscoveredInfluencersTable({
   error?: string | null
   searchQuery?: string
   onViewProfile?: (influencer: any) => void
+  isInfluencerSaved?: (username: string, platform: string) => boolean
+  handleHeartToggle?: (influencer: any) => void
 }) {
   const [addingToRoster, setAddingToRoster] = useState<string | null>(null)
   const [rosterMessages, setRosterMessages] = useState<Record<string, { type: 'success' | 'error', message: string }>>({})
@@ -1636,35 +1642,7 @@ function DiscoveredInfluencersTable({
     console.log('💖 Current hearted influencers:', heartedInfluencers)
   }, [heartedInfluencers])
 
-  // Toggle heart status for an influencer
-  const handleHeartToggle = (influencer: any) => {
-    console.log('💖 Heart toggle clicked for influencer:', influencer)
-    
-    const influencerId = influencer.creatorId || influencer.userId || influencer.username || influencer.id
-    console.log('💖 Extracted influencer ID:', influencerId)
-    
-    if (isInfluencerHearted(influencerId)) {
-      console.log('💔 Removing influencer from hearts')
-      removeHeartedInfluencer(influencerId)
-    } else {
-      // Add to hearted influencers with all relevant data
-      const heartedInfluencer = {
-        id: influencerId,
-        displayName: influencer.displayName || influencer.display_name || influencer.username || influencer.id,
-        username: influencer.username || influencer.instagram_handle?.replace('@', '') || influencer.tiktok_handle?.replace('@', '') || influencer.youtube_handle?.replace('@', '') || 'unknown',
-        platform: selectedPlatform,
-        followers: influencer.platforms?.[selectedPlatform]?.followers || influencer.followers || 0,
-        engagement_rate: influencer.platforms?.[selectedPlatform]?.engagement_rate || influencer.engagement_rate || 0,
-        profilePicture: influencer.profilePicture || influencer.profile_picture,
-        niches: influencer.niches || [influencer.niche].filter(Boolean) || [],
-        location: influencer.location,
-        bio: influencer.bio
-      }
-      
-      console.log('❤️ Adding influencer to hearts:', heartedInfluencer)
-      addHeartedInfluencer(heartedInfluencer)
-    }
-  }
+
 
   // Add to roster functionality
   const handleAddToRoster = async (influencer: any) => {
@@ -2101,16 +2079,16 @@ function DiscoveredInfluencersTable({
                       <div className="flex items-center space-x-2">
                         <button 
                           className={`p-2 transition-colors rounded-lg ${
-                            isInfluencerHearted(creator.creatorId || creator.userId || creator.username || creator.id)
+                            isInfluencerSaved?.(creator.username || creator.instagram_handle?.replace('@', '') || creator.tiktok_handle?.replace('@', '') || creator.youtube_handle?.replace('@', '') || 'unknown', selectedPlatform) 
                               ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
                               : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'
                           }`}
-                          title={isInfluencerHearted(creator.creatorId || creator.userId || creator.username || creator.id) ? "Remove from favorites" : "Add to favorites"}
-                          onClick={() => handleHeartToggle(creator)}
+                          title={isInfluencerSaved?.(creator.username || creator.instagram_handle?.replace('@', '') || creator.tiktok_handle?.replace('@', '') || creator.youtube_handle?.replace('@', '') || 'unknown', selectedPlatform) ? "Already saved" : "Save to favorites"}
+                          onClick={() => handleHeartToggle?.(creator)}
                         >
                           <Heart 
                             size={16} 
-                            fill={isInfluencerHearted(creator.creatorId || creator.userId || creator.username || creator.id) ? 'currentColor' : 'none'}
+                            fill={isInfluencerSaved?.(creator.username || creator.instagram_handle?.replace('@', '') || creator.tiktok_handle?.replace('@', '') || creator.youtube_handle?.replace('@', '') || 'unknown', selectedPlatform) ? 'currentColor' : 'none'}
                           />
                         </button>
                         <button 
@@ -2165,8 +2143,14 @@ function DiscoveryPageClient() {
   // Add heart context to main component for debugging
   const { heartedInfluencers } = useHeartedInfluencers()
   
+  // Tab state - Search or Saved
+  const [activeTab, setActiveTab] = useState<'search' | 'saved'>('search')
+  
   // Platform state moved here to share between components
   const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'tiktok' | 'youtube'>('instagram')
+  
+  // Staff saved influencers hook (after platform state)
+  const { saveInfluencer, isInfluencerSaved, savedInfluencers } = useStaffSavedInfluencers(selectedPlatform)
   
   // API state
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -2443,6 +2427,137 @@ function DiscoveryPageClient() {
   const [detailCity, setDetailCity] = useState<string | undefined>()
   const [detailCountry, setDetailCountry] = useState<string | undefined>()
   const [detailLoading, setDetailLoading] = useState(false)
+
+  // Toggle heart status for an influencer - saves to staff system with FULL analytics
+  const handleHeartToggle = async (influencer: any) => {
+    console.log('💖 Heart toggle clicked for influencer:', influencer)
+    
+    const username = influencer.username || influencer.instagram_handle?.replace('@', '') || influencer.tiktok_handle?.replace('@', '') || influencer.youtube_handle?.replace('@', '') || 'unknown'
+    
+    if (isInfluencerSaved(username, selectedPlatform)) {
+      console.log('💔 Already saved - this will be handled by the Saved tab')
+      // For now, just show a message - removal is handled in the Saved tab
+      alert('This influencer is already saved. Use the Saved tab to manage saved influencers.')
+      return
+    }
+
+    // Fetch COMPLETE Modash analytics before saving
+    try {
+      console.log('🔄 Fetching complete Modash profile data...')
+      
+      const modashUserId = influencer.userId || influencer.creatorId
+      if (!modashUserId) {
+        throw new Error('No Modash user ID available for this influencer')
+      }
+
+      // Fetch complete profile data
+      const profileResponse = await fetch('/api/discovery/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: modashUserId,
+          platform: selectedPlatform,
+          includePerformanceData: true
+        })
+      })
+
+      if (!profileResponse.ok) {
+        throw new Error('Failed to fetch complete profile data')
+      }
+
+      const profileData = await profileResponse.json()
+      
+      // Fetch extended analytics (hashtags, partnerships, audience interests, etc.)
+      const extendedResponse = await fetch('/api/discovery/profile-extended', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: modashUserId,
+          platform: selectedPlatform,
+          sections: ['hashtags', 'partnerships', 'mentions', 'topics', 'interests', 'languages']
+        })
+      })
+
+      let extendedData = null
+      if (extendedResponse.ok) {
+        const extendedResult = await extendedResponse.json()
+        extendedData = extendedResult.data
+      }
+
+      // Combine search result with complete analytics
+      const enrichedInfluencerData = {
+        // Original search result data
+        ...influencer,
+        // Complete Modash profile data
+        ...profileData.data,
+        // Extended analytics
+        extended_analytics: extendedData
+      }
+
+      console.log('✅ Fetched complete analytics:', {
+        basicData: !!profileData.data,
+        extendedData: !!extendedData,
+        dataKeys: Object.keys(profileData.data || {}),
+        extendedKeys: Object.keys(extendedData || {})
+      })
+
+      const savedInfluencerData = {
+        username,
+        display_name: profileData.data?.fullname || influencer.displayName || influencer.display_name || influencer.username,
+        platform: selectedPlatform,
+        followers: profileData.data?.followers || influencer.platforms?.[selectedPlatform]?.followers || influencer.followers || 0,
+        engagement_rate: profileData.data?.engagementRate || influencer.platforms?.[selectedPlatform]?.engagement_rate || influencer.engagement_rate || 0,
+        avg_likes: profileData.data?.avgLikes || influencer.avgLikes,
+        avg_views: profileData.data?.avgViews || influencer.avgViews,
+        avg_comments: profileData.data?.avgComments || influencer.avgComments,
+        profile_picture: profileData.data?.picture || influencer.profilePicture || influencer.profile_picture || influencer.picture,
+        bio: profileData.data?.bio || influencer.bio,
+        location: profileData.data?.location || influencer.location,
+        niches: influencer.niches || [influencer.niche].filter(Boolean) || [],
+        profile_url: profileData.data?.url || influencer.url || `https://${selectedPlatform}.com/${username}`,
+        modash_user_id: modashUserId,
+        modash_data: enrichedInfluencerData, // Store COMPLETE analytics data
+        discovered_influencer_id: influencer.discoveredId
+      }
+      
+      console.log('❤️ Saving influencer with complete analytics to staff system')
+      await saveInfluencer(savedInfluencerData)
+      
+      console.log('✅ Successfully saved influencer with full Modash analytics!')
+      
+    } catch (error) {
+      console.error('❌ Failed to save influencer with complete analytics:', error)
+      // Fallback to basic save if analytics fetch fails
+      try {
+        console.log('🔄 Fallback: Saving with basic data only...')
+        const basicSavedData = {
+          username,
+          display_name: influencer.displayName || influencer.display_name || influencer.username,
+          platform: selectedPlatform,
+          followers: influencer.platforms?.[selectedPlatform]?.followers || influencer.followers || 0,
+          engagement_rate: influencer.platforms?.[selectedPlatform]?.engagement_rate || influencer.engagement_rate || 0,
+          avg_likes: influencer.avgLikes,
+          avg_views: influencer.avgViews,
+          avg_comments: influencer.avgComments,
+          profile_picture: influencer.profilePicture || influencer.profile_picture || influencer.picture,
+          bio: influencer.bio,
+          location: influencer.location,
+          niches: influencer.niches || [influencer.niche].filter(Boolean) || [],
+          profile_url: influencer.url || `https://${selectedPlatform}.com/${username}`,
+          modash_user_id: influencer.userId || influencer.creatorId,
+          modash_data: influencer, // Basic search result data
+          discovered_influencer_id: influencer.discoveredId
+        }
+        
+        await saveInfluencer(basicSavedData)
+        console.log('⚠️ Saved with basic data only due to analytics fetch error')
+        
+      } catch (fallbackError) {
+        console.error('❌ Failed to save even basic data:', fallbackError)
+        alert('Failed to save influencer. Please try again.')
+      }
+    }
+  }
 
   // Handler to open detail panel and fetch comprehensive data
   const handleViewProfile = async (influencer: any) => {
@@ -2847,33 +2962,93 @@ function DiscoveryPageClient() {
           </div>
         )}
 
-        {/* Main Content Area - Side by Side Layout */}
-        <div className="flex flex-col lg:flex-row gap-6" style={{ height: 'calc(100vh - 200px)' }}>
-          {/* Left Column - Search Interface (1/3) */}
-          <div className="w-full lg:w-1/3 lg:flex-shrink-0">
-            <DiscoverySearchInterface 
-              selectedPlatform={selectedPlatform}
-              setSelectedPlatform={setSelectedPlatform}
-              onSearch={handleSearch}
-              isLoading={isSearching}
-              searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
-              onFiltersChange={setCurrentFilters}
-            />
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
+            {[
+              { 
+                key: 'search', 
+                label: 'Search', 
+                icon: Search
+              },
+              { 
+                key: 'saved', 
+                label: 'Saved', 
+                icon: Heart
+              }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as 'search' | 'saved')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === tab.key
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span className="font-bold capitalize">{tab.label}</span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Right Column - Results Table (2/3) */}
-          <div className="flex-1 min-w-0 min-h-0">
-            <DiscoveredInfluencersTable 
+        {/* Main Content Area - Conditional based on active tab */}
+        {activeTab === 'search' ? (
+          <div className="flex flex-col lg:flex-row gap-6" style={{ height: 'calc(100vh - 200px)' }}>
+            {/* Left Column - Search Interface (1/3) */}
+            <div className="w-full lg:w-1/3 lg:flex-shrink-0">
+              <DiscoverySearchInterface 
+                selectedPlatform={selectedPlatform}
+                setSelectedPlatform={setSelectedPlatform}
+                onSearch={handleSearch}
+                isLoading={isSearching}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
+                onFiltersChange={setCurrentFilters}
+              />
+            </div>
+
+            {/* Right Column - Results Table (2/3) */}
+            <div className="flex-1 min-w-0 min-h-0">
+              <DiscoveredInfluencersTable 
               selectedPlatform={selectedPlatform}
               searchResults={searchResults}
               isLoading={isSearching}
               error={searchError}
               searchQuery={searchQuery}
               onViewProfile={handleViewProfile}
+              isInfluencerSaved={isInfluencerSaved}
+              handleHeartToggle={handleHeartToggle}
+            />
+            </div>
+          </div>
+        ) : (
+          /* Saved Tab Content */
+          <div className="space-y-6">
+            {/* Platform Selector for Saved Tab */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">Platform:</label>
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value as 'instagram' | 'tiktok' | 'youtube')}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="youtube">YouTube</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Saved Influencers Table */}
+            <SavedInfluencersTable 
+              selectedPlatform={selectedPlatform}
+              onViewProfile={handleViewProfile}
             />
           </div>
-        </div>
+        )}
       </main>
       <InfluencerDetailPanel 
         influencer={detailInfluencer}
@@ -2885,23 +3060,22 @@ function DiscoveryPageClient() {
         loading={detailLoading}
       />
       {/* 🚨 DEBUG: Log what's being passed to the panel */}
-      {detailPanelOpen && selectedPlatform === 'tiktok' && (
-        <div style={{ display: 'none' }}>
-          {console.log('🚨 Discovery Page - Data being passed to TikTok popup:', {
-            selectedPlatform,
-            detailInfluencer,
-            hasEngagements: detailInfluencer?.engagements,
-            hasTotalLikes: detailInfluencer?.totalLikes,
-            hasPostsCount: detailInfluencer?.postsCount,
-            hasAverageViews: detailInfluencer?.averageViews,
-            hasGender: detailInfluencer?.gender,
-            hasAgeGroup: detailInfluencer?.ageGroup,
-            hasRecentPosts: detailInfluencer?.recentPosts,
-            hasPopularPosts: detailInfluencer?.popularPosts,
-            hasPaidData: detailInfluencer?.paidPostPerformance
-          })}
-        </div>
-      )}
+      {detailPanelOpen && selectedPlatform === 'tiktok' && (() => {
+        console.log('🚨 Discovery Page - Data being passed to TikTok popup:', {
+          selectedPlatform,
+          detailInfluencer,
+          hasEngagements: detailInfluencer?.engagements,
+          hasTotalLikes: detailInfluencer?.totalLikes,
+          hasPostsCount: detailInfluencer?.postsCount,
+          hasAverageViews: detailInfluencer?.averageViews,
+          hasGender: detailInfluencer?.gender,
+          hasAgeGroup: detailInfluencer?.ageGroup,
+          hasRecentPosts: detailInfluencer?.recentPosts,
+          hasPopularPosts: detailInfluencer?.popularPosts,
+          hasPaidData: detailInfluencer?.paidPostPerformance
+        })
+        return null
+      })()}
     </div>
   )
 }
