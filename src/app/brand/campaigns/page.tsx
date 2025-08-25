@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useState, useCallback, Suspense } from 'react'
+import React, { useState, useCallback, Suspense, useEffect } from 'react'
 import { BrandProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernBrandHeader from '../../../components/nav/ModernBrandHeader'
+import CampaignDetailModal from '../../../components/campaigns/CampaignDetailModal'
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
+import { Campaign } from '../../../types/index'
 import { 
   Plus, 
   Eye, 
@@ -89,37 +91,38 @@ const mockCampaigns = [
 ]
 
 // Helper function to get status color and icon
-const getStatusInfo = (status: string, quotationStatus: string) => {
-  if (status === 'COMPLETED') {
-    return {
-      color: 'text-green-600 bg-green-100',
-      icon: CheckCircle,
-      label: 'Completed'
-    }
-  } else if (status === 'ACTIVE') {
-    return {
-      color: 'text-blue-600 bg-blue-100',
-      icon: Play,
-      label: 'Active'
-    }
-  } else if (quotationStatus === 'PENDING') {
-    return {
-      color: 'text-orange-600 bg-orange-100',
-      icon: Clock,
-      label: 'Pending Quotation'
-    }
-  } else if (quotationStatus === 'REJECTED') {
-    return {
-      color: 'text-red-600 bg-red-100',
-      icon: XCircle,
-      label: 'Quotation Rejected'
-    }
-  } else {
-    return {
-      color: 'text-gray-600 bg-gray-100',
-      icon: AlertCircle,
-      label: 'Draft'
-    }
+const getStatusInfo = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return {
+        color: 'text-green-600 bg-green-100',
+        icon: CheckCircle,
+        label: 'Completed'
+      }
+    case 'active':
+      return {
+        color: 'text-blue-600 bg-blue-100',
+        icon: Play,
+        label: 'Active'
+      }
+    case 'paused':
+      return {
+        color: 'text-yellow-600 bg-yellow-100',
+        icon: Pause,
+        label: 'Paused'
+      }
+    case 'cancelled':
+      return {
+        color: 'text-red-600 bg-red-100',
+        icon: XCircle,
+        label: 'Cancelled'
+      }
+    default:
+      return {
+        color: 'text-gray-600 bg-gray-100',
+        icon: AlertCircle,
+        label: 'Draft'
+      }
   }
 }
 
@@ -160,7 +163,10 @@ const PlatformIcon = ({ platform, size = 16 }: { platform: string, size?: number
 
 function CampaignsPageClient() {
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PENDING' | 'COMPLETED'>('ALL')
-  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null)
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([])
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null)
@@ -183,6 +189,30 @@ function CampaignsPageClient() {
 
   const { heartedInfluencers } = useHeartedInfluencers()
 
+  // Load campaigns on mount
+  useEffect(() => {
+    loadCampaigns()
+  }, [])
+
+  const loadCampaigns = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/brand/campaigns')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setCampaigns(result.data)
+        }
+      } else {
+        console.error('Failed to load campaigns')
+      }
+    } catch (error) {
+      console.error('Error loading campaigns:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Filter shortlisted influencers based on search
   const filteredHeartedInfluencers = heartedInfluencers.filter(influencer =>
     influencer.displayName.toLowerCase().includes(shortlistSearchQuery.toLowerCase()) ||
@@ -190,14 +220,14 @@ function CampaignsPageClient() {
   )
 
   // Filter campaigns based on active tab and search
-  const filteredCampaigns = mockCampaigns.filter(campaign => {
+  const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          campaign.description.toLowerCase().includes(searchQuery.toLowerCase())
     
     if (activeTab === 'ALL') return matchesSearch
-    if (activeTab === 'ACTIVE') return matchesSearch && campaign.status === 'ACTIVE'
-    if (activeTab === 'PENDING') return matchesSearch && campaign.quotation_status === 'PENDING'
-    if (activeTab === 'COMPLETED') return matchesSearch && campaign.status === 'COMPLETED'
+    if (activeTab === 'ACTIVE') return matchesSearch && campaign.status.toLowerCase() === 'active'
+    if (activeTab === 'PENDING') return matchesSearch && campaign.status.toLowerCase() === 'draft'
+    if (activeTab === 'COMPLETED') return matchesSearch && campaign.status.toLowerCase() === 'completed'
     
     return matchesSearch
   })
@@ -206,6 +236,28 @@ function CampaignsPageClient() {
   const totalCampaigns = filteredCampaigns.length
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = startIndex + pageSize
+  
+  // Handle campaign detail view
+  const handleViewCampaign = (campaign: Campaign) => {
+    setSelectedCampaign(campaign)
+    setIsDetailModalOpen(true)
+  }
+  
+  // Handle close detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false)
+    setSelectedCampaign(null)
+  }
+  
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
   const paginatedCampaigns = filteredCampaigns.slice(startIndex, endIndex)
   const totalPages = Math.ceil(totalCampaigns / pageSize)
 
@@ -409,91 +461,112 @@ function CampaignsPageClient() {
               </tr>
             </thead>
             <tbody className="bg-white/50 divide-y divide-gray-100/60">
-              {paginatedCampaigns.map((campaign) => {
-                const statusInfo = getStatusInfo(campaign.status, campaign.quotation_status)
-                const StatusIcon = statusInfo.icon
-                
-                return (
-                  <tr key={campaign.id} className="hover:bg-white/70 transition-colors duration-150">
-                    {/* Campaign Info */}
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">{campaign.name}</div>
-                        <div className="text-sm text-gray-500 truncate">{campaign.description}</div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {campaign.target_deliverables.slice(0, 2).map((deliverable, index) => (
-                            <span key={index} className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
-                              {deliverable}
-                            </span>
-                          ))}
-                          {campaign.target_deliverables.length > 2 && (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
-                              +{campaign.target_deliverables.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.color}`}>
-                        <StatusIcon size={12} className="mr-1" />
-                        {statusInfo.label}
-                      </span>
-                    </td>
-
-                    {/* Budget */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center text-sm font-medium text-gray-900">
-                        <DollarSign size={14} className="mr-1 text-gray-400" />
-                        ${campaign.budget_min.toLocaleString()} - ${campaign.budget_max.toLocaleString()}
-                      </div>
-                    </td>
-
-                    {/* Timeline */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock size={14} className="mr-1 text-gray-400" />
-                        {campaign.timeline}
-                      </div>
-                    </td>
-
-                    {/* Progress */}
-                    <td className="px-6 py-4">
-                      {campaign.status === 'ACTIVE' ? (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Participation</span>
-                            <span>{Math.round((campaign.influencers_accepted / campaign.influencers_invited) * 100)}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className="bg-blue-600 h-1.5 rounded-full" 
-                              style={{ width: `${(campaign.influencers_accepted / campaign.influencers_invited) * 100}%` }}
-                            ></div>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-gray-600">Loading campaigns...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedCampaigns.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <Target size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p>No campaigns found matching your criteria.</p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedCampaigns.map((campaign) => {
+                  const statusInfo = getStatusInfo(campaign.status)
+                  const StatusIcon = statusInfo.icon
+                  
+                  return (
+                    <tr key={campaign.id} className="hover:bg-white/70 transition-colors duration-150">
+                      {/* Campaign Info */}
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900 truncate">{campaign.name}</div>
+                          <div className="text-sm text-gray-500 truncate">{campaign.description}</div>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {campaign.deliverables.slice(0, 2).map((deliverable, index) => (
+                              <span key={index} className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
+                                {deliverable}
+                              </span>
+                            ))}
+                            {campaign.deliverables.length > 2 && (
+                              <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
+                                +{campaign.deliverables.length - 2}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <span className="text-xs text-gray-500">—</span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => setSelectedCampaign(selectedCampaign === campaign.id ? null : campaign.id)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.color}`}>
+                          <StatusIcon size={12} className="mr-1" />
+                          {statusInfo.label}
+                        </span>
+                      </td>
+
+                      {/* Budget */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center text-sm font-medium text-gray-900">
+                          <DollarSign size={14} className="mr-1 text-gray-400" />
+                          {formatCurrency(campaign.budget.total)}
+                        </div>
+                      </td>
+
+                      {/* Timeline */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Clock size={14} className="mr-1 text-gray-400" />
+                          {campaign.timeline.contentDeadline ? 
+                            Math.ceil((new Date(campaign.timeline.contentDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) + ' days'
+                            : 'TBD'
+                          }
+                        </div>
+                      </td>
+
+                      {/* Progress */}
+                      <td className="px-6 py-4">
+                        {campaign.status.toLowerCase() === 'active' && campaign.totalInfluencers > 0 ? (
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>Participation</span>
+                              <span>{Math.round((campaign.acceptedCount / campaign.totalInfluencers) * 100)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full" 
+                                style={{ width: `${(campaign.acceptedCount / campaign.totalInfluencers) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500">—</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleViewCampaign(campaign)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -813,6 +886,13 @@ function CampaignsPageClient() {
           </div>
         </div>
       )}
+
+      {/* Campaign Detail Modal */}
+      <CampaignDetailModal
+        campaign={selectedCampaign}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+      />
 
       {/* Toast Notification */}
       {toast && (
