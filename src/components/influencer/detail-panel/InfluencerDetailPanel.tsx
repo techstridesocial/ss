@@ -58,11 +58,16 @@ const LoadingSpinner = () => (
 // Header component
 const PanelHeader = ({ 
   influencer, 
-  onClose 
+  onClose,
+  selectedPlatform,
+  onPlatformSwitch
 }: { 
   influencer: any
-  onClose: () => void 
+  onClose: () => void
+  selectedPlatform?: 'instagram' | 'tiktok' | 'youtube'
+  onPlatformSwitch?: (platform: 'instagram' | 'tiktok' | 'youtube') => void
 }) => {
+
   const displayName =
     influencer.name || influencer.displayName || influencer.display_name ||
     influencer.handle || influencer.username || 'User'
@@ -113,6 +118,32 @@ const PanelHeader = ({
             @{influencer.handle || influencer.username}
           </p>
           
+          {/* Platform Toggle - Roster Only */}
+          {influencer?.isRosterInfluencer && onPlatformSwitch && (
+            <div className="mb-3">
+              <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+                {[
+                  { id: 'instagram', name: 'IG', icon: '📸' },
+                  { id: 'tiktok', name: 'TT', icon: '🎵' },
+                  { id: 'youtube', name: 'YT', icon: '📺' }
+                ].map((platform) => (
+                  <button
+                    key={platform.id}
+                    onClick={() => onPlatformSwitch(platform.id as 'instagram' | 'tiktok' | 'youtube')}
+                    className={`flex-1 flex items-center justify-center space-x-1 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                      selectedPlatform === platform.id
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <span>{platform.icon}</span>
+                    <span className="font-bold">{platform.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {/* Quick Stats */}
           <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500">
             {influencer.followers && (
@@ -153,6 +184,7 @@ function InfluencerDetailPanel({
   isOpen, 
   onClose, 
   selectedPlatform,
+  onPlatformSwitch,
   loading = false 
 }: InfluencerDetailPanelProps) {
   const [mounted, setMounted] = useState(false)
@@ -215,7 +247,12 @@ function InfluencerDetailPanel({
             className="bg-white shadow-2xl w-full max-w-2xl lg:max-w-3xl h-screen overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <PanelHeader influencer={influencer} onClose={onClose} />
+            <PanelHeader 
+              influencer={influencer} 
+              onClose={onClose} 
+              selectedPlatform={selectedPlatform}
+              onPlatformSwitch={onPlatformSwitch}
+            />
 
             <div className="flex-1 overflow-y-auto overscroll-contain">
               {loading ? (

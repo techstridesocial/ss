@@ -30,6 +30,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
+  const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
   const [searchQuery, setSearchQuery] = useState('')
   
@@ -37,6 +38,32 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const router = useRouter()
   const urlSearchParams = useSearchParams()
   const pathname = usePathname()
+  
+  // Bulk refresh analytics for all roster influencers
+  const handleBulkRefreshAnalytics = async () => {
+    setIsRefreshingAnalytics(true)
+    try {
+      const response = await fetch('/api/roster/bulk-refresh-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Bulk refresh completed:', result)
+        
+        // Reload the page to show updated data
+        window.location.reload()
+      } else {
+        throw new Error('Failed to refresh analytics')
+      }
+    } catch (error) {
+      console.error('❌ Bulk refresh failed:', error)
+      alert('Failed to refresh analytics. Please try again.')
+    } finally {
+      setIsRefreshingAnalytics(false)
+    }
+  }
   
   // Helper function to generate random 6-character alphanumeric ID
   const generateRandomId = () => {
@@ -1195,11 +1222,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </button>
         
         <button
-          onClick={handleRefreshData}
-          disabled={isLoading}
-          className="flex items-center px-4 py-3 bg-white/60 backdrop-blur-md border border-gray-200 rounded-2xl hover:bg-white/80 transition-all duration-300 font-medium text-gray-700 disabled:opacity-50"
+          onClick={handleBulkRefreshAnalytics}
+          disabled={isRefreshingAnalytics}
+          className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-300 font-medium disabled:opacity-50"
+          title="Refresh Analytics for All Influencers"
         >
-          <RefreshCw size={16} className={`${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw size={16} className={`mr-2 ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
+          {isRefreshingAnalytics ? 'Refreshing...' : 'Refresh Analytics'}
         </button>
       </div>
 
@@ -1786,33 +1815,56 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         <InfluencerDetailPanel
           isOpen={detailPanelOpen}
           onClose={handleClosePanels}
-          influencer={{
-            id: selectedInfluencerDetail.id,
-            name: selectedInfluencerDetail.display_name,
-            handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-            profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-            followers: selectedInfluencerDetail.total_followers || 0,
-            engagement_rate: selectedInfluencerDetail.total_engagement_rate,
-            avgViews: selectedInfluencerDetail.total_avg_views,
-            audience: {
-              locations: selectedInfluencerDetail.audience_locations?.map((loc: any) => ({
-                country: loc.country_name,
-                percentage: loc.percentage
-              })),
-              languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
-                language: (lang as any).language_name || (lang as any).name || String(lang),
+          influencer={(() => {
+            // Transform roster data to discovery format (KISS approach)
+            const savedAnalytics = selectedInfluencerDetail.notes ? 
+              JSON.parse(selectedInfluencerDetail.notes || '{}') : {}
+            
+            return {
+              // Basic discovery format
+              id: selectedInfluencerDetail.id,
+              username: selectedInfluencerDetail.display_name,
+              displayName: selectedInfluencerDetail.display_name,
+              name: selectedInfluencerDetail.display_name,
+              handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+              profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+              picture: selectedInfluencerDetail.avatar_url || undefined,
+              followers: selectedInfluencerDetail.total_followers || 0,
+              engagement_rate: selectedInfluencerDetail.total_engagement_rate,
+              engagementRate: selectedInfluencerDetail.total_engagement_rate,
+              avgViews: selectedInfluencerDetail.total_avg_views,
+              
+              // 🔥 PRESERVED ANALYTICS: Use saved modash_data if available
+              ...(savedAnalytics.modash_data || {}),
+              
+              // Basic audience fallback
+              audience: {
+                locations: selectedInfluencerDetail.audience_locations?.map((loc: any) => ({
+                  country: loc.country_name,
+                  percentage: loc.percentage
+                })) || [],
+                languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
+                  language: (lang as any).language_name || (lang as any).name || String(lang),
+                  percentage: (lang as any).percentage
+                })) || []
+              },
+              audience_interests: [],
+              audience_languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
+                name: (lang as any).language_name || (lang as any).name || String(lang),
                 percentage: (lang as any).percentage
-              }))
-            },
-            // Map to flexible types: allow names array if needed
-            audience_interests: [],
-            audience_languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
-              name: (lang as any).language_name || (lang as any).name || String(lang),
-              percentage: (lang as any).percentage
-            }))
+              })) || [],
+              
+              // Metadata for refresh functionality
+              isRosterInfluencer: true,
+              rosterId: selectedInfluencerDetail.id,
+              hasPreservedAnalytics: !!savedAnalytics.modash_data
+            }
+          })()}
+          selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
+          onPlatformSwitch={(platform) => {
+            setSelectedPlatform(platform.toUpperCase())
+            console.log('🔄 Platform switched to:', platform)
           }}
-          selectedPlatform={selectedPlatform}
-          onPlatformSwitch={handlePlatformSwitch}
         />
       )}
     </div>

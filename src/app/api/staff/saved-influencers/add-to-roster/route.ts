@@ -108,13 +108,13 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    // Create influencer record
+    // Create influencer record with preserved analytics
     const influencerResult = await query<{ id: string }>(
       `INSERT INTO influencers (
         user_id, display_name, niche_primary, niches, 
         total_followers, total_engagement_rate,
-        tier, assigned_to
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        tier, assigned_to, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
       [
         influencer_user_id,
         savedInfluencer.display_name || savedInfluencer.username,
@@ -123,7 +123,12 @@ export async function POST(request: NextRequest) {
         savedInfluencer.followers,
         savedInfluencer.engagement_rate,
         'PARTNERED',
-        user_id // Assign to the staff member who added them
+        user_id, // Assign to the staff member who added them
+        JSON.stringify({
+          modash_data: savedInfluencer.modash_data, // Preserve complete analytics
+          added_from_saved: true,
+          saved_date: new Date().toISOString()
+        })
       ]
     )
 
