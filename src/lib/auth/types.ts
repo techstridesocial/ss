@@ -36,7 +36,7 @@ export function getRoleDisplayName(role: UserRole): string {
 export function getRoleRedirectPath(role: UserRole): string {
   switch (role) {
     case UserRole.BRAND:
-      return '/brand/influencers'
+      return '/brand/campaigns'
     case UserRole.INFLUENCER_SIGNED:
     case UserRole.INFLUENCER_PARTNERED:
       return '/influencer/campaigns'

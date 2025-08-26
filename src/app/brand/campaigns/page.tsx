@@ -32,63 +32,7 @@ import {
   Trash2
 } from 'lucide-react'
 
-// Mock campaign data - in real app this would come from API
-const mockCampaigns = [
-  {
-    id: 'camp_1',
-    name: 'Summer Collection Launch',
-    description: 'Promote our new summer fashion collection with lifestyle content',
-    status: 'ACTIVE',
-    quotation_status: 'APPROVED',
-    budget_min: 5000,
-    budget_max: 10000,
-    timeline: '2 weeks',
-    created_at: '2024-01-15',
-    target_deliverables: ['1 Instagram Post', '3 Instagram Stories', '1 TikTok Video'],
-    influencers_invited: 5,
-    influencers_accepted: 4,
-    influencers_declined: 1,
-    content_delivered: 2,
-    payments_completed: 1,
-    brand_notes: 'Focus on lifestyle and outdoor activities'
-  },
-  {
-    id: 'camp_2', 
-    name: 'Product Review Campaign',
-    description: 'Authentic reviews of our new skincare line',
-    status: 'PENDING_QUOTATION',
-    quotation_status: 'PENDING',
-    budget_min: 2000,
-    budget_max: 4000,
-    timeline: '3 weeks',
-    created_at: '2024-01-20',
-    target_deliverables: ['1 Instagram Post', '1 YouTube Review'],
-    influencers_invited: 0,
-    influencers_accepted: 0,
-    influencers_declined: 0,
-    content_delivered: 0,
-    payments_completed: 0,
-    brand_notes: 'Must include before/after content'
-  },
-  {
-    id: 'camp_3',
-    name: 'Holiday Promotion',
-    description: 'Christmas holiday themed content showcasing gift ideas',
-    status: 'COMPLETED',
-    quotation_status: 'APPROVED',
-    budget_min: 8000,
-    budget_max: 12000,
-    timeline: '1 week',
-    created_at: '2024-01-10',
-    target_deliverables: ['2 Instagram Posts', '5 Instagram Stories', '1 TikTok Video'],
-    influencers_invited: 8,
-    influencers_accepted: 7,
-    influencers_declined: 1,
-    content_delivered: 7,
-    payments_completed: 7,
-    brand_notes: 'Holiday aesthetic with family-friendly content'
-  }
-]
+// Production-ready: ALL data comes from database via API
 
 // Helper function to get status color and icon
 const getStatusInfo = (status: string) => {
@@ -346,7 +290,7 @@ function CampaignsPageClient() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Total</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{mockCampaigns.length}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{campaigns.length}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-2xl">
               <Target className="w-6 h-6 text-blue-600" />
@@ -359,7 +303,7 @@ function CampaignsPageClient() {
             <div>
               <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Active</p>
               <p className="text-3xl font-bold text-green-600 mt-2">
-                {mockCampaigns.filter(c => c.status === 'ACTIVE').length}
+                {campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE').length}
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-2xl">
@@ -373,7 +317,7 @@ function CampaignsPageClient() {
             <div>
               <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Pending</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">
-                {mockCampaigns.filter(c => c.quotation_status === 'PENDING').length}
+                {campaigns.filter(c => c.status.toUpperCase() === 'DRAFT').length}
               </p>
             </div>
             <div className="p-3 bg-orange-100 rounded-2xl">
@@ -421,10 +365,10 @@ function CampaignsPageClient() {
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-1">
         <div className="flex space-x-1">
           {(['ALL', 'ACTIVE', 'PENDING', 'COMPLETED'] as const).map((tab) => {
-            const count = tab === 'ALL' ? mockCampaigns.length :
-                         tab === 'ACTIVE' ? mockCampaigns.filter(c => c.status === 'ACTIVE').length :
-                         tab === 'PENDING' ? mockCampaigns.filter(c => c.quotation_status === 'PENDING').length :
-                         mockCampaigns.filter(c => c.status === 'COMPLETED').length
+            const count = tab === 'ALL' ? campaigns.length :
+                         tab === 'ACTIVE' ? campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE').length :
+                         tab === 'PENDING' ? campaigns.filter(c => c.status.toUpperCase() === 'DRAFT').length :
+                         campaigns.filter(c => c.status.toUpperCase() === 'COMPLETED').length
 
             return (
               <button

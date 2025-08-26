@@ -96,7 +96,8 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           // User not authenticated or not authorized - silently fall back to localStorage
           loadFromLocalStorage()
         } else {
-          console.error('Failed to load shortlists from database:', response.status, response.statusText)
+          // Handle server errors gracefully - could be brand not onboarded
+          console.log('Loading shortlists from localStorage due to server response:', response.status)
           // Fallback to localStorage for backward compatibility
           loadFromLocalStorage()
         }

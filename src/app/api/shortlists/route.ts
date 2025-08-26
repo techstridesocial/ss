@@ -31,7 +31,7 @@ async function getBrandIdFromUserId(userId: string): Promise<string> {
   )
 
   if (brandResult.length === 0) {
-    throw new Error('Brand not found')
+    throw new Error('Brand not found - Please complete onboarding first')
   }
 
   return brandResult[0]?.id
@@ -60,8 +60,12 @@ export async function GET() {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage === 'User not found') {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
-      } else if (errorMessage === 'Brand not found') {
-        return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+      } else if (errorMessage.includes('Brand not found')) {
+        // Brand hasn't completed onboarding - return empty shortlists instead of error
+        return NextResponse.json({
+          success: true,
+          data: []
+        })
       }
       throw error
     }
@@ -121,8 +125,8 @@ export async function POST(request: NextRequest) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         if (errorMessage === 'User not found') {
           return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        } else if (errorMessage === 'Brand not found') {
-          return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
+        } else if (errorMessage.includes('Brand not found')) {
+          return NextResponse.json({ error: 'Please complete onboarding first' }, { status: 400 })
         }
         throw error
       }

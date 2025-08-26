@@ -253,7 +253,7 @@ function BrandOnboardingPageContent() {
       
       // Redirect to dashboard after success animation
       setTimeout(() => {
-        router.push('/brand/influencers')
+        router.push('/brand/campaigns')
       }, 3000)
     } catch (error) {
       console.error('Onboarding submission failed:', error)

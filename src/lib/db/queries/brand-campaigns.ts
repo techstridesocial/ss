@@ -1,19 +1,29 @@
 import { query } from '../connection'
 import { Campaign } from '../../../types/index'
 
-// Get brand ID from authenticated user ID
-export async function getBrandIdFromUserId(userId: string): Promise<string> {
-  const result = await query(`
-    SELECT b.id 
-    FROM brands b 
-    WHERE b.user_id = $1
-  `, [userId])
+// Get brand ID from authenticated Clerk user ID
+export async function getBrandIdFromUserId(clerkUserId: string): Promise<string> {
+  // First get the user ID from Clerk user ID
+  const userResult = await query(`
+    SELECT id FROM users WHERE clerk_id = $1
+  `, [clerkUserId])
   
-  if (result.length === 0) {
-    throw new Error('Brand not found for user')
+  if (userResult.length === 0) {
+    throw new Error('User not found')
   }
   
-  return result[0].id
+  const userId = userResult[0].id
+  
+  // Then get the brand ID from user ID
+  const brandResult = await query(`
+    SELECT id FROM brands WHERE user_id = $1
+  `, [userId])
+  
+  if (brandResult.length === 0) {
+    throw new Error('Brand not found - Please complete onboarding first')
+  }
+  
+  return brandResult[0].id
 }
 
 // Get all campaigns for a specific brand

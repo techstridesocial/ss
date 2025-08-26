@@ -1,16 +1,22 @@
 import { Pool } from 'pg'
+import { ENV } from '../env'
 
 // Create connection pool for better performance
 let pool: Pool | null = null
 
 export function getDatabase(): Pool {
   if (!pool) {
+    // Use the pre-validated environment variable
+    console.log('🔗 Creating new database pool with URL:', ENV.DATABASE_URL.substring(0, 50) + '...')
+    
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: ENV.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      max: 20, // Maximum connections in pool
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      max: 10, // Reduced max connections
+      idleTimeoutMillis: 60000, // Increased idle timeout
+      connectionTimeoutMillis: 10000, // Increased connection timeout to 10 seconds
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 0,
     })
     
     // Handle pool errors

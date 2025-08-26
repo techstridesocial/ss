@@ -27,6 +27,11 @@ export async function GET(
     try {
       brandId = await getBrandIdFromUserId(userId)
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('Brand not found')) {
+        // Brand hasn't completed onboarding - return not found for specific campaign
+        return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      }
       return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
     }
 

@@ -49,9 +49,9 @@ export default function ModernBrandHeader() {
 
   // Navigation items for brands
   const navItems = [
+    { href: '/brand/campaigns', label: 'Campaigns' },
     { href: '/brand/influencers', label: 'Influencers' },
-    { href: '/brand/shortlists', label: 'Shortlists' },
-    { href: '/brand/campaigns', label: 'Campaigns' }
+    { href: '/brand/shortlists', label: 'Shortlists' }
   ]
 
   const handleSignOut = () => {
@@ -148,7 +148,7 @@ export default function ModernBrandHeader() {
               
               {/* Left side - Logo */}
               <div className="flex items-center">
-                <Link href="/brand/influencers" className="flex items-center">
+                <Link href="/brand/campaigns" className="flex items-center">
                   <img 
                     src="https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/logo/logo-full-white-yyqQnjIujCXZTACVDaoHzFvyh3XDPF.webp"
                     alt="Stride Social"
