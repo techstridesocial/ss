@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Menu, X, LogOut, Settings, User } from 'lucide-react'
+import { Menu, X, LogOut, User } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useUserRole } from '../../lib/auth/hooks'
 
@@ -217,15 +217,7 @@ export default function ModernBrandHeader() {
                           Profile
                         </Link>
                         
-                        <Link
-                          href="/brand/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          <Settings size={16} className="mr-3" />
-                          Settings
-                        </Link>
-                        
+
                         <button
                           onClick={handleSignOut}
                           className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -325,13 +317,7 @@ export default function ModernBrandHeader() {
             >
               Profile
             </Link>
-            <Link
-              href="/brand/settings"
-              onClick={closeMobileMenu}
-              className="block px-3 py-2 text-base font-medium text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg"
-            >
-              Settings
-            </Link>
+
             <button
               onClick={handleSignOut}
               className="block w-full text-left px-3 py-2 text-base font-medium text-red-300 hover:bg-red-900 hover:bg-opacity-50 rounded-lg"

@@ -20,7 +20,23 @@ async function modashApiRequest<T>(endpoint: string, params: Record<string, any>
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Modash API error (${res.status}): ${err}`)
+    console.error(`❌ Modash API Request Failed:`, {
+      status: res.status,
+      statusText: res.statusText,
+      endpoint,
+      error: err,
+      url: url.split('?')[0] // Log URL without sensitive params
+    })
+    
+    if (res.status === 401) {
+      throw new Error(`Modash API authentication failed (${res.status}): Check API key validity`)
+    } else if (res.status === 429) {
+      throw new Error(`Modash API rate limit exceeded (${res.status}): Too many requests`)
+    } else if (res.status >= 500) {
+      throw new Error(`Modash API server error (${res.status}): ${err}`)
+    } else {
+      throw new Error(`Modash API error (${res.status}): ${err}`)
+    }
   }
 
   return await res.json()
@@ -41,7 +57,23 @@ async function modashApiPost<T>(endpoint: string, body: Record<string, any> = {}
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Modash API error (${res.status}): ${err}`)
+    console.error(`❌ Modash API Request Failed:`, {
+      status: res.status,
+      statusText: res.statusText,
+      endpoint,
+      error: err,
+      url: url.split('?')[0] // Log URL without sensitive params
+    })
+    
+    if (res.status === 401) {
+      throw new Error(`Modash API authentication failed (${res.status}): Check API key validity`)
+    } else if (res.status === 429) {
+      throw new Error(`Modash API rate limit exceeded (${res.status}): Too many requests`)
+    } else if (res.status >= 500) {
+      throw new Error(`Modash API server error (${res.status}): ${err}`)
+    } else {
+      throw new Error(`Modash API error (${res.status}): ${err}`)
+    }
   }
 
   return await res.json()

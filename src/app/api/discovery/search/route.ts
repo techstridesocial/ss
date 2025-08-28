@@ -103,7 +103,12 @@ export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.error('❌ Authentication failed - no user ID found')
+      return NextResponse.json({ 
+        error: 'Authentication required', 
+        message: 'Please sign in to continue',
+        code: 'AUTH_REQUIRED'
+      }, { status: 401 })
     }
 
     const body: DiscoverySearchBody = await request.json()

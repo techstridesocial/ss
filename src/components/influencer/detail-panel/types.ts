@@ -1,4 +1,10 @@
 // Type definitions for the influencer detail panel
+
+export interface SocialContact {
+  type: string
+  value: string
+}
+
 export interface InfluencerData {
   id: string
   name?: string
@@ -18,6 +24,7 @@ export interface InfluencerData {
   fake_followers_quality?: 'below_average' | 'average' | 'above_average'
   estimated_impressions?: number
   estimated_reach?: number
+  contacts?: SocialContact[] // Connected social media platforms
   growth_trends?: {
     follower_growth?: {
       value: number
@@ -261,10 +268,7 @@ export interface InfluencerData {
     code: string
     name: string
   }
-  contacts?: Array<{
-    type: string
-    value: string
-  }>
+  // contacts already defined above with SocialContact type
   isPrivate?: boolean
   accountType?: string
   avgReelsPlays?: number

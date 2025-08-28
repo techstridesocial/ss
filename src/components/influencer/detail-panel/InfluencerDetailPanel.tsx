@@ -6,7 +6,9 @@ import { X, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Types
-import { InfluencerDetailPanelProps } from './types'
+import { InfluencerDetailPanelProps, SocialContact, InfluencerData } from './types'
+import SocialMediaIcons from '../SocialMediaIcons'
+import { InstagramLogo, YouTubeLogo, TikTokLogo } from '../../icons/BrandLogos'
 
 // Sections
 import { OverviewSection } from './sections/OverviewSection'
@@ -37,15 +39,81 @@ import { CreatorInsightsSection } from './sections/CreatorInsightsSection'
 
 
 
-// Helper function to format follower counts properly
-const formatFollowerCount = (count: number): string => {
+
+// Helper function to map contact types to our platform types
+const mapContactToPlatform = (contactType: string): 'instagram' | 'tiktok' | 'youtube' | null => {
+  const mapping: Record<string, 'instagram' | 'tiktok' | 'youtube'> = {
+    'instagram': 'instagram',
+    'tiktok': 'tiktok', 
+    'youtube': 'youtube'
+  }
+  return mapping[contactType.toLowerCase()] || null
+}
+
+// Platform Analytics Switcher Component - Simple tabs like discovery page
+const PlatformSwitcherTabs = ({ 
+  currentPlatform, 
+  onPlatformSwitch,
+  influencer,
+  loading = false
+}: {
+  currentPlatform?: 'instagram' | 'tiktok' | 'youtube'
+  onPlatformSwitch: (platform: 'instagram' | 'tiktok' | 'youtube') => void
+  influencer: InfluencerData
+  loading?: boolean
+}) => {
+  const platforms = [
+    { id: 'instagram' as const, name: 'Instagram', logo: <InstagramLogo /> },
+    { id: 'tiktok' as const, name: 'TikTok', logo: <TikTokLogo /> },
+    { id: 'youtube' as const, name: 'YouTube', logo: <YouTubeLogo /> }
+  ]
+
+  // Show all 3 platforms always
+  const platformsAny: any = (influencer as any).platforms
+
+  return (
+    <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
+      {platforms.map((platform) => {
+        const isActive = currentPlatform === platform.id
+        const hasData = platformsAny?.[platform.id]
+        
+        return (
+          <button
+            key={platform.id}
+            onClick={() => onPlatformSwitch(platform.id)}
+            disabled={loading}
+            className={`flex-1 flex items-center justify-center space-x-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+              isActive
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title={hasData ? `View ${platform.name} analytics` : `Load ${platform.name} analytics`}
+          >
+            <span>{platform.logo}</span>
+            <span className="font-bold">{platform.name}</span>
+            {loading && isActive && (
+              <div className="ml-1 w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+            )}
+            {!hasData && !isActive && !loading && (
+              <span className="ml-1 w-2 h-2 bg-blue-500 rounded-full" title="Click to load data"></span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Helper function to format follower counts
+const formatFollowerCount = (count: number | string): string => {
+  if (typeof count === 'string') return count
   if (count >= 1000000) {
     return `${(count / 1000000).toFixed(1)}M`
-  } else if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`
-  } else {
-    return count.toString()
   }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`
+  }
+  return count.toLocaleString()
 }
 
 // Loading component
@@ -55,129 +123,226 @@ const LoadingSpinner = () => (
   </div>
 )
 
-// Header component
+// Premium Header component with dynamic platform metrics
 const PanelHeader = ({ 
   influencer, 
   onClose,
   selectedPlatform,
-  onPlatformSwitch
+  onPlatformSwitch,
+  loading = false
 }: { 
   influencer: any
   onClose: () => void
   selectedPlatform?: 'instagram' | 'tiktok' | 'youtube'
   onPlatformSwitch?: (platform: 'instagram' | 'tiktok' | 'youtube') => void
+  loading?: boolean
 }) => {
 
   const displayName =
     influencer.name || influencer.displayName || influencer.display_name ||
     influencer.handle || influencer.username || 'User'
-  // Use only API-provided image fields. Do not replace with generated avatars.
-  const pictureSrc =
+  
+  // Get platform-specific data for dynamic header metrics
+  const platformsAny: any = (influencer as any).platforms
+  const currentPlatformData = selectedPlatform && platformsAny?.[selectedPlatform]
+    ? platformsAny[selectedPlatform]
+    : null
+
+  // Get platform-specific profile picture or fallback to general
+  const platformProfilePicture = currentPlatformData?.profile_picture || currentPlatformData?.profilePicture
+  const pictureSrc = platformProfilePicture ||
     influencer.picture ||
     influencer.profilePicture ||
     influencer.profile_picture || ''
 
+
+
+  // Use platform-specific metrics or fallback to general data
+  const displayFollowers = currentPlatformData?.followers || influencer.followers
+  const displayEngagementRate = currentPlatformData?.engagementRate || influencer.engagementRate || influencer.engagement_rate
+  const displayAvgLikes = currentPlatformData?.avgLikes || influencer.avgLikes
+
+  // Add visual feedback for data source
+  const isUsingPlatformData = !!currentPlatformData?.followers
+  const isUsingPlatformImage = !!platformProfilePicture
+  const dataSource = isUsingPlatformData ? `${selectedPlatform} data` : 'general data'
+
+  // Force header re-render with key
+  const headerKey = `${selectedPlatform}-${displayFollowers}-${displayEngagementRate}-${pictureSrc}`
+
   return (
-  <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-    <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5">
-      <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-        <div className="relative">
-          <img
-            src={pictureSrc}
-            alt={displayName}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover bg-gray-100 ring-2 ring-gray-100"
-          />
-          {influencer.isVerified && (
-            <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 rounded-full flex items-center justify-center">
-              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
+    <div className="bg-white border-b border-gray-100" key={headerKey}>
+      {/* Premium Header Layout - Bigger Height for Larger Profile */}
+      <div className="h-32 px-6 flex items-center">
+        {/* Larger Square Profile Picture */}
+        <div className="h-24 w-24 flex-shrink-0 mr-6">
+          {pictureSrc ? (
+            <div className="relative h-full w-full">
+              <img
+                src={pictureSrc}
+                alt={`${displayName}'s profile`}
+                className={`h-full w-full object-cover rounded-2xl shadow-lg transition-all duration-300 ${
+                  isUsingPlatformImage 
+                    ? `ring-2 ${
+                        selectedPlatform === 'instagram' ? 'ring-pink-500' :
+                        selectedPlatform === 'tiktok' ? 'ring-gray-900' :
+                        selectedPlatform === 'youtube' ? 'ring-red-500' : 'ring-blue-500'
+                      } ring-opacity-80` 
+                    : 'ring-1 ring-gray-200'
+                }`}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+              {/* Platform indicator for profile image */}
+              {isUsingPlatformImage && selectedPlatform && (
+                <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm ${
+                  selectedPlatform === 'instagram' ? 'bg-pink-500' :
+                  selectedPlatform === 'tiktok' ? 'bg-gray-900' :
+                  selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-blue-500'
+                }`}>
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              )}
+              {influencer.isVerified && (
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={`h-full w-full rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg transition-all duration-300 ${
+              selectedPlatform 
+                ? `ring-2 ${
+                    selectedPlatform === 'instagram' ? 'ring-pink-500' :
+                    selectedPlatform === 'tiktok' ? 'ring-gray-900' :
+                    selectedPlatform === 'youtube' ? 'ring-red-500' : 'ring-blue-500'
+                  } ring-opacity-50` 
+                : ''
+            }`}>
+              <span className="text-white font-semibold text-3xl">
+                {displayName.charAt(0).toUpperCase()}
+              </span>
             </div>
           )}
         </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2 mb-1">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate leading-tight">
-              {displayName}
-            </h1>
+
+        {/* Content Area - Name, Handle & Dynamic Metrics */}
+        <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
+          {/* Name & Handle Row */}
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-semibold text-gray-900 truncate leading-tight">
+                {displayName}
+              </h1>
+              <p className="text-sm text-gray-500 truncate mt-0.5">
+                @{influencer.handle || influencer.username}
+              </p>
+            </div>
             {influencer.url && (
               <a
                 href={influencer.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                className="flex-shrink-0 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
                 title="View profile on platform"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-5 h-5" />
               </a>
             )}
           </div>
-          
-          <p className="text-sm sm:text-base text-gray-600 truncate leading-tight mb-2">
-            @{influencer.handle || influencer.username}
-          </p>
-          
-          {/* Platform Toggle - Roster Only */}
-          {influencer?.isRosterInfluencer && onPlatformSwitch && (
-            <div className="mb-3">
-              <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-                {[
-                  { id: 'instagram', name: 'IG', icon: '📸' },
-                  { id: 'tiktok', name: 'TT', icon: '🎵' },
-                  { id: 'youtube', name: 'YT', icon: '📺' }
-                ].map((platform) => (
-                  <button
-                    key={platform.id}
-                    onClick={() => onPlatformSwitch(platform.id as 'instagram' | 'tiktok' | 'youtube')}
-                    className={`flex-1 flex items-center justify-center space-x-1 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
-                      selectedPlatform === platform.id
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <span>{platform.icon}</span>
-                    <span className="font-bold">{platform.name}</span>
-                  </button>
-                ))}
+
+          {/* Dynamic Platform Metrics Row */}
+          <div className="flex items-center space-x-6">
+            {displayFollowers && (
+              <div className="flex items-center space-x-2 transition-all duration-300">
+                <span className={`text-lg font-semibold ${
+                  isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
+                } transition-colors duration-300`}>
+                  {formatFollowerCount(displayFollowers)}
+                </span>
+                <span className="text-sm text-gray-500">followers</span>
+                {isUsingPlatformData && (
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                )}
               </div>
-            </div>
-          )}
-          
-          {/* Quick Stats */}
-          <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-500">
-            {influencer.followers && (
-              <span className="flex items-center">
-                <span className="font-medium text-gray-900">
-                  {formatFollowerCount(influencer.followers)}
-                </span>
-                <span className="ml-1 hidden sm:inline">followers</span>
-                <span className="ml-1 sm:hidden">f</span>
-              </span>
             )}
-            {influencer.engagementRate && (
-              <span className="flex items-center">
-                <span className="font-medium text-gray-900">
-                  {(influencer.engagementRate * 100).toFixed(1)}%
+            {displayEngagementRate && (
+              <div className="flex items-center space-x-2 transition-all duration-300">
+                <span className={`text-lg font-semibold ${
+                  isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
+                } transition-colors duration-300`}>
+                  {typeof displayEngagementRate === 'number' 
+                    ? `${(displayEngagementRate * 100).toFixed(1)}%`
+                    : displayEngagementRate}
                 </span>
-                <span className="ml-1 hidden sm:inline">engagement</span>
-                <span className="ml-1 sm:hidden">eng</span>
-              </span>
+                <span className="text-sm text-gray-500">engagement</span>
+                {isUsingPlatformData && (
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                )}
+              </div>
+            )}
+            {selectedPlatform && (
+              <div className="flex items-center space-x-2">
+                <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                  selectedPlatform === 'instagram' ? 'bg-pink-500' :
+                  selectedPlatform === 'tiktok' ? 'bg-gray-900' :
+                  selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-gray-400'
+                } ${!isUsingPlatformData ? 'opacity-50 animate-pulse' : 'shadow-sm'}`}></div>
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                  {dataSource}
+                </span>
+                {!isUsingPlatformData && loading && (
+                  <div className="text-xs text-orange-500 font-medium animate-pulse">
+                    Loading...
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 w-10 h-10 ml-4 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
+          aria-label="Close panel"
+        >
+          <X className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
+        </button>
       </div>
-      
-      <button
-        onClick={onClose}
-        className="flex-shrink-0 p-2 sm:p-2.5 hover:bg-gray-100 rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        aria-label="Close panel"
-      >
-        <X className="w-5 h-5 text-gray-500" />
-      </button>
+
+      {/* Social Media & Platform Tabs Section */}
+      <div className="px-6 pb-5 space-y-4">
+        {/* Connected Social Media Links */}
+        {influencer.contacts && influencer.contacts.length > 0 && (
+          <div>
+            <div className="text-xs font-medium text-gray-500 mb-2.5 uppercase tracking-wider">Connected Profiles</div>
+            <SocialMediaIcons 
+              contacts={influencer.contacts}
+              size="sm"
+            />
+          </div>
+        )}
+
+        {/* Platform Analytics Switcher */}
+        {onPlatformSwitch && (
+          <div>
+            <div className="text-xs font-medium text-gray-500 mb-2.5 uppercase tracking-wider">Platform Analytics</div>
+            <PlatformSwitcherTabs
+              currentPlatform={selectedPlatform}
+              onPlatformSwitch={onPlatformSwitch}
+              influencer={influencer}
+              loading={loading}
+            />
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-)}
+  )
+}
 
 function InfluencerDetailPanel({ 
   influencer, 
@@ -252,6 +417,7 @@ function InfluencerDetailPanel({
               onClose={onClose} 
               selectedPlatform={selectedPlatform}
               onPlatformSwitch={onPlatformSwitch}
+              loading={loading}
             />
 
             <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -271,7 +437,14 @@ function InfluencerDetailPanel({
                   {/* Content Performance Section Group */}
                   <div className="bg-white">
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Content Performance</h2>
+                      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">
+                        Content Performance
+                        {selectedPlatform && (
+                          <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                            {selectedPlatform.toUpperCase()}
+                          </span>
+                        )}
+                      </h2>
                     </div>
                     <AllContentSection 
                       influencer={influencer} 
@@ -287,13 +460,22 @@ function InfluencerDetailPanel({
                     )}
                     
                     {/* Platform-specific content sections */}
+                    
                     {selectedPlatform === 'tiktok' ? (
                       <>
+                        {/* TikTok-specific content sections */}
+                        <div className="border-l-4 border-black bg-gray-50 p-2 mb-4 mx-4">
+                          <p className="text-xs font-medium text-gray-700">📱 TikTok Platform Sections</p>
+                        </div>
                         <TikTokVideosSection influencer={influencer} />
                         <TikTokPostsSection influencer={influencer} />
                       </>
                     ) : selectedPlatform === 'youtube' ? (
                       <>
+                        {/* YouTube-specific content sections */}
+                        <div className="border-l-4 border-red-500 bg-gray-50 p-2 mb-4 mx-4">
+                          <p className="text-xs font-medium text-gray-700">📺 YouTube Platform Sections</p>
+                        </div>
                         <YouTubeVideosSection influencer={influencer} />
                         <YouTubeShortsSection influencer={influencer} />
                         <YouTubeStreamsSection influencer={influencer} />
@@ -301,6 +483,10 @@ function InfluencerDetailPanel({
                       </>
                     ) : (
                       <>
+                        {/* Instagram-specific content sections */}
+                        <div className="border-l-4 border-pink-500 bg-gray-50 p-2 mb-4 mx-4">
+                          <p className="text-xs font-medium text-gray-700">📸 Instagram Platform Sections</p>
+                        </div>
                         <ReelsSection influencer={influencer} />
                         <StoriesSection influencer={influencer} />
                         <RecentContentSection influencer={influencer} />

@@ -45,6 +45,57 @@ import {
   Heart
 } from 'lucide-react'
 import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
+import { getBrandLogo, getBrandColor } from '@/components/icons/BrandLogos'
+// URL validation and platform icon helpers for social media contacts
+const validateAndSanitizeUrl = (contact: any): string | null => {
+  if (!contact?.value || typeof contact.value !== 'string') return null
+  
+  let url = contact.value.trim()
+  
+  // If it's already a full URL, validate it
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    try {
+      new URL(url)
+      return url
+    } catch {
+      return null
+    }
+  }
+  
+  // Generate fallback URLs based on platform
+  const platform = contact.type?.toLowerCase()
+  const username = url.replace(/^@/, '') // Remove @ if present
+  
+  switch (platform) {
+    case 'instagram':
+      return `https://www.instagram.com/${username}`
+    case 'youtube':
+      return url.includes('channel/') ? `https://www.youtube.com/${url}` : `https://www.youtube.com/@${username}`
+    case 'tiktok':
+      return `https://www.tiktok.com/@${username}`
+    case 'linktree':
+      return `https://linktr.ee/${username}`
+    case 'twitter':
+    case 'x':
+      return `https://twitter.com/${username}`
+    case 'facebook':
+      return `https://www.facebook.com/${username}`
+    default:
+      // If platform type is unknown but URL looks valid, return it as-is
+      if (url.includes('.')) {
+        return url.startsWith('http') ? url : `https://${url}`
+      }
+      return null
+  }
+}
+
+const getPlatformIconJSX = (platformType: string) => {
+  return getBrandLogo(platformType, "w-4 h-4")
+}
+
+const getPlatformColor = (platformType: string) => {
+  return getBrandColor(platformType)
+}
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 import { useStaffSavedInfluencers } from '../../../lib/hooks/useStaffSavedInfluencers'
 import SavedInfluencersTable from '../../../components/staff/SavedInfluencersTable'
@@ -2055,6 +2106,49 @@ function DiscoveredInfluencersTable({
                             })()}
                           </>
                         )}
+                        
+                        {/* 🔗 Connected Social Media Platforms - Bulletproof Implementation */}
+                        {creator.contacts && creator.contacts.length > 0 && (
+                          <div className="flex items-center space-x-1 mt-1">
+                            {creator.contacts.map((contact: any, contactIndex: number) => {
+                              // Validate URL and get platform info
+                              const platformUrl = validateAndSanitizeUrl(contact)
+                              const platformIcon = getPlatformIconJSX(contact.type)
+                              const platformColor = getPlatformColor(contact.type)
+                              
+                              // Skip invalid contacts
+                              if (!platformUrl || !platformIcon || !contact.type) {
+                                return null
+                              }
+                              
+                              const platformName = contact.type.charAt(0).toUpperCase() + contact.type.slice(1)
+                              
+                              return (
+                                <a
+                                  key={`contact-${contactIndex}-${contact.type}`}
+                                  href={platformUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    e.stopPropagation() // Prevent table row click interference
+                                    // Optional: Add analytics tracking
+                                    console.log(`🔗 Social platform link clicked: ${contact.type} - ${platformUrl}`)
+                                  }}
+                                  className={`
+                                    ${platformColor}
+                                    hover:bg-gray-100 p-1 rounded transition-all duration-200 cursor-pointer
+                                    opacity-75 hover:opacity-100 hover:scale-105
+                                    flex items-center justify-center
+                                  `.trim()}
+                                  title={`Open ${platformName} profile`}
+                                  aria-label={`Open ${platformName} profile in new tab`}
+                                >
+                                  {platformIcon}
+                                </a>
+                              )
+                            }).filter(Boolean)} {/* Remove null entries */}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -2319,7 +2413,30 @@ function DiscoveryPageClient() {
       
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`Search failed: ${response.status} ${response.statusText}`)
+        let errorMessage = `Search failed: ${response.status} ${response.statusText}`
+        
+        try {
+          const errorData = JSON.parse(errorText)
+          if (errorData.code === 'AUTH_REQUIRED') {
+            errorMessage = `Authentication required: ${errorData.message}`
+            // Redirect to sign-in or refresh the page to trigger re-auth
+            console.error('🔒 Authentication failed, user needs to sign in')
+          } else if (errorData.message) {
+            errorMessage = errorData.message
+          }
+        } catch {
+          // If error text is not JSON, use the original error
+          console.error('📄 Non-JSON error response:', errorText)
+        }
+        
+        console.error('❌ Search API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          url: response.url
+        })
+        
+        throw new Error(errorMessage)
       }
       
       const result = await response.json()
@@ -2382,7 +2499,21 @@ function DiscoveryPageClient() {
       
     } catch (error) {
       console.error('❌ Search error:', error)
-      setSearchError(error instanceof Error ? error.message : 'Search failed')
+      const errorMessage = error instanceof Error ? error.message : 'Search failed'
+      
+      // Show helpful error messages based on error type
+      if (errorMessage.includes('Authentication required')) {
+        setSearchError('⚠️ Your session has expired. Please refresh the page to sign in again.')
+      } else if (errorMessage.includes('rate limit')) {
+        setSearchError('⏱️ Too many requests. Please wait a moment before searching again.')
+      } else if (errorMessage.includes('server error')) {
+        setSearchError('🔧 Service temporarily unavailable. Please try again in a few minutes.')
+      } else if (errorMessage.includes('API key')) {
+        setSearchError('🔑 API configuration issue. Please contact support.')
+      } else {
+        setSearchError(`❌ ${errorMessage}`)
+      }
+      
       setSearchResults(MOCK_DISCOVERED_INFLUENCERS) // Fallback to mock data
     } finally {
       setIsSearching(false)
@@ -2663,6 +2794,34 @@ function DiscoveryPageClient() {
               brand_partnerships: coreResult.data.brand_partnerships,
               content_topics: coreResult.data.content_topics,
               
+              // 🔗 SOCIAL MEDIA CONTACTS from API
+              contacts: coreResult.data.contacts || [],
+              
+              // 📊 Initialize platforms data structure with current platform
+              platforms: {
+                [actualPlatform]: {
+                  followers: coreResult.data.followers,
+                  engagementRate: coreResult.data.engagementRate,
+                  avgLikes: coreResult.data.avgLikes,
+                  avgComments: coreResult.data.avgComments,
+                  avgShares: coreResult.data.avgShares,
+                  fake_followers_percentage: coreResult.data.fake_followers_percentage,
+                  credibility: coreResult.data.credibility,
+                  audience: coreResult.data.audience,
+                  audience_interests: coreResult.data.audience_interests,
+                  audience_languages: coreResult.data.audience_languages,
+                  relevant_hashtags: coreResult.data.relevant_hashtags,
+                  brand_partnerships: coreResult.data.brand_partnerships,
+                  content_topics: coreResult.data.content_topics,
+                  statsByContentType: coreResult.data.statsByContentType,
+                  topContent: coreResult.data.topContent,
+                  // Platform-specific profile picture
+                  profile_picture: coreResult.data.profile_picture || coreResult.data.profilePicture,
+                  profilePicture: coreResult.data.profile_picture || coreResult.data.profilePicture,
+                  ...coreResult.data
+                }
+              },
+              
               // 🚨 FIX: Add missing TikTok fields from API response
               engagements: coreResult.data.engagements,
               totalLikes: coreResult.data.totalLikes,
@@ -2781,6 +2940,37 @@ function DiscoveryPageClient() {
               // Override with enhanced data if available
               followers: result.data.followers || influencer.followers,
               engagement_rate: result.data.engagementRate || influencer.engagement_rate,
+              
+              // 🔗 SOCIAL MEDIA CONTACTS from API
+              contacts: result.data.contacts || influencer.contacts || [],
+              
+              // 📊 Ensure platforms data structure with enhanced data
+              platforms: {
+                ...influencer.platforms,
+                [actualPlatform]: {
+                  followers: result.data.followers,
+                  engagementRate: result.data.engagementRate,
+                  avgLikes: result.data.avgLikes,
+                  avgComments: result.data.avgComments,
+                  avgShares: result.data.avgShares,
+                  fake_followers_percentage: result.data.fake_followers_percentage,
+                  credibility: result.data.credibility,
+                  audience: result.data.audience,
+                  audience_interests: result.data.audience_interests,
+                  audience_languages: result.data.audience_languages,
+                  relevant_hashtags: result.data.relevant_hashtags,
+                  brand_partnerships: result.data.brand_partnerships,
+                  content_topics: result.data.content_topics,
+                  statsByContentType: result.data.statsByContentType,
+                  topContent: result.data.topContent,
+                  content_performance: result.data.content_performance,
+                  growth_trends: result.data.growth_trends,
+                  // Platform-specific profile picture
+                  profile_picture: result.data.profile_picture || result.data.profilePicture,
+                  profilePicture: result.data.profile_picture || result.data.profilePicture,
+                  ...result.data
+                }
+              },
               
               // Add demographic and audience data
               audience: result.data.audience || {},
@@ -3055,6 +3245,105 @@ function DiscoveryPageClient() {
         isOpen={detailPanelOpen}
         onClose={() => setDetailPanelOpen(false)}
         selectedPlatform={selectedPlatform}
+        onPlatformSwitch={async (platform) => {
+          console.log('🔄 Platform switched to:', platform)
+          
+          // ALWAYS update the selected platform first for immediate UI feedback
+          setSelectedPlatform(platform)
+          
+          // Try to fetch new data, but don't block UI updates
+          if (detailInfluencer) {
+            setDetailLoading(true)
+            
+            try {
+              const userId = detailInfluencer.userId
+              
+              if (userId) {
+                console.log(`🔄 Loading ${platform} data for:`, detailInfluencer.username)
+                
+                // Fetch platform-specific data
+                const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: userId,
+                    platform: platform,
+                    includeReport: true,
+                    includePerformanceData: true,
+                    searchResultData: {
+                      username: detailInfluencer.username,
+                      handle: detailInfluencer.handle,
+                      followers: detailInfluencer.followers,
+                      engagement_rate: detailInfluencer.engagement_rate,
+                      platform: platform,
+                      profile_picture: detailInfluencer.profile_picture || detailInfluencer.profilePicture,
+                      location: detailInfluencer.location,
+                      verified: detailInfluencer.verified
+                    }
+                  })
+                })
+                
+                if (response.ok) {
+                  const result = await response.json()
+                  if (result.success && result.data) {
+                    // Update influencer with new platform data
+                    const updatedInfluencer = {
+                      ...detailInfluencer,
+                      // Store platform-specific data in platforms object
+                      platforms: {
+                        ...detailInfluencer.platforms,
+                        [platform]: {
+                          followers: result.data.followers,
+                          engagementRate: result.data.engagementRate,
+                          avgLikes: result.data.avgLikes,
+                          avgComments: result.data.avgComments,
+                          avgShares: result.data.avgShares,
+                          fake_followers_percentage: result.data.fake_followers_percentage,
+                          credibility: result.data.credibility,
+                          audience: result.data.audience,
+                          audience_interests: result.data.audience_interests,
+                          audience_languages: result.data.audience_languages,
+                          relevant_hashtags: result.data.relevant_hashtags,
+                          brand_partnerships: result.data.brand_partnerships,
+                          content_topics: result.data.content_topics,
+                          statsByContentType: result.data.statsByContentType,
+                          topContent: result.data.topContent,
+                          // Platform-specific profile picture
+                          profile_picture: result.data.profile_picture || result.data.profilePicture,
+                          profilePicture: result.data.profile_picture || result.data.profilePicture,
+                          ...result.data
+                        }
+                      },
+                      // Keep original data as fallbacks
+                      contacts: result.data.contacts || detailInfluencer.contacts || []
+                    }
+                    
+                    setDetailInfluencer(updatedInfluencer)
+                    console.log(`✅ Successfully loaded ${platform} data`, {
+                      platformData: updatedInfluencer.platforms[platform],
+                      followers: updatedInfluencer.platforms[platform]?.followers
+                    })
+                  }
+                } else {
+                  const errorText = await response.text()
+                  console.warn(`⚠️ Failed to load ${platform} data:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorText,
+                    userId: userId,
+                    platform: platform
+                  })
+                  
+                  console.log(`🔄 Using existing data for ${platform}`)
+                }
+              }
+            } catch (error) {
+              console.error(`❌ Error loading ${platform} data:`, error)
+            } finally {
+              setDetailLoading(false)
+            }
+          }
+        }}
         city={detailCity}
         country={detailCountry}
         loading={detailLoading}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
+import { useAuth } from '@clerk/nextjs'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
@@ -31,13 +32,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram')
   const [searchQuery, setSearchQuery] = useState('')
   
   // Router hooks for URL state management
   const router = useRouter()
   const urlSearchParams = useSearchParams()
   const pathname = usePathname()
+  
+  // Clerk authentication
+  const { getToken } = useAuth()
   
   // Bulk refresh analytics for all roster influencers
   const handleBulkRefreshAnalytics = async () => {
@@ -161,9 +165,15 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }, [urlSearchParams])
 
-  const [influencers, setInfluencers] = useState(() => {
-    // Initialize with mock data - updated with new type system
-    const INITIAL_INFLUENCERS = [
+  const [influencers, setInfluencers] = useState<any[]>(() => {
+    // Initialize with empty array - will load real data immediately
+    return []
+  })
+
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+
+  // Mock data only for fallback (not used as initial state)
+  const FALLBACK_INFLUENCERS = [
       {
         id: 'SC9K2L',
         user_id: 'user_3',
@@ -377,24 +387,46 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         platform_count: 1
       }
     ]
-    return INITIAL_INFLUENCERS
-  })
 
   // Function to load influencers from the database
   const loadInfluencers = async () => {
     try {
-      const response = await fetch('/api/influencers')
+      const token = await getToken()
+      if (!token) {
+        console.warn('No auth token available, using fallback data')
+        setInfluencers(FALLBACK_INFLUENCERS)
+        setIsInitialLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/influencers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
       if (response.ok) {
         const result = await response.json()
-        if (result.success) {
+        if (result.success && result.data.length > 0) {
+          console.log('✅ Loaded real influencers from database:', result.data.length)
           setInfluencers(result.data)
+          setIsInitialLoading(false)
           return result.data
         }
+      } else {
+        console.error('API response not ok:', response.status, response.statusText)
       }
-      // Fallback - keep existing data if API fails
-      console.warn('API failed, keeping current data')
+      
+      // Fallback - use mock data only if API completely fails
+      console.warn('API failed, using fallback data')
+      setInfluencers(FALLBACK_INFLUENCERS)
+      setIsInitialLoading(false)
     } catch (error) {
       console.error('Error loading influencers:', error)
+      console.warn('Using fallback data due to error')
+      setInfluencers(FALLBACK_INFLUENCERS)
+      setIsInitialLoading(false)
     }
   }
 
@@ -793,24 +825,30 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       email: `contact@${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
       
       // Generate platform details
-      platform_details: basicInfluencer.platforms.map((platform: Platform, index: number) => ({
-        id: `platform_${basicInfluencer.id}_${index}`,
-        influencer_id: basicInfluencer.id,
-        platform,
-        username: `${basicInfluencer.display_name.toLowerCase().replace(' ', '')}${index > 0 ? index + 1 : ''}`,
-        followers: Math.floor(basicInfluencer.total_followers / basicInfluencer.platform_count),
-        following: Math.floor(Math.random() * 2000) + 500,
-        engagement_rate: basicInfluencer.total_engagement_rate + (Math.random() - 0.5),
-        avg_views: Math.floor(basicInfluencer.total_avg_views / basicInfluencer.platform_count),
-        avg_likes: Math.floor(basicInfluencer.total_avg_views * 0.1),
-        avg_comments: Math.floor(basicInfluencer.total_avg_views * 0.02),
-        last_post_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-        profile_url: `https://${platform.toLowerCase()}.com/${basicInfluencer.display_name.toLowerCase().replace(' ', '')}`,
-        is_verified: Math.random() > 0.7,
-        is_connected: true,
-        created_at: new Date(),
-        updated_at: new Date()
-      })),
+      platform_details: (basicInfluencer.platforms || []).map((platformObj: any, index: number) => {
+        // Handle both string and object platform formats
+        const platformName = typeof platformObj === 'string' ? platformObj : (platformObj.platform || 'INSTAGRAM')
+        const platformLower = platformName.toLowerCase()
+        
+        return {
+          id: `platform_${basicInfluencer.id}_${index}`,
+          influencer_id: basicInfluencer.id,
+          platform: platformName,
+          username: platformObj.username || `${basicInfluencer.display_name.toLowerCase().replace(' ', '')}${index > 0 ? index + 1 : ''}`,
+          followers: platformObj.followers || Math.floor(basicInfluencer.total_followers / basicInfluencer.platform_count),
+          following: Math.floor(Math.random() * 2000) + 500,
+          engagement_rate: platformObj.engagement_rate || (basicInfluencer.total_engagement_rate + (Math.random() - 0.5)),
+          avg_views: platformObj.avg_views || Math.floor(basicInfluencer.total_avg_views / basicInfluencer.platform_count),
+          avg_likes: Math.floor((platformObj.avg_views || basicInfluencer.total_avg_views) * 0.1),
+          avg_comments: Math.floor((platformObj.avg_views || basicInfluencer.total_avg_views) * 0.02),
+          last_post_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+          profile_url: platformObj.profile_url || `https://${platformLower}.com/${basicInfluencer.display_name.toLowerCase().replace(' ', '')}`,
+          is_verified: platformObj.is_verified || Math.random() > 0.7,
+          is_connected: platformObj.is_connected || true,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      }),
       
       // Generate recent content
       recent_content: Array.from({ length: 6 }, (_, i) => ({
@@ -892,7 +930,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handleViewInfluencer = async (influencer: any) => {
     // Use URL state management instead of directly setting panel state
-    const defaultPlatform = influencer.platforms?.[0] || 'INSTAGRAM'
+    // Handle platform data structure from API: [{platform: 'INSTAGRAM', ...}, ...]
+    let defaultPlatform = 'instagram'
+    
+    if (influencer.platforms && Array.isArray(influencer.platforms) && influencer.platforms.length > 0) {
+      // API returns array of platform objects: [{platform: 'INSTAGRAM', username: '...', ...}]
+      const firstPlatform = influencer.platforms[0]
+      if (firstPlatform && firstPlatform.platform) {
+        defaultPlatform = firstPlatform.platform.toLowerCase()
+      }
+    }
+    
     updateUrl(influencer.id, defaultPlatform)
     
     // The actual panel opening will be handled by the useEffect that watches URL changes
@@ -1474,7 +1522,48 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               </tr>
             </thead>
             <tbody className="bg-white/50 divide-y divide-gray-100/60">
-              {paginatedInfluencers.map((influencer) => (
+              {isInitialLoading ? (
+                // Loading state
+                Array.from({ length: 3 }).map((_, index) => (
+                  <tr key={index} className="animate-pulse">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          <div className="h-12 w-12 rounded-full bg-gray-200"></div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-24"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-6 bg-gray-200 rounded w-20"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded w-12"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-6 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="h-8 bg-gray-200 rounded w-24"></div>
+                    </td>
+                  </tr>
+                ))
+              ) : paginatedInfluencers.map((influencer) => (
                 <tr key={influencer.id} className="hover:bg-white/70 transition-colors duration-150">
                   {/* Influencer Info */}
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -1485,12 +1574,20 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                             className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" 
                             src={influencer.avatar_url} 
                             alt={influencer.display_name}
+                            onError={(e) => {
+                              console.log('🖼️ Image failed to load:', influencer.avatar_url)
+                              // Fallback to default icon
+                              e.currentTarget.style.display = 'none'
+                              e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex')
+                            }}
                           />
-                        ) : (
-                          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
-                            <Users size={20} className="text-gray-500" />
-                          </div>
-                        )}
+                        ) : null}
+                        <div 
+                          className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center border-2 border-white shadow-sm text-white font-bold text-lg" 
+                          style={influencer.avatar_url ? { display: 'none' } : { display: 'flex' }}
+                        >
+                          {influencer.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-semibold text-gray-900">
@@ -1816,12 +1913,82 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           isOpen={detailPanelOpen}
           onClose={handleClosePanels}
           influencer={(() => {
-            // Transform roster data to discovery format (KISS approach)
+            // Restore COMPLETE Modash analytics from notes field (same format as discovery)
             const savedAnalytics = selectedInfluencerDetail.notes ? 
               JSON.parse(selectedInfluencerDetail.notes || '{}') : {}
             
+            console.log('🔍 Roster popup data restoration:', {
+              hasNotes: !!selectedInfluencerDetail.notes,
+              hasModashData: !!savedAnalytics.modash_data,
+              modashDataKeys: savedAnalytics.modash_data ? Object.keys(savedAnalytics.modash_data) : 'none',
+              selectedPlatform,
+              influencerName: selectedInfluencerDetail.display_name,
+              fullNotes: selectedInfluencerDetail.notes,
+              modashDataSample: savedAnalytics.modash_data ? {
+                hasAudience: !!savedAnalytics.modash_data.audience,
+                hasPlatforms: !!savedAnalytics.modash_data.platforms,
+                hasHashtags: !!savedAnalytics.modash_data.hashtags,
+                hasBrandPartnerships: !!savedAnalytics.modash_data.brand_partnerships
+              } : 'none'
+            })
+            
+            // If we have complete Modash data, use it directly (same as discovery popup)
+            if (savedAnalytics.modash_data && Object.keys(savedAnalytics.modash_data).length > 10) {
+              const completeData = {
+                // Use complete Modash analytics (EXACTLY like discovery popup)
+                ...savedAnalytics.modash_data,
+                
+                // Override with current roster metadata
+                id: selectedInfluencerDetail.id,
+                username: selectedInfluencerDetail.display_name,
+                displayName: selectedInfluencerDetail.display_name,
+                name: selectedInfluencerDetail.display_name,
+                handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+                picture: selectedInfluencerDetail.avatar_url || savedAnalytics.modash_data.picture,
+                profilePicture: selectedInfluencerDetail.avatar_url || savedAnalytics.modash_data.profilePicture,
+                
+                // Metadata for roster functionality  
+                isRosterInfluencer: true,
+                rosterId: selectedInfluencerDetail.id,
+                hasPreservedAnalytics: true,
+                
+                // Platform data structure for platform switching
+                platforms: savedAnalytics.modash_data.platforms || {
+                  [selectedPlatform]: {
+                    followers: selectedInfluencerDetail.total_followers,
+                    engagement_rate: selectedInfluencerDetail.total_engagement_rate,
+                    avgViews: selectedInfluencerDetail.total_avg_views
+                  }
+                }
+              }
+              
+              console.log('🚀 Roster popup using COMPLETE modash data:', {
+                hasAudience: !!completeData.audience,
+                audienceLocations: completeData.audience?.locations?.length || 0,
+                audienceLanguages: completeData.audience?.languages?.length || 0,
+                hasHashtags: !!completeData.hashtags,
+                hashtagCount: completeData.hashtags?.length || 0,
+                hasBrandPartnerships: !!completeData.brand_partnerships,
+                partnershipCount: completeData.brand_partnerships?.length || 0,
+                platformKeys: Object.keys(completeData.platforms || {}),
+                selectedPlatform
+              })
+              
+              console.log('✅ Using complete Modash analytics for roster popup:', {
+                hasAudience: !!completeData.audience,
+                hasAudienceTypes: !!completeData.audience_types,
+                hasPaidPerformance: !!completeData.paidPostPerformance,
+                hasRecentPosts: !!completeData.recentPosts,
+                audienceKeys: completeData.audience ? Object.keys(completeData.audience) : 'none'
+              })
+              
+              return completeData
+            }
+            
+            // Fallback to basic data if no complete analytics (should rarely happen)
+            console.warn('⚠️ No complete Modash analytics found, using basic roster data')
             return {
-              // Basic discovery format
+              // Basic discovery format fallback
               id: selectedInfluencerDetail.id,
               username: selectedInfluencerDetail.display_name,
               displayName: selectedInfluencerDetail.display_name,
@@ -1833,9 +2000,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               engagement_rate: selectedInfluencerDetail.total_engagement_rate,
               engagementRate: selectedInfluencerDetail.total_engagement_rate,
               avgViews: selectedInfluencerDetail.total_avg_views,
-              
-              // 🔥 PRESERVED ANALYTICS: Use saved modash_data if available
-              ...(savedAnalytics.modash_data || {}),
               
               // Basic audience fallback
               audience: {
@@ -1854,16 +2018,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 percentage: (lang as any).percentage
               })) || [],
               
-              // Metadata for refresh functionality
+              // Metadata
               isRosterInfluencer: true,
               rosterId: selectedInfluencerDetail.id,
-              hasPreservedAnalytics: !!savedAnalytics.modash_data
+              hasPreservedAnalytics: false
             }
           })()}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
-            setSelectedPlatform(platform.toUpperCase())
-            console.log('🔄 Platform switched to:', platform)
+            setSelectedPlatform(platform)
+            console.log('🔄 Roster platform switched to:', platform)
           }}
         />
       )}

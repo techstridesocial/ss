@@ -284,21 +284,7 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
           />
         )}
         
-        {/* 🔧 STREAMLINED: Contact Information (consolidated from ContactInfoSection) */}
-        {influencer.contacts && influencer.contacts.length > 0 && (
-          <MetricRow
-            icon={Mail}
-            label="Contact Email"
-            value={
-              <a 
-                href={`mailto:${influencer.contacts[0].value}`}
-                className="text-blue-600 hover:text-blue-800 underline"
-              >
-                {influencer.contacts[0].value}
-              </a>
-            }
-          />
-        )}
+        {/* Social Media Platforms moved to header for interactive platform switching */}
         
         {/* 🔧 STREAMLINED: Bio and Description */}
         {influencer.bio && (
