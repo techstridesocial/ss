@@ -15,6 +15,7 @@ import { PremiumOverviewSection } from './sections/PremiumOverviewSection'
 import { PremiumContentSection } from './sections/PremiumContentSection'
 import { PremiumAudienceSection } from './sections/PremiumAudienceSection'
 import { PremiumBrandPartnershipsSection } from './sections/PremiumBrandPartnershipsSection'
+import { PremiumAnalyticsSection } from './sections/PremiumAnalyticsSection'
 import { PremiumSectionWrapper } from './components/PremiumSectionWrapper'
 import { AllContentSection } from './sections/AllContentSection'
 import { PaidOrganicSection } from './sections/PaidOrganicSection'
@@ -22,16 +23,12 @@ import { TikTokPaidOrganicSection } from './sections/TikTokPaidOrganicSection'
 import { YouTubePaidOrganicSection } from './sections/YouTubePaidOrganicSection'
 
 import { ContentStrategySection } from './sections/ContentStrategySection'
-import { PerformanceStatusSection } from './sections/PerformanceStatusSection'
 
 import { HashtagStrategySection } from './sections/HashtagStrategySection'
 import { ContentTopicsSection } from './sections/ContentTopicsSection'
 
 
-import { ContentAnalyticsSection } from './sections/ContentAnalyticsSection'
-import { HistoricalGrowthSection } from './sections/HistoricalGrowthSectionWithCharts'
-import { RecentContentSection } from './sections/RecentContentSection'
-import { CreatorInsightsSection } from './sections/CreatorInsightsSection'
+
 
 
 
@@ -517,18 +514,8 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     />
                   </div>
                   
-                  {/* Content Performance Section Group */}
-                  <div className="bg-white">
-                    <div className="px-4 sm:px-6 py-3 sm:py-4">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">
-                        Content Performance
-                        {selectedPlatform && (
-                          <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                            {selectedPlatform.toUpperCase()}
-                          </span>
-                        )}
-                      </h2>
-                    </div>
+                  {/* Content Performance Sections */}
+                  <div>
                     <PremiumContentSection
                       influencer={influencer}
                       selectedPlatform={selectedPlatform}
@@ -601,52 +588,26 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     )}
                   </div>
                   
-                  {/* Audience Intelligence Section Group - NOW AVAILABLE FOR TIKTOK! */}
-                  <div className="bg-gray-50/50">
-                    <div className="px-4 sm:px-6 py-3 sm:py-4">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Audience Intelligence</h2>
-                    </div>
-                    <PremiumAudienceSection influencer={influencer} />
-                  </div>
+                  {/* Audience Intelligence Section */}
+                  <PremiumAudienceSection influencer={influencer} />
                   
-                  {/* Brand Partnerships & Strategy Section Group - NOW AVAILABLE FOR TIKTOK! */}
-                  <div className="bg-white">
-                    <div className="px-4 sm:px-6 py-3 sm:py-4">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Brand Partnerships & Strategy</h2>
-                    </div>
-                    <PremiumBrandPartnershipsSection influencer={influencer} />
-                    <PremiumSectionWrapper title="Content Strategy" defaultOpen={false}>
-                      <ContentStrategySection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                    <PremiumSectionWrapper title="Hashtag Strategy" defaultOpen={false}>
-                      <HashtagStrategySection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                  </div>
+                  {/* Brand Partnerships & Strategy Sections */}
+                  <PremiumBrandPartnershipsSection influencer={influencer} />
+                  <PremiumSectionWrapper title="Content Strategy" defaultOpen={false}>
+                    <ContentStrategySection influencer={influencer} />
+                  </PremiumSectionWrapper>
+                  <PremiumSectionWrapper title="Hashtag Strategy" defaultOpen={false}>
+                    <HashtagStrategySection influencer={influencer} />
+                  </PremiumSectionWrapper>
+                  <PremiumSectionWrapper title="Content Topics" defaultOpen={false}>
+                    <ContentTopicsSection influencer={influencer} />
+                  </PremiumSectionWrapper>
                   
-                  <div className="bg-white">
-                    <PremiumSectionWrapper title="Content Topics" defaultOpen={false}>
-                      <ContentTopicsSection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                  </div>
-                  
-                  {/* Analytics & Growth Section Group - NOW AVAILABLE FOR TIKTOK! */}
-                  <div className="bg-gray-50/50">
-                    <div className="px-4 sm:px-6 py-3 sm:py-4">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Analytics & Growth</h2>
-                    </div>
-                    <PremiumSectionWrapper title="Performance Status" defaultOpen={false}>
-                      <PerformanceStatusSection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                    <PremiumSectionWrapper title="Content Analytics" defaultOpen={false}>
-                      <ContentAnalyticsSection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                    <PremiumSectionWrapper title="Historical Growth" defaultOpen={false}>
-                      <HistoricalGrowthSection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                    <PremiumSectionWrapper title="Creator Insights" defaultOpen={false}>
-                      <CreatorInsightsSection influencer={influencer} />
-                    </PremiumSectionWrapper>
-                  </div>
+                  {/* Analytics & Growth Sections */}
+                  <PremiumAnalyticsSection influencer={influencer} sectionType="performance" />
+                  <PremiumAnalyticsSection influencer={influencer} sectionType="analytics" />
+                  <PremiumAnalyticsSection influencer={influencer} sectionType="growth" />
+                  <PremiumAnalyticsSection influencer={influencer} sectionType="insights" />
                   
 
 

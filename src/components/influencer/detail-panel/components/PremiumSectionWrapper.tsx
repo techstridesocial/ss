@@ -25,7 +25,7 @@ export const PremiumSectionWrapper = ({
       badge={badge}
       defaultOpen={defaultOpen}
     >
-      <div className="space-y-4">
+      <div className="space-y-4 [&_.lucide]:hidden [&_svg]:hidden [&_.text-pink-50]:bg-gray-50 [&_.text-blue-50]:bg-gray-50 [&_.text-green-50]:bg-gray-50 [&_.bg-pink-100]:bg-gray-100 [&_.bg-blue-100]:bg-gray-100 [&_.bg-green-100]:bg-gray-100">
         {children}
       </div>
     </PremiumSection>
