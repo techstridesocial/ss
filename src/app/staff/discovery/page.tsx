@@ -3168,7 +3168,7 @@ function DiscoveryPageClient() {
             setDetailLoading(true)
             
             try {
-              // 🎯 SMART APPROACH: Debug actual contact structure first
+              // 🎯 GENIUS APPROACH: Extract userId directly from contact URL!
               console.log(`🔍 ALL CONTACTS DEBUG:`, detailInfluencer.contacts)
               
               // Find the contact for the target platform
@@ -3180,53 +3180,35 @@ function DiscoveryPageClient() {
               }
               
               console.log(`🔍 FOUND CONTACT:`, platformContact)
-              console.log(`🔍 CONTACT KEYS:`, Object.keys(platformContact))
               
-              // Try different possible fields where the handle might be
-              let platformHandle = platformContact.value || platformContact.url || platformContact.handle || platformContact.username
+              // Extract userId directly from contact URL - no need to search!
+              const contactUrl = platformContact.value
+              let platformUserId = null
               
-              console.log(`🔍 RAW HANDLE:`, platformHandle)
-              
-              // If still no handle, fallback to original username 
-              if (!platformHandle) {
-                console.log(`⚠️ No handle in contact, using fallback username:`, detailInfluencer.username)
-                platformHandle = detailInfluencer.username || detailInfluencer.handle
+              if (contactUrl) {
+                // Extract userId from URL patterns:
+                // TikTok: https://www.tiktok.com/share/user/5831967 → 5831967
+                // Instagram: https://www.instagram.com/accounts/login/?next=/p/user/12345 → 12345
+                // YouTube: https://www.youtube.com/channel/UC123456 → UC123456
+                
+                const userIdMatch = contactUrl.match(/\/user\/(\d+)|\/channel\/(UC[a-zA-Z0-9_-]+)|\/accounts\/.*\/(\d+)/)
+                if (userIdMatch) {
+                  platformUserId = userIdMatch[1] || userIdMatch[2] || userIdMatch[3]
+                  console.log(`✅ Extracted userId from URL: ${platformUserId}`)
+                } else {
+                  // If no userId in URL, try to extract from other patterns
+                  console.log(`⚠️ Could not extract userId from URL: ${contactUrl}`)
+                  throw new Error(`Could not extract userId from ${platform} contact URL`)
+                }
               }
-              
-              console.log(`🔍 Searching for ${platformHandle} on ${platform} (extracted from contacts)`)
-              
-              const searchResponse = await fetch(`${window.location.origin}/api/discovery/search`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  platform: platform,
-                  query: platformHandle, // Use platform-specific handle from contacts
-                  exactMode: true // Use exact mode to find the specific influencer
-                })
-              })
-              
-              if (!searchResponse.ok) {
-                throw new Error(`Search failed: ${searchResponse.statusText}`)
-              }
-              
-              const searchResult = await searchResponse.json()
-              console.log(`🔍 Search result for ${platform}:`, searchResult)
-              
-              if (!searchResult.success || !searchResult.data?.length) {
-                throw new Error(`No ${platform} profile found for handle: ${platformHandle}`)
-              }
-              
-              // Find the matching influencer in search results
-              const platformInfluencer = searchResult.data[0] // Take first result from exact match
-              const platformUserId = platformInfluencer.userId || platformInfluencer.creatorId
               
               if (!platformUserId) {
-                throw new Error(`No userId found for ${platform} profile`)
+                throw new Error(`No userId found in ${platform} contact`)
               }
               
-              console.log(`✅ Found ${platform} userId: ${platformUserId} for handle: ${platformHandle}`)
+              console.log(`✅ Using ${platform} userId: ${platformUserId} (no search needed!)`)
               
-              // Now fetch the detailed profile with the correct platform-specific userId
+              // Fetch the detailed profile directly with the userId from contacts
               const profileResponse = await fetch(`${window.location.origin}/api/discovery/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3236,14 +3218,14 @@ function DiscoveryPageClient() {
                   includeReport: true,
                   includePerformanceData: true,
                   searchResultData: {
-                    username: platformInfluencer.username || detailInfluencer.username,
-                    handle: platformInfluencer.handle || detailInfluencer.handle,
-                    followers: platformInfluencer.followers || detailInfluencer.followers,
-                    engagement_rate: platformInfluencer.engagement_rate || detailInfluencer.engagement_rate,
+                    username: detailInfluencer.username,
+                    handle: detailInfluencer.handle,
+                    followers: detailInfluencer.followers,
+                    engagement_rate: detailInfluencer.engagement_rate,
                     platform: platform,
-                    profile_picture: platformInfluencer.profile_picture || platformInfluencer.profilePicture || detailInfluencer.profile_picture,
-                    location: platformInfluencer.location || detailInfluencer.location,
-                    verified: platformInfluencer.verified || detailInfluencer.verified
+                    profile_picture: detailInfluencer.profile_picture,
+                    location: detailInfluencer.location,
+                    verified: detailInfluencer.verified
                   }
                 })
               })

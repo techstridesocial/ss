@@ -209,7 +209,24 @@ const PanelHeader = ({
       <div className="h-32 px-6 flex items-center">
         {/* Larger Square Profile Picture */}
         <div className="h-24 w-24 flex-shrink-0 mr-6">
-          {pictureSrc ? (
+          {loading ? (
+            /* Loading skeleton for profile picture */
+            <div className="relative h-full w-full">
+              <div className="h-full w-full rounded-2xl bg-gray-200 animate-pulse shadow-lg flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+              {/* Loading platform indicator */}
+              {selectedPlatform && (
+                <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm ${
+                  selectedPlatform === 'instagram' ? 'bg-pink-500' :
+                  selectedPlatform === 'tiktok' ? 'bg-gray-900' :
+                  selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-blue-500'
+                }`}>
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                </div>
+              )}
+            </div>
+          ) : pictureSrc ? (
             <div className="relative h-full w-full">
               <img
                 src={pictureSrc}
@@ -289,50 +306,76 @@ const PanelHeader = ({
 
           {/* Dynamic Platform Metrics Row */}
           <div className="flex items-center space-x-6">
-            {displayMetrics.followers && (
-              <div className="flex items-center space-x-2 transition-all duration-300">
-                <span className={`text-lg font-semibold ${
-                  visualFeedback.isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
-                } transition-colors duration-300`}>
-                  {formatFollowerCount(displayMetrics.followers)}
-                </span>
-                <span className="text-sm text-gray-500">followers</span>
-                {visualFeedback.isUsingPlatformData && (
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                )}
-              </div>
-            )}
-            {displayMetrics.engagementRate && (
-              <div className="flex items-center space-x-2 transition-all duration-300">
-                <span className={`text-lg font-semibold ${
-                  visualFeedback.isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
-                } transition-colors duration-300`}>
-                  {typeof displayMetrics.engagementRate === 'number' 
-                    ? `${(displayMetrics.engagementRate * 100).toFixed(1)}%`
-                    : displayMetrics.engagementRate}
-                </span>
-                <span className="text-sm text-gray-500">engagement</span>
-                {visualFeedback.isUsingPlatformData && (
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                )}
-              </div>
-            )}
-            {selectedPlatform && (
-              <div className="flex items-center space-x-2">
-                <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  selectedPlatform === 'instagram' ? 'bg-pink-500' :
-                  selectedPlatform === 'tiktok' ? 'bg-gray-900' :
-                  selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-gray-400'
-                } ${!visualFeedback.isUsingPlatformData ? 'opacity-50 animate-pulse' : 'shadow-sm'}`}></div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                  {visualFeedback.dataSource}
-                </span>
-                {!visualFeedback.isUsingPlatformData && loading && (
-                  <div className="text-xs text-orange-500 font-medium animate-pulse">
-                    Loading...
+            {loading ? (
+              /* Loading skeletons for metrics */
+              <>
+                <div className="flex items-center space-x-2">
+                  <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  <span className="text-sm text-gray-500">followers</span>
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="h-6 w-12 bg-gray-200 rounded animate-pulse"></div>
+                  <span className="text-sm text-gray-500">engagement</span>
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                </div>
+                {selectedPlatform && (
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+                      selectedPlatform === 'instagram' ? 'bg-pink-500' :
+                      selectedPlatform === 'tiktok' ? 'bg-gray-900' :
+                      selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className="text-xs text-blue-500 uppercase tracking-wider font-medium animate-pulse">
+                      Loading {selectedPlatform} data...
+                    </span>
                   </div>
                 )}
-              </div>
+              </>
+            ) : (
+              /* Normal metrics display */
+              <>
+                {displayMetrics.followers && (
+                  <div className="flex items-center space-x-2 transition-all duration-300">
+                    <span className={`text-lg font-semibold ${
+                      visualFeedback.isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
+                    } transition-colors duration-300`}>
+                      {formatFollowerCount(displayMetrics.followers)}
+                    </span>
+                    <span className="text-sm text-gray-500">followers</span>
+                    {visualFeedback.isUsingPlatformData && (
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    )}
+                  </div>
+                )}
+                {displayMetrics.engagementRate && (
+                  <div className="flex items-center space-x-2 transition-all duration-300">
+                    <span className={`text-lg font-semibold ${
+                      visualFeedback.isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
+                    } transition-colors duration-300`}>
+                      {typeof displayMetrics.engagementRate === 'number' 
+                        ? `${(displayMetrics.engagementRate * 100).toFixed(1)}%`
+                        : displayMetrics.engagementRate}
+                    </span>
+                    <span className="text-sm text-gray-500">engagement</span>
+                    {visualFeedback.isUsingPlatformData && (
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    )}
+                  </div>
+                )}
+                {selectedPlatform && (
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                      selectedPlatform === 'instagram' ? 'bg-pink-500' :
+                      selectedPlatform === 'tiktok' ? 'bg-gray-900' :
+                      selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-gray-400'
+                    } ${!visualFeedback.isUsingPlatformData ? 'opacity-50 animate-pulse' : 'shadow-sm'}`}></div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                      {visualFeedback.dataSource}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
