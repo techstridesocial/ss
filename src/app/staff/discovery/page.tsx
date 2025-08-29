@@ -3258,7 +3258,24 @@ function DiscoveryPageClient() {
                 // Update influencer with new platform data
                 const updatedInfluencer = {
                   ...detailInfluencer,
-                  // Store platform-specific data in platforms object
+                  // 🎯 CRITICAL: Update main fields so ALL components see the new data
+                  followers: profileResult.data.followers || detailInfluencer.followers,
+                  engagement_rate: profileResult.data.engagementRate || profileResult.data.engagement_rate || detailInfluencer.engagement_rate,
+                  engagementRate: profileResult.data.engagementRate || detailInfluencer.engagementRate,
+                  avgLikes: profileResult.data.avgLikes || detailInfluencer.avgLikes,
+                  avgComments: profileResult.data.avgComments || detailInfluencer.avgComments,
+                  profile_picture: profileResult.data.profile_picture || profileResult.data.profilePicture || detailInfluencer.profile_picture,
+                  profilePicture: profileResult.data.profile_picture || profileResult.data.profilePicture || detailInfluencer.profilePicture,
+                  // Update content data
+                  recentPosts: profileResult.data.recentPosts || detailInfluencer.recentPosts,
+                  popularPosts: profileResult.data.popularPosts || detailInfluencer.popularPosts,
+                  sponsoredPosts: profileResult.data.sponsoredPosts || detailInfluencer.sponsoredPosts,
+                  audience: profileResult.data.audience || detailInfluencer.audience,
+                  audience_interests: profileResult.data.audience_interests || detailInfluencer.audience_interests,
+                  relevant_hashtags: profileResult.data.relevant_hashtags || detailInfluencer.relevant_hashtags,
+                  brand_partnerships: profileResult.data.brand_partnerships || detailInfluencer.brand_partnerships,
+                  content_topics: profileResult.data.content_topics || detailInfluencer.content_topics,
+                  // Store platform-specific data in platforms object (for advanced features)
                   platforms: {
                     ...detailInfluencer.platforms,
                     [platform]: {
@@ -3278,10 +3295,8 @@ function DiscoveryPageClient() {
                       statsByContentType: profileResult.data.statsByContentType,
                       topContent: profileResult.data.topContent,
                       content_performance: profileResult.data.content_performance,
-                      // Platform-specific profile picture
                       profile_picture: profileResult.data.profile_picture || profileResult.data.profilePicture,
                       profilePicture: profileResult.data.profile_picture || profileResult.data.profilePicture,
-                      // Additional fields for complete platform data
                       recentPosts: profileResult.data.recentPosts,
                       popularPosts: profileResult.data.popularPosts,
                       sponsoredPosts: profileResult.data.sponsoredPosts,
@@ -3291,7 +3306,12 @@ function DiscoveryPageClient() {
                     }
                   },
                   // Keep original data as fallbacks and update contacts
-                  contacts: profileResult.data.contacts || detailInfluencer.contacts || []
+                  contacts: profileResult.data.contacts || detailInfluencer.contacts || [],
+                  // Include ALL other platform data for complete panel functionality
+                  ...profileResult.data,
+                  // 🔄 Force re-render with timestamp
+                  lastUpdated: Date.now(),
+                  currentPlatform: platform
                 }
                 
                 setDetailInfluencer(updatedInfluencer)
