@@ -2454,7 +2454,15 @@ function DiscoveryPageClient() {
       
       setSearchResults(searchResults)
       
-      // Credits are now managed by the CreditCardComponent automatically
+      // Refresh credits if the search consumed credits
+      if (creditsUsed > 0) {
+        setTimeout(() => {
+          // Use the simplified refresh method
+          import('@/lib/services/credits').then(({ creditsService }) => {
+            creditsService.refreshAfterAction('search')
+          })
+        }, 1000)
+      }
       
     } catch (error) {
       console.error('❌ Search error:', error)
@@ -3160,89 +3168,122 @@ function DiscoveryPageClient() {
             setDetailLoading(true)
             
             try {
-              const userId = detailInfluencer.userId
+              // 🎯 NEW APPROACH: First search for the influencer on the new platform to get platform-specific userId
+              console.log(`🔍 Searching for ${detailInfluencer.username} on ${platform} to get platform-specific userId`)
               
-              if (userId) {
-                console.log(`🔄 Loading ${platform} data for:`, detailInfluencer.username)
-                
-                // Fetch platform-specific data
-                const response = await fetch(`${window.location.origin}/api/discovery/profile`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: userId,
-                    platform: platform,
-                    includeReport: true,
-                    includePerformanceData: true,
-                    searchResultData: {
-                      username: detailInfluencer.username,
-                      handle: detailInfluencer.handle,
-                      followers: detailInfluencer.followers,
-                      engagement_rate: detailInfluencer.engagement_rate,
-                      platform: platform,
-                      profile_picture: detailInfluencer.profile_picture || detailInfluencer.profilePicture,
-                      location: detailInfluencer.location,
-                      verified: detailInfluencer.verified
-                    }
-                  })
+              const searchResponse = await fetch(`${window.location.origin}/api/discovery/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  platform: platform,
+                  query: detailInfluencer.username || detailInfluencer.handle,
+                  exactMode: true // Use exact mode to find the specific influencer
                 })
-                
-                if (response.ok) {
-                  const result = await response.json()
-                  if (result.success && result.data) {
-                    // Update influencer with new platform data
-                    const updatedInfluencer = {
-                      ...detailInfluencer,
-                      // Store platform-specific data in platforms object
-                      platforms: {
-                        ...detailInfluencer.platforms,
-                        [platform]: {
-                          followers: result.data.followers,
-                          engagementRate: result.data.engagementRate,
-                          avgLikes: result.data.avgLikes,
-                          avgComments: result.data.avgComments,
-                          avgShares: result.data.avgShares,
-                          fake_followers_percentage: result.data.fake_followers_percentage,
-                          credibility: result.data.credibility,
-                          audience: result.data.audience,
-                          audience_interests: result.data.audience_interests,
-                          audience_languages: result.data.audience_languages,
-                          relevant_hashtags: result.data.relevant_hashtags,
-                          brand_partnerships: result.data.brand_partnerships,
-                          content_topics: result.data.content_topics,
-                          statsByContentType: result.data.statsByContentType,
-                          topContent: result.data.topContent,
-                          // Platform-specific profile picture
-                          profile_picture: result.data.profile_picture || result.data.profilePicture,
-                          profilePicture: result.data.profile_picture || result.data.profilePicture,
-                          ...result.data
-                        }
-                      },
-                      // Keep original data as fallbacks
-                      contacts: result.data.contacts || detailInfluencer.contacts || []
-                    }
-                    
-                    setDetailInfluencer(updatedInfluencer)
-                    console.log(`✅ Successfully loaded ${platform} data`, {
-                      platformData: updatedInfluencer.platforms[platform],
-                      followers: updatedInfluencer.platforms[platform]?.followers
-                    })
-                  }
-                } else {
-                  const errorText = await response.text()
-                  console.warn(`⚠️ Failed to load ${platform} data:`, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorText,
-                    userId: userId,
-                    platform: platform
-                  })
-                  
-                  console.log(`🔄 Using existing data for ${platform}`)
-                }
+              })
+              
+              if (!searchResponse.ok) {
+                throw new Error(`Search failed: ${searchResponse.statusText}`)
               }
+              
+              const searchResult = await searchResponse.json()
+              console.log(`🔍 Search result for ${platform}:`, searchResult)
+              
+              if (!searchResult.success || !searchResult.data?.length) {
+                throw new Error(`No ${platform} profile found for ${detailInfluencer.username}`)
+              }
+              
+              // Find the matching influencer in search results
+              const platformInfluencer = searchResult.data[0] // Take first result from exact match
+              const platformUserId = platformInfluencer.userId || platformInfluencer.creatorId
+              
+              if (!platformUserId) {
+                throw new Error(`No userId found for ${platform} profile`)
+              }
+              
+              console.log(`✅ Found ${platform} userId: ${platformUserId} for ${detailInfluencer.username}`)
+              
+              // Now fetch the detailed profile with the correct platform-specific userId
+              const profileResponse = await fetch(`${window.location.origin}/api/discovery/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: platformUserId,
+                  platform: platform,
+                  includeReport: true,
+                  includePerformanceData: true,
+                  searchResultData: {
+                    username: platformInfluencer.username || detailInfluencer.username,
+                    handle: platformInfluencer.handle || detailInfluencer.handle,
+                    followers: platformInfluencer.followers || detailInfluencer.followers,
+                    engagement_rate: platformInfluencer.engagement_rate || detailInfluencer.engagement_rate,
+                    platform: platform,
+                    profile_picture: platformInfluencer.profile_picture || platformInfluencer.profilePicture || detailInfluencer.profile_picture,
+                    location: platformInfluencer.location || detailInfluencer.location,
+                    verified: platformInfluencer.verified || detailInfluencer.verified
+                  }
+                })
+              })
+              
+              if (!profileResponse.ok) {
+                throw new Error(`Profile fetch failed: ${profileResponse.statusText}`)
+              }
+              
+              const profileResult = await profileResponse.json()
+              
+              if (profileResult.success && profileResult.data) {
+                // Update influencer with new platform data
+                const updatedInfluencer = {
+                  ...detailInfluencer,
+                  // Store platform-specific data in platforms object
+                  platforms: {
+                    ...detailInfluencer.platforms,
+                    [platform]: {
+                      followers: profileResult.data.followers,
+                      engagementRate: profileResult.data.engagementRate,
+                      avgLikes: profileResult.data.avgLikes,
+                      avgComments: profileResult.data.avgComments,
+                      avgShares: profileResult.data.avgShares,
+                      fake_followers_percentage: profileResult.data.fake_followers_percentage,
+                      credibility: profileResult.data.credibility,
+                      audience: profileResult.data.audience,
+                      audience_interests: profileResult.data.audience_interests,
+                      audience_languages: profileResult.data.audience_languages,
+                      relevant_hashtags: profileResult.data.relevant_hashtags,
+                      brand_partnerships: profileResult.data.brand_partnerships,
+                      content_topics: profileResult.data.content_topics,
+                      statsByContentType: profileResult.data.statsByContentType,
+                      topContent: profileResult.data.topContent,
+                      content_performance: profileResult.data.content_performance,
+                      // Platform-specific profile picture
+                      profile_picture: profileResult.data.profile_picture || profileResult.data.profilePicture,
+                      profilePicture: profileResult.data.profile_picture || profileResult.data.profilePicture,
+                      // Additional fields for complete platform data
+                      recentPosts: profileResult.data.recentPosts,
+                      popularPosts: profileResult.data.popularPosts,
+                      sponsoredPosts: profileResult.data.sponsoredPosts,
+                      statHistory: profileResult.data.statHistory,
+                      paidPostPerformance: profileResult.data.paidPostPerformance,
+                      ...profileResult.data
+                    }
+                  },
+                  // Keep original data as fallbacks and update contacts
+                  contacts: profileResult.data.contacts || detailInfluencer.contacts || []
+                }
+                
+                setDetailInfluencer(updatedInfluencer)
+                console.log(`✅ Successfully loaded ${platform} data`, {
+                  platformData: updatedInfluencer.platforms[platform],
+                  followers: updatedInfluencer.platforms[platform]?.followers,
+                  profilePicture: updatedInfluencer.platforms[platform]?.profile_picture
+                })
+              } else {
+                throw new Error('Profile API returned no data')
+              }
+              
             } catch (error) {
-              console.error(`❌ Error loading ${platform} data:`, error)
+              console.error(`❌ Error switching to ${platform}:`, error)
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+              setSearchError(`Failed to load ${platform} data: ${errorMessage}`)
             } finally {
               setDetailLoading(false)
             }
