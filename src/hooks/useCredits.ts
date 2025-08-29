@@ -6,10 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
-// Shared state for all credit hooks to prevent multiple API calls
-let globalCreditState: any = null
-let globalStateSubscribers: Array<(state: any) => void> = []
-let globalRefreshInterval: NodeJS.Timeout | null = null
+// The credits service now handles global state internally
 import creditsService, { 
   DEFAULT_CREDIT_CONFIG,
   creditFormatters,
@@ -23,15 +20,15 @@ import type { CreditHookState, CreditRefreshStatus } from '@/types/credits'
  * Main credits hook - provides complete credit management
  */
 export function useCredits(config: Partial<CreditConfig> = {}) {
-  // Memoize config to prevent infinite loops
+  // Simplified config without auto-refresh
   const finalConfig = useMemo(() => ({ 
     ...DEFAULT_CREDIT_CONFIG, 
-    ...config 
+    ...config,
+    refreshInterval: 0 // Disable automatic refresh
   }), [
     config.warningThreshold,
     config.criticalThreshold, 
-    config.showDetailed,
-    config.refreshInterval
+    config.showDetailed
   ])
   
   const [state, setState] = useState<CreditHookState>({
@@ -42,95 +39,73 @@ export function useCredits(config: Partial<CreditConfig> = {}) {
     alerts: []
   })
 
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const refreshFnRef = useRef<(() => Promise<void>) | null>(null)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
 
   /**
-   * Refresh credit usage from API
+   * Handle global state changes from credits service
+   */
+  const handleGlobalStateChange = useCallback((globalState: any) => {
+    console.log('📡 Credits hook received global state update')
+    
+    setState(prev => {
+      const newState: CreditHookState = {
+        ...prev,
+        usage: globalState.data,
+        refreshStatus: globalState.isLoading ? 'loading' : 
+                     globalState.error ? 'error' : 
+                     globalState.data ? 'success' : 'idle',
+        lastRefresh: globalState.lastFetch,
+        alerts: globalState.data && globalState.error === null 
+          ? creditsService.generateAlerts(globalState.data, finalConfig)
+          : globalState.error 
+            ? [{
+                type: 'critical' as const,
+                message: globalState.error,
+                threshold: 0,
+                currentUsage: 0
+              }]
+            : []
+      }
+      return newState
+    })
+  }, [finalConfig])
+
+  /**
+   * Manual refresh function (forces new API call)
    */
   const refresh = useCallback(async () => {
-    setState(prev => ({ ...prev, refreshStatus: 'loading' }))
-
-    try {
-      const response = await creditsService.fetchCreditUsage()
-      
-      if (response.success && response.data) {
-        const detailedUsage = creditsService.transformToDetailedUsage(response.data)
-        const alerts = creditsService.generateAlerts(detailedUsage, finalConfig)
-
-        setState(prev => ({
-          ...prev,
-          usage: detailedUsage,
-          refreshStatus: 'success',
-          lastRefresh: new Date(),
-          alerts
-        }))
-
-        console.log('💳 Credits refreshed:', {
-          monthly: `${response.data.used}/${response.data.limit}`,
-          percentage: `${response.data.percentage}%`
-        })
-      } else {
-        throw new Error(response.error || 'Failed to fetch credits')
-      }
-    } catch (error) {
-      console.error('❌ Credit refresh failed:', error)
-      setState(prev => ({
-        ...prev,
-        refreshStatus: 'error',
-        alerts: [{
-          type: 'critical',
-          message: 'Failed to load credit usage',
-          threshold: 0,
-          currentUsage: 0
-        }]
-      }))
-    }
+    console.log('🔄 Manual credit refresh requested')
+    await creditsService.fetchCreditUsage(true) // Force refresh
   }, [])
 
-  // Update ref without causing re-renders
-  refreshFnRef.current = refresh
-
   /**
-   * Set up automatic refresh interval (singleton to prevent multiple intervals)
+   * Subscribe to global credits state on mount
    */
   useEffect(() => {
-    // Clear any existing local interval
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current)
-      refreshIntervalRef.current = null
-    }
-
-    // Only create interval if none exists globally
-    if (finalConfig.refreshInterval > 0 && !globalRefreshInterval) {
-      globalRefreshInterval = setInterval(
-        () => {
-          if (refreshFnRef.current) {
-            refreshFnRef.current()
-          }
-        },
-        finalConfig.refreshInterval * 60 * 1000 // Convert minutes to milliseconds
-      )
-      refreshIntervalRef.current = globalRefreshInterval
+    console.log('🔌 Credits hook subscribing to global state')
+    
+    // Subscribe to global state changes
+    unsubscribeRef.current = creditsService.subscribe(handleGlobalStateChange)
+    
+    // Initialize with current global state
+    const currentState = creditsService.getGlobalState()
+    handleGlobalStateChange(currentState)
+    
+    // If no data exists, trigger initial fetch
+    if (!currentState.data && !currentState.isLoading) {
+      console.log('🚀 No cached data, triggering initial fetch')
+      creditsService.fetchCreditUsage()
     }
 
     return () => {
-      // Only clear if this instance owns the global interval
-      if (refreshIntervalRef.current === globalRefreshInterval) {
-        clearInterval(globalRefreshInterval!)
-        globalRefreshInterval = null
-        refreshIntervalRef.current = null
+      console.log('🔌 Credits hook unsubscribing from global state')
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
       }
     }
-  }, [finalConfig.refreshInterval])
+  }, [handleGlobalStateChange])
 
-  /**
-   * Initial load - only run once on mount
-   */
-  useEffect(() => {
-    refresh()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Empty dependency array - only run on mount
+  // No automatic refresh - manual only for simplicity
 
   /**
    * Update configuration

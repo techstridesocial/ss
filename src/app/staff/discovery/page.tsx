@@ -3186,18 +3186,54 @@ function DiscoveryPageClient() {
               let platformUserId = null
               
               if (contactUrl) {
+                console.log(`🔍 DEBUG: Trying to extract userId from ${platform} URL: ${contactUrl}`)
+                
                 // Extract userId from URL patterns:
                 // TikTok: https://www.tiktok.com/share/user/5831967 → 5831967
-                // Instagram: https://www.instagram.com/accounts/login/?next=/p/user/12345 → 12345
+                // Instagram: Could be different format - let's see what we get!
                 // YouTube: https://www.youtube.com/channel/UC123456 → UC123456
                 
-                const userIdMatch = contactUrl.match(/\/user\/(\d+)|\/channel\/(UC[a-zA-Z0-9_-]+)|\/accounts\/.*\/(\d+)/)
-                if (userIdMatch) {
-                  platformUserId = userIdMatch[1] || userIdMatch[2] || userIdMatch[3]
-                  console.log(`✅ Extracted userId from URL: ${platformUserId}`)
-                } else {
-                  // If no userId in URL, try to extract from other patterns
-                  console.log(`⚠️ Could not extract userId from URL: ${contactUrl}`)
+                if (platform === 'tiktok') {
+                  const tiktokMatch = contactUrl.match(/\/user\/(\d+)/)
+                  if (tiktokMatch) {
+                    platformUserId = tiktokMatch[1]
+                    console.log(`✅ TikTok userId extracted: ${platformUserId}`)
+                  }
+                } else if (platform === 'instagram') {
+                  // Let's see what Instagram URLs actually look like
+                  console.log(`🔍 Instagram URL to parse: ${contactUrl}`)
+                  
+                  // Try different Instagram patterns
+                  const patterns = [
+                    /\/user\/(\d+)/,                    // /user/12345
+                    /\/accounts\/.*\/(\d+)/,            // /accounts/.../12345  
+                    /instagram\.com\/([a-zA-Z0-9_.]+)/, // instagram.com/username
+                    /\/p\/user\/(\d+)/,                 // /p/user/12345
+                    /profile\/(\d+)/                    // profile/12345
+                  ]
+                  
+                  for (const pattern of patterns) {
+                    const match = contactUrl.match(pattern)
+                    if (match) {
+                      platformUserId = match[1]
+                      console.log(`✅ Instagram match found with pattern ${pattern}: ${platformUserId}`)
+                      break
+                    }
+                  }
+                  
+                  if (!platformUserId) {
+                    console.log(`❌ Instagram: No userId pattern matched. URL: ${contactUrl}`)
+                  }
+                } else if (platform === 'youtube') {
+                  const youtubeMatch = contactUrl.match(/\/channel\/(UC[a-zA-Z0-9_-]+)/)
+                  if (youtubeMatch) {
+                    platformUserId = youtubeMatch[1]
+                    console.log(`✅ YouTube userId extracted: ${platformUserId}`)
+                  }
+                }
+                
+                if (!platformUserId) {
+                  console.log(`⚠️ Could not extract userId from ${platform} URL: ${contactUrl}`)
                   throw new Error(`Could not extract userId from ${platform} contact URL`)
                 }
               }

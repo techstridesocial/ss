@@ -21,7 +21,7 @@ export const DEFAULT_CREDIT_CONFIG: CreditConfig = {
   warningThreshold: 80, // 80% usage triggers warning
   criticalThreshold: 95, // 95% usage triggers critical alert
   showDetailed: true,
-  refreshInterval: 5, // 5 minutes
+  refreshInterval: 0, // No automatic refresh - manual only
 }
 
 /**
@@ -144,12 +144,12 @@ class CreditsService {
   }
 
   /**
-   * Check if data is fresh (within 30 seconds)
+   * Check if data is fresh (within 2 minutes for better UX)
    */
   private isDataFresh(): boolean {
     if (!this.globalState.lastFetch || !this.globalState.data) return false
-    const thirtySecondsAgo = Date.now() - (30 * 1000)
-    return this.globalState.lastFetch.getTime() > thirtySecondsAgo
+    const twoMinutesAgo = Date.now() - (2 * 60 * 1000)
+    return this.globalState.lastFetch.getTime() > twoMinutesAgo
   }
 
   /**
@@ -343,6 +343,14 @@ class CreditsService {
     }
 
     return Math.ceil(operation.count * costs[operation.type])
+  }
+
+  /**
+   * Refresh credits after an action that consumed credits
+   */
+  async refreshAfterAction(actionType: string): Promise<void> {
+    console.log(`🔄 Refreshing credits after ${actionType}`)
+    await this.fetchCreditUsage(true) // Force refresh
   }
 }
 

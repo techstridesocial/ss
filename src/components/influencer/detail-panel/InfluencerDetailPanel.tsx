@@ -11,26 +11,22 @@ import SocialMediaIcons from '../SocialMediaIcons'
 import { InstagramLogo, YouTubeLogo, TikTokLogo } from '../../icons/BrandLogos'
 
 // Sections
-import { OverviewSection } from './sections/OverviewSection'
+import { PremiumOverviewSection } from './sections/PremiumOverviewSection'
+import { PremiumContentSection } from './sections/PremiumContentSection'
+import { PremiumAudienceSection } from './sections/PremiumAudienceSection'
+import { PremiumBrandPartnershipsSection } from './sections/PremiumBrandPartnershipsSection'
+import { PremiumSectionWrapper } from './components/PremiumSectionWrapper'
 import { AllContentSection } from './sections/AllContentSection'
 import { PaidOrganicSection } from './sections/PaidOrganicSection'
-import { ReelsSection } from './sections/ReelsSection'
-import { StoriesSection } from './sections/StoriesSection'
-import { TikTokVideosSection } from './sections/TikTokVideosSection'
 import { TikTokPaidOrganicSection } from './sections/TikTokPaidOrganicSection'
-import { TikTokPostsSection } from './sections/TikTokPostsSection'
-import { YouTubeVideosSection } from './sections/YouTubeVideosSection'
-import { YouTubeShortsSection } from './sections/YouTubeShortsSection'
-import { YouTubeStreamsSection } from './sections/YouTubeStreamsSection'
 import { YouTubePaidOrganicSection } from './sections/YouTubePaidOrganicSection'
-import { AudienceSection } from './sections/AudienceSection'
+
 import { ContentStrategySection } from './sections/ContentStrategySection'
 import { PerformanceStatusSection } from './sections/PerformanceStatusSection'
-import { BrandPartnershipsSection } from './sections/BrandPartnershipsSection'
+
 import { HashtagStrategySection } from './sections/HashtagStrategySection'
 import { ContentTopicsSection } from './sections/ContentTopicsSection'
-import { AudienceInterestsSection } from './sections/AudienceInterestsSection'
-import { LanguageBreakdownSection } from './sections/LanguageBreakdownSection'
+
 
 import { ContentAnalyticsSection } from './sections/ContentAnalyticsSection'
 import { HistoricalGrowthSection } from './sections/HistoricalGrowthSectionWithCharts'
@@ -514,7 +510,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                 <div className="min-h-full">
                   {/* Core Profile Section - Always visible */}
                   <div className="bg-gradient-to-b from-gray-50 to-white">
-                    <OverviewSection 
+                    <PremiumOverviewSection 
                       influencer={influencer} 
                       currentPlatformData={currentPlatformData}
                       selectedPlatform={selectedPlatform}
@@ -533,50 +529,74 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                         )}
                       </h2>
                     </div>
-                    <AllContentSection 
-                      influencer={influencer} 
-                      currentPlatformData={currentPlatformData} 
+                    <PremiumContentSection
+                      influencer={influencer}
+                      selectedPlatform={selectedPlatform}
+                      contentType="popular"
                     />
                     {/* Platform-specific paid/organic analysis */}
                     {selectedPlatform === 'tiktok' ? (
-                      <TikTokPaidOrganicSection influencer={influencer} />
+                      <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
+                        <TikTokPaidOrganicSection influencer={influencer} />
+                      </PremiumSectionWrapper>
                     ) : selectedPlatform === 'youtube' ? (
-                      <YouTubePaidOrganicSection influencer={influencer} />
+                      <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
+                        <YouTubePaidOrganicSection influencer={influencer} />
+                      </PremiumSectionWrapper>
                     ) : (
-                      <PaidOrganicSection influencer={influencer} />
+                      <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
+                        <PaidOrganicSection influencer={influencer} />
+                      </PremiumSectionWrapper>
                     )}
                     
                     {/* Platform-specific content sections */}
                     
                     {selectedPlatform === 'tiktok' ? (
                       <>
-                        {/* TikTok-specific content sections */}
-                        <div className="border-l-4 border-black bg-gray-50 p-2 mb-4 mx-4">
-                          <p className="text-xs font-medium text-gray-700">📱 TikTok Platform Sections</p>
-                        </div>
-                        <TikTokVideosSection influencer={influencer} />
-                        <TikTokPostsSection influencer={influencer} />
+                        {/* TikTok Premium Content Sections */}
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="videos"
+                        />
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="recent"
+                        />
                       </>
                     ) : selectedPlatform === 'youtube' ? (
                       <>
-                        {/* YouTube-specific content sections */}
-                        <div className="border-l-4 border-red-500 bg-gray-50 p-2 mb-4 mx-4">
-                          <p className="text-xs font-medium text-gray-700">📺 YouTube Platform Sections</p>
-                        </div>
-                        <YouTubeVideosSection influencer={influencer} />
-                        <YouTubeShortsSection influencer={influencer} />
-                        <YouTubeStreamsSection influencer={influencer} />
-                        <RecentContentSection influencer={influencer} />
+                        {/* YouTube Premium Content Sections */}
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="videos"
+                        />
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="popular"
+                        />
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="recent"
+                        />
                       </>
                     ) : (
                       <>
-                        {/* Instagram-specific content sections */}
-                        <div className="border-l-4 border-pink-500 bg-gray-50 p-2 mb-4 mx-4">
-                          <p className="text-xs font-medium text-gray-700">📸 Instagram Platform Sections</p>
-                        </div>
-                        <ReelsSection influencer={influencer} />
-                        <StoriesSection influencer={influencer} />
-                        <RecentContentSection influencer={influencer} />
+                        {/* Instagram Premium Content Sections */}
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="recent"
+                        />
+                        <PremiumContentSection
+                          influencer={influencer}
+                          selectedPlatform={selectedPlatform}
+                          contentType="popular"
+                        />
                       </>
                     )}
                   </div>
@@ -586,9 +606,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Audience Intelligence</h2>
                     </div>
-                    <AudienceSection influencer={influencer} />
-                    <AudienceInterestsSection influencer={influencer} />
-                    <LanguageBreakdownSection influencer={influencer} />
+                    <PremiumAudienceSection influencer={influencer} />
                   </div>
                   
                   {/* Brand Partnerships & Strategy Section Group - NOW AVAILABLE FOR TIKTOK! */}
@@ -596,13 +614,19 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Brand Partnerships & Strategy</h2>
                     </div>
-                    <BrandPartnershipsSection influencer={influencer} />
-                    <ContentStrategySection influencer={influencer} />
-                    <HashtagStrategySection influencer={influencer} />
+                    <PremiumBrandPartnershipsSection influencer={influencer} />
+                    <PremiumSectionWrapper title="Content Strategy" defaultOpen={false}>
+                      <ContentStrategySection influencer={influencer} />
+                    </PremiumSectionWrapper>
+                    <PremiumSectionWrapper title="Hashtag Strategy" defaultOpen={false}>
+                      <HashtagStrategySection influencer={influencer} />
+                    </PremiumSectionWrapper>
                   </div>
                   
                   <div className="bg-white">
-                    <ContentTopicsSection influencer={influencer} />
+                    <PremiumSectionWrapper title="Content Topics" defaultOpen={false}>
+                      <ContentTopicsSection influencer={influencer} />
+                    </PremiumSectionWrapper>
                   </div>
                   
                   {/* Analytics & Growth Section Group - NOW AVAILABLE FOR TIKTOK! */}
@@ -610,10 +634,18 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     <div className="px-4 sm:px-6 py-3 sm:py-4">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Analytics & Growth</h2>
                     </div>
-                    <PerformanceStatusSection influencer={influencer} />
-                    <ContentAnalyticsSection influencer={influencer} />
-                    <HistoricalGrowthSection influencer={influencer} />
-                    <CreatorInsightsSection influencer={influencer} />
+                    <PremiumSectionWrapper title="Performance Status" defaultOpen={false}>
+                      <PerformanceStatusSection influencer={influencer} />
+                    </PremiumSectionWrapper>
+                    <PremiumSectionWrapper title="Content Analytics" defaultOpen={false}>
+                      <ContentAnalyticsSection influencer={influencer} />
+                    </PremiumSectionWrapper>
+                    <PremiumSectionWrapper title="Historical Growth" defaultOpen={false}>
+                      <HistoricalGrowthSection influencer={influencer} />
+                    </PremiumSectionWrapper>
+                    <PremiumSectionWrapper title="Creator Insights" defaultOpen={false}>
+                      <CreatorInsightsSection influencer={influencer} />
+                    </PremiumSectionWrapper>
                   </div>
                   
 
