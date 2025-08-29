@@ -13,6 +13,7 @@ import { InstagramLogo, YouTubeLogo, TikTokLogo } from '../../icons/BrandLogos'
 // Sections
 import { PremiumOverviewSection } from './sections/PremiumOverviewSection'
 import { PremiumContentSection } from './sections/PremiumContentSection'
+import { PremiumProfileSection } from './sections/PremiumProfileSection'
 import { PremiumAudienceSection } from './sections/PremiumAudienceSection'
 import { PremiumBrandPartnershipsSection } from './sections/PremiumBrandPartnershipsSection'
 import { PremiumAnalyticsSection } from './sections/PremiumAnalyticsSection'
@@ -513,6 +514,12 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       selectedPlatform={selectedPlatform}
                     />
                   </div>
+                  
+                  {/* Creator Profile Information */}
+                  <PremiumProfileSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
                   
                   {/* Content Performance Sections */}
                   <div>
