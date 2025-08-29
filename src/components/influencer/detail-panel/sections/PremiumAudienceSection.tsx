@@ -69,7 +69,8 @@ export const PremiumAudienceSection = ({ influencer }: PremiumAudienceSectionPro
     })
   }
 
-  if (demographicMetrics.length === 0) {
+  // Only return null if there's absolutely no audience data
+  if (demographicMetrics.length === 0 && interests.length === 0 && languages.length === 0) {
     return null
   }
 
@@ -85,12 +86,15 @@ export const PremiumAudienceSection = ({ influencer }: PremiumAudienceSectionPro
       defaultOpen={false}
     >
       <div className="space-y-6">
-        <PremiumMetricsGrid 
-          metrics={demographicMetrics}
-          columns={2}
-        />
+        {/* Demographics Metrics */}
+        {demographicMetrics.length > 0 && (
+          <>
+            <PremiumMetricsGrid 
+              metrics={demographicMetrics}
+              columns={2}
+            />
 
-        {/* Detailed Breakdowns */}
+            {/* Detailed Breakdowns */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Gender Details */}
           {genders && genders.length > 1 && (
@@ -151,6 +155,8 @@ export const PremiumAudienceSection = ({ influencer }: PremiumAudienceSectionPro
             </div>
           )}
         </div>
+          </>
+        )}
 
         {/* Audience Interests */}
         {interests && interests.length > 0 && (
