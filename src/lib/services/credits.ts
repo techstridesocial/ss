@@ -73,19 +73,155 @@ export const creditFormatters = {
 }
 
 /**
- * Core credits service class
+ * Global state management for credits to prevent multiple API calls
+ */
+interface GlobalCreditState {
+  data: DetailedCreditUsage | null
+  isLoading: boolean
+  lastFetch: Date | null
+  error: string | null
+  activePromise: Promise<CreditServiceResponse<CreditUsage>> | null
+  subscribers: Set<(state: GlobalCreditState) => void>
+}
+
+/**
+ * Core credits service class with singleton pattern
  */
 class CreditsService {
   private baseUrl: string
+  private globalState: GlobalCreditState
 
   constructor() {
     this.baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    this.globalState = {
+      data: null,
+      isLoading: false,
+      lastFetch: null,
+      error: null,
+      activePromise: null,
+      subscribers: new Set()
+    }
   }
 
   /**
-   * Fetch current credit usage from API
+   * Subscribe to global credit state changes
    */
-  async fetchCreditUsage(): Promise<CreditServiceResponse<CreditUsage>> {
+  subscribe(callback: (state: GlobalCreditState) => void): () => void {
+    this.globalState.subscribers.add(callback)
+    
+    // Return unsubscribe function
+    return () => {
+      this.globalState.subscribers.delete(callback)
+    }
+  }
+
+  /**
+   * Notify all subscribers of state changes
+   */
+  private notifySubscribers() {
+    this.globalState.subscribers.forEach(callback => {
+      try {
+        callback(this.globalState)
+      } catch (error) {
+        console.error('Credit subscriber error:', error)
+      }
+    })
+  }
+
+  /**
+   * Update global state and notify subscribers
+   */
+  private updateGlobalState(updates: Partial<GlobalCreditState>) {
+    this.globalState = { ...this.globalState, ...updates }
+    this.notifySubscribers()
+  }
+
+  /**
+   * Get current global state (for immediate access)
+   */
+  getGlobalState(): GlobalCreditState {
+    return { ...this.globalState }
+  }
+
+  /**
+   * Check if data is fresh (within 30 seconds)
+   */
+  private isDataFresh(): boolean {
+    if (!this.globalState.lastFetch || !this.globalState.data) return false
+    const thirtySecondsAgo = Date.now() - (30 * 1000)
+    return this.globalState.lastFetch.getTime() > thirtySecondsAgo
+  }
+
+  /**
+   * Fetch current credit usage with deduplication and caching
+   */
+  async fetchCreditUsage(forceRefresh: boolean = false): Promise<CreditServiceResponse<CreditUsage>> {
+    console.log('🔄 Credit fetch requested, force:', forceRefresh)
+    
+    // Return cached data if fresh and not forcing refresh
+    if (!forceRefresh && this.isDataFresh() && this.globalState.data) {
+      console.log('📋 Using cached credit data')
+      return {
+        success: true,
+        data: this.transformDetailedToBasic(this.globalState.data),
+        timestamp: new Date().toISOString()
+      }
+    }
+
+    // If there's already an active request, wait for it
+    if (this.globalState.activePromise) {
+      console.log('⏳ Waiting for existing credit request')
+      return await this.globalState.activePromise
+    }
+
+    // Start new request
+    console.log('🚀 Starting new credit API request')
+    this.updateGlobalState({ isLoading: true, error: null })
+
+    const promise = this.performFetch()
+    this.updateGlobalState({ activePromise: promise })
+
+    try {
+      const result = await promise
+      
+      if (result.success && result.data) {
+        const detailedUsage = this.transformToDetailedUsage(result.data)
+        this.updateGlobalState({
+          data: detailedUsage,
+          isLoading: false,
+          lastFetch: new Date(),
+          error: null,
+          activePromise: null
+        })
+      } else {
+        this.updateGlobalState({
+          isLoading: false,
+          error: result.error || 'Failed to fetch credits',
+          activePromise: null
+        })
+      }
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      this.updateGlobalState({
+        isLoading: false,
+        error: errorMessage,
+        activePromise: null
+      })
+      
+      return {
+        success: false,
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      }
+    }
+  }
+
+  /**
+   * Perform the actual API fetch (private)
+   */
+  private async performFetch(): Promise<CreditServiceResponse<CreditUsage>> {
     try {
       const response = await fetch(`${this.baseUrl}/api/discovery/credits`)
       
@@ -108,6 +244,19 @@ class CreditsService {
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       }
+    }
+  }
+
+  /**
+   * Transform detailed usage back to basic format (for compatibility)
+   */
+  private transformDetailedToBasic(detailed: DetailedCreditUsage): CreditUsage {
+    return {
+      used: detailed.monthly.used,
+      limit: detailed.monthly.limit,
+      remaining: detailed.monthly.remaining,
+      resetDate: detailed.monthly.endDate,
+      percentage: Math.round((detailed.monthly.used / detailed.monthly.limit) * 100)
     }
   }
 

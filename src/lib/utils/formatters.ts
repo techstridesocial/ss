@@ -229,4 +229,4 @@ export const formatNumberWithCommas = formatters.precise
  * Export the main formatter for advanced usage
  */
 export default formatter
-export { FORMAT_PRESETS, type NumberFormatConfig }
+export type { NumberFormatConfig }

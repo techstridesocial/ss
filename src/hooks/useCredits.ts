@@ -4,7 +4,12 @@
  * Provides centralized state management and operations for Modash API credits
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+
+// Shared state for all credit hooks to prevent multiple API calls
+let globalCreditState: any = null
+let globalStateSubscribers: Array<(state: any) => void> = []
+let globalRefreshInterval: NodeJS.Timeout | null = null
 import creditsService, { 
   DEFAULT_CREDIT_CONFIG,
   creditFormatters,
@@ -18,7 +23,16 @@ import type { CreditHookState, CreditRefreshStatus } from '@/types/credits'
  * Main credits hook - provides complete credit management
  */
 export function useCredits(config: Partial<CreditConfig> = {}) {
-  const finalConfig = { ...DEFAULT_CREDIT_CONFIG, ...config }
+  // Memoize config to prevent infinite loops
+  const finalConfig = useMemo(() => ({ 
+    ...DEFAULT_CREDIT_CONFIG, 
+    ...config 
+  }), [
+    config.warningThreshold,
+    config.criticalThreshold, 
+    config.showDetailed,
+    config.refreshInterval
+  ])
   
   const [state, setState] = useState<CreditHookState>({
     usage: null,
@@ -29,6 +43,7 @@ export function useCredits(config: Partial<CreditConfig> = {}) {
   })
 
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const refreshFnRef = useRef<(() => Promise<void>) | null>(null)
 
   /**
    * Refresh credit usage from API
@@ -71,32 +86,51 @@ export function useCredits(config: Partial<CreditConfig> = {}) {
         }]
       }))
     }
-  }, [finalConfig])
+  }, [])
+
+  // Update ref without causing re-renders
+  refreshFnRef.current = refresh
 
   /**
-   * Set up automatic refresh interval
+   * Set up automatic refresh interval (singleton to prevent multiple intervals)
    */
   useEffect(() => {
-    if (finalConfig.refreshInterval > 0) {
-      refreshIntervalRef.current = setInterval(
-        refresh, 
+    // Clear any existing local interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+      refreshIntervalRef.current = null
+    }
+
+    // Only create interval if none exists globally
+    if (finalConfig.refreshInterval > 0 && !globalRefreshInterval) {
+      globalRefreshInterval = setInterval(
+        () => {
+          if (refreshFnRef.current) {
+            refreshFnRef.current()
+          }
+        },
         finalConfig.refreshInterval * 60 * 1000 // Convert minutes to milliseconds
       )
+      refreshIntervalRef.current = globalRefreshInterval
+    }
 
-      return () => {
-        if (refreshIntervalRef.current) {
-          clearInterval(refreshIntervalRef.current)
-        }
+    return () => {
+      // Only clear if this instance owns the global interval
+      if (refreshIntervalRef.current === globalRefreshInterval) {
+        clearInterval(globalRefreshInterval!)
+        globalRefreshInterval = null
+        refreshIntervalRef.current = null
       }
     }
-  }, [refresh, finalConfig.refreshInterval])
+  }, [finalConfig.refreshInterval])
 
   /**
-   * Initial load
+   * Initial load - only run once on mount
    */
   useEffect(() => {
     refresh()
-  }, [refresh])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty dependency array - only run on mount
 
   /**
    * Update configuration
