@@ -7,12 +7,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import creditsService, { 
   DEFAULT_CREDIT_CONFIG,
+  creditFormatters,
   type CreditConfig,
   type DetailedCreditUsage,
-  type CreditAlert,
-  type CreditRefreshStatus
+  type CreditAlert
 } from '@/lib/services/credits'
-import type { CreditHookState } from '@/types/credits'
+import type { CreditHookState, CreditRefreshStatus } from '@/types/credits'
 
 /**
  * Main credits hook - provides complete credit management
@@ -174,7 +174,7 @@ export function useCreditDisplay(config: Partial<CreditConfig> = {}) {
     usage: credits.usage,
     isLoading: credits.isLoading,
     refresh: credits.refresh,
-    formatters: creditsService.creditFormatters
+    formatters: creditFormatters
   }
 }
 

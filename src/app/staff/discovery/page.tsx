@@ -45,6 +45,7 @@ import {
   Heart
 } from 'lucide-react'
 import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
+import { CreditCard as CreditCardComponent } from '@/components/credits/CreditDisplay'
 import { getBrandLogo, getBrandColor } from '@/components/icons/BrandLogos'
 // URL validation and platform icon helpers for social media contacts
 const validateAndSanitizeUrl = (contact: any): string | null => {
@@ -124,15 +125,7 @@ const addToRoster = async (discoveredId: string) => {
   }
 }
 
-// Mock data for Modash credit usage and discovered influencers
-const MOCK_CREDIT_USAGE = {
-  monthlyLimit: 3000,
-  monthlyUsed: 1247,
-  yearlyLimit: 36000,
-  yearlyUsed: 8934,
-  lastUpdated: '2024-01-20T10:30:00Z',
-  rolloverCredits: 425
-}
+// Mock data for discovered influencers
 
 const MOCK_DISCOVERED_INFLUENCERS = [
   {
@@ -2245,9 +2238,7 @@ function DiscoveryPageClient() {
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [creditUsage, setCreditUsage] = useState(MOCK_CREDIT_USAGE)
   const [apiWarning, setApiWarning] = useState<string | null>(null)
-  const [isRefreshingCredits, setIsRefreshingCredits] = useState(false)
   
   // Search query state
   const [searchQuery, setSearchQuery] = useState('')
@@ -2255,31 +2246,7 @@ function DiscoveryPageClient() {
   // Current filters state
   const [currentFilters, setCurrentFilters] = useState<any>({})
   
-  // Function to refresh credits from API
-  const refreshCredits = async () => {
-    setIsRefreshingCredits(true)
-    try {
-      const response = await fetch(`${window.location.origin}/api/discovery/credits`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          setCreditUsage(prev => ({
-            ...prev,
-            monthlyUsed: result.data.used,
-            monthlyLimit: result.data.limit,
-            yearlyUsed: result.data.used, // In production, track separately
-            yearlyLimit: result.data.limit * 12,
-            lastUpdated: result.data.resetDate
-          }))
-          console.log('💳 Refreshed credits:', result.data.used + '/' + result.data.limit)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to refresh credits:', error)
-    } finally {
-      setIsRefreshingCredits(false)
-    }
-  }
+
   
   // Auto-search when platform changes (only if there are existing results or search query)
   useEffect(() => {
@@ -2487,10 +2454,7 @@ function DiscoveryPageClient() {
       
       setSearchResults(searchResults)
       
-      // If real API was used and credits were consumed, refresh the credit count
-      if (creditsUsed > 0) {
-        setTimeout(() => refreshCredits(), 1000)
-      }
+      // Credits are now managed by the CreditCardComponent automatically
       
     } catch (error) {
       console.error('❌ Search error:', error)
@@ -2515,38 +2479,7 @@ function DiscoveryPageClient() {
     }
   }
   
-  // Load initial credit usage
-  React.useEffect(() => {
-    const loadCredits = async () => {
-      try {
-        const response = await fetch(`${window.location.origin}/api/discovery/credits`)
-        if (response.ok) {
-          const result = await response.json()
-          if (result.success) {
-            setCreditUsage(prev => ({
-              ...prev,
-              monthlyUsed: result.data.used,
-              monthlyLimit: result.data.limit,
-              // Initialize yearly based on current monthly usage for now
-              // In production, this would be tracked separately 
-              yearlyUsed: result.data.used,
-              yearlyLimit: result.data.limit * 12, // Assuming 12 months
-              lastUpdated: result.data.resetDate,
-              rolloverCredits: prev.rolloverCredits
-            }))
-            console.log('💳 Loaded initial credits:', {
-              monthly: result.data.used + '/' + result.data.limit,
-              yearly: result.data.used + '/' + (result.data.limit * 12)
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load credits:', error)
-      }
-    }
-    
-    loadCredits()
-  }, [])
+  // Credits are now managed by CreditCardComponent hooks
 
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [detailInfluencer, setDetailInfluencer] = useState<any | null>(null)
@@ -3077,39 +3010,15 @@ function DiscoveryPageClient() {
 
         {/* Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 transition-all duration-200">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600 mb-1">Monthly Credits</p>
-                  <button 
-                    onClick={refreshCredits}
-                    disabled={isRefreshingCredits}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-                    title="Refresh credits"
-                  >
-                    <RefreshCw size={14} className={isRefreshingCredits ? 'animate-spin' : ''} />
-                  </button>
-                </div>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {formatNumberWithCommas(creditUsage.monthlyUsed)} / {formatNumberWithCommas(creditUsage.monthlyLimit)}
-                </p>
-                <div className="flex items-center mt-2">
-                  <p className="text-xs text-gray-500">
-                    {((creditUsage.monthlyUsed / creditUsage.monthlyLimit) * 100).toFixed(1)}% used
-                  </p>
-                </div>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-xl text-gray-600">
-                <TrendingUp size={20} />
-              </div>
-            </div>
-          </div>
-          <MetricCard
+          <CreditCardComponent
+            title="Monthly Credits"
+            period="monthly"
+            icon={<TrendingUp size={20} />}
+          />
+          <CreditCardComponent
             title="Yearly Credits"
-            value={`${formatNumberWithCommas(creditUsage.yearlyUsed)} / ${formatNumberWithCommas(creditUsage.yearlyLimit)}`}
+            period="yearly"
             icon={<Calendar size={20} />}
-            trend={`${formatNumberWithCommas(creditUsage.yearlyLimit - creditUsage.yearlyUsed)} remaining`}
           />
           <MetricCard
             title="Search Mode"

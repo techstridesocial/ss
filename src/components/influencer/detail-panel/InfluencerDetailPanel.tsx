@@ -166,19 +166,15 @@ const PanelHeader = ({
   loading?: boolean
 }) => {
 
-  // Memoize expensive computations for performance
-  const displayName = useMemo(() =>
-    influencer.name || influencer.displayName || influencer.display_name ||
+  // Get display name with fallbacks
+  const displayName = influencer.name || influencer.displayName || influencer.display_name ||
     influencer.handle || influencer.username || 'User'
-  , [influencer.name, influencer.displayName, influencer.display_name, influencer.handle, influencer.username])
   
   // Get platform-specific data for dynamic header metrics  
   const platforms = influencer.platforms
-  const currentPlatformData = useMemo(() => 
-    selectedPlatform && platforms?.[selectedPlatform]
-      ? platforms[selectedPlatform]
-      : null
-  , [selectedPlatform, platforms])
+  const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
+    ? platforms[selectedPlatform]
+    : null
 
   // Get platform-specific profile picture or fallback to general
   const pictureSrc = useMemo(() => {
@@ -191,21 +187,18 @@ const PanelHeader = ({
 
 
 
-  // Use platform-specific metrics or fallback to general data (memoized)
-  const displayMetrics = useMemo(() => ({
+  // Use platform-specific metrics or fallback to general data
+  const displayMetrics = {
     followers: currentPlatformData?.followers || influencer.followers,
     engagementRate: currentPlatformData?.engagementRate || influencer.engagementRate || influencer.engagement_rate,
     avgLikes: currentPlatformData?.avgLikes || influencer.avgLikes
-  }), [currentPlatformData, influencer.followers, influencer.engagementRate, influencer.engagement_rate, influencer.avgLikes])
+  }
 
-  // Add visual feedback for data source (memoized)
-  const visualFeedback = useMemo(() => {
-    const isUsingPlatformData = !!currentPlatformData?.followers
-    const isUsingPlatformImage = !!(currentPlatformData?.profile_picture || currentPlatformData?.profilePicture)
-    const dataSource = isUsingPlatformData ? `${selectedPlatform} data` : 'general data'
-    
-    return { isUsingPlatformData, isUsingPlatformImage, dataSource }
-  }, [currentPlatformData, selectedPlatform])
+  // Add visual feedback for data source
+  const isUsingPlatformData = !!currentPlatformData?.followers
+  const isUsingPlatformImage = !!(currentPlatformData?.profile_picture || currentPlatformData?.profilePicture)
+  const dataSource = isUsingPlatformData ? `${selectedPlatform} data` : 'general data'
+  const visualFeedback = { isUsingPlatformData, isUsingPlatformImage, dataSource }
 
   // Force header re-render with key
   const headerKey = `${selectedPlatform}-${displayMetrics.followers}-${displayMetrics.engagementRate}-${pictureSrc}`
@@ -398,16 +391,11 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     setMounted(true)
   }, [])
 
-  // Memoized close handler for better performance
-  const handleClose = useCallback(() => {
-    onClose()
-  }, [onClose])
-
   // Handle escape key and focus management
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
-        handleClose()
+        onClose()
       }
     }
 
@@ -428,7 +416,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
       document.removeEventListener('keydown', handleEscape)
       document.body.style.overflow = 'unset'
     }
-  }, [isOpen, handleClose])
+  }, [isOpen, onClose])
 
   if (!mounted || !isOpen || !influencer) return null
 
