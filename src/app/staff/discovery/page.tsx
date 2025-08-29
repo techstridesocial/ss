@@ -3179,13 +3179,45 @@ function DiscoveryPageClient() {
               }
               
               // Extract handle from the contact value/URL
+              console.log(`🔍 DEBUG: Raw contact value for ${platform}:`, platformContact.value)
+              
               let platformHandle = platformContact.value
               if (platformHandle) {
-                // Remove URL parts to get just the handle
-                platformHandle = platformHandle.replace(/^https?:\/\/(www\.)?(instagram|tiktok|youtube)\.com\//, '')
-                platformHandle = platformHandle.replace(/^@/, '') // Remove @ if present
-                platformHandle = platformHandle.split('/')[0] // Take first part if there's a path
-                platformHandle = platformHandle.split('?')[0] // Remove query params
+                // First, let's see what we're working with
+                console.log(`🔍 DEBUG: Before parsing:`, platformHandle)
+                
+                // For TikTok, Instagram, YouTube - extract username from various URL formats
+                if (platform === 'tiktok') {
+                  // TikTok URLs: https://www.tiktok.com/@username or https://www.tiktok.com/share/@username
+                  const tiktokMatch = platformHandle.match(/tiktok\.com\/.*@([^\/\?&]+)/)
+                  if (tiktokMatch) {
+                    platformHandle = tiktokMatch[1]
+                  } else {
+                    // Fallback: remove domain and clean up
+                    platformHandle = platformHandle.replace(/^https?:\/\/(www\.)?tiktok\.com\/.*[@\/]?/, '')
+                    platformHandle = platformHandle.replace(/^@/, '')
+                    platformHandle = platformHandle.split('/')[0].split('?')[0]
+                  }
+                } else if (platform === 'instagram') {
+                  // Instagram URLs: https://www.instagram.com/username or https://instagram.com/username  
+                  const instaMatch = platformHandle.match(/instagram\.com\/([^\/\?&]+)/)
+                  if (instaMatch) {
+                    platformHandle = instaMatch[1]
+                  }
+                } else if (platform === 'youtube') {
+                  // YouTube URLs: https://www.youtube.com/c/username or https://youtube.com/@username
+                  const youtubeMatch = platformHandle.match(/youtube\.com\/[@c\/]?([^\/\?&]+)/)
+                  if (youtubeMatch) {
+                    platformHandle = youtubeMatch[1]
+                  }
+                } else {
+                  // Generic cleanup for other platforms
+                  platformHandle = platformHandle.replace(/^https?:\/\/(www\.)?(instagram|tiktok|youtube)\.com\//, '')
+                  platformHandle = platformHandle.replace(/^@/, '')
+                  platformHandle = platformHandle.split('/')[0].split('?')[0]
+                }
+                
+                console.log(`🔍 DEBUG: After parsing:`, platformHandle)
               }
               
               if (!platformHandle) {
