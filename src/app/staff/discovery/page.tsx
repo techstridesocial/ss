@@ -3168,60 +3168,29 @@ function DiscoveryPageClient() {
             setDetailLoading(true)
             
             try {
-              // 🎯 CORRECT APPROACH: Use platform-specific handle from contacts data
-              console.log(`🔍 Looking for ${platform} contact in contacts:`, detailInfluencer.contacts)
+              // 🎯 SMART APPROACH: Debug actual contact structure first
+              console.log(`🔍 ALL CONTACTS DEBUG:`, detailInfluencer.contacts)
               
               // Find the contact for the target platform
               const platformContact = detailInfluencer.contacts?.find((contact: any) => contact.type === platform)
               
               if (!platformContact) {
+                console.log(`❌ No ${platform} contact found. Available contacts:`, detailInfluencer.contacts?.map((c: any) => ({ type: c.type, value: c.value })))
                 throw new Error(`No ${platform} contact found for this influencer`)
               }
               
-              // Extract handle from the contact value/URL
-              console.log(`🔍 DEBUG: Raw contact value for ${platform}:`, platformContact.value)
+              console.log(`🔍 FOUND CONTACT:`, platformContact)
+              console.log(`🔍 CONTACT KEYS:`, Object.keys(platformContact))
               
-              let platformHandle = platformContact.value
-              if (platformHandle) {
-                // First, let's see what we're working with
-                console.log(`🔍 DEBUG: Before parsing:`, platformHandle)
-                
-                // For TikTok, Instagram, YouTube - extract username from various URL formats
-                if (platform === 'tiktok') {
-                  // TikTok URLs: https://www.tiktok.com/@username or https://www.tiktok.com/share/@username
-                  const tiktokMatch = platformHandle.match(/tiktok\.com\/.*@([^\/\?&]+)/)
-                  if (tiktokMatch) {
-                    platformHandle = tiktokMatch[1]
-                  } else {
-                    // Fallback: remove domain and clean up
-                    platformHandle = platformHandle.replace(/^https?:\/\/(www\.)?tiktok\.com\/.*[@\/]?/, '')
-                    platformHandle = platformHandle.replace(/^@/, '')
-                    platformHandle = platformHandle.split('/')[0].split('?')[0]
-                  }
-                } else if (platform === 'instagram') {
-                  // Instagram URLs: https://www.instagram.com/username or https://instagram.com/username  
-                  const instaMatch = platformHandle.match(/instagram\.com\/([^\/\?&]+)/)
-                  if (instaMatch) {
-                    platformHandle = instaMatch[1]
-                  }
-                } else if (platform === 'youtube') {
-                  // YouTube URLs: https://www.youtube.com/c/username or https://youtube.com/@username
-                  const youtubeMatch = platformHandle.match(/youtube\.com\/[@c\/]?([^\/\?&]+)/)
-                  if (youtubeMatch) {
-                    platformHandle = youtubeMatch[1]
-                  }
-                } else {
-                  // Generic cleanup for other platforms
-                  platformHandle = platformHandle.replace(/^https?:\/\/(www\.)?(instagram|tiktok|youtube)\.com\//, '')
-                  platformHandle = platformHandle.replace(/^@/, '')
-                  platformHandle = platformHandle.split('/')[0].split('?')[0]
-                }
-                
-                console.log(`🔍 DEBUG: After parsing:`, platformHandle)
-              }
+              // Try different possible fields where the handle might be
+              let platformHandle = platformContact.value || platformContact.url || platformContact.handle || platformContact.username
               
+              console.log(`🔍 RAW HANDLE:`, platformHandle)
+              
+              // If still no handle, fallback to original username 
               if (!platformHandle) {
-                throw new Error(`Could not extract handle from ${platform} contact`)
+                console.log(`⚠️ No handle in contact, using fallback username:`, detailInfluencer.username)
+                platformHandle = detailInfluencer.username || detailInfluencer.handle
               }
               
               console.log(`🔍 Searching for ${platformHandle} on ${platform} (extracted from contacts)`)
