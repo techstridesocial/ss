@@ -18,7 +18,17 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
 
   const formatBrandName = (brand: any) => {
     if (typeof brand === 'string') return brand
-    return brand?.name || brand?.brand || brand?.sponsor || 'Unknown Brand'
+    
+    // Handle nested objects like {id: 1, name: "Brand Name"}
+    const name = brand?.name || brand?.brand || brand?.sponsor
+    
+    // If name is an object, try to get its name property
+    if (typeof name === 'object' && name?.name) {
+      return String(name.name)
+    }
+    
+    // Convert to string to ensure it's always a string
+    return String(name || 'Unknown Brand')
   }
 
   const getBrandCount = (brand: any) => {
@@ -65,7 +75,9 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
                   </div>
                   {partnership.category && (
                     <div className="text-sm text-gray-500">
-                      {partnership.category}
+                      {typeof partnership.category === 'object' && partnership.category?.name 
+                        ? String(partnership.category.name) 
+                        : String(partnership.category)}
                     </div>
                   )}
                 </div>
@@ -85,7 +97,14 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
         {/* Brand Categories */}
         {(() => {
           const categories = partnerships
-            .map((p: any) => p.category)
+            .map((p: any) => {
+              const category = p.category
+              // Handle category objects like {id: 1, name: "Fashion"}
+              if (typeof category === 'object' && category?.name) {
+                return String(category.name)
+              }
+              return typeof category === 'string' ? category : null
+            })
             .filter(Boolean)
             .reduce((acc: any, cat: string) => {
               acc[cat] = (acc[cat] || 0) + 1
