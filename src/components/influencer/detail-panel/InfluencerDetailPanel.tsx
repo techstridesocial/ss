@@ -16,6 +16,7 @@ import { PremiumContentSection } from './sections/PremiumContentSection'
 import { PremiumProfileSection } from './sections/PremiumProfileSection'
 import { PremiumInstagramMetricsSection } from './sections/PremiumInstagramMetricsSection'
 import { PremiumAudienceSection } from './sections/PremiumAudienceSection'
+import { PremiumAdvancedAudienceSection } from './sections/PremiumAdvancedAudienceSection'
 import { PremiumBrandPartnershipsSection } from './sections/PremiumBrandPartnershipsSection'
 import { PremiumAnalyticsSection } from './sections/PremiumAnalyticsSection'
 import { PremiumSectionWrapper } from './components/PremiumSectionWrapper'
@@ -604,6 +605,9 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   
                   {/* Audience Intelligence Section */}
                   <PremiumAudienceSection influencer={influencer} />
+                  
+                  {/* Advanced Audience Intelligence */}
+                  <PremiumAdvancedAudienceSection influencer={influencer} />
                   
                   {/* Brand Partnerships & Strategy Sections */}
                   <PremiumBrandPartnershipsSection influencer={influencer} />
