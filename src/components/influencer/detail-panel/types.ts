@@ -5,16 +5,55 @@ export interface SocialContact {
   value: string
 }
 
+export interface PlatformData {
+  followers?: number
+  engagementRate?: number
+  avgLikes?: number
+  avgComments?: number
+  avgShares?: number
+  fake_followers_percentage?: number
+  credibility?: number
+  audience?: any
+  audience_interests?: any
+  audience_languages?: any
+  relevant_hashtags?: string[]
+  brand_partnerships?: Array<{ id?: number; name: string; count?: number }>
+  content_topics?: string[]
+  statsByContentType?: any
+  topContent?: any
+  content_performance?: any
+  growth_trends?: any
+  profile_picture?: string
+  profilePicture?: string
+  // Catch-all for other platform-specific fields
+  [key: string]: any
+}
+
+export interface PlatformsData {
+  instagram?: PlatformData
+  tiktok?: PlatformData
+  youtube?: PlatformData
+}
+
 export interface InfluencerData {
   id: string
   name?: string
+  displayName?: string // Alternative display name
+  display_name?: string // API field variation
   handle: string
+  username?: string // Alternative handle field
   profilePicture?: string
+  profile_picture?: string // API field variation
+  picture?: string // API field variation
   bio?: string
   url?: string // Profile URL
   description?: string // Channel/profile description
   followers: number
   engagement_rate?: number
+  engagementRate?: number // API field variation
+  isVerified?: boolean // Verification status
+  // 🎯 Platform-specific data storage
+  platforms?: PlatformsData
   avgViews?: number
   avgLikes?: number
   avgComments?: number

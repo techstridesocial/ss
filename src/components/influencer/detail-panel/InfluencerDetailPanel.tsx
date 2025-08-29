@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -51,7 +51,7 @@ const mapContactToPlatform = (contactType: string): 'instagram' | 'tiktok' | 'yo
 }
 
 // Platform Analytics Switcher Component - Simple tabs like discovery page
-const PlatformSwitcherTabs = ({ 
+const PlatformSwitcherTabs = memo(({ 
   currentPlatform, 
   onPlatformSwitch,
   influencer,
@@ -62,20 +62,20 @@ const PlatformSwitcherTabs = ({
   influencer: InfluencerData
   loading?: boolean
 }) => {
-  const platforms = [
+  const platformTabs = [
     { id: 'instagram' as const, name: 'Instagram', logo: <InstagramLogo /> },
     { id: 'tiktok' as const, name: 'TikTok', logo: <TikTokLogo /> },
     { id: 'youtube' as const, name: 'YouTube', logo: <YouTubeLogo /> }
   ]
 
-  // Show all 3 platforms always
-  const platformsAny: any = (influencer as any).platforms
+  // Get platform-specific data from influencer
+  const influencerPlatforms = influencer.platforms
 
   return (
     <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
-      {platforms.map((platform) => {
+      {platformTabs.map((platform) => {
         const isActive = currentPlatform === platform.id
-        const hasData = platformsAny?.[platform.id]
+        const hasData = influencerPlatforms?.[platform.id]
         
         return (
           <button
@@ -88,6 +88,10 @@ const PlatformSwitcherTabs = ({
                 : 'text-gray-600 hover:text-gray-900'
             } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={hasData ? `View ${platform.name} analytics` : `Load ${platform.name} analytics`}
+            aria-label={`Switch to ${platform.name} analytics${isActive ? ' (currently selected)' : ''}`}
+            aria-pressed={isActive}
+            role="tab"
+            tabIndex={isActive ? 0 : -1}
           >
             <span>{platform.logo}</span>
             <span className="font-bold">{platform.name}</span>
@@ -102,7 +106,7 @@ const PlatformSwitcherTabs = ({
       })}
     </div>
   )
-}
+})
 
 // Helper function to format follower counts
 const formatFollowerCount = (count: number | string): string => {
@@ -116,10 +120,34 @@ const formatFollowerCount = (count: number | string): string => {
   return count.toLocaleString()
 }
 
-// Loading component
+// Loading component with skeleton UI for better UX
 const LoadingSpinner = () => (
-  <div className="flex items-center justify-center p-12">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  <div className="animate-pulse">
+    {/* Header Skeleton */}
+    <div className="h-32 px-6 flex items-center border-b border-gray-100">
+      <div className="h-24 w-24 bg-gray-300 rounded-2xl"></div>
+      <div className="flex-1 ml-6">
+        <div className="h-6 bg-gray-300 rounded w-48 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-32 mb-4"></div>
+        <div className="flex space-x-6">
+          <div className="h-4 bg-gray-200 rounded w-20"></div>
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+        </div>
+      </div>
+    </div>
+    
+    {/* Content Skeleton */}
+    <div className="p-6 space-y-6">
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-300 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-20 bg-gray-200 rounded"></div>
+        <div className="h-20 bg-gray-200 rounded"></div>
+      </div>
+    </div>
   </div>
 )
 
@@ -131,44 +159,56 @@ const PanelHeader = ({
   onPlatformSwitch,
   loading = false
 }: { 
-  influencer: any
+  influencer: InfluencerData
   onClose: () => void
   selectedPlatform?: 'instagram' | 'tiktok' | 'youtube'
   onPlatformSwitch?: (platform: 'instagram' | 'tiktok' | 'youtube') => void
   loading?: boolean
 }) => {
 
-  const displayName =
+  // Memoize expensive computations for performance
+  const displayName = useMemo(() =>
     influencer.name || influencer.displayName || influencer.display_name ||
     influencer.handle || influencer.username || 'User'
+  , [influencer.name, influencer.displayName, influencer.display_name, influencer.handle, influencer.username])
   
-  // Get platform-specific data for dynamic header metrics
-  const platformsAny: any = (influencer as any).platforms
-  const currentPlatformData = selectedPlatform && platformsAny?.[selectedPlatform]
-    ? platformsAny[selectedPlatform]
-    : null
+  // Get platform-specific data for dynamic header metrics  
+  const platforms = influencer.platforms
+  const currentPlatformData = useMemo(() => 
+    selectedPlatform && platforms?.[selectedPlatform]
+      ? platforms[selectedPlatform]
+      : null
+  , [selectedPlatform, platforms])
 
   // Get platform-specific profile picture or fallback to general
-  const platformProfilePicture = currentPlatformData?.profile_picture || currentPlatformData?.profilePicture
-  const pictureSrc = platformProfilePicture ||
-    influencer.picture ||
-    influencer.profilePicture ||
-    influencer.profile_picture || ''
+  const pictureSrc = useMemo(() => {
+    const platformProfilePicture = currentPlatformData?.profile_picture || currentPlatformData?.profilePicture
+    return platformProfilePicture ||
+      influencer.picture ||
+      influencer.profilePicture ||
+      influencer.profile_picture || ''
+  }, [currentPlatformData, influencer.picture, influencer.profilePicture, influencer.profile_picture])
 
 
 
-  // Use platform-specific metrics or fallback to general data
-  const displayFollowers = currentPlatformData?.followers || influencer.followers
-  const displayEngagementRate = currentPlatformData?.engagementRate || influencer.engagementRate || influencer.engagement_rate
-  const displayAvgLikes = currentPlatformData?.avgLikes || influencer.avgLikes
+  // Use platform-specific metrics or fallback to general data (memoized)
+  const displayMetrics = useMemo(() => ({
+    followers: currentPlatformData?.followers || influencer.followers,
+    engagementRate: currentPlatformData?.engagementRate || influencer.engagementRate || influencer.engagement_rate,
+    avgLikes: currentPlatformData?.avgLikes || influencer.avgLikes
+  }), [currentPlatformData, influencer.followers, influencer.engagementRate, influencer.engagement_rate, influencer.avgLikes])
 
-  // Add visual feedback for data source
-  const isUsingPlatformData = !!currentPlatformData?.followers
-  const isUsingPlatformImage = !!platformProfilePicture
-  const dataSource = isUsingPlatformData ? `${selectedPlatform} data` : 'general data'
+  // Add visual feedback for data source (memoized)
+  const visualFeedback = useMemo(() => {
+    const isUsingPlatformData = !!currentPlatformData?.followers
+    const isUsingPlatformImage = !!(currentPlatformData?.profile_picture || currentPlatformData?.profilePicture)
+    const dataSource = isUsingPlatformData ? `${selectedPlatform} data` : 'general data'
+    
+    return { isUsingPlatformData, isUsingPlatformImage, dataSource }
+  }, [currentPlatformData, selectedPlatform])
 
   // Force header re-render with key
-  const headerKey = `${selectedPlatform}-${displayFollowers}-${displayEngagementRate}-${pictureSrc}`
+  const headerKey = `${selectedPlatform}-${displayMetrics.followers}-${displayMetrics.engagementRate}-${pictureSrc}`
 
   return (
     <div className="bg-white border-b border-gray-100" key={headerKey}>
@@ -182,7 +222,7 @@ const PanelHeader = ({
                 src={pictureSrc}
                 alt={`${displayName}'s profile`}
                 className={`h-full w-full object-cover rounded-2xl shadow-lg transition-all duration-300 ${
-                  isUsingPlatformImage 
+                  visualFeedback.isUsingPlatformImage 
                     ? `ring-2 ${
                         selectedPlatform === 'instagram' ? 'ring-pink-500' :
                         selectedPlatform === 'tiktok' ? 'ring-gray-900' :
@@ -195,7 +235,7 @@ const PanelHeader = ({
                 }}
               />
               {/* Platform indicator for profile image */}
-              {isUsingPlatformImage && selectedPlatform && (
+              {visualFeedback.isUsingPlatformImage && selectedPlatform && (
                 <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm ${
                   selectedPlatform === 'instagram' ? 'bg-pink-500' :
                   selectedPlatform === 'tiktok' ? 'bg-gray-900' :
@@ -234,7 +274,7 @@ const PanelHeader = ({
           {/* Name & Handle Row */}
           <div className="flex items-center space-x-3 mb-3">
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold text-gray-900 truncate leading-tight">
+              <h1 id="influencer-panel-title" className="text-2xl font-semibold text-gray-900 truncate leading-tight">
                 {displayName}
               </h1>
               <p className="text-sm text-gray-500 truncate mt-0.5">
@@ -256,30 +296,30 @@ const PanelHeader = ({
 
           {/* Dynamic Platform Metrics Row */}
           <div className="flex items-center space-x-6">
-            {displayFollowers && (
+            {displayMetrics.followers && (
               <div className="flex items-center space-x-2 transition-all duration-300">
                 <span className={`text-lg font-semibold ${
-                  isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
+                  visualFeedback.isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
                 } transition-colors duration-300`}>
-                  {formatFollowerCount(displayFollowers)}
+                  {formatFollowerCount(displayMetrics.followers)}
                 </span>
                 <span className="text-sm text-gray-500">followers</span>
-                {isUsingPlatformData && (
+                {visualFeedback.isUsingPlatformData && (
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                 )}
               </div>
             )}
-            {displayEngagementRate && (
+            {displayMetrics.engagementRate && (
               <div className="flex items-center space-x-2 transition-all duration-300">
                 <span className={`text-lg font-semibold ${
-                  isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
+                  visualFeedback.isUsingPlatformData ? 'text-gray-900' : 'text-gray-600'
                 } transition-colors duration-300`}>
-                  {typeof displayEngagementRate === 'number' 
-                    ? `${(displayEngagementRate * 100).toFixed(1)}%`
-                    : displayEngagementRate}
+                  {typeof displayMetrics.engagementRate === 'number' 
+                    ? `${(displayMetrics.engagementRate * 100).toFixed(1)}%`
+                    : displayMetrics.engagementRate}
                 </span>
                 <span className="text-sm text-gray-500">engagement</span>
-                {isUsingPlatformData && (
+                {visualFeedback.isUsingPlatformData && (
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                 )}
               </div>
@@ -290,11 +330,11 @@ const PanelHeader = ({
                   selectedPlatform === 'instagram' ? 'bg-pink-500' :
                   selectedPlatform === 'tiktok' ? 'bg-gray-900' :
                   selectedPlatform === 'youtube' ? 'bg-red-500' : 'bg-gray-400'
-                } ${!isUsingPlatformData ? 'opacity-50 animate-pulse' : 'shadow-sm'}`}></div>
+                } ${!visualFeedback.isUsingPlatformData ? 'opacity-50 animate-pulse' : 'shadow-sm'}`}></div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                  {dataSource}
+                  {visualFeedback.dataSource}
                 </span>
-                {!isUsingPlatformData && loading && (
+                {!visualFeedback.isUsingPlatformData && loading && (
                   <div className="text-xs text-orange-500 font-medium animate-pulse">
                     Loading...
                   </div>
@@ -344,7 +384,7 @@ const PanelHeader = ({
   )
 }
 
-function InfluencerDetailPanel({ 
+const InfluencerDetailPanel = memo(function InfluencerDetailPanel({ 
   influencer, 
   isOpen, 
   onClose, 
@@ -358,38 +398,51 @@ function InfluencerDetailPanel({
     setMounted(true)
   }, [])
 
-  // Handle escape key
+  // Memoized close handler for better performance
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  // Handle escape key and focus management
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
-        onClose()
+        handleClose()
       }
     }
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
+      
+      // Focus management - focus first tab button for better accessibility
+      setTimeout(() => {
+        const firstTab = document.querySelector('[role="tab"]') as HTMLElement
+        if (firstTab) {
+          firstTab.focus()
+        }
+      }, 100)
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
       document.body.style.overflow = 'unset'
     }
-  }, [isOpen, onClose])
+  }, [isOpen, handleClose])
 
   if (!mounted || !isOpen || !influencer) return null
 
   // Get platform-specific data if available (guard against missing platforms type)
-  const platformsAny: any = (influencer as any).platforms
-  const currentPlatformData = selectedPlatform && platformsAny?.[selectedPlatform]
-    ? platformsAny[selectedPlatform]
+  const platforms = influencer.platforms
+  const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
+    ? platforms[selectedPlatform]
     : null
 
   // DEBUG: Log data discrepancy for Charlie
   console.log('🔍 Platform Data Debug:', {
     selectedPlatform,
     influencerFollowers: influencer.followers,
-    platformsAvailable: platformsAny ? Object.keys(platformsAny) : 'none',
+    platformsAvailable: platforms ? Object.keys(platforms) : 'none',
     currentPlatformData: currentPlatformData,
     currentPlatformFollowers: currentPlatformData?.followers
   })
@@ -403,6 +456,9 @@ function InfluencerDetailPanel({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-stretch justify-end"
           onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="influencer-panel-title"
         >
           <motion.div
             initial={{ x: '100%', opacity: 1 }}
@@ -544,6 +600,6 @@ function InfluencerDetailPanel({
   )
 
   return createPortal(panel, document.body)
-}
+})
 
 export default InfluencerDetailPanel

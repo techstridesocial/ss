@@ -210,14 +210,9 @@ const MOCK_DISCOVERED_INFLUENCERS = [
 ]
 
 // Helper functions
-const formatNumber = (num: number) => {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M'
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
-  }
-  return num.toString()
-}
+import { formatters } from '@/lib/utils/formatters'
+const formatNumber = formatters.display
+const formatNumberWithCommas = formatters.precise
 
 const getScoreBadge = (score: number) => {
   if (score >= 90) {
@@ -3097,7 +3092,7 @@ function DiscoveryPageClient() {
                   </button>
                 </div>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {Math.round(creditUsage.monthlyUsed)} / {Math.round(creditUsage.monthlyLimit)}
+                  {formatNumberWithCommas(creditUsage.monthlyUsed)} / {formatNumberWithCommas(creditUsage.monthlyLimit)}
                 </p>
                 <div className="flex items-center mt-2">
                   <p className="text-xs text-gray-500">
@@ -3112,9 +3107,9 @@ function DiscoveryPageClient() {
           </div>
           <MetricCard
             title="Yearly Credits"
-            value={`${Math.round(creditUsage.yearlyUsed)} / ${Math.round(creditUsage.yearlyLimit)}`}
+            value={`${formatNumberWithCommas(creditUsage.yearlyUsed)} / ${formatNumberWithCommas(creditUsage.yearlyLimit)}`}
             icon={<Calendar size={20} />}
-            trend={`${Math.round(creditUsage.yearlyLimit - creditUsage.yearlyUsed)} remaining`}
+            trend={`${formatNumberWithCommas(creditUsage.yearlyLimit - creditUsage.yearlyUsed)} remaining`}
           />
           <MetricCard
             title="Search Mode"
