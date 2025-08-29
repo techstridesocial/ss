@@ -12,7 +12,7 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
   const partnerships = influencer.brand_partnerships || influencer.sponsoredPosts || []
   const brandMentions = influencer.mentions || []
   
-  if (!partnerships || partnerships.length === 0) {
+  if (!partnerships || !Array.isArray(partnerships) || partnerships.length === 0) {
     return null
   }
 
@@ -32,13 +32,15 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
   }
 
   const getBrandCount = (brand: any) => {
-    return brand?.count || brand?.mentions || brand?.posts || 1
+    const count = brand?.count || brand?.mentions || brand?.posts || 1
+    // Ensure we always return a number
+    return typeof count === 'number' ? count : parseInt(String(count)) || 1
   }
 
   return (
     <PremiumSection 
       title="Brand Partnerships"
-      badge={partnerships.length}
+      badge={Array.isArray(partnerships) ? partnerships.length : 0}
       defaultOpen={false}
     >
       <div className="space-y-6">
@@ -46,12 +48,12 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-semibold text-gray-900">
-              {partnerships.length}
+              {Array.isArray(partnerships) ? partnerships.length : 0}
             </div>
             <div className="text-sm text-gray-600">Total Partnerships</div>
           </div>
           
-          {brandMentions.length > 0 && (
+          {Array.isArray(brandMentions) && brandMentions.length > 0 && (
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <div className="text-2xl font-semibold text-gray-900">
                 {brandMentions.length}
@@ -143,7 +145,7 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
               {Object.entries(influencer.partnerships_aggregate_metrics).map(([key, value]: [string, any]) => (
                 <div key={key} className="text-center p-3 bg-gray-50 rounded-lg">
                   <div className="text-lg font-semibold text-gray-900">
-                    {typeof value === 'number' ? formatNumber(value) : value}
+                    {typeof value === 'number' ? formatNumber(value) : String(value)}
                   </div>
                   <div className="text-xs text-gray-600 capitalize">
                     {key.replace(/_/g, ' ')}
