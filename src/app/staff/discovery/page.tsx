@@ -14,7 +14,9 @@ import ToggleFilter from '../../../components/filters/ToggleFilter'
 import CustomDropdown from '../../../components/filters/CustomDropdown'
 import MultiSelectDropdown from '../../../components/filters/MultiSelectDropdown'
 import AutocompleteInput from '../../../components/filters/AutocompleteInput'
+import MultiAutocompleteInput from '../../../components/filters/MultiAutocompleteInput'
 import { FOLLOWER_VIEW_OPTIONS } from '../../../constants/filterOptions'
+import { LOCATION_OPTIONS, getBestAvailableLocations, LocationService } from '../../../constants/locations'
 import { 
   Search, 
   Download, 
@@ -338,10 +340,12 @@ function DiscoverySearchInterface({
   const [transcript, setTranscript] = useState('')
 
   // Demographics filter states
-  const [selectedLocation, setSelectedLocation] = useState('')
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([])
   const [selectedGender, setSelectedGender] = useState('')
   const [selectedAge, setSelectedAge] = useState('')
   const [selectedLanguage, setSelectedLanguage] = useState('')
+  
+  // No need for availableLocations state anymore - MultiAutocompleteInput handles this dynamically
 
   // Account filter states
   const [bio, setBio] = useState('')
@@ -388,7 +392,7 @@ function DiscoverySearchInterface({
     if (selectedContentCategories.length > 0) filters.selectedContentCategories = selectedContentCategories
 
     // Demographics
-    if (selectedLocation) filters.selectedLocation = selectedLocation
+    if (selectedLocations.length > 0) filters.selectedLocations = selectedLocations
     if (selectedGender) filters.selectedGender = selectedGender
     if (selectedAge) filters.selectedAge = selectedAge
     if (selectedLanguage) filters.selectedLanguage = selectedLanguage
@@ -436,10 +440,12 @@ function DiscoverySearchInterface({
   }, [
     selectedPlatform, followersMin, followersMax, engagement, viewsMin, viewsMax,
     bio, hashtags, mentions, captions, topics, transcript, collaborations,
-    selectedContentCategories, selectedLocation, selectedGender, selectedAge,
+    selectedContentCategories, selectedLocations, selectedGender, selectedAge,
     selectedLanguage, accountType, selectedSocials, fakeFollowers, lastPosted,
     verifiedOnly, hideProfilesInRoster, onFiltersChange
   ])
+
+  // Dynamic location loading is now handled by MultiAutocompleteInput component
 
   // Collapsible section toggle function with debouncing
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -978,11 +984,13 @@ function DiscoverySearchInterface({
                           Audience
                         </button>
                       </div>
-                      <AutocompleteInput
-                        value={selectedLocation}
-                        onChange={setSelectedLocation}
-                        placeholder="Search locations..."
+                      <MultiAutocompleteInput
+                        selectedValues={selectedLocations}
+                        onChange={setSelectedLocations}
+                        placeholder="Type to search locations (e.g., London, New York, Tokyo)..."
                         apiEndpoint="/api/discovery/locations"
+                        additionalParams={{ platform: selectedPlatform }}
+                        maxSelections={5}
                       />
                     </div>
                   </div>
@@ -2321,37 +2329,89 @@ function DiscoveryPageClient() {
           audience: {}
         }
         
-        // Map follower filters
-        if (currentFilters.follower_count) {
-          searchFilters.influencer.followers = {
-            min: currentFilters.follower_count.min,
-            max: currentFilters.follower_count.max
-          }
+        // Map follower filters - Fix mapping from getCurrentFilters()
+        if (currentFilters.followersMin || currentFilters.followersMax) {
+          searchFilters.influencer.followers = {}
+          if (currentFilters.followersMin) searchFilters.influencer.followers.min = currentFilters.followersMin
+          if (currentFilters.followersMax) searchFilters.influencer.followers.max = currentFilters.followersMax
         }
         
-        // Map engagement rate
-        if (currentFilters.engagement_rate) {
-          searchFilters.influencer.engagementRate = currentFilters.engagement_rate / 100 // Convert percentage to decimal
+        // Map engagement rate - Fix mapping from getCurrentFilters()
+        if (currentFilters.engagementRate) {
+          searchFilters.influencer.engagementRate = currentFilters.engagementRate / 100 // Convert percentage to decimal
         }
         
-        // Map verification
-        if (currentFilters.verified === true) {
+        // Map verification - Fix mapping from getCurrentFilters()
+        if (currentFilters.verifiedOnly === true) {
           searchFilters.influencer.isVerified = true
         }
         
-        // Map location if available
-        if (currentFilters.location_ids && currentFilters.location_ids.length > 0) {
-          searchFilters.influencer.location = currentFilters.location_ids
+        // Map bio search
+        if (currentFilters.bio) {
+          searchFilters.influencer.bio = currentFilters.bio
         }
         
-        // Map language
-        if (currentFilters.language) {
-          searchFilters.influencer.language = currentFilters.language
+        // Map hashtags and mentions as textTags per API spec
+        const textTags: Array<{ type: 'hashtag' | 'mention', value: string }> = []
+        if (currentFilters.hashtags) {
+          currentFilters.hashtags.split(',').forEach((tag: string) => {
+            const cleanTag = tag.trim().replace('#', '')
+            if (cleanTag) textTags.push({ type: 'hashtag', value: cleanTag })
+          })
+        }
+        if (currentFilters.mentions) {
+          currentFilters.mentions.split(',').forEach((mention: string) => {
+            const cleanMention = mention.trim().replace('@', '')
+            if (cleanMention) textTags.push({ type: 'mention', value: cleanMention })
+          })
+        }
+        if (textTags.length > 0) {
+          searchFilters.influencer.textTags = textTags
         }
         
-        // Map interests
-        if (currentFilters.interests && currentFilters.interests.length > 0) {
-          searchFilters.influencer.interests = currentFilters.interests
+        // Map captions as keywords per API spec
+        if (currentFilters.captions) {
+          searchFilters.influencer.keywords = currentFilters.captions
+        }
+        
+        // Map locations - Handle multiple location selection
+        if (currentFilters.selectedLocations && currentFilters.selectedLocations.length > 0) {
+          // Convert string IDs to numbers for Modash API
+          searchFilters.influencer.location = currentFilters.selectedLocations.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id))
+        }
+        
+        // Map language - Fix mapping from getCurrentFilters()
+        if (currentFilters.selectedLanguage) {
+          searchFilters.influencer.language = currentFilters.selectedLanguage
+        }
+        
+        // Map gender - Fix mapping from getCurrentFilters()
+        if (currentFilters.selectedGender) {
+          searchFilters.influencer.gender = currentFilters.selectedGender.toUpperCase()
+        }
+        
+        // Map account type per API spec
+        if (currentFilters.accountType) {
+          const accountTypeMap: Record<string, number[]> = {
+            'regular': [1],
+            'business': [2], 
+            'creator': [3]
+          }
+          if (accountTypeMap[currentFilters.accountType.toLowerCase()]) {
+            searchFilters.influencer.accountTypes = accountTypeMap[currentFilters.accountType.toLowerCase()]
+          }
+        }
+        
+        // Map last posted per API spec
+        if (currentFilters.lastPosted) {
+          const daysMap: Record<string, number> = {
+            '30': 30,
+            '60': 60,
+            '90': 90
+          }
+          if (daysMap[currentFilters.lastPosted]) {
+            searchFilters.influencer.lastposted = daysMap[currentFilters.lastPosted]
+          }
         }
         
         // Add audience credibility (fake follower protection)
@@ -2359,6 +2419,7 @@ function DiscoveryPageClient() {
         
         apiEndpoint = '/api/discovery/search-v2'
         requestBody = {
+          platform: selectedPlatform,
           page: 0,
           sort: { field: 'followers', direction: 'desc' },
           filter: searchFilters

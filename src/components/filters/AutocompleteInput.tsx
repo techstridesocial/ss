@@ -15,6 +15,7 @@ interface AutocompleteInputProps {
   apiEndpoint: string
   label?: string
   className?: string
+  additionalParams?: Record<string, string> // New: for platform and other params
 }
 
 const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -23,7 +24,8 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   placeholder = "Type to search...",
   apiEndpoint,
   label,
-  className = ""
+  className = "",
+  additionalParams = {}
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [options, setOptions] = useState<AutocompleteOption[]>([])
@@ -43,7 +45,13 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     const timer = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`${apiEndpoint}?query=${encodeURIComponent(searchTerm)}&limit=10`)
+        // Build query parameters including additional params (like platform)
+        const params = new URLSearchParams({
+          query: searchTerm,
+          limit: '10',
+          ...additionalParams
+        })
+        const response = await fetch(`${apiEndpoint}?${params.toString()}`)
         if (response.ok) {
           const data = await response.json()
           

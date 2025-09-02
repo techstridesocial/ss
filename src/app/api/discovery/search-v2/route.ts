@@ -29,8 +29,11 @@ export async function POST(request: Request) {
       filter = {}
     } = body
 
-    // Call the platform-aware discovery API (default instagram for v2 for now)
-    const result = await searchDiscovery('instagram', {
+    // Extract platform from request body, default to instagram
+    const platform = body.platform || 'instagram'
+    
+    // Call the platform-aware discovery API
+    const result = await searchDiscovery(platform, {
       page,
       limit: 15,
       sort,

@@ -67,7 +67,8 @@ interface DiscoverySearchBody {
   verifiedOnly?: boolean
   
   // Demographics
-  selectedLocation?: string
+  selectedLocation?: string // Legacy support
+  selectedLocations?: string[] // New multi-location support
   selectedGender?: string
   selectedAge?: string
   selectedLanguage?: string
@@ -828,29 +829,45 @@ function mapToModashFilters(body: DiscoverySearchBody) {
     filters.verified = true
   }
   
-  // Location mapping (would need location ID mapping)
+  // Location mapping - handle both single and multiple locations
+  const locations: number[] = []
+  
+  // Handle new multi-location array
+  if (body.selectedLocations && body.selectedLocations.length > 0) {
+    body.selectedLocations.forEach(locationId => {
+      const id = parseInt(locationId)
+      if (!isNaN(id)) {
+        locations.push(id)
+      }
+    })
+  }
+  
+  // Handle legacy single location (for backwards compatibility)
   if (body.selectedLocation && body.selectedLocation !== '') {
-    // Map common slugs/names to ISO numeric codes expected by Modash
-    const locationMapping: Record<string, number[]> = {
-      united_kingdom: [826],
-      uk: [826],
-      great_britain: [826],
-      united_states: [840],
-      usa: [840],
-      us: [840],
-      canada: [124],
-      australia: [36],
-      germany: [276],
-      france: [250]
+    const locationId = parseInt(body.selectedLocation)
+    if (!isNaN(locationId)) {
+      locations.push(locationId)
+    } else {
+      // Fallback: try to map common location names to known IDs
+      const locationMapping: Record<string, number[]> = {
+        'united kingdom': [826], 'uk': [826], 'great britain': [826],
+        'united states': [840], 'usa': [840], 'us': [840], 'america': [840],
+        'canada': [124], 'australia': [36], 'germany': [276], 'france': [250],
+        'italy': [380], 'spain': [724], 'netherlands': [528], 'brazil': [76],
+        'india': [356], 'japan': [392], 'south korea': [410], 'mexico': [484]
+      }
+      const key = String(body.selectedLocation).toLowerCase().trim()
+      const mapped = locationMapping[key]
+      if (mapped) {
+        locations.push(...mapped)
+      } else {
+        console.warn('📍 Unmapped location:', body.selectedLocation)
+      }
     }
-    const key = String(body.selectedLocation).toLowerCase().replace(/\s+/g, '_')
-    const mapped = locationMapping[key]
-    // Fallback: if user passed ISO2 like 'GB' or 'US', pass-through as array
-    if (mapped) {
-      ;(filters as any).location = mapped
-    } else if (typeof body.selectedLocation === 'string' && body.selectedLocation.length <= 3) {
-      ;(filters as any).location = [body.selectedLocation]
-    }
+  }
+  
+  if (locations.length > 0) {
+    ;(filters as any).location = locations
   }
   
   // Search query as relevance
@@ -943,27 +960,45 @@ function mapToTikTokFilters(body: DiscoverySearchBody) {
     }
   }
   
-  // Location mapping for TikTok (same as Instagram for now)
+  // Location mapping for TikTok - handle both single and multiple locations
+  const locations: number[] = []
+  
+  // Handle new multi-location array
+  if (body.selectedLocations && body.selectedLocations.length > 0) {
+    body.selectedLocations.forEach(locationId => {
+      const id = parseInt(locationId)
+      if (!isNaN(id)) {
+        locations.push(id)
+      }
+    })
+  }
+  
+  // Handle legacy single location (for backwards compatibility)
   if (body.selectedLocation && body.selectedLocation !== '') {
-    const locationMapping: Record<string, number[]> = {
-      united_kingdom: [826],
-      uk: [826], 
-      great_britain: [826],
-      united_states: [840],
-      usa: [840],
-      us: [840],
-      canada: [124],
-      australia: [36],
-      germany: [276],
-      france: [250]
+    const locationId = parseInt(body.selectedLocation)
+    if (!isNaN(locationId)) {
+      locations.push(locationId)
+    } else {
+      // Fallback: try to map common location names to known IDs
+      const locationMapping: Record<string, number[]> = {
+        'united kingdom': [826], 'uk': [826], 'great britain': [826],
+        'united states': [840], 'usa': [840], 'us': [840], 'america': [840],
+        'canada': [124], 'australia': [36], 'germany': [276], 'france': [250],
+        'italy': [380], 'spain': [724], 'netherlands': [528], 'brazil': [76],
+        'india': [356], 'japan': [392], 'south korea': [410], 'mexico': [484]
+      }
+      const key = String(body.selectedLocation).toLowerCase().trim()
+      const mapped = locationMapping[key]
+      if (mapped) {
+        locations.push(...mapped)
+      } else {
+        console.warn('📍 TikTok unmapped location:', body.selectedLocation)
+      }
     }
-    const key = String(body.selectedLocation).toLowerCase().replace(/\s+/g, '_')
-    const mapped = locationMapping[key]
-    if (mapped) {
-      influencerFilters.location = mapped
-    } else if (typeof body.selectedLocation === 'string' && body.selectedLocation.length <= 3) {
-      influencerFilters.location = [body.selectedLocation]
-    }
+  }
+  
+  if (locations.length > 0) {
+    influencerFilters.location = locations
   }
   
   // Demographics for audience filters
@@ -1059,27 +1094,45 @@ function mapToYouTubeFilters(body: DiscoverySearchBody) {
     influencerFilters.isVerified = true
   }
   
-  // Location mapping for YouTube
+  // Location mapping for YouTube - handle both single and multiple locations
+  const locations: number[] = []
+  
+  // Handle new multi-location array
+  if (body.selectedLocations && body.selectedLocations.length > 0) {
+    body.selectedLocations.forEach(locationId => {
+      const id = parseInt(locationId)
+      if (!isNaN(id)) {
+        locations.push(id)
+      }
+    })
+  }
+  
+  // Handle legacy single location (for backwards compatibility)
   if (body.selectedLocation && body.selectedLocation !== '') {
-    const locationMapping: Record<string, number[]> = {
-      united_kingdom: [826],
-      uk: [826],
-      great_britain: [826],
-      united_states: [840],
-      usa: [840],
-      us: [840],
-      canada: [124],
-      australia: [36],
-      germany: [276],
-      france: [250]
+    const locationId = parseInt(body.selectedLocation)
+    if (!isNaN(locationId)) {
+      locations.push(locationId)
+    } else {
+      // Fallback: try to map common location names to known IDs
+      const locationMapping: Record<string, number[]> = {
+        'united kingdom': [826], 'uk': [826], 'great britain': [826],
+        'united states': [840], 'usa': [840], 'us': [840], 'america': [840],
+        'canada': [124], 'australia': [36], 'germany': [276], 'france': [250],
+        'italy': [380], 'spain': [724], 'netherlands': [528], 'brazil': [76],
+        'india': [356], 'japan': [392], 'south korea': [410], 'mexico': [484]
+      }
+      const key = String(body.selectedLocation).toLowerCase().trim()
+      const mapped = locationMapping[key]
+      if (mapped) {
+        locations.push(...mapped)
+      } else {
+        console.warn('📍 YouTube unmapped location:', body.selectedLocation)
+      }
     }
-    const key = String(body.selectedLocation).toLowerCase().replace(/\s+/g, '_')
-    const mapped = locationMapping[key]
-    if (mapped) {
-      influencerFilters.location = mapped
-    } else if (typeof body.selectedLocation === 'string' && body.selectedLocation.length <= 3) {
-      influencerFilters.location = [body.selectedLocation]
-    }
+  }
+  
+  if (locations.length > 0) {
+    influencerFilters.location = locations
   }
   
   // Demographics for audience filters
