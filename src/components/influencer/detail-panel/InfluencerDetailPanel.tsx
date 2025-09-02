@@ -30,6 +30,18 @@ import { ContentStrategySection } from './sections/ContentStrategySection'
 import { HashtagStrategySection } from './sections/HashtagStrategySection'
 import { ContentTopicsSection } from './sections/ContentTopicsSection'
 
+// New enhanced sections
+import { CreatorProfileInsightsSection } from './sections/CreatorProfileInsightsSection'
+import { AdvancedAudienceMatrixSection } from './sections/AdvancedAudienceMatrixSection'
+import { FollowerQualityScoreSection } from './sections/FollowerQualityScoreSection'
+import { ContentStrategyOptimizerSection } from './sections/ContentStrategyOptimizerSection'
+import { CompetitiveBenchmarkingSection } from './sections/CompetitiveBenchmarkingSection'
+
+// Critical missing data sections
+import { AudienceReachabilitySection } from './sections/AudienceReachabilitySection'
+import { BrandAffinitySection } from './sections/BrandAffinitySection'
+import { GeographicReachSection } from './sections/GeographicReachSection'
+
 
 
 
@@ -603,23 +615,70 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     selectedPlatform={selectedPlatform}
                   />
                   
+                  {/* Creator Profile Insights - New Enhanced Section */}
+                  <CreatorProfileInsightsSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
                   {/* Audience Intelligence Section */}
                   <PremiumAudienceSection influencer={influencer} />
                   
                   {/* Advanced Audience Intelligence */}
                   <PremiumAdvancedAudienceSection influencer={influencer} />
                   
+                  {/* Advanced Audience Matrix - New Enhanced Section */}
+                  <AdvancedAudienceMatrixSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
+                  {/* Follower Quality Score - New Enhanced Section */}
+                  <FollowerQualityScoreSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
+                  {/* Audience Reachability - CRITICAL Missing Data */}
+                  <AudienceReachabilitySection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
+                  {/* Geographic Reach - CRITICAL Missing Data */}
+                  <GeographicReachSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
                   {/* Brand Partnerships & Strategy Sections */}
                   <PremiumBrandPartnershipsSection influencer={influencer} />
-                  <PremiumSectionWrapper title="Content Strategy" defaultOpen={false}>
-                    <ContentStrategySection influencer={influencer} />
-                  </PremiumSectionWrapper>
+                  
+                  {/* Brand Affinity - CRITICAL Missing Data */}
+                  <BrandAffinitySection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
+                  {/* Content Strategy Optimizer - Replaces old Content Strategy */}
+                  <ContentStrategyOptimizerSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
+                  
+                  {/* Keep existing hashtag and topics sections */}
                   <PremiumSectionWrapper title="Hashtag Strategy" defaultOpen={false}>
                     <HashtagStrategySection influencer={influencer} />
                   </PremiumSectionWrapper>
                   <PremiumSectionWrapper title="Content Topics" defaultOpen={false}>
                     <ContentTopicsSection influencer={influencer} />
                   </PremiumSectionWrapper>
+                  
+                  {/* Competitive Benchmarking - New Enhanced Section */}
+                  <CompetitiveBenchmarkingSection 
+                    influencer={influencer}
+                    selectedPlatform={selectedPlatform}
+                  />
                   
                   {/* Analytics & Growth Sections */}
                   <PremiumAnalyticsSection influencer={influencer} sectionType="performance" />
