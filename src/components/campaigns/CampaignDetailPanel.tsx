@@ -236,7 +236,12 @@ export default function CampaignDetailPanel({
   const [activeTab, setActiveTab] = useState<'overview' | 'influencers' | 'analytics'>('overview')
   const [isLoading, setIsLoading] = useState(false)
 
-  if (!campaign) return null
+  console.log('CampaignDetailPanel rendered with:', { isOpen, campaign: campaign?.name })
+
+  if (!campaign) {
+    console.log('CampaignDetailPanel: No campaign provided')
+    return null
+  }
 
   // Determine if campaign has started (Active, Paused, or Completed campaigns)
   const campaignHasStarted = ['ACTIVE', 'PAUSED', 'COMPLETED'].includes(campaign.status)
@@ -330,7 +335,7 @@ export default function CampaignDetailPanel({
   }
 
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
         <>
           {/* Enhanced Backdrop */}
@@ -725,6 +730,6 @@ export default function CampaignDetailPanel({
           setShowPaymentPanel(false)
         }}
       />
-    </AnimatePresence>
+    </>
   )
 } 

@@ -69,6 +69,13 @@ export function useStaffSavedInfluencers(platform?: string) {
   // Save an influencer
   const saveInfluencer = async (influencerData: Partial<StaffSavedInfluencer>) => {
     try {
+      console.log('🔄 useStaffSavedInfluencers: Saving influencer data:', {
+        username: influencerData.username,
+        platform: influencerData.platform,
+        followers: influencerData.followers,
+        engagement_rate: influencerData.engagement_rate
+      })
+
       const response = await fetch('/api/staff/saved-influencers', {
         method: 'POST',
         headers: {
@@ -77,12 +84,22 @@ export function useStaffSavedInfluencers(platform?: string) {
         body: JSON.stringify(influencerData)
       })
       
+      console.log('📡 API Response status:', response.status, response.statusText)
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save influencer')
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        console.error('❌ API Error response:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to save influencer`)
       }
       
       const result = await response.json()
+      console.log('✅ API Success response:', result)
       
       if (result.success) {
         // Reload the list to get the updated data
@@ -93,6 +110,7 @@ export function useStaffSavedInfluencers(platform?: string) {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error('❌ useStaffSavedInfluencers: Save failed:', errorMessage)
       setError(errorMessage)
       throw err
     }

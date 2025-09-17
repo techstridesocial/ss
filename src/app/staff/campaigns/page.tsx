@@ -180,8 +180,10 @@ function CampaignsPageClient() {
   }
 
   const handleViewCampaign = (campaign: Campaign) => {
+    console.log('handleViewCampaign called with:', campaign)
     setSelectedCampaign(campaign)
     setShowDetailPanel(true)
+    console.log('Panel should be open now, showDetailPanel:', true)
   }
 
   const handleEditCampaign = (campaignId: string) => {
@@ -604,7 +606,10 @@ function CampaignsPageClient() {
           <CampaignDetailPanel
             isOpen={showDetailPanel}
             campaign={selectedCampaign}
-            onClose={() => setShowDetailPanel(false)}
+            onClose={() => {
+              console.log('Closing campaign detail panel')
+              setShowDetailPanel(false)
+            }}
             onPauseCampaign={handlePauseCampaign}
             onResumeCampaign={handleResumeCampaign}
           />

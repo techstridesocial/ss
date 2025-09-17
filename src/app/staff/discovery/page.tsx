@@ -2562,6 +2562,13 @@ function DiscoveryPageClient() {
     
     const username = influencer.username || influencer.instagram_handle?.replace('@', '') || influencer.tiktok_handle?.replace('@', '') || influencer.youtube_handle?.replace('@', '') || 'unknown'
     
+    // Validate username before proceeding
+    if (!username || username === 'unknown') {
+      console.error('❌ Invalid username for influencer:', influencer)
+      alert('Unable to save influencer: No valid username found.')
+      return
+    }
+    
     if (isInfluencerSaved(username, selectedPlatform)) {
       console.log('💔 Already saved - this will be handled by the Saved tab')
       // For now, just show a message - removal is handled in the Saved tab
@@ -2649,9 +2656,18 @@ function DiscoveryPageClient() {
       }
       
       console.log('❤️ Saving influencer with complete analytics to staff system')
-      await saveInfluencer(savedInfluencerData)
+      console.log('📊 Save data:', {
+        username: savedInfluencerData.username,
+        platform: savedInfluencerData.platform,
+        followers: savedInfluencerData.followers,
+        engagement_rate: savedInfluencerData.engagement_rate,
+        hasModashData: !!savedInfluencerData.modash_data
+      })
       
-      console.log('✅ Successfully saved influencer with full Modash analytics!')
+      const saveResult = await saveInfluencer(savedInfluencerData)
+      
+      console.log('✅ Successfully saved influencer with full Modash analytics!', saveResult)
+      alert(`✅ ${savedInfluencerData.display_name || username} has been saved to your favorites!`)
       
     } catch (error) {
       console.error('❌ Failed to save influencer with complete analytics:', error)
@@ -2677,12 +2693,14 @@ function DiscoveryPageClient() {
           discovered_influencer_id: influencer.discoveredId
         }
         
-        await saveInfluencer(basicSavedData)
-        console.log('⚠️ Saved with basic data only due to analytics fetch error')
+        const fallbackResult = await saveInfluencer(basicSavedData)
+        console.log('⚠️ Saved with basic data only due to analytics fetch error', fallbackResult)
+        alert(`⚠️ ${basicSavedData.display_name || username} has been saved with basic data only.`)
         
       } catch (fallbackError) {
         console.error('❌ Failed to save even basic data:', fallbackError)
-        alert('Failed to save influencer. Please try again.')
+        const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error'
+        alert(`❌ Failed to save influencer: ${errorMessage}. Please check your connection and try again.`)
       }
     }
   }

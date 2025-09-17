@@ -119,10 +119,25 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!username || !platform || followers === undefined || engagement_rate === undefined) {
+      console.error('❌ Missing required fields in save request:', {
+        username: !!username,
+        platform: !!platform, 
+        followers: followers !== undefined,
+        engagement_rate: engagement_rate !== undefined,
+        body: body
+      })
       return NextResponse.json({ 
         error: 'Missing required fields: username, platform, followers, engagement_rate' 
       }, { status: 400 })
     }
+
+    console.log('✅ Save request validation passed:', {
+      username,
+      platform,
+      followers,
+      engagement_rate,
+      user_id: userId
+    })
 
     // Get user ID from Clerk userId
     const userResult = await query<{ id: string }>(
@@ -137,6 +152,16 @@ export async function POST(request: NextRequest) {
     const user_id = userResult[0]?.id
 
     // Insert or update saved influencer
+    console.log('📊 Attempting database insert/update with params:', {
+      username,
+      display_name,
+      platform: platform.toUpperCase(),
+      followers,
+      engagement_rate,
+      user_id,
+      hasModashData: !!modash_data
+    })
+
     const result = await query<{ id: string }>(
       `INSERT INTO staff_saved_influencers (
         username, display_name, platform, followers, engagement_rate,
@@ -182,6 +207,11 @@ export async function POST(request: NextRequest) {
         user_id
       ]
     )
+
+    console.log('✅ Database operation successful:', {
+      id: result[0]?.id,
+      rowsAffected: result.length
+    })
 
     return NextResponse.json({
       success: true,
