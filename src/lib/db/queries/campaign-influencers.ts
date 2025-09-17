@@ -77,6 +77,8 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
       acceptedAt: row.accepted_at ? new Date(row.accepted_at) : undefined,
       declinedAt: row.declined_at ? new Date(row.declined_at) : undefined,
       contentSubmittedAt: row.content_submitted_at ? new Date(row.content_submitted_at) : undefined,
+      contentLinks: row.content_links ? JSON.parse(row.content_links) : [],
+      discountCode: row.discount_code,
       paidAt: row.paid_at ? new Date(row.paid_at) : undefined,
       notes: row.notes,
       rate: row.compensation_amount,

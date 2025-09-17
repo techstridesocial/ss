@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { getAllCampaigns, createCampaign } from '@/lib/db/queries/campaigns'
+import { getAllCampaigns, createCampaign, addInfluencerToCampaign } from '@/lib/db/queries/campaigns'
 
 export async function GET() {
   try {
@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
       description: data.description?.substring(0, 50) + '...',
       hasTimeline: !!data.timeline,
       hasBudget: !!data.budget,
-      hasRequirements: !!data.requirements
+      hasRequirements: !!data.requirements,
+      selectedInfluencers: data.selectedInfluencers?.length || 0
     })
     
     // Validate required fields
@@ -100,6 +101,21 @@ export async function POST(request: NextRequest) {
     
     const campaign = await createCampaign(campaignData)
     console.log('✅ Campaign created successfully:', { id: campaign.id, name: campaign.name })
+    
+    // Add selected influencers to the campaign if any were selected
+    if (data.selectedInfluencers && data.selectedInfluencers.length > 0) {
+      console.log('👥 Adding selected influencers to campaign...')
+      try {
+        for (const influencerId of data.selectedInfluencers) {
+          // Manually added influencers are automatically accepted
+          await addInfluencerToCampaign(campaign.id, influencerId)
+        }
+        console.log(`✅ Added ${data.selectedInfluencers.length} influencers to campaign`)
+      } catch (influencerError) {
+        console.error('⚠️ Error adding influencers to campaign:', influencerError)
+        // Don't fail the campaign creation, just log the error
+      }
+    }
     
     return NextResponse.json({ 
       success: true, 

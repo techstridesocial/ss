@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
+import { query } from '@/lib/db/connection'
 import { addInfluencerToCampaign, updateCampaignInfluencerStatus } from '@/lib/db/queries/campaigns'
 import { 
   getCampaignInfluencersWithDetails, 
@@ -158,22 +159,42 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { id: campaignId } = params
     const data = await request.json()
 
-    const { influencerId, status, notes } = data
+    const { influencerId, status, notes, contentLinks, discountCode } = data
 
-    if (!influencerId || !status) {
+    if (!influencerId) {
       return NextResponse.json(
-        { error: 'Influencer ID and status are required' },
+        { error: 'Influencer ID is required' },
         { status: 400 }
       )
     }
 
-    // Update the influencer's status in the campaign
-    const updatedCampaignInfluencer = await updateCampaignInfluencerStatus(
-      campaignId,
-      influencerId,
-      status,
-      notes
-    )
+    // Update the campaign influencer with content links and discount code
+    let updatedCampaignInfluencer
+    
+    if (contentLinks !== undefined || discountCode !== undefined) {
+      // Update content links and discount code
+      const updateQuery = `
+        UPDATE campaign_influencers 
+        SET content_links = $1, discount_code = $2, updated_at = NOW()
+        WHERE campaign_id = $3 AND influencer_id = $4
+        RETURNING *
+      `
+      const result = await query(updateQuery, [
+        JSON.stringify(contentLinks || []),
+        discountCode || null,
+        campaignId,
+        influencerId
+      ])
+      updatedCampaignInfluencer = result[0]
+    } else if (status) {
+      // Update status only
+      updatedCampaignInfluencer = await updateCampaignInfluencerStatus(
+        campaignId,
+        influencerId,
+        status,
+        notes
+      )
+    }
 
     if (!updatedCampaignInfluencer) {
       return NextResponse.json(
