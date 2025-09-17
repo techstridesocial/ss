@@ -388,7 +388,7 @@ export default function CampaignDetailPanel({
                         <span>•</span>
                         <div className="flex items-center space-x-1">
                           <DollarSign size={14} />
-                          <span>${campaign.budget.toLocaleString()} budget</span>
+                          <span>${(typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget).toLocaleString()} budget</span>
                         </div>
                         <span>•</span>
                         <div className="flex items-center space-x-1">
@@ -474,7 +474,7 @@ export default function CampaignDetailPanel({
                           />
                           <InfoField
                             label="Budget"
-                            value={campaign.budget.total}
+                            value={typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget}
                             type="currency"
                             icon={<DollarSign size={18} />}
                           />
@@ -557,7 +557,7 @@ export default function CampaignDetailPanel({
                       <div className="space-y-6">
                         <ProgressBar
                           current={campaign.spent}
-                          total={campaign.budget}
+                          total={typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget}
                           label="Budget Usage"
                           color="blue"
                         />
@@ -653,7 +653,7 @@ export default function CampaignDetailPanel({
                         <div className="text-center">
                           <div className="text-3xl font-bold text-blue-900 mb-2">
                             {campaign.actual_reach && campaign.budget 
-                              ? `${Math.round((campaign.actual_reach / campaign.budget.total) * 100)}%` 
+                              ? `${Math.round((campaign.actual_reach / (typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget)) * 100)}%` 
                               : 'N/A'
                             }
                           </div>
