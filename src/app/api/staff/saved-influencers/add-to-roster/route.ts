@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
 
@@ -33,11 +34,57 @@ export async function POST(request: NextRequest) {
       [userId]
     )
 
-    if (userResult.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+    let user_id: string
 
-    const user_id = userResult[0]?.id
+    if (userResult.length === 0 || !userResult[0]) {
+      // User doesn't exist, create one automatically
+      console.log('User not found, creating new staff record for clerk_id:', userId)
+      
+      try {
+        // Get user details from Clerk
+        const client = await clerkClient()
+        const clerkUser = await client.users.getUser(userId)
+        const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
+        const userRole = clerkUser.publicMetadata?.role as string || 'STAFF'
+        
+        console.log('Creating staff user with email:', userEmail, 'role:', userRole)
+        
+        const newUserResult = await query<{ id: string }>(
+          `INSERT INTO users (clerk_id, email, status, role) 
+           VALUES ($1, $2, $3, $4) 
+           RETURNING id`,
+          [userId, userEmail, 'ACTIVE', userRole]
+        )
+        
+        if (newUserResult.length === 0 || !newUserResult[0]) {
+          throw new Error('INSERT returned no results')
+        }
+        
+        user_id = newUserResult[0].id
+        console.log('✅ Created new staff user with ID:', user_id)
+        
+        // Create basic user profile
+        await query(
+          `INSERT INTO user_profiles (user_id, first_name, last_name, is_onboarded)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            user_id,
+            clerkUser.firstName || 'Staff',
+            clerkUser.lastName || 'Member',
+            true
+          ]
+        )
+        
+      } catch (createUserError: any) {
+        console.error('Error creating staff user:', createUserError)
+        return NextResponse.json(
+          { error: 'Database error: ' + (createUserError?.message || 'Could not create user record') }, 
+          { status: 500 }
+        )
+      }
+    } else {
+      user_id = userResult[0].id
+    }
 
     // Get saved influencer data
     const savedInfluencerResult = await query<{

@@ -51,7 +51,7 @@ const SECURITY_HEADERS = {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://api.clerk.dev https://www.google-analytics.com https://va.vercel-scripts.com https://vercel.live https://analytics.google.com",
+    "connect-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://api.clerk.dev https://clerk-telemetry.com https://www.google-analytics.com https://va.vercel-scripts.com https://vercel.live https://analytics.google.com",
     "frame-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev",
     "object-src 'none'",
     "base-uri 'self'",
