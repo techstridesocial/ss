@@ -478,7 +478,7 @@ export default function EditCampaignModal({
                   onClick={handleCancel}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-medium"
                 >
-                  Cancel
+                  Exit
                 </button>
                 
                 <button

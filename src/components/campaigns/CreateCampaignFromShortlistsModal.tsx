@@ -685,7 +685,7 @@ export default function CreateCampaignFromShortlistsModal({
               onClick={handleCancel}
               className="px-6 py-2 text-gray-600 font-medium hover:text-gray-800 transition-colors"
             >
-              Cancel
+              Exit
             </button>
             
             <div className="flex items-center space-x-3">
