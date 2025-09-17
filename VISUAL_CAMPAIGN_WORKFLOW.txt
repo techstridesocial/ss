@@ -1,0 +1,306 @@
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                          🎯 STRIDE SOCIAL CAMPAIGN WORKFLOW                                                             ║
+║                                            Complete Visual Flow Diagram                                                                 ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                    WORKFLOW PHASES                                                                      │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+     🔍              👥              📝              ✅              🚀              📞              🎬              📊              💰
+  DISCOVERY      SHORTLIST       QUOTATION        APPROVAL        CAMPAIGN        OUTREACH        CONTENT         REVIEW          PAYMENT
+     │              │              │              │              │              │              │              │              │
+     ▼              ▼              ▼              ▼              ▼              ▼              ▼              ▼              ▼
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│ STAFF   │───▶│ BRAND   │───▶│ BRAND   │───▶│ BRAND   │───▶│ SYSTEM  │───▶│ STAFF   │───▶│INFLUENCER│───▶│ STAFF   │───▶│ SYSTEM  │
+│DISCOVERY│    │SHORTLIST│    │QUOTATION│    │APPROVAL │    │AUTO-GEN │    │OUTREACH │    │CONTENT  │    │REVIEW   │    │PAYMENT  │
+└─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                                  DETAILED FLOW                                                                         ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ PHASE 1: STAFF DISCOVERY ─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   👨‍💼 STAFF PORTAL                          🔍 MODASH API                          💾 SYSTEM DATABASE                                  │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /staff/        │                    │  Search API     │                    │  Save Results   │                                    │
+│  │  discovery      │───────────────────▶│  • Instagram    │───────────────────▶│  • Roster       │                                    │
+│  │                 │                    │  • TikTok       │                    │  • Analytics    │                                    │
+│  │  • Search       │                    │  • YouTube      │                    │  • Demographics │                                    │
+│  │  • Filter       │                    │  • Demographics │                    │  • Full Profile │                                    │
+│  │  • Analyze      │                    │  • Engagement   │                    │  • Modash Data  │                                    │
+│  │  • Save ❤️      │                    │  • Performance  │                    │  • Staff Notes  │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                          INFLUENCER ROSTER CREATED                                                                │  │
+│  │  • Gold/Silver/Partnered Tier Assignment                                                                                          │  │
+│  │  • Complete Analytics Package Stored                                                                                              │  │
+│  │  • 4-Week Auto-Refresh Schedule Set                                                                                               │  │
+│  │  • Available for Brand Discovery                                                                                                  │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 2: BRAND SHORTLISTING ──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   🏢 BRAND PORTAL                           👥 INFLUENCER BROWSE                      ❤️ SHORTLIST CREATION                           │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /brand/        │                    │  Filter & View  │                    │  Organize &     │                                    │
+│  │  influencers    │───────────────────▶│  • Niche        │───────────────────▶│  Manage         │                                    │
+│  │                 │                    │  • Followers    │                    │  • Named Lists  │                                    │
+│  │  • Browse All   │                    │  • Engagement   │                    │  • Notes/Rating │                                    │
+│  │  • Advanced     │                    │  • Demographics │                    │  • Campaign Prep│                                    │
+│  │    Filters      │                    │  • Location     │                    │  • Ready to Use │                                    │
+│  │  • View Details │                    │  • Analytics    │                    │  • Export Lists │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                        SHORTLISTS READY FOR CAMPAIGNS                                                             │  │
+│  │  • Multiple Organized Shortlists                                                                                                  │  │
+│  │  • Detailed Influencer Profiles                                                                                                   │  │
+│  │  • Performance Metrics Available                                                                                                  │  │
+│  │  • Ready for Campaign Creation                                                                                                    │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 3: CAMPAIGN QUOTATION ──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   🏢 BRAND PORTAL                           📝 CAMPAIGN DETAILS                       📨 QUOTATION REQUEST                            │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /brand/        │                    │  Campaign Info  │                    │  Submit to      │                                    │
+│  │  campaigns      │───────────────────▶│  • Name & Desc  │───────────────────▶│  Staff Review   │                                    │
+│  │                 │                    │  • Budget Range │                    │  • All Details  │                                    │
+│  │  • New Campaign │                    │  • Timeline     │                    │  • Influencers  │                                    │
+│  │  • Select       │                    │  • Deliverables │                    │  • Requirements │                                    │
+│  │    Influencers  │                    │  • Requirements │                    │  • Status:      │                                    │
+│  │  • Set Budget   │                    │  • Target Goals │                    │    "Pending"    │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                      QUOTATION SENT TO STAFF                                                                      │  │
+│  │  • Complete Campaign Brief                                                                                                        │  │
+│  │  • Selected Influencers List                                                                                                      │  │
+│  │  • Budget Expectations                                                                                                            │  │
+│  │  • Timeline Requirements                                                                                                          │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 4: STAFF REVIEW & PRICING ──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   👨‍💼 STAFF PORTAL                          💰 PRICING REVIEW                        📨 SEND QUOTATION                              │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /staff/        │                    │  Set Pricing    │                    │  Send to Brand  │                                    │
+│  │  brands         │───────────────────▶│  • Individual   │───────────────────▶│  • Final Quote  │                                    │
+│  │                 │                    │    Rates        │                    │  • Breakdown    │                                    │
+│  │  • Review       │                    │  • Adjust       │                    │  • Timeline     │                                    │
+│  │    Requests     │                    │    Selection    │                    │  • Terms        │                                    │
+│  │  • Analyze      │                    │  • Calculate    │                    │  • Status:      │                                    │
+│  │    Feasibility  │                    │    Total        │                    │    "Awaiting"   │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                     PROFESSIONAL QUOTATION SENT                                                                   │  │
+│  │  • Detailed Cost Breakdown                                                                                                        │  │
+│  │  • Individual Influencer Rates                                                                                                    │  │
+│  │  • Timeline Confirmation                                                                                                          │  │
+│  │  • Terms and Conditions                                                                                                           │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 5: BRAND APPROVAL ──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   🏢 BRAND PORTAL                           ✅ REVIEW & APPROVE                     🚀 AUTO CAMPAIGN CREATION                         │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /brand/        │                    │  Review Quote   │                    │  System Auto    │                                    │
+│  │  campaigns      │───────────────────▶│  • Cost Details │───────────────────▶│  Creates        │                                    │
+│  │                 │                    │  • Influencers  │                    │  • Campaign     │                                    │
+│  │  • View Quote   │                    │  • Timeline     │                    │  • Assignments  │                                    │
+│  │  • Approve/     │                    │  • Terms        │                    │  • Notifications│                                    │
+│  │    Decline      │                    │  • Digital      │                    │  • Status:      │                                    │
+│  │  • Negotiate    │                    │    Approval     │                    │    "Active"     │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                       CAMPAIGN OFFICIALLY ACTIVE                                                                  │  │
+│  │  • All Influencers Added to Campaign                                                                                              │  │
+│  │  • Brand Dashboard Updated                                                                                                        │  │
+│  │  • Staff Notified for Outreach                                                                                                    │  │
+│  │  • System Ready for Next Phase                                                                                                    │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 6: INFLUENCER OUTREACH (MANUAL) ────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   👨‍💼 STAFF + EXTERNAL                      📞 DIRECT COMMUNICATION                   📝 RESPONSE TRACKING                           │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  Manual         │                    │  WhatsApp/Phone │                    │  Update System  │                                    │
+│  │  Contact        │───────────────────▶│  • Campaign     │───────────────────▶│  • Accepted     │                                    │
+│  │                 │                    │    Details      │                    │  • Declined     │                                    │
+│  │  • WhatsApp     │                    │  • Compensation │                    │  • Negotiating  │                                    │
+│  │  • Phone Calls  │                    │  • Timeline     │                    │  • Notes        │                                    │
+│  │  • Email        │                    │  • Q&A          │                    │  • Final Terms  │                                    │
+│  │  • Follow-up    │                    │  • Negotiation  │                    │  • Assignment   │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                    CONFIRMED INFLUENCER PARTICIPATION                                                             │  │
+│  │  • Accepted Influencers Assigned                                                                                                  │  │
+│  │  • Final Compensation Set                                                                                                         │  │
+│  │  • Campaign Visible to Influencers                                                                                                │  │
+│  │  • Content Creation Can Begin                                                                                                     │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 7: CONTENT CREATION ────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   🎬 INFLUENCER PORTAL                       🎨 CONTENT CREATION                      📤 SUBMISSION                                   │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /influencer/   │                    │  Create Content │                    │  Submit to      │                                    │
+│  │  campaigns      │───────────────────▶│  • Follow       │───────────────────▶│  Platform       │                                    │
+│  │                 │                    │    Guidelines   │                    │  • URLs         │                                    │
+│  │  • View Active  │                    │  • Brand        │                    │  • Screenshots  │                                    │
+│  │  • Requirements │                    │    Requirements │                    │  • Metrics      │                                    │
+│  │  • Timeline     │                    │  • Post on      │                    │  • Performance  │                                    │
+│  │  • Compensation │                    │    Social Media │                    │  • Compliance   │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                      CONTENT SUBMITTED FOR REVIEW                                                                 │  │
+│  │  • Live Social Media Posts                                                                                                        │  │
+│  │  • Platform URLs Provided                                                                                                         │  │
+│  │  • Performance Metrics Tracked                                                                                                    │  │
+│  │  • Ready for Staff Review                                                                                                         │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 8: CONTENT REVIEW ──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   👨‍💼 STAFF PORTAL                          📊 REVIEW PROCESS                        ✅ APPROVAL DECISION                            │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  /staff/        │                    │  Check Content  │                    │  Approve/Reject │                                    │
+│  │  content        │───────────────────▶│  • Brand        │───────────────────▶│  • Quality      │                                    │
+│  │                 │                    │    Guidelines   │                    │    Check        │                                    │
+│  │  • Pending      │                    │  • Performance  │                    │  • Performance  │                                    │
+│  │    Reviews      │                    │  • Compliance   │                    │  • Brand        │                                    │
+│  │  • Performance │                    │  • Quality      │                    │    Alignment    │                                    │
+│  │  • Analytics    │                    │  • Metrics      │                    │  • Final OK     │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                       CONTENT APPROVED & VERIFIED                                                                 │  │
+│  │  • All Deliverables Completed                                                                                                     │  │
+│  │  • Performance Metrics Recorded                                                                                                   │  │
+│  │  • Brand Requirements Met                                                                                                         │  │
+│  │  • Ready for Payment Processing                                                                                                   │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                           │
+                                                           ▼
+┌─ PHASE 9: PAYMENT PROCESSING ──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│   👨‍💼 STAFF AUTHORIZATION                   💰 PAYMENT SYSTEM                        📊 TRACKING & CONFIRMATION                      │
+│  ┌─────────────────┐                    ┌─────────────────┐                    ┌─────────────────┐                                    │
+│  │  Payment        │                    │  Process        │                    │  Update All     │                                    │
+│  │  Authorization  │───────────────────▶│  Payments       │───────────────────▶│  Dashboards     │                                    │
+│  │                 │                    │  • PayPal       │                    │  • Influencer   │                                    │
+│  │  • Verify       │                    │  • Bank         │                    │  • Brand        │                                    │
+│  │    Completion   │                    │  • Wise         │                    │  • Staff        │                                    │
+│  │  • Authorize    │                    │  • Stripe       │                    │  • Analytics    │                                    │
+│  │    Release      │                    │  • Confirmations│                    │  • Completed    │                                    │
+│  └─────────────────┘                    └─────────────────┘                    └─────────────────┘                                    │
+│                                                    │                                      │                                            │
+│                                                    ▼                                      ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                        CAMPAIGN SUCCESSFULLY COMPLETED                                                            │  │
+│  │  • All Payments Processed                                                                                                         │  │
+│  │  • Performance Analytics Available                                                                                                │  │
+│  │  • Campaign Marked Complete                                                                                                       │  │
+│  │  • ROI Data Generated                                                                                                             │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                                STATUS INDICATORS                                                                        ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+🟡 PENDING STAFF REVIEW     ──▶  Brand submitted quotation request
+🔵 AWAITING BRAND APPROVAL  ──▶  Staff sent quotation to brand  
+🟢 ACTIVE CAMPAIGN          ──▶  Brand approved, campaign created
+🟠 OUTREACH IN PROGRESS     ──▶  Staff contacting influencers
+🟣 CONTENT CREATION         ──▶  Influencers creating content
+⚪ CONTENT REVIEW           ──▶  Staff reviewing submissions  
+🔴 PAYMENT PROCESSING       ──▶  Processing influencer payments
+✅ CAMPAIGN COMPLETED       ──▶  All deliverables met, payments sent
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                              SYSTEM AUTOMATION                                                                         ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+🤖 AUTO CAMPAIGN CREATION    ──▶  Brand approval triggers campaign creation
+📧 EMAIL NOTIFICATIONS       ──▶  Status changes send automated emails
+💾 DATA SYNCHRONIZATION      ──▶  All portals update in real-time  
+📊 ANALYTICS REFRESH         ──▶  Modash data updates every 4 weeks
+🔄 STATUS PROPAGATION        ──▶  Changes flow between all user types
+💰 PAYMENT AUTOMATION        ──▶  Approved campaigns trigger payment flow
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                               USER PORTALS                                                                             ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ STAFF PORTAL ─────────────────┐    ┌─ BRAND PORTAL ─────────────────┐    ┌─ INFLUENCER PORTAL ────────────┐
+│                                │    │                                │    │                                │
+│ 🔍 /staff/discovery            │    │ 👥 /brand/influencers          │    │ 🎬 /influencer/campaigns       │
+│ 👥 /staff/roster               │    │ ❤️ /brand/shortlists           │    │ 💰 /influencer/payments        │
+│ 📊 /staff/campaigns            │    │ 📝 /brand/campaigns            │    │ 📊 /influencer/stats           │
+│ 🏢 /staff/brands               │    │ 📊 /brand/profile              │    │ 👤 /influencer/profile         │
+│ 🎬 /staff/content              │    │                                │    │                                │
+│ 👤 /staff/users                │    │                                │    │                                │
+│                                │    │                                │    │                                │
+└────────────────────────────────┘    └────────────────────────────────┘    └────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                              DATABASE FLOW                                                                             ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+users ──┬── user_profiles
+        │
+        ├── brands ──── brand_contacts
+        │           └── shortlists ──── shortlist_influencers
+        │
+        └── influencers ──┬── influencer_platforms ──┬── audience_demographics
+                          │                          ├── audience_locations  
+                          │                          └── influencer_content
+                          │
+                          └── campaign_influencers ──── payment_transactions
+
+campaigns ──── quotations ──── campaign_content_submissions
+
+modash_profile_cache ──── modash_audience_cache ──── modash_update_log
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                                  SUMMARY                                                                               ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+📊 TOTAL PHASES: 9 Complete Workflow Steps
+🔄 AUTO POINTS: 6 Automated System Actions  
+👥 USER ROLES: 3 Distinct Portal Experiences
+🗄️ DATABASE: 15+ Synchronized Tables
+⚡ REAL-TIME: Complete Cross-Portal Updates
+🎯 RESULT: Enterprise-Grade Campaign Management System
+

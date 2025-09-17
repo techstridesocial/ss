@@ -1,0 +1,964 @@
+===============================================================================
+                         COMPLETE USER FLOWS - ALL USER TYPES                        
+                      Every Possible User Journey & Interaction                       
+                   Brand | Influencer | Staff | Admin User Flows                     
+===============================================================================
+
+===============================================================================
+                                BRAND USER FLOWS                               
+                           Complete Brand Journey Map                           
+===============================================================================
+
+-------------------------------------------------------------------------------
+                    BRAND FLOW 1: INITIAL REGISTRATION & ONBOARDING            
+-------------------------------------------------------------------------------
+
+    ENTRY POINT: New Brand Discovers Platform
+    
+    Step 1: Landing Page Visit
+    - User visits stride-social.com
+    - Sees "For Brands" section
+    - Clicks "Get Started" or "Sign Up"
+    
+    Step 2: Account Creation
+    - Redirected to /sign-up
+    - Clerk signup form appears
+    - Enters: Email, Password, Confirm Password
+    - Selects "Brand" as account type
+    - Receives email verification
+    - Clicks verification link
+    
+    Step 3: Initial Login
+    - Redirected to /sign-in
+    - Enters credentials
+    - System detects: role = 'BRAND', is_onboarded = false
+    - Auto-redirected to /brand/onboarding
+    
+    Step 4: 24-Step Onboarding Process
+    - Step 1: "What's your brand called?" → Company name
+    - Step 2: "Do you have a website?" → Website URL
+    - Step 3: "Which industry are you in?" → Industry selection
+    - Step 4: "How big is your team?" → Company size
+    - Step 5: "What does your brand do?" → Description
+    - Step 6: "Upload your logo" → Logo upload
+    - Step 7: "Annual marketing budget?" → Budget range
+    - Step 8: "Content niches focus?" → Multi-select niches
+    - Step 9: "Target customer locations?" → Multi-select regions
+    - Step 10: "Primary region?" → Main operation region
+    - Step 11: "Campaign objective?" → Main goals
+    - Step 12: "Product/service type?" → Business type
+    - Step 13: "Contact method preference?" → Communication preference
+    - Step 14: "Proactive suggestions?" → Yes/No for recommendations
+    - Step 15: "Invite team members?" → Team collaboration
+    - Step 16: "Team invitations" → Email addresses (conditional)
+    - Step 17: "Brand contact name?" → Primary contact person
+    - Step 18: "Brand contact role?" → Their position
+    - Step 19: "Brand contact email?" → Contact email
+    - Step 20: "Brand contact phone?" → Contact phone
+    - Step 21: "Stride contact name?" → Preferred Stride team member
+    - Step 22: "Stride contact email?" → Stride contact email
+    - Step 23: "Stride contact phone?" → Stride contact phone
+    - Step 24: "Review details" → Final confirmation
+    
+    Step 5: Onboarding Completion
+    - System creates brand profile
+    - Creates brand contacts
+    - Sends team invitations (if provided)
+    - Sets is_onboarded = true
+    - Redirected to /brand/campaigns (main dashboard)
+    
+
+
+
+┌─ BRAND FLOW 2: INFLUENCER DISCOVERY & SHORTLISTING ───────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  🔍 USER JOURNEY: Finding Perfect Influencers                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Dashboard Navigation                                                                                                       │  │
+│  │ • Logs into brand portal                                                                                                           │  │
+│  │ • Sees main navigation: Campaigns, Influencers, Shortlists, Profile                                                               │  │
+│  │ • Clicks "Influencers" to browse available creators                                                                                │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Influencer Browsing                                                                                                        │  │
+│  │ • Lands on /brand/influencers                                                                                                      │  │
+│  │ • Sees grid of available influencers                                                                                               │  │
+│  │ • Each card shows: Profile pic, name, followers, engagement, niche                                                                 │  │
+│  │ • Uses filters: Niche, Follower range, Engagement rate, Location                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Detailed Influencer Analysis                                                                                               │  │
+│  │ • Clicks on influencer card                                                                                                        │  │
+│  │ • Popup opens with detailed analytics                                                                                              │  │
+│  │ • Views: Platform breakdowns, recent content, demographics                                                                         │  │
+│  │ • Sees audience age/gender/location breakdowns                                                                                     │  │
+│  │ • Reviews past campaign performance                                                                                                │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Shortlisting Decision                                                                                                      │  │
+│  │ • Likes what they see                                                                                                              │  │
+│  │ • Clicks heart ❤️ button to add to shortlist                                                                                      │  │
+│  │ • System prompts: "Add to existing shortlist or create new?"                                                                      │  │
+│  │ • Chooses shortlist name (e.g., "Summer Campaign 2024")                                                                           │  │
+│  │ • Adds optional notes and rating                                                                                                   │  │
+│  │ • Influencer added to shortlist                                                                                                    │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Building Multiple Shortlists                                                                                               │  │
+│  │ • Repeats process for multiple influencers                                                                                         │  │
+│  │ • Creates different shortlists for different campaigns                                                                             │  │
+│  │ • Organizes by: Campaign type, niche, budget tier                                                                                  │  │
+│  │ • Adds detailed notes for each influencer                                                                                          │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Shortlist Management                                                                                                       │  │
+│  │ • Navigates to /brand/shortlists                                                                                                   │  │
+│  │ • Views all created shortlists                                                                                                     │  │
+│  │ • Can edit, delete, or merge shortlists                                                                                            │  │
+│  │ • Exports shortlist data for team review                                                                                           │  │
+│  │ • Ready to create campaigns from shortlists                                                                                        │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ BRAND FLOW 3: CAMPAIGN CREATION & QUOTATION REQUEST ─────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📝 USER JOURNEY: From Idea to Quotation Request                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Campaign Planning                                                                                                          │  │
+│  │ • Has shortlisted influencers ready                                                                                                │  │
+│  │ • Has campaign idea and budget in mind                                                                                             │  │
+│  │ • Navigates to /brand/campaigns                                                                                                     │  │
+│  │ • Clicks "Create New Campaign" button                                                                                              │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Campaign Basic Information                                                                                                 │  │
+│  │ • Modal opens with campaign creation form                                                                                          │  │
+│  │ • Fills in: Campaign name, description, goals                                                                                      │  │
+│  │ • Sets: Budget range (min/max)                                                                                                     │  │
+│  │ • Chooses: Timeline (start date, end date)                                                                                         │  │
+│  │ • Specifies: Deliverables (posts, stories, reels, etc.)                                                                           │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Influencer Selection                                                                                                       │  │
+│  │ • Sees dropdown: "Select from shortlists"                                                                                          │  │
+│  │ • Chooses relevant shortlist                                                                                                       │  │
+│  │ • Views influencers in selected shortlist                                                                                          │  │
+│  │ • Checkboxes to select specific influencers                                                                                        │  │
+│  │ • For each selected influencer:                                                                                                    │  │
+│  │   - Sets suggested compensation                                                                                                    │  │
+│  │   - Chooses platforms (Instagram, TikTok, YouTube)                                                                                │  │
+│  │   - Adds specific requirements                                                                                                     │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Campaign Requirements                                                                                                       │  │
+│  │ • Detailed requirements section                                                                                                    │  │
+│  │ • Brand guidelines upload                                                                                                          │  │
+│  │ • Content style preferences                                                                                                        │  │
+│  │ • Hashtags and mentions requirements                                                                                               │  │
+│  │ • Approval process preferences                                                                                                     │  │
+│  │ • Performance expectations                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Review & Submit                                                                                                            │  │
+│  │ • Reviews all campaign details                                                                                                     │  │
+│  │ • Sees total estimated cost                                                                                                        │  │
+│  │ • Confirms influencer selections                                                                                                   │  │
+│  │ • Adds final notes for staff                                                                                                       │  │
+│  │ • Clicks "Submit for Quotation"                                                                                                    │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Quotation Submitted                                                                                                        │  │
+│  │ • Success message appears                                                                                                          │  │
+│  │ • Campaign status: "Pending Staff Review"                                                                                          │  │
+│  │ • Receives email confirmation                                                                                                      │  │
+│  │ • Can track progress in campaigns dashboard                                                                                        │  │
+│  │ • Waits for staff to review and price                                                                                              │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ BRAND FLOW 4: QUOTATION REVIEW & APPROVAL ───────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  ✅ USER JOURNEY: Reviewing Staff Quotation                                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Notification Receipt                                                                                                       │  │
+│  │ • Receives email: "Your quotation is ready for review"                                                                             │  │
+│  │ • Email contains: Campaign name, total cost, review link                                                                           │  │
+│  │ • Also sees notification in brand portal                                                                                           │  │
+│  │ • Campaign status changed to "Awaiting Approval"                                                                                   │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Quotation Review                                                                                                           │  │
+│  │ • Clicks email link or portal notification                                                                                         │  │
+│  │ • Lands on campaign detail page                                                                                                    │  │
+│  │ • Sees detailed quotation breakdown:                                                                                               │  │
+│  │   - Total campaign cost                                                                                                            │  │
+│  │   - Individual influencer rates                                                                                                    │  │
+│  │   - Platform-specific pricing                                                                                                     │  │
+│  │   - Additional fees (if any)                                                                                                      │  │
+│  │   - Timeline confirmation                                                                                                          │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Influencer Review                                                                                                          │  │
+│  │ • Reviews each selected influencer                                                                                                 │  │
+│  │ • Sees staff notes and recommendations                                                                                             │  │
+│  │ • Can view updated analytics                                                                                                       │  │
+│  │ • Staff may have suggested alternatives                                                                                            │  │
+│  │ • Can see why certain rates were recommended                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Decision Making                                                                                                            │  │
+│  │ • Three options available:                                                                                                         │  │
+│  │   1. ✅ Approve quotation as-is                                                                                                    │  │
+│  │   2. 📝 Request modifications (budget, influencers, timeline)                                                                     │  │
+│  │   3. ❌ Decline quotation (with reason)                                                                                            │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5A: Approval Path                                                                                                             │  │
+│  │ • Clicks "Approve Quotation"                                                                                                       │  │
+│  │ • Confirms payment method/terms                                                                                                    │  │
+│  │ • Digital signature/confirmation                                                                                                   │  │
+│  │ • System automatically creates active campaign                                                                                     │  │
+│  │ • All selected influencers added to campaign                                                                                       │  │
+│  │ • Staff notified to begin influencer outreach                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5B: Modification Request Path                                                                                                 │  │
+│  │ • Clicks "Request Changes"                                                                                                         │  │
+│  │ • Specifies what needs changing                                                                                                    │  │
+│  │ • Provides detailed feedback                                                                                                       │  │
+│  │ • Quotation returns to staff for revision                                                                                          │  │
+│  │ • Process repeats until approval                                                                                                   │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Post-Approval                                                                                                              │  │
+│  │ • Campaign status: "Active"                                                                                                        │  │
+│  │ • Can track campaign progress                                                                                                      │  │
+│  │ • Receives updates as influencers are contacted                                                                                    │  │
+│  │ • Dashboard shows campaign timeline                                                                                                │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ BRAND FLOW 5: CAMPAIGN MONITORING & MANAGEMENT ──────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📊 USER JOURNEY: Active Campaign Oversight                                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Campaign Dashboard                                                                                                         │  │
+│  │ • Views active campaigns in /brand/campaigns                                                                                       │  │
+│  │ • Sees campaign status indicators:                                                                                                 │  │
+│  │   - 🟠 Outreach in Progress                                                                                                        │  │
+│  │   - 🟣 Content Creation                                                                                                            │  │
+│  │   - ⚪ Content Review                                                                                                              │  │
+│  │   - 🔴 Payment Processing                                                                                                          │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Influencer Status Tracking                                                                                                 │  │
+│  │ • Clicks on active campaign                                                                                                        │  │
+│  │ • Sees list of assigned influencers                                                                                                │  │
+│  │ • Status for each influencer:                                                                                                      │  │
+│  │   - ⏳ Being Contacted                                                                                                             │  │
+│  │   - ✅ Accepted                                                                                                                    │  │
+│  │   - ❌ Declined                                                                                                                    │  │
+│  │   - 🎬 Creating Content                                                                                                            │  │
+│  │   - 📤 Content Submitted                                                                                                           │  │
+│  │   - 💰 Paid                                                                                                                        │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Content Review Process                                                                                                     │  │
+│  │ • Receives notifications when content is submitted                                                                                 │  │
+│  │ • Can preview submitted content                                                                                                    │  │
+│  │ • Provides feedback to staff if needed                                                                                             │  │
+│  │ • Tracks content performance metrics                                                                                               │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Performance Analytics                                                                                                      │  │
+│  │ • Views real-time campaign metrics                                                                                                 │  │
+│  │ • Sees: Total reach, impressions, engagement                                                                                       │  │
+│  │ • Individual influencer performance                                                                                                │  │
+│  │ • ROI calculations and projections                                                                                                 │  │
+│  │ • Compares against campaign goals                                                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Communication & Updates                                                                                                    │  │
+│  │ • Receives regular email updates                                                                                                   │  │
+│  │ • Can message staff through portal                                                                                                 │  │
+│  │ • Requests changes or additional influencers                                                                                       │  │
+│  │ • Provides feedback on campaign progress                                                                                           │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Campaign Completion                                                                                                        │  │
+│  │ • All content delivered and approved                                                                                               │  │
+│  │ • Final performance report generated                                                                                               │  │
+│  │ • Invoice and payment summary provided                                                                                             │  │
+│  │ • Campaign marked as completed                                                                                                     │  │
+│  │ • Post-campaign analysis available                                                                                                 │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                           🎬 INFLUENCER USER FLOWS                                                                     ║
+║                                         Complete Creator Journey Map                                                                   ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ INFLUENCER FLOW 1: REGISTRATION & ONBOARDING ────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  🚪 ENTRY POINT: Creator Joins Platform                                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Discovery & Interest                                                                                                       │  │
+│  │ • Hears about platform through:                                                                                                    │  │
+│  │   - Social media ads                                                                                                               │  │
+│  │   - Word of mouth from other creators                                                                                              │  │
+│  │   - Brand referral                                                                                                                 │  │
+│  │   - Staff outreach                                                                                                                 │  │
+│  │ • Visits landing page                                                                                                              │  │
+│  │ • Clicks "Join as Creator" or "For Influencers"                                                                                    │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Account Creation                                                                                                           │  │
+│  │ • Redirected to /sign-up                                                                                                           │  │
+│  │ • Selects "Influencer" account type                                                                                                │  │
+│  │ • Enters: Email, Password, Confirm Password                                                                                        │  │
+│  │ • Receives email verification                                                                                                      │  │
+│  │ • Clicks verification link                                                                                                         │  │
+│  │ • Account created with role: INFLUENCER_SIGNED                                                                                     │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Initial Login & Onboarding Start                                                                                           │  │
+│  │ • Logs in for first time                                                                                                           │  │
+│  │ • System detects: is_onboarded = false                                                                                             │  │
+│  │ • Auto-redirected to /influencer/onboarding                                                                                        │  │
+│  │ • Sees welcome message and onboarding steps                                                                                        │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Personal Information Collection                                                                                            │  │
+│  │ • Step 1: "What's your first name?" → First name                                                                                  │  │
+│  │ • Step 2: "What's your last name?" → Last name                                                                                    │  │
+│  │ • Step 3: "Choose your display name" → Public display name                                                                        │  │
+│  │ • Step 4: "What's your email?" → Contact email                                                                                    │  │
+│  │ • Step 5: "Phone number?" → Phone with country code                                                                               │  │
+│  │ • Step 6: "Where are you based?" → Location/country                                                                               │  │
+│  │ • Step 7: "Personal website?" → Optional website URL                                                                              │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Social Media Profile Setup                                                                                                 │  │
+│  │ • Step 8: "Instagram handle?" → @username (optional)                                                                              │  │
+│  │ • Step 9: "TikTok handle?" → @username (optional)                                                                                 │  │
+│  │ • Step 10: "YouTube channel?" → @username (optional)                                                                              │  │
+│  │ • Step 11: "Main platform?" → Primary platform selection                                                                          │  │
+│  │ • Step 12: "Content niche?" → Primary content category                                                                            │  │
+│  │ • Step 13: "Profile picture?" → Upload profile image                                                                              │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Onboarding Completion                                                                                                      │  │
+│  │ • Reviews all entered information                                                                                                  │  │
+│  │ • Confirms accuracy                                                                                                                │  │
+│  │ • Submits onboarding form                                                                                                          │  │
+│  │ • System creates influencer profile                                                                                                │  │
+│  │ • Creates platform records                                                                                                         │  │
+│  │ • Sets is_onboarded = true                                                                                                         │  │
+│  │ • Redirected to /influencer/campaigns (main dashboard)                                                                             │  │
+│  │                                                                                                                                     │  │
+│  │ Step 7: Initial Dashboard Experience                                                                                               │  │
+│  │ • Sees empty campaigns dashboard                                                                                                   │  │
+│  │ • Message: "No campaigns yet - we'll notify you when opportunities arise"                                                         │  │
+│  │ • Can complete profile setup                                                                                                       │  │
+│  │ • Can add payment information                                                                                                      │  │
+│  │ • Profile marked as "Pending Staff Review"                                                                                         │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ INFLUENCER FLOW 2: PROFILE COMPLETION & VERIFICATION ────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📋 USER JOURNEY: Building Complete Profile                                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Profile Enhancement                                                                                                        │  │
+│  │ • Navigates to /influencer/profile                                                                                                 │  │
+│  │ • Sees profile completion percentage                                                                                               │  │
+│  │ • Completes missing information:                                                                                                   │  │
+│  │   - Extended bio                                                                                                                   │  │
+│  │   - Additional social platforms                                                                                                    │  │
+│  │   - Content samples                                                                                                                │  │
+│  │   - Rate preferences                                                                                                               │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Social Media Connection                                                                                                    │  │
+│  │ • Clicks "Connect Instagram" button                                                                                                │  │
+│  │ • OAuth flow begins                                                                                                                │  │
+│  │ • Authorizes platform access                                                                                                       │  │
+│  │ • System fetches basic metrics                                                                                                     │  │
+│  │ • Repeats for other platforms                                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Analytics Integration                                                                                                      │  │
+│  │ • Staff uses "Find My Profile" feature                                                                                             │  │
+│  │ • Links influencer to Modash analytics                                                                                             │  │
+│  │ • Complete analytics package stored                                                                                                │  │
+│  │ • Profile marked as "Analytics Complete"                                                                                           │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Payment Setup                                                                                                              │  │
+│  │ • Navigates to /influencer/payments                                                                                                │  │
+│  │ • Adds payment methods:                                                                                                            │  │
+│  │   - PayPal account                                                                                                                 │  │
+│  │   - Bank account details                                                                                                           │  │
+│  │   - Wise account                                                                                                                   │  │
+│  │ • Sets payment preferences                                                                                                         │  │
+│  │ • Verifies payment information                                                                                                     │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Content Portfolio                                                                                                          │  │
+│  │ • Uploads best content examples                                                                                                    │  │
+│  │ • Categorizes by campaign type                                                                                                     │  │
+│  │ • Adds performance metrics                                                                                                         │  │
+│  │ • Creates content style guide                                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Staff Review & Approval                                                                                                    │  │
+│  │ • Profile submitted for staff review                                                                                               │  │
+│  │ • Staff evaluates profile completeness                                                                                             │  │
+│  │ • Staff assigns tier (Silver, Gold, Partnered)                                                                                    │  │
+│  │ • Profile marked as "Ready for Campaigns"                                                                                          │  │
+│  │ • Influencer notified of approval                                                                                                  │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ INFLUENCER FLOW 3: CAMPAIGN PARTICIPATION ────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📞 USER JOURNEY: From Contact to Content Creation                                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Initial Contact                                                                                                            │  │
+│  │ • Receives WhatsApp message from Stride staff                                                                                      │  │
+│  │ • Message includes:                                                                                                                │  │
+│  │   - Campaign overview                                                                                                              │  │
+│  │   - Brand information                                                                                                              │  │
+│  │   - Proposed compensation                                                                                                          │  │
+│  │   - Timeline expectations                                                                                                          │  │
+│  │   - Link to detailed brief                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Campaign Review                                                                                                            │  │
+│  │ • Clicks link to campaign details                                                                                                  │  │
+│  │ • Reviews comprehensive brief:                                                                                                     │  │
+│  │   - Brand background                                                                                                               │  │
+│  │   - Campaign objectives                                                                                                            │  │
+│  │   - Content requirements                                                                                                           │  │
+│  │   - Brand guidelines                                                                                                               │  │
+│  │   - Deliverable specifications                                                                                                     │  │
+│  │   - Timeline and deadlines                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Decision Making                                                                                                            │  │
+│  │ • Considers factors:                                                                                                               │  │
+│  │   - Brand alignment with personal brand                                                                                            │  │
+│  │   - Compensation fairness                                                                                                          │  │
+│  │   - Timeline feasibility                                                                                                           │  │
+│  │   - Content requirements complexity                                                                                                │  │
+│  │ • Discusses with staff via WhatsApp/phone                                                                                          │  │
+│  │ • Negotiates terms if needed                                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Campaign Acceptance                                                                                                        │  │
+│  │ • Confirms participation to staff                                                                                                  │  │
+│  │ • Staff updates system status to "Accepted"                                                                                        │  │
+│  │ • Campaign appears in influencer dashboard                                                                                         │  │
+│  │ • Receives formal campaign assignment                                                                                              │  │
+│  │ • Gets access to brand assets and guidelines                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Dashboard Campaign View                                                                                                    │  │
+│  │ • Logs into /influencer/campaigns                                                                                                  │  │
+│  │ • Sees assigned campaign details:                                                                                                  │  │
+│  │   - Campaign name and brand                                                                                                        │  │
+│  │   - Compensation amount                                                                                                            │  │
+│  │   - Content requirements                                                                                                           │  │
+│  │   - Deadline countdown                                                                                                             │  │
+│  │   - Brand contact information                                                                                                      │  │
+│  │   - Upload area for deliverables                                                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Content Planning                                                                                                           │  │
+│  │ • Downloads brand assets                                                                                                           │  │
+│  │ • Reviews content guidelines                                                                                                       │  │
+│  │ • Plans content calendar                                                                                                           │  │
+│  │ • Prepares shooting schedule                                                                                                       │  │
+│  │ • Clarifies any questions with staff                                                                                               │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ INFLUENCER FLOW 4: CONTENT CREATION & SUBMISSION ────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  🎨 USER JOURNEY: Creating & Delivering Content                                                                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Content Creation Process                                                                                                   │  │
+│  │ • Creates content according to brief:                                                                                              │  │
+│  │   - Instagram posts with product features                                                                                          │  │
+│  │   - Instagram stories with swipe-up links                                                                                          │  │
+│  │   - TikTok videos showcasing product use                                                                                           │  │
+│  │   - YouTube integration or mention                                                                                                 │  │
+│  │ • Follows brand guidelines:                                                                                                        │  │
+│  │   - Color schemes and aesthetics                                                                                                   │  │
+│  │   - Messaging and tone                                                                                                             │  │
+│  │   - Required hashtags and mentions                                                                                                 │  │
+│  │   - Disclosure requirements (#ad, #sponsored)                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Content Publishing                                                                                                         │  │
+│  │ • Posts content on agreed platforms                                                                                                │  │
+│  │ • Uses campaign-specific tracking links                                                                                            │  │
+│  │ • Includes required hashtags and mentions                                                                                          │  │
+│  │ • Tags brand accounts appropriately                                                                                                │  │
+│  │ • Ensures proper disclosure compliance                                                                                             │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Performance Tracking                                                                                                       │  │
+│  │ • Monitors content performance:                                                                                                    │  │
+│  │   - Views, likes, comments, shares                                                                                                 │  │
+│  │   - Story completion rates                                                                                                         │  │
+│  │   - Click-through rates on links                                                                                                   │  │
+│  │   - Engagement quality and sentiment                                                                                               │  │
+│  │ • Takes screenshots for reporting                                                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Content Submission to Platform                                                                                             │  │
+│  │ • Logs into /influencer/campaigns                                                                                                  │  │
+│  │ • Finds assigned campaign                                                                                                          │  │
+│  │ • Clicks "Submit Content" button                                                                                                   │  │
+│  │ • Fills submission form:                                                                                                           │  │
+│  │   - Content URLs (Instagram post links, TikTok links)                                                                             │  │
+│  │   - Platform selection                                                                                                             │  │
+│  │   - Performance metrics (if available)                                                                                             │  │
+│  │   - Screenshots of content                                                                                                         │  │
+│  │   - Additional notes or context                                                                                                    │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Submission Confirmation                                                                                                    │  │
+│  │ • Reviews all submitted information                                                                                                │  │
+│  │ • Confirms content meets requirements                                                                                              │  │
+│  │ • Submits for staff review                                                                                                         │  │
+│  │ • Receives confirmation message                                                                                                    │  │
+│  │ • Campaign status updates to "Content Submitted"                                                                                   │  │
+│  │ • Staff notified for review                                                                                                        │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Review Process                                                                                                             │  │
+│  │ • Waits for staff content review                                                                                                   │  │
+│  │ • May receive feedback requests                                                                                                    │  │
+│  │ • Makes revisions if needed                                                                                                        │  │
+│  │ • Resubmits updated content                                                                                                        │  │
+│  │ • Receives final approval notification                                                                                             │  │
+│  │ • Campaign status: "Content Approved"                                                                                              │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ INFLUENCER FLOW 5: PAYMENT & COMPLETION ─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  💰 USER JOURNEY: Getting Paid & Campaign Wrap-up                                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Payment Processing Notification                                                                                            │  │
+│  │ • Receives notification: "Payment processing for [Campaign Name]"                                                                  │  │
+│  │ • Email includes:                                                                                                                  │  │
+│  │   - Campaign completion confirmation                                                                                               │  │
+│  │   - Payment amount                                                                                                                 │  │
+│  │   - Expected payment timeline                                                                                                      │  │
+│  │   - Payment method being used                                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Payment Dashboard Monitoring                                                                                               │  │
+│  │ • Navigates to /influencer/payments                                                                                                │  │
+│  │ • Views payment status dashboard:                                                                                                  │  │
+│  │   - Pending payments                                                                                                               │  │
+│  │   - Processing payments                                                                                                            │  │
+│  │   - Completed payments                                                                                                             │  │
+│  │   - Payment history                                                                                                                │  │
+│  │   - Total earnings statistics                                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Payment Receipt                                                                                                            │  │
+│  │ • Receives payment via chosen method:                                                                                              │  │
+│  │   - PayPal deposit notification                                                                                                    │  │
+│  │   - Bank transfer confirmation                                                                                                     │  │
+│  │   - Wise account credit                                                                                                            │  │
+│  │ • Payment appears in dashboard as "Completed"                                                                                      │  │
+│  │ • Receives email confirmation with:                                                                                                │  │
+│  │   - Payment receipt                                                                                                                │  │
+│  │   - Campaign completion certificate                                                                                                │  │
+│  │   - Performance summary                                                                                                            │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Performance Review                                                                                                         │  │
+│  │ • Views campaign performance metrics:                                                                                              │  │
+│  │   - Total reach and impressions                                                                                                    │  │
+│  │   - Engagement rates achieved                                                                                                      │  │
+│  │   - Click-through rates                                                                                                            │  │
+│  │   - Brand mention sentiment                                                                                                        │  │
+│  │ • Compares against personal benchmarks                                                                                             │  │
+│  │ • Identifies successful content types                                                                                              │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Relationship Building                                                                                                      │  │
+│  │ • Provides feedback on campaign experience                                                                                         │  │
+│  │ • Rates brand collaboration                                                                                                        │  │
+│  │ • Expresses interest in future campaigns                                                                                           │  │
+│  │ • Maintains relationship with staff                                                                                                │  │
+│  │ • Profile updated with successful campaign                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Ongoing Platform Engagement                                                                                                │  │
+│  │ • Regularly checks /influencer/campaigns for new opportunities                                                                     │  │
+│  │ • Updates profile with new content and metrics                                                                                     │  │
+│  │ • Maintains payment information                                                                                                    │  │
+│  │ • Builds portfolio of successful campaigns                                                                                         │  │
+│  │ • Increases tier status through consistent performance                                                                             │  │
+│  │ • Becomes preferred influencer for future campaigns                                                                                │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                             👨‍💼 STAFF USER FLOWS                                                                       ║
+║                                           Complete Staff Journey Map                                                                   ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ STAFF FLOW 1: DAILY OPERATIONS & DASHBOARD MANAGEMENT ───────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📊 USER JOURNEY: Staff Daily Workflow                                                                                                │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Morning Dashboard Review                                                                                                   │  │
+│  │ • Logs into staff portal                                                                                                           │  │
+│  │ • Lands on /staff/dashboard (overview page)                                                                                        │  │
+│  │ • Reviews daily metrics:                                                                                                           │  │
+│  │   - New quotation requests                                                                                                         │  │
+│  │   - Pending content reviews                                                                                                        │  │
+│  │   - Active campaigns status                                                                                                        │  │
+│  │   - Influencer outreach responses                                                                                                  │  │
+│  │   - Payment processing queue                                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Priority Task Identification                                                                                               │  │
+│  │ • Checks notification center                                                                                                       │  │
+│  │ • Identifies urgent items:                                                                                                         │  │
+│  │   - 🔴 Overdue quotation reviews                                                                                                   │  │
+│  │   - 🟠 Content awaiting approval                                                                                                   │  │
+│  │   - 🟡 Influencer responses pending                                                                                                │  │
+│  │   - 🟢 New discovery requests                                                                                                      │  │
+│  │ • Plans daily workflow priorities                                                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Navigation Between Core Functions                                                                                          │  │
+│  │ • Primary navigation areas:                                                                                                        │  │
+│  │   - 🔍 /staff/discovery - Influencer research                                                                                     │  │
+│  │   - 👥 /staff/roster - Influencer management                                                                                      │  │
+│  │   - 📊 /staff/campaigns - Campaign oversight                                                                                      │  │
+│  │   - 🏢 /staff/brands - Brand relationship management                                                                              │  │
+│  │   - 🎬 /staff/content - Content review and approval                                                                               │  │
+│  │   - 👤 /staff/users - User management                                                                                             │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Task Completion Workflow                                                                                                   │  │
+│  │ • Follows systematic approach:                                                                                                     │  │
+│  │   1. Handle urgent quotations first                                                                                               │  │
+│  │   2. Review and approve content                                                                                                    │  │
+│  │   3. Conduct influencer discovery                                                                                                  │  │
+│  │   4. Manage ongoing campaigns                                                                                                      │  │
+│  │   5. Process payments                                                                                                              │  │
+│  │   6. Update brand relationships                                                                                                    │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: End-of-Day Reporting                                                                                                       │  │
+│  │ • Reviews completed tasks                                                                                                          │  │
+│  │ • Updates campaign statuses                                                                                                        │  │
+│  │ • Prepares next-day priorities                                                                                                     │  │
+│  │ • Generates performance reports                                                                                                    │  │
+│  │ • Communicates updates to team                                                                                                     │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STAFF FLOW 2: INFLUENCER DISCOVERY & ROSTER BUILDING ────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  🔍 USER JOURNEY: Finding & Adding Influencers                                                                                        │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Discovery Session Planning                                                                                                 │  │
+│  │ • Navigates to /staff/discovery                                                                                                    │  │
+│  │ • Reviews current roster gaps:                                                                                                     │  │
+│  │   - Needed niches (beauty, tech, fitness)                                                                                         │  │
+│  │   - Follower range requirements                                                                                                    │  │
+│  │   - Geographic coverage needs                                                                                                      │  │
+│  │   - Platform diversity requirements                                                                                                │  │
+│  │ • Checks available Modash credits                                                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Advanced Search Configuration                                                                                              │  │
+│  │ • Sets up complex search filters:                                                                                                  │  │
+│  │   - Platform: Instagram/TikTok/YouTube                                                                                            │  │
+│  │   - Follower range: 50K - 500K                                                                                                    │  │
+│  │   - Engagement rate: 3%+                                                                                                           │  │
+│  │   - Location: UK, US, Canada                                                                                                      │  │
+│  │   - Demographics: 18-35, 60% female                                                                                               │  │
+│  │   - Content categories: Lifestyle, Fashion                                                                                        │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Search Execution & Results Analysis                                                                                        │  │
+│  │ • Clicks "Search" - API call to Modash                                                                                            │  │
+│  │ • Reviews returned results (50-100 profiles)                                                                                      │  │
+│  │ • Evaluates each profile:                                                                                                          │  │
+│  │   - Profile quality and authenticity                                                                                              │  │
+│  │   - Content consistency and quality                                                                                               │  │
+│  │   - Audience engagement quality                                                                                                    │  │
+│  │   - Brand alignment potential                                                                                                      │  │
+│  │   - Already in roster check                                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Detailed Profile Investigation                                                                                             │  │
+│  │ • Clicks on promising profiles                                                                                                     │  │
+│  │ • Deep-dive popup opens with:                                                                                                      │  │
+│  │   - Complete Modash analytics report                                                                                               │  │
+│  │   - Audience demographics breakdown                                                                                                │  │
+│  │   - Recent content performance                                                                                                     │  │
+│  │   - Brand collaboration history                                                                                                    │  │
+│  │   - Engagement authenticity scores                                                                                                 │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Selection & Saving Process                                                                                                 │  │
+│  │ • Hearts ❤️ high-potential influencers                                                                                            │  │
+│  │ • Adds to staff_saved_influencers with:                                                                                           │  │
+│  │   - Quality rating (1-5 stars)                                                                                                    │  │
+│  │   - Notes about potential use cases                                                                                               │  │
+│  │   - Tier recommendation                                                                                                            │  │
+│  │   - Contact priority level                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Roster Addition Decision                                                                                                   │  │
+│  │ • Reviews saved influencers                                                                                                        │  │
+│  │ • Selects best candidates for roster                                                                                               │  │
+│  │ • Clicks "Add to Roster" for chosen influencers                                                                                    │  │
+│  │ • System creates full influencer profiles:                                                                                         │  │
+│  │   - User account creation                                                                                                          │  │
+│  │   - Profile setup with Modash data                                                                                                │  │
+│  │   - Platform connections                                                                                                           │  │
+│  │   - Tier assignment                                                                                                                │  │
+│  │   - Ready for brand discovery                                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │ Step 7: Outreach Planning                                                                                                          │  │
+│  │ • Plans initial contact strategy                                                                                                   │  │
+│  │ • Prepares introduction messages                                                                                                   │  │
+│  │ • Schedules follow-up sequences                                                                                                    │  │
+│  │ • Sets up tracking for responses                                                                                                   │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STAFF FLOW 3: QUOTATION REVIEW & CAMPAIGN CREATION ──────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📝 USER JOURNEY: Processing Brand Requests                                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Quotation Request Notification                                                                                             │  │
+│  │ • Receives email: "New quotation request from [Brand Name]"                                                                        │  │
+│  │ • Dashboard shows notification badge                                                                                               │  │
+│  │ • Navigates to /staff/brands                                                                                                       │  │
+│  │ • Sees pending quotation with 🟡 status                                                                                           │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Quotation Analysis                                                                                                         │  │
+│  │ • Clicks on quotation request                                                                                                      │  │
+│  │ • Reviews detailed information:                                                                                                    │  │
+│  │   - Campaign objectives and goals                                                                                                  │  │
+│  │   - Brand background and industry                                                                                                  │  │
+│  │   - Budget range and expectations                                                                                                  │  │
+│  │   - Timeline and deadlines                                                                                                         │  │
+│  │   - Selected influencers list                                                                                                      │  │
+│  │   - Deliverable requirements                                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Influencer Evaluation                                                                                                      │  │
+│  │ • Reviews each selected influencer:                                                                                                │  │
+│  │   - Current availability status                                                                                                    │  │
+│  │   - Recent performance metrics                                                                                                     │  │
+│  │   - Brand alignment assessment                                                                                                     │  │
+│  │   - Historical campaign success                                                                                                    │  │
+│  │   - Current rate recommendations                                                                                                   │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Pricing Strategy Development                                                                                               │  │
+│  │ • Calculates individual influencer rates:                                                                                          │  │
+│  │   - Base rate per follower tier                                                                                                    │  │
+│  │   - Platform-specific multipliers                                                                                                  │  │
+│  │   - Content complexity adjustments                                                                                                 │  │
+│  │   - Brand premium considerations                                                                                                    │  │
+│  │   - Timeline urgency factors                                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Alternative Recommendations                                                                                                │  │
+│  │ • Suggests improvements:                                                                                                           │  │
+│  │   - Better-performing influencers                                                                                                  │  │
+│  │   - More cost-effective options                                                                                                    │  │
+│  │   - Additional platform opportunities                                                                                              │  │
+│  │   - Timeline optimizations                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Quotation Preparation                                                                                                      │  │
+│  │ • Creates comprehensive quotation:                                                                                                 │  │
+│  │   - Executive summary                                                                                                              │  │
+│  │   - Individual influencer breakdown                                                                                                │  │
+│  │   - Platform-specific deliverables                                                                                                │  │
+│  │   - Timeline with milestones                                                                                                       │  │
+│  │   - Total investment summary                                                                                                       │  │
+│  │   - Terms and conditions                                                                                                           │  │
+│  │                                                                                                                                     │  │
+│  │ Step 7: Quotation Delivery                                                                                                         │  │
+│  │ • Sends quotation to brand via:                                                                                                    │  │
+│  │   - Email with PDF attachment                                                                                                      │  │
+│  │   - Portal notification                                                                                                            │  │
+│  │   - Optional phone call walkthrough                                                                                                │  │
+│  │ • Updates quotation status to "Awaiting Brand Approval"                                                                           │  │
+│  │ • Sets follow-up reminders                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 8: Approval Processing                                                                                                        │  │
+│  │ • Receives brand approval notification                                                                                             │  │
+│  │ • System auto-creates campaign                                                                                                     │  │
+│  │ • All selected influencers added                                                                                                   │  │
+│  │ • Campaign status: "Active - Ready for Outreach"                                                                                   │  │
+│  │ • Begins influencer contact process                                                                                                │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STAFF FLOW 4: INFLUENCER OUTREACH & CAMPAIGN MANAGEMENT ─────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  📞 USER JOURNEY: Managing Active Campaigns                                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Campaign Activation                                                                                                        │  │
+│  │ • New active campaign appears in /staff/campaigns                                                                                  │  │
+│  │ • Status: "Active - Outreach Required"                                                                                             │  │
+│  │ • Reviews campaign details and influencer list                                                                                     │  │
+│  │ • Plans outreach strategy and timeline                                                                                             │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: Influencer Contact Process                                                                                                 │  │
+│  │ • For each assigned influencer:                                                                                                    │  │
+│  │   1. WhatsApp Message:                                                                                                             │  │
+│  │      "Hi [Name]! Exciting campaign opportunity with [Brand]..."                                                                   │  │
+│  │      - Brief campaign overview                                                                                                     │  │
+│  │      - Compensation offer                                                                                                          │  │
+│  │      - Timeline expectations                                                                                                       │  │
+│  │      - Link to detailed brief                                                                                                      │  │
+│  │                                                                                                                                     │  │
+│  │   2. Follow-up Phone Call (if needed):                                                                                             │  │
+│  │      - Detailed campaign explanation                                                                                               │  │
+│  │      - Answer questions and concerns                                                                                               │  │
+│  │      - Negotiate terms if required                                                                                                 │  │
+│  │      - Confirm participation                                                                                                       │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: Response Tracking                                                                                                          │  │
+│  │ • Updates system with responses:                                                                                                   │  │
+│  │   - ✅ Accepted (rate confirmed)                                                                                                   │  │
+│  │   - ❌ Declined (reason noted)                                                                                                     │  │
+│  │   - 🤔 Negotiating (terms being discussed)                                                                                        │  │
+│  │   - ⏳ Pending (awaiting response)                                                                                                 │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Campaign Roster Finalization                                                                                               │  │
+│  │ • Confirms final participating influencers                                                                                         │  │
+│  │ • Updates campaign with confirmed participants                                                                                     │  │
+│  │ • Notifies brand of final influencer list                                                                                          │  │
+│  │ • Sends detailed briefs to accepted influencers                                                                                    │  │
+│  │ • Provides brand assets and guidelines                                                                                             │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Content Creation Monitoring                                                                                                │  │
+│  │ • Tracks content creation progress:                                                                                                │  │
+│  │   - Regular check-ins with influencers                                                                                             │  │
+│  │   - Deadline reminders                                                                                                             │  │
+│  │   - Creative guidance if needed                                                                                                    │  │
+│  │   - Brand guideline clarifications                                                                                                 │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Content Submission Management                                                                                              │  │
+│  │ • Receives content submissions in /staff/content                                                                                   │  │
+│  │ • Reviews each submission:                                                                                                         │  │
+│  │   - Brand guideline compliance                                                                                                     │  │
+│  │   - Quality standards                                                                                                              │  │
+│  │   - Disclosure requirements                                                                                                        │  │
+│  │   - Performance potential                                                                                                          │  │
+│  │                                                                                                                                     │  │
+│  │ Step 7: Campaign Completion & Reporting                                                                                            │  │
+│  │ • All content approved and live                                                                                                    │  │
+│  │ • Collects performance metrics                                                                                                     │  │
+│  │ • Generates campaign report for brand                                                                                              │  │
+│  │ • Processes influencer payments                                                                                                    │  │
+│  │ • Updates campaign status to "Completed"                                                                                           │  │
+│  │ • Archives campaign for future reference                                                                                           │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                             👑 ADMIN USER FLOWS                                                                       ║
+║                                          Complete Admin Journey Map                                                                    ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ ADMIN FLOW 1: SYSTEM OVERSIGHT & MANAGEMENT ─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  🔧 USER JOURNEY: Platform Administration                                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Step 1: Administrative Dashboard                                                                                                   │  │
+│  │ • Logs into admin portal                                                                                                           │  │
+│  │ • Views comprehensive system metrics:                                                                                              │  │
+│  │   - Total users by type (brands, influencers, staff)                                                                              │  │
+│  │   - Active campaigns and completion rates                                                                                          │  │
+│  │   - Revenue and payment statistics                                                                                                 │  │
+│  │   - System performance indicators                                                                                                  │  │
+│  │   - API usage and credit consumption                                                                                               │  │
+│  │                                                                                                                                     │  │
+│  │ Step 2: User Management                                                                                                            │  │
+│  │ • Navigates to /admin/users                                                                                                        │  │
+│  │ • Manages all user accounts:                                                                                                       │  │
+│  │   - View user details and activity                                                                                                 │  │
+│  │   - Change user roles and permissions                                                                                              │  │
+│  │   - Suspend or reactivate accounts                                                                                                 │  │
+│  │   - Reset passwords and handle support                                                                                             │  │
+│  │   - Bulk user operations                                                                                                           │  │
+│  │                                                                                                                                     │  │
+│  │ Step 3: System Configuration                                                                                                       │  │
+│  │ • Manages platform settings:                                                                                                       │  │
+│  │   - API rate limits and quotas                                                                                                     │  │
+│  │   - Payment processing configuration                                                                                               │  │
+│  │   - Email notification templates                                                                                                   │  │
+│  │   - Security policies and rules                                                                                                    │  │
+│  │   - Feature flags and rollouts                                                                                                     │  │
+│  │                                                                                                                                     │  │
+│  │ Step 4: Analytics & Reporting                                                                                                      │  │
+│  │ • Generates comprehensive reports:                                                                                                 │  │
+│  │   - Platform usage statistics                                                                                                      │  │
+│  │   - Revenue and growth metrics                                                                                                     │  │
+│  │   - User engagement patterns                                                                                                       │  │
+│  │   - Campaign success rates                                                                                                         │  │
+│  │   - Performance benchmarks                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Step 5: Security & Compliance                                                                                                      │  │
+│  │ • Monitors security metrics:                                                                                                       │  │
+│  │   - Failed login attempts                                                                                                          │  │
+│  │   - Suspicious user activity                                                                                                       │  │
+│  │   - Data access patterns                                                                                                           │  │
+│  │   - GDPR compliance status                                                                                                         │  │
+│  │   - Audit log reviews                                                                                                              │  │
+│  │                                                                                                                                     │  │
+│  │ Step 6: Strategic Planning                                                                                                         │  │
+│  │ • Long-term platform development:                                                                                                  │  │
+│  │   - Feature roadmap planning                                                                                                       │  │
+│  │   - Scalability assessments                                                                                                        │  │
+│  │   - Integration opportunities                                                                                                      │  │
+│  │   - Market expansion strategies                                                                                                    │  │
+│  │   - Competitive analysis                                                                                                           │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                        🔄 CROSS-USER TYPE INTERACTIONS                                                                ║
+║                                      How Different User Types Connect                                                                 ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ INTERACTION FLOW 1: BRAND → STAFF → INFLUENCER PIPELINE ─────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                         │
+│  🔄 COMPLETE USER INTERACTION CHAIN                                                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Brand Journey:                                                                                                                      │  │
+│  │ 1. Discovers influencers via /brand/influencers                                                                                    │  │
+│  │ 2. Creates shortlists of preferred creators                                                                                        │  │
+│  │ 3. Submits campaign quotation request                                                                                              │  │
+│  │ 4. Reviews and approves staff pricing                                                                                              │  │
+│  │ 5. Monitors campaign progress                                                                                                       │  │
+│  │ 6. Reviews content and performance                                                                                                  │  │
+│  │                                                                                                                                     │  │
+│  │ ↓ Handoff to Staff ↓                                                                                                               │  │
+│  │                                                                                                                                     │  │
+│  │ Staff Journey:                                                                                                                      │  │
+│  │ 1. Receives brand quotation request                                                                                                │  │
+│  │ 2. Evaluates influencer selections                                                                                                 │  │
+│  │ 3. Develops pricing strategy                                                                                                       │  │
+│  │ 4. Sends quotation back to brand                                                                                                   │  │
+│  │ 5. Creates campaign upon approval                                                                                                   │  │
+│  │ 6. Contacts selected influencers                                                                                                   │  │
+│  │ 7. Manages campaign execution                                                                                                       │  │
+│  │ 8. Reviews and approves content                                                                                                    │  │
+│  │ 9. Processes payments                                                                                                               │  │
+│  │                                                                                                                                     │  │
+│  │ ↓ Handoff to Influencers ↓                                                                                                         │  │
+│  │                                                                                                                                     │  │
+│  │ Influencer Journey:                                                                                                                 │  │
+│  │ 1. Receives WhatsApp contact from staff                                                                                            │  │
+│  │ 2. Reviews campaign opportunity                                                                                                     │  │
+│  │ 3. Negotiates terms and accepts                                                                                                    │  │
+│  │ 4. Sees campaign in dashboard                                                                                                       │  │
+│  │ 5. Creates and publishes content                                                                                                   │  │
+│  │ 6. Submits deliverables via portal                                                                                                 │  │
+│  │ 7. Receives payment confirmation                                                                                                    │  │
+│  │ 8. Builds relationship for future campaigns                                                                                        │  │
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                               SUMMARY                                                                                  ║
+║                                    Complete User Flow Documentation                                                                    ║
+╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+TOTAL USER FLOWS DOCUMENTED: 15 Complete Journeys
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ BRAND FLOWS (5):                                                                                                                       │
+│ • Registration & 24-step onboarding                                                                                                    │
+│ • Influencer discovery & shortlisting                                                                                                  │
+│ • Campaign creation & quotation request                                                                                                │
+│ • Quotation review & approval                                                                                                          │
+│ • Campaign monitoring & management                                                                                                     │
+│                                                                                                                                         │
+│ INFLUENCER FLOWS (5):                                                                                                                  │
+│ • Registration & profile onboarding                                                                                                    │
+│ • Profile completion & verification                                                                                                    │
+│ • Campaign participation process                                                                                                       │
+│ • Content creation & submission                                                                                                        │
+│ • Payment & campaign completion                                                                                                        │
+│                                                                                                                                         │
+│ STAFF FLOWS (4):                                                                                                                       │
+│ • Daily operations & dashboard management                                                                                              │
+│ • Influencer discovery & roster building                                                                                               │
+│ • Quotation review & campaign creation                                                                                                 │
+│ • Influencer outreach & campaign management                                                                                            │
+│                                                                                                                                         │
+│ ADMIN FLOWS (1):                                                                                                                       │
+│ • System oversight & platform management                                                                                               │
+│                                                                                                                                         │
+│ INTERACTION FLOWS (1):                                                                                                                 │
+│ • Cross-user type collaboration pipeline                                                                                               │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Every possible user interaction, journey, and workflow is now documented in complete detail!

@@ -15,8 +15,8 @@ export const CompetitiveBenchmarkingSection = ({
   selectedPlatform 
 }: CompetitiveBenchmarkingSectionProps) => {
   
-  // Only show for Instagram
-  if (selectedPlatform !== 'instagram') {
+  // Only show for Instagram and TikTok (not YouTube yet)
+  if (selectedPlatform === 'youtube') {
     return null
   }
 

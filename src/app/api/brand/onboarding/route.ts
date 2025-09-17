@@ -23,6 +23,10 @@ interface OnboardingRequest {
   product_service_type?: string
   preferred_contact_method?: string
   proactive_suggestions?: string
+  // Team Member Invitations (Optional)
+  invite_team_members?: string
+  team_member_1_email?: string
+  team_member_2_email?: string
   // Stride Social Contact Information
   stride_contact_name?: string
   stride_contact_email?: string
@@ -222,6 +226,43 @@ export async function POST(request: NextRequest) {
           false,
           `Stride Social team contact for ${data.company_name}`
         ])
+      }
+
+      // Insert team member invitations if provided
+      if (data.invite_team_members === 'yes') {
+        // Insert team member 1 if email provided
+        if (data.team_member_1_email && data.team_member_1_email.trim()) {
+          await client.query(`
+            INSERT INTO brand_contacts (
+              brand_id, name, email, phone, role, is_primary, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `, [
+            brandId,
+            'Team Member', // Default name since we only collect email
+            data.team_member_1_email.trim(),
+            null, // No phone collected
+            'Team Member',
+            false, // Not primary contact
+            `Team member invited during onboarding for ${data.company_name}`
+          ])
+        }
+
+        // Insert team member 2 if email provided
+        if (data.team_member_2_email && data.team_member_2_email.trim()) {
+          await client.query(`
+            INSERT INTO brand_contacts (
+              brand_id, name, email, phone, role, is_primary, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `, [
+            brandId,
+            'Team Member', // Default name since we only collect email
+            data.team_member_2_email.trim(),
+            null, // No phone collected
+            'Team Member',
+            false, // Not primary contact
+            `Team member invited during onboarding for ${data.company_name}`
+          ])
+        }
       }
 
       // Update user status to indicate onboarding is complete

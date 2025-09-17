@@ -46,6 +46,10 @@ interface OnboardingData {
   product_service_type: string
   preferred_contact_method: string
   proactive_suggestions: string
+  // Team Member Invitations (Optional)
+  invite_team_members: string
+  team_member_1_email: string
+  team_member_2_email: string
   // Stride Social Contact Information
   stride_contact_name: string
   stride_contact_email: string
@@ -67,6 +71,8 @@ const STEPS = [
   { id: 'product_service_type', title: "What type of product/service do you offer?", type: 'select', optional: true },
   { id: 'preferred_contact_method', title: "How would you prefer we contact you?", type: 'radio', optional: true },
   { id: 'proactive_suggestions', title: "Would you like Stride to suggest creators proactively?", type: 'radio', optional: true },
+  { id: 'invite_team_members', title: "Would you like to invite team members to collaborate?", type: 'radio', optional: true },
+  { id: 'team_invitations', title: "Invite your team members", type: 'team_invitations', optional: true },
   { id: 'brand_contact_name', title: "Who's your main point of contact at your brand?", type: 'text' },
   { id: 'brand_contact_role', title: "What's their role in your company?", type: 'text' },
   { id: 'brand_contact_email', title: "Brand contact email address?", type: 'email' },
@@ -158,6 +164,11 @@ const PROACTIVE_SUGGESTIONS_OPTIONS = [
   { value: 'no', label: 'No, I\'ll browse and select myself' }
 ]
 
+const TEAM_INVITATION_OPTIONS = [
+  { value: 'yes', label: 'Yes, I\'d like to invite team members' },
+  { value: 'no', label: 'No, just me for now' }
+]
+
 function BrandOnboardingPageContent() {
   const { user } = useUser()
   const router = useRouter()
@@ -186,6 +197,10 @@ function BrandOnboardingPageContent() {
     product_service_type: '',
     preferred_contact_method: '',
     proactive_suggestions: '',
+    // Team Member Invitations (Optional)
+    invite_team_members: '',
+    team_member_1_email: '',
+    team_member_2_email: '',
     // Stride Social Contact Information
     stride_contact_name: '',
     stride_contact_email: '',
@@ -210,13 +225,27 @@ function BrandOnboardingPageContent() {
       // Last step - submit
       await handleSubmit()
     } else {
-      setCurrentStep(prev => prev + 1)
+      let nextStep = currentStep + 1
+      
+      // Skip team_invitations step if user said no to inviting team members
+      if (STEPS[nextStep]?.id === 'team_invitations' && formData.invite_team_members === 'no') {
+        nextStep += 1
+      }
+      
+      setCurrentStep(nextStep)
     }
   }
 
   const handlePrev = () => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1)
+      let prevStep = currentStep - 1
+      
+      // Skip team_invitations step if user said no to inviting team members
+      if (STEPS[prevStep]?.id === 'team_invitations' && formData.invite_team_members === 'no') {
+        prevStep -= 1
+      }
+      
+      setCurrentStep(prevStep)
     }
   }
 
@@ -759,6 +788,134 @@ function BrandOnboardingPageContent() {
           </motion.div>
         )
 
+      case 'invite_team_members':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {TEAM_INVITATION_OPTIONS.map((option) => (
+              <motion.button
+                key={option.value}
+                onClick={() => updateFormData('invite_team_members', option.value)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full p-6 rounded-xl text-left transition-all duration-200 ${
+                  formData.invite_team_members === option.value
+                    ? 'bg-white text-blue-600 shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-lg">{option.label}</span>
+                  {formData.invite_team_members === option.value && (
+                    <Check className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+              </motion.button>
+            ))}
+            <p className="text-blue-200 text-sm text-center">
+              Optional - You can add team members later if you prefer
+            </p>
+          </motion.div>
+        )
+
+      case 'team_invitations':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="bg-white/10 border border-white/20 rounded-2xl p-6 backdrop-blur-sm">
+              <div className="flex items-start space-x-3 mb-4">
+                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                  <Users size={14} className="text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-2">Invite Team Members</h4>
+                  <p className="text-sm text-blue-200 leading-relaxed">
+                    Add up to 2 team members who will have access to the brand portal. They'll receive an invitation to join your team.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4"
+              >
+                <h4 className="text-base font-bold text-white">Team Member 1</h4>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
+                  <input
+                    type="email"
+                    value={formData.team_member_1_email}
+                    onChange={(e) => updateFormData('team_member_1_email', e.target.value)}
+                    placeholder="john.smith@company.com"
+                    className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                      text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
+                      focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                  />
+                </div>
+                {formData.team_member_1_email && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center space-x-3 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-xl p-3"
+                  >
+                    <CheckCircle size={16} className="text-green-400 flex-shrink-0" />
+                    <span className="font-medium">
+                      Ready to invite {formData.team_member_1_email}
+                    </span>
+                  </motion.div>
+                )}
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4"
+              >
+                <h4 className="text-base font-bold text-white">Team Member 2</h4>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
+                  <input
+                    type="email"
+                    value={formData.team_member_2_email}
+                    onChange={(e) => updateFormData('team_member_2_email', e.target.value)}
+                    placeholder="jane.doe@company.com"
+                    className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                      text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
+                      focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                  />
+                </div>
+                {formData.team_member_2_email && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center space-x-3 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-xl p-3"
+                  >
+                    <CheckCircle size={16} className="text-green-400 flex-shrink-0" />
+                    <span className="font-medium">
+                      Ready to invite {formData.team_member_2_email}
+                    </span>
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
+            
+            <p className="text-blue-200 text-sm text-center">
+              Optional - Leave blank if you don't want to invite anyone right now
+            </p>
+          </motion.div>
+        )
+
       case 'brand_contact_name':
         return (
           <motion.div
@@ -1029,6 +1186,27 @@ function BrandOnboardingPageContent() {
                   <p className="text-white text-sm">
                     {PROACTIVE_SUGGESTIONS_OPTIONS.find(o => o.value === formData.proactive_suggestions)?.label}
                   </p>
+                </div>
+              )}
+
+              {/* Team Member Invitations */}
+              {formData.invite_team_members === 'yes' && (formData.team_member_1_email || formData.team_member_2_email) && (
+                <div>
+                  <p className="text-blue-200 font-medium">Team Members to Invite</p>
+                  <div className="space-y-1 mt-2">
+                    {formData.team_member_1_email && (
+                      <p className="text-white text-sm flex items-center space-x-2">
+                        <Mail size={14} className="text-blue-300" />
+                        <span>{formData.team_member_1_email}</span>
+                      </p>
+                    )}
+                    {formData.team_member_2_email && (
+                      <p className="text-white text-sm flex items-center space-x-2">
+                        <Mail size={14} className="text-blue-300" />
+                        <span>{formData.team_member_2_email}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 

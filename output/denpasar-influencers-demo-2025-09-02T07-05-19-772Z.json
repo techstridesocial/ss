@@ -1,0 +1,217 @@
+{
+  "searchParams": {
+    "location": "Denpasar, Bali, Indonesia",
+    "followersMin": 5000,
+    "followersMax": 100000,
+    "platform": "instagram",
+    "timestamp": "2025-09-02T07:05:19.776Z"
+  },
+  "summary": {
+    "totalFound": 10,
+    "averageFollowers": 68400,
+    "averageEngagement": 0.04449999999999999,
+    "verifiedCount": 2
+  },
+  "influencers": [
+    {
+      "userId": "demo_001",
+      "username": "bali_foodie_explorer",
+      "displayName": "Made Santika",
+      "totalFollowers": 85000,
+      "averageEngagement": 0.045,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "🌴 Authentic Balinese food experiences | 📍 Denpasar local | 🍛 Traditional recipes & modern twists | DM for collabs",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_001",
+          "username": "bali_foodie_explorer",
+          "followers": 85000,
+          "engagement_rate": 0.045,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Made+Santika&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_002",
+      "username": "denpasar_lifestyle",
+      "displayName": "Ni Luh Kadek",
+      "totalFollowers": 62000,
+      "averageEngagement": 0.038,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "✨ Bali lifestyle blogger | 🏝️ Local tips & hidden gems | 📸 Capturing the real Bali | Collaboration: DM",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_002",
+          "username": "denpasar_lifestyle",
+          "followers": 62000,
+          "engagement_rate": 0.038,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Ni+Luh+Kadek&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_003",
+      "username": "bali_artisan_official",
+      "displayName": "I Wayan Dharma",
+      "totalFollowers": 45000,
+      "averageEngagement": 0.055,
+      "verified": true,
+      "location": "Denpasar, Bali",
+      "bio": "🎨 Traditional Balinese art & crafts | 🏛️ Cultural heritage preservation | 📍 Denpasar workshops | Verified artisan",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_003",
+          "username": "bali_artisan_official",
+          "followers": 45000,
+          "engagement_rate": 0.055,
+          "verified": true
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=I+Wayan+Dharma&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_004",
+      "username": "denpasar_adventures",
+      "displayName": "Putu Adventure Guide",
+      "totalFollowers": 78000,
+      "averageEngagement": 0.042,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "🏄‍♂️ Bali adventure guide | 🌊 Surf, trek, explore | 📍 Denpasar based | Book your next adventure!",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_004",
+          "username": "denpasar_adventures",
+          "followers": 78000,
+          "engagement_rate": 0.042,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Putu+Adventure+Guide&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_005",
+      "username": "bali_wellness_coach",
+      "displayName": "Ketut Yoga Instructor",
+      "totalFollowers": 93000,
+      "averageEngagement": 0.048,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "🧘‍♀️ Certified yoga instructor | 🌿 Holistic wellness | 📍 Denpasar & Ubud classes | Mind, body, spirit",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_005",
+          "username": "bali_wellness_coach",
+          "followers": 93000,
+          "engagement_rate": 0.048,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Ketut+Yoga+Instructor&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_006",
+      "username": "denpasar_fashion_hub",
+      "displayName": "Luh Fashion Designer",
+      "totalFollowers": 56000,
+      "averageEngagement": 0.041,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "👗 Sustainable fashion designer | 🌺 Balinese-inspired collections | 📍 Denpasar atelier | Eco-conscious style",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_006",
+          "username": "denpasar_fashion_hub",
+          "followers": 56000,
+          "engagement_rate": 0.041,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Luh+Fashion+Designer&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_007",
+      "username": "bali_tech_entrepreneur",
+      "displayName": "Made Digital Nomad",
+      "totalFollowers": 71000,
+      "averageEngagement": 0.035,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "💻 Tech entrepreneur in paradise | 🏝️ Digital nomad lifestyle | 📍 Denpasar coworking spaces | Startup mentor",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_007",
+          "username": "bali_tech_entrepreneur",
+          "followers": 71000,
+          "engagement_rate": 0.035,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Made+Digital+Nomad&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_008",
+      "username": "denpasar_street_food",
+      "displayName": "Wayan Warung Owner",
+      "totalFollowers": 38000,
+      "averageEngagement": 0.052,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "🍜 Authentic street food | 🏪 Family warung since 1985 | 📍 Denpasar central market | Traditional flavors",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_008",
+          "username": "denpasar_street_food",
+          "followers": 38000,
+          "engagement_rate": 0.052,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Wayan+Warung+Owner&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_009",
+      "username": "bali_cultural_guide",
+      "displayName": "Kadek Cultural Expert",
+      "totalFollowers": 67000,
+      "averageEngagement": 0.046,
+      "verified": true,
+      "location": "Denpasar, Bali",
+      "bio": "🏛️ Licensed cultural guide | 📚 Balinese history & traditions | 📍 Denpasar temples & museums | Educational tours",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_009",
+          "username": "bali_cultural_guide",
+          "followers": 67000,
+          "engagement_rate": 0.046,
+          "verified": true
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Kadek+Cultural+Expert&background=random&size=150&color=fff"
+    },
+    {
+      "userId": "demo_010",
+      "username": "denpasar_photographer",
+      "displayName": "Nyoman Photo Studio",
+      "totalFollowers": 89000,
+      "averageEngagement": 0.043,
+      "verified": false,
+      "location": "Denpasar, Bali",
+      "bio": "📸 Professional photographer | 🌅 Bali landscapes & portraits | 📍 Denpasar studio | Capturing your memories",
+      "platforms": {
+        "instagram": {
+          "userId": "demo_010",
+          "username": "denpasar_photographer",
+          "followers": 89000,
+          "engagement_rate": 0.043,
+          "verified": false
+        }
+      },
+      "profilePicture": "https://ui-avatars.com/api/?name=Nyoman+Photo+Studio&background=random&size=150&color=fff"
+    }
+  ]
+}

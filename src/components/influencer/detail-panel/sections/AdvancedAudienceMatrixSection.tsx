@@ -15,18 +15,19 @@ export const AdvancedAudienceMatrixSection = ({
   selectedPlatform 
 }: AdvancedAudienceMatrixSectionProps) => {
   
-  // Only show for Instagram
-  if (selectedPlatform !== 'instagram') {
+  // Only show for Instagram and TikTok (not YouTube yet)
+  if (selectedPlatform === 'youtube') {
     return null
   }
 
   const audience = influencer.audience || {}
   
-  // Extract demographic data
+  // Extract demographic data (platform-aware)
   const genders = getMetricValue(audience.genders, influencer.genders) || []
   const ages = getMetricValue(audience.ages, influencer.ages) || []
-  const ethnicities = getMetricValue(audience.ethnicities, influencer.ethnicities) || []
-  const geoStates = getMetricValue(audience.geoStates, influencer.geoStates) || []
+  const ethnicities = getMetricValue(audience.ethnicities, influencer.ethnicities) || [] // Instagram only
+  const geoStates = getMetricValue(audience.geoStates, influencer.geoStates) || [] // Instagram only
+  const languages = getMetricValue(audience.languages, influencer.languages) || [] // Both platforms
 
   // Build demographic metrics
   const demographicMetrics = []
@@ -53,8 +54,8 @@ export const AdvancedAudienceMatrixSection = ({
     })
   }
 
-  // Ethnic diversity
-  if (ethnicities.length > 0) {
+  // Ethnic diversity (Instagram only)
+  if (selectedPlatform === 'instagram' && ethnicities.length > 0) {
     demographicMetrics.push({
       label: 'Ethnic Groups',
       value: ethnicities.length,
@@ -63,13 +64,23 @@ export const AdvancedAudienceMatrixSection = ({
     })
   }
 
-  // Geographic diversity
-  if (geoStates.length > 0) {
+  // Geographic diversity (Instagram only)
+  if (selectedPlatform === 'instagram' && geoStates.length > 0) {
     demographicMetrics.push({
       label: 'States/Regions',
       value: geoStates.length,
       secondaryValue: 'regions',
       quality: geoStates.length > 20 ? 'high' : geoStates.length > 10 ? 'medium' : 'low'
+    })
+  }
+
+  // Language diversity (both platforms)
+  if (languages.length > 0) {
+    demographicMetrics.push({
+      label: 'Languages',
+      value: languages.length,
+      secondaryValue: 'languages',
+      quality: languages.length > 5 ? 'high' : languages.length > 2 ? 'medium' : 'low'
     })
   }
 
