@@ -36,6 +36,8 @@ function SavedInfluencersTable({
   const [rosterMessages, setRosterMessages] = useState<Record<string, { type: 'success' | 'error', message: string }>>({})
   const [addingToRoster, setAddingToRoster] = useState<string | null>(null)
   const [removingInfluencer, setRemovingInfluencer] = useState<string | null>(null)
+  const [selectedInfluencerTypes, setSelectedInfluencerTypes] = useState<Record<string, string>>({})
+  const [agencyNames, setAgencyNames] = useState<Record<string, string>>({})
 
   // Format percentage
   const toPct = (n: number): string => {
@@ -56,16 +58,19 @@ function SavedInfluencersTable({
       return
     }
 
+    const influencerType = selectedInfluencerTypes[influencer.id] || 'PARTNERED'
+    const agencyName = influencerType === 'AGENCY_PARTNER' ? agencyNames[influencer.id] : undefined
+
     setAddingToRoster(influencer.id)
     setRosterMessages(prev => ({ ...prev, [influencer.id]: { type: 'success', message: 'Adding to roster...' } }))
 
     try {
-      await addToRoster(influencer.id)
+      await addToRoster(influencer.id, influencerType as 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER', agencyName)
       setRosterMessages(prev => ({
         ...prev,
         [influencer.id]: {
           type: 'success',
-          message: 'Added to roster successfully!'
+          message: `Added to roster as ${influencerType.toLowerCase()}!`
         }
       }))
       
@@ -350,24 +355,57 @@ function SavedInfluencersTable({
                       </a>
                     )}
 
-                    {/* Add to Roster Button */}
+                    {/* Add to Roster Section */}
                     {!influencer.added_to_roster && (
-                      <button 
-                        className={`p-2 transition-colors rounded-lg ${
-                          addingToRoster === influencer.id
-                            ? 'text-blue-500 bg-blue-50'
-                            : 'text-green-500 hover:text-green-600 hover:bg-green-50'
-                        }`}
-                        title="Add to Roster"
-                        onClick={() => handleAddToRoster(influencer)}
-                        disabled={addingToRoster === influencer.id}
-                      >
-                        {addingToRoster === influencer.id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Plus size={16} />
+                      <div className="flex items-center gap-2">
+                        {/* Influencer Type Dropdown */}
+                        <select
+                          value={selectedInfluencerTypes[influencer.id] || 'PARTNERED'}
+                          onChange={(e) => setSelectedInfluencerTypes(prev => ({
+                            ...prev,
+                            [influencer.id]: e.target.value
+                          }))}
+                          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={addingToRoster === influencer.id}
+                        >
+                          <option value="SIGNED">Signed</option>
+                          <option value="PARTNERED">Partnered</option>
+                          <option value="AGENCY_PARTNER">Agency Partner</option>
+                        </select>
+
+                        {/* Agency Name Input (only for Agency Partners) */}
+                        {selectedInfluencerTypes[influencer.id] === 'AGENCY_PARTNER' && (
+                          <input
+                            type="text"
+                            placeholder="Agency name"
+                            value={agencyNames[influencer.id] || ''}
+                            onChange={(e) => setAgencyNames(prev => ({
+                              ...prev,
+                              [influencer.id]: e.target.value
+                            }))}
+                            className="text-xs border border-gray-300 rounded px-2 py-1 w-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={addingToRoster === influencer.id}
+                          />
                         )}
-                      </button>
+
+                        {/* Add to Roster Button */}
+                        <button 
+                          className={`p-2 transition-colors rounded-lg ${
+                            addingToRoster === influencer.id
+                              ? 'text-blue-500 bg-blue-50'
+                              : 'text-green-500 hover:text-green-600 hover:bg-green-50'
+                          }`}
+                          title="Add to Roster"
+                          onClick={() => handleAddToRoster(influencer)}
+                          disabled={addingToRoster === influencer.id}
+                        >
+                          {addingToRoster === influencer.id ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <Plus size={16} />
+                          )}
+                        </button>
+                      </div>
                     )}
 
                     {/* Remove Button */}

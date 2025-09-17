@@ -44,7 +44,7 @@ export interface NavItem {
 }
 
 // Campaign types
-export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
 
 export type ParticipationStatus = 'INVITED' | 'ACCEPTED' | 'DECLINED' | 'IN_PROGRESS' | 'CONTENT_SUBMITTED' | 'COMPLETED' | 'PAID';
 

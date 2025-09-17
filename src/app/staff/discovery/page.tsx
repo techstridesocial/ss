@@ -102,6 +102,8 @@ const getPlatformColor = (platformType: string) => {
 import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
 import { useStaffSavedInfluencers } from '../../../lib/hooks/useStaffSavedInfluencers'
 import SavedInfluencersTable from '../../../components/staff/SavedInfluencersTable'
+import { useToast } from '../../../components/ui/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
 
 // Add to roster functionality
 const addToRoster = async (discoveredId: string) => {
@@ -2233,6 +2235,9 @@ function DiscoveryPageClient() {
   // Add heart context to main component for debugging
   const { heartedInfluencers } = useHeartedInfluencers()
   
+  // Toast notifications
+  const { toast } = useToast()
+  
   // Tab state - Search or Saved
   const [activeTab, setActiveTab] = useState<'search' | 'saved'>('search')
   
@@ -2565,14 +2570,21 @@ function DiscoveryPageClient() {
     // Validate username before proceeding
     if (!username || username === 'unknown') {
       console.error('❌ Invalid username for influencer:', influencer)
-      alert('Unable to save influencer: No valid username found.')
+      toast({
+        title: "Unable to save influencer",
+        description: "No valid username found for this influencer.",
+        variant: "destructive"
+      })
       return
     }
     
     if (isInfluencerSaved(username, selectedPlatform)) {
       console.log('💔 Already saved - this will be handled by the Saved tab')
-      // For now, just show a message - removal is handled in the Saved tab
-      alert('This influencer is already saved. Use the Saved tab to manage saved influencers.')
+      toast({
+        title: "Already saved",
+        description: "This influencer is already in your saved list. Use the Saved tab to manage saved influencers.",
+        variant: "default"
+      })
       return
     }
 
@@ -2667,7 +2679,11 @@ function DiscoveryPageClient() {
       const saveResult = await saveInfluencer(savedInfluencerData)
       
       console.log('✅ Successfully saved influencer with full Modash analytics!', saveResult)
-      alert(`✅ ${savedInfluencerData.display_name || username} has been saved to your favorites!`)
+      toast({
+        title: "✅ Influencer saved!",
+        description: `${savedInfluencerData.display_name || username} has been saved to your favorites with complete analytics.`,
+        variant: "default"
+      })
       
     } catch (error) {
       console.error('❌ Failed to save influencer with complete analytics:', error)
@@ -2695,12 +2711,20 @@ function DiscoveryPageClient() {
         
         const fallbackResult = await saveInfluencer(basicSavedData)
         console.log('⚠️ Saved with basic data only due to analytics fetch error', fallbackResult)
-        alert(`⚠️ ${basicSavedData.display_name || username} has been saved with basic data only.`)
+        toast({
+          title: "⚠️ Partially saved",
+          description: `${basicSavedData.display_name || username} has been saved with basic data only. Full analytics could not be retrieved.`,
+          variant: "default"
+        })
         
       } catch (fallbackError) {
         console.error('❌ Failed to save even basic data:', fallbackError)
         const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error'
-        alert(`❌ Failed to save influencer: ${errorMessage}. Please check your connection and try again.`)
+        toast({
+          title: "❌ Failed to save influencer",
+          description: `${errorMessage}. Please check your connection and try again.`,
+          variant: "destructive"
+        })
       }
     }
   }
@@ -3451,6 +3475,9 @@ function DiscoveryPageClient() {
         })
         return null
       })()}
+      
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   )
 }

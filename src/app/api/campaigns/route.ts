@@ -32,7 +32,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 Campaign creation API called')
     const { userId } = await auth()
+    console.log('🔐 Auth result:', { userId: userId ? 'Found' : 'Not found' })
     
     if (!userId) {
       console.error('❌ Authentication failed - no user ID found')
@@ -43,7 +45,16 @@ export async function POST(request: NextRequest) {
       }, { status: 401 })
     }
 
+    console.log('📝 Parsing request body...')
     const data = await request.json()
+    console.log('📋 Request data received:', { 
+      name: data.name, 
+      brand: data.brand, 
+      description: data.description?.substring(0, 50) + '...',
+      hasTimeline: !!data.timeline,
+      hasBudget: !!data.budget,
+      hasRequirements: !!data.requirements
+    })
     
     // Validate required fields
     const requiredFields = ['name', 'brand', 'description']
@@ -60,7 +71,7 @@ export async function POST(request: NextRequest) {
     const campaignData = {
       name: data.name,
       brand: data.brand,
-      status: data.status || 'draft',
+      status: data.status || 'DRAFT',
       description: data.description,
       goals: data.goals || [],
       timeline: {
@@ -84,7 +95,11 @@ export async function POST(request: NextRequest) {
       deliverables: data.deliverables || []
     }
 
+    console.log('🗄️ Creating campaign in database...')
+    console.log('📊 Campaign data to save:', JSON.stringify(campaignData, null, 2))
+    
     const campaign = await createCampaign(campaignData)
+    console.log('✅ Campaign created successfully:', { id: campaign.id, name: campaign.name })
     
     return NextResponse.json({ 
       success: true, 
@@ -94,8 +109,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating campaign:', error)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      data: data
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     })
     return NextResponse.json(
       { 

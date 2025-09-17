@@ -96,7 +96,7 @@ export default function CreateCampaignModal({
     handleInputChange('goals', goals)
   }
 
-  const validateForm = () => {
+  const getValidationErrors = () => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) {
@@ -129,19 +129,39 @@ export default function CreateCampaignModal({
     }
 
     if (formData.requirements.platforms.length === 0) {
-      newErrors['requirements.platforms'] = 'At least one platform is required'
+      newErrors['requirements.platforms'] = 'Please select at least one platform in the Requirements section'
     }
 
     if (formData.deliverables.length === 0) {
-      newErrors.deliverables = 'At least one deliverable is required'
+      newErrors.deliverables = 'Please select at least one deliverable in the Requirements section'
     }
 
+    if (formData.goals.length === 0) {
+      newErrors.goals = 'Please select at least one campaign goal in the Requirements section'
+    }
+
+    return newErrors
+  }
+
+  const validateForm = () => {
+    const newErrors = getValidationErrors()
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSave = async () => {
-    if (!validateForm()) {
+    const validationErrors = getValidationErrors()
+    setErrors(validationErrors)
+    if (Object.keys(validationErrors).length > 0) {
+      // Switch to the section with the first error
+      const errorKeys = Object.keys(validationErrors)
+      if (errorKeys.some(key => key.startsWith('requirements.') || key === 'deliverables' || key === 'goals')) {
+        setActiveSection('requirements')
+      } else if (errorKeys.some(key => key.startsWith('timeline.'))) {
+        setActiveSection('basic')
+      } else {
+        setActiveSection('basic')
+      }
       return
     }
 
@@ -151,7 +171,7 @@ export default function CreateCampaignModal({
         name: formData.name,
         brand: formData.brand,
         description: formData.description,
-        status: 'draft',
+        status: 'DRAFT',
         goals: formData.goals,
         timeline: {
           startDate: formData.timeline.startDate,
@@ -203,24 +223,7 @@ export default function CreateCampaignModal({
   }
 
   const handleCancel = () => {
-    setFormData({
-      name: '',
-      brand: '',
-      description: '',
-      budget: { total: '', perInfluencer: '' },
-      timeline: { startDate: '', endDate: '' },
-      requirements: {
-        minFollowers: '1000',
-        maxFollowers: '1000000',
-        minEngagement: '2.0',
-        platforms: [],
-        contentGuidelines: ''
-      },
-      deliverables: [],
-      goals: []
-    })
-    setErrors({})
-    setActiveSection('basic')
+    // Just close the modal, keep the form data in case user wants to continue later
     onClose()
   }
 

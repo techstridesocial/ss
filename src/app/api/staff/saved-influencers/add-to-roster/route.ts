@@ -20,11 +20,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { saved_influencer_id } = body
+    const { saved_influencer_id, influencer_type = 'PARTNERED', agency_name } = body
 
     if (!saved_influencer_id) {
       return NextResponse.json({ 
         error: 'saved_influencer_id is required' 
+      }, { status: 400 })
+    }
+
+    // Validate influencer_type
+    const validTypes = ['SIGNED', 'PARTNERED', 'AGENCY_PARTNER']
+    if (!validTypes.includes(influencer_type)) {
+      return NextResponse.json({ 
+        error: 'Invalid influencer_type. Must be one of: SIGNED, PARTNERED, AGENCY_PARTNER' 
       }, { status: 400 })
     }
 
@@ -160,8 +168,8 @@ export async function POST(request: NextRequest) {
       `INSERT INTO influencers (
         user_id, display_name, niche_primary, niches, 
         total_followers, total_engagement_rate,
-        tier, assigned_to, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+        tier, assigned_to, notes, influencer_type, agency_name
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
       [
         influencer_user_id,
         savedInfluencer.display_name || savedInfluencer.username,
@@ -169,13 +177,16 @@ export async function POST(request: NextRequest) {
         savedInfluencer.niches || [],
         savedInfluencer.followers,
         savedInfluencer.engagement_rate,
-        'PARTNERED',
+        influencer_type === 'AGENCY_PARTNER' ? null : influencer_type, // Agency partners don't have tiers
         user_id, // Assign to the staff member who added them
         JSON.stringify({
           modash_data: savedInfluencer.modash_data, // Preserve complete analytics
           added_from_saved: true,
-          saved_date: new Date().toISOString()
-        })
+          saved_date: new Date().toISOString(),
+          influencer_type: influencer_type
+        }),
+        influencer_type,
+        influencer_type === 'AGENCY_PARTNER' ? agency_name : null
       ]
     )
 

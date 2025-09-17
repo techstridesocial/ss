@@ -605,7 +605,7 @@ export default function ViewBrandPanel({ isOpen, onClose, brand }: ViewBrandPane
         id: 'camp_3',
         name: 'Q2 Product Seeding',
         description: 'Product seeding campaign for Q2 launch',
-        status: 'draft',
+        status: 'DRAFT',
         budget: 12000,
         spent: 0,
         influencer_count: 8,

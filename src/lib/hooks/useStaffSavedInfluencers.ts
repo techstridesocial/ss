@@ -143,14 +143,22 @@ export function useStaffSavedInfluencers(platform?: string) {
   }
 
   // Add saved influencer to roster
-  const addToRoster = async (savedInfluencerId: string) => {
+  const addToRoster = async (
+    savedInfluencerId: string, 
+    influencerType: 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' = 'PARTNERED',
+    agencyName?: string
+  ) => {
     try {
       const response = await fetch('/api/staff/saved-influencers/add-to-roster', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ saved_influencer_id: savedInfluencerId })
+        body: JSON.stringify({ 
+          saved_influencer_id: savedInfluencerId,
+          influencer_type: influencerType,
+          agency_name: agencyName
+        })
       })
       
       if (!response.ok) {

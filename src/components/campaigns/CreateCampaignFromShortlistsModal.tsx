@@ -201,7 +201,7 @@ export default function CreateCampaignFromShortlistsModal({
         name: formData.name,
         brand: formData.brand,
         description: formData.description,
-        status: 'draft',
+        status: 'DRAFT',
         goals: formData.goals,
         timeline: {
           startDate: formData.timeline.startDate,
