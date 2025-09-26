@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { clerkClient } from '@clerk/nextjs/server'
 import { UserRole } from '@/types/database'
 import { createInvitation, getInvitations } from '@/lib/db/queries/invitations'
 import { query } from '@/lib/db/connection'
+import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,78 +39,124 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    try {
-      const existingUsers = await clerkClient().users.getUserList({
-        emailAddress: [email]
-      })
+    // Check if user already exists in our database
+    const existingUser = await query(
+      `SELECT id FROM users WHERE email = $1`,
+      [email]
+    )
 
-      if (existingUsers.data.length > 0) {
-        return NextResponse.json(
-          { error: 'User with this email already exists' },
-          { status: 409 }
-        )
-      }
-    } catch (error) {
-      // If error is not "user not found", re-throw it
-      if (!error.message?.includes('not found')) {
-        throw error
-      }
+    if (existingUser.length > 0) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 409 }
+      )
+    }
+
+    // Check if there's already a pending invitation for this email
+    const existingInvitation = await query(
+      `SELECT id FROM user_invitations 
+       WHERE email = $1 AND status = 'INVITED'`,
+      [email]
+    )
+
+    if (existingInvitation.length > 0) {
+      return NextResponse.json(
+        { error: 'A pending invitation already exists for this email' },
+        { status: 409 }
+      )
     }
 
     // Get current user info for tracking
     const currentUser = await auth()
     const currentUserEmail = currentUser.userId ? 
-      (await clerkClient().users.getUser(currentUser.userId)).emailAddresses[0]?.emailAddress : 
+      (await query(`SELECT email FROM users WHERE clerk_id = $1`, [currentUser.userId]))[0]?.email : 
       'system@stridesocial.com'
 
-    // Create invitation with role metadata
-    const invitation = await clerkClient().invitations.createInvitation({
-      emailAddress: email,
-      publicMetadata: {
-        role: role,
-        invitedBy: userRole,
-        invitedAt: new Date().toISOString()
+    // Create Clerk invitation with custom redirect URL
+    const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invitation/accept`
+    
+    // Create invitation using Clerk REST API
+    const response = await fetch('https://api.clerk.dev/v1/invitations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
       },
-      ...(firstName && lastName && {
-        publicMetadata: {
+      body: JSON.stringify({
+        email_address: email,
+        public_metadata: {
           role: role,
           invitedBy: userRole,
           invitedAt: new Date().toISOString(),
-          firstName: firstName,
-          lastName: lastName
-        }
+          ...(firstName && lastName && {
+            firstName: firstName,
+            lastName: lastName
+          })
+        },
+        redirect_url: invitationUrl,
+        // Add required fields for Clerk
+        ...(firstName && { first_name: firstName }),
+        ...(lastName && { last_name: lastName })
       })
     })
 
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Clerk API error response:', errorText)
+      
+      // Handle duplicate invitation error gracefully
+      if (response.status === 400) {
+        try {
+          const errorData = JSON.parse(errorText)
+          if (errorData.errors?.[0]?.code === 'duplicate_record') {
+            return NextResponse.json({
+              success: false,
+              error: 'A pending invitation already exists for this email address',
+              message: 'Please wait for the current invitation to be accepted or expired before sending a new one'
+            }, { status: 409 })
+          }
+        } catch (parseError) {
+          // If we can't parse the error, fall through to the generic error
+        }
+      }
+      
+      throw new Error(`Clerk API error: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+
+    const clerkInvitation = await response.json()
+
     // Store invitation in our database for tracking
     const dbResult = await createInvitation(
-      invitation.id,
+      clerkInvitation.id,
       email,
       role,
-      currentUser.userId || 'system',
+      currentUser.userId || null, // Use null instead of 'system' for UUID field
       currentUserEmail,
       firstName,
       lastName,
-      invitation.expiresAt ? new Date(invitation.expiresAt) : undefined
+      clerkInvitation.expiresAt ? new Date(clerkInvitation.expiresAt) : undefined
     )
 
     if (!dbResult.success) {
       console.error('Failed to store invitation in database:', dbResult.error)
       // Don't fail the request, but log the error
+      console.log('Clerk invitation created but database storage failed')
+    } else {
+      console.log('✅ Invitation stored in database successfully')
     }
 
     return NextResponse.json({
       success: true,
       invitation: {
-        id: invitation.id,
-        email: invitation.emailAddress,
+        id: clerkInvitation.id,
+        email: clerkInvitation.emailAddress,
         role: role,
-        status: invitation.status,
-        createdAt: invitation.createdAt,
-        expiresAt: invitation.expiresAt
+        status: clerkInvitation.status,
+        createdAt: clerkInvitation.createdAt,
+        expiresAt: clerkInvitation.expiresAt,
+        invitationUrl: invitationUrl
       },
-      message: `Invitation sent to ${email} with ${role} role`
+      message: `Invitation sent to ${email} with ${role} role via Clerk email system`
     })
 
   } catch (error) {
@@ -124,9 +170,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Fetching invitations - checking authentication...')
+    
     // Authenticate and check permissions
     await auth.protect()
+    console.log('✅ Authentication passed')
+    
     const userRole = await getCurrentUserRole()
+    console.log('👤 User role:', userRole)
 
     // Only staff and admin can view invitations
     if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {

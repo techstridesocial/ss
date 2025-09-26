@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Store webhook event for processing
     await query(
-      `INSERT INTO clerk_webhook_events (event_type, clerk_user_id, clerk_invitation_id, event_data)
+      `INSERT INTO clerk_webhook_events (event_type, clerk_id, clerk_invitation_id, event_data)
        VALUES ($1, $2, $3, $4)`,
       [
         type,
@@ -97,19 +97,9 @@ async function handleUserCreated(data: any) {
   try {
     console.log('Processing user.created webhook:', data.id)
     
-    // Check if this user was created from an invitation
-    const invitation = await getInvitationByClerkId(data.invitation_id)
-    if (invitation) {
-      // Update invitation status to accepted
-      await updateInvitationStatus(
-        invitation.clerk_invitation_id,
-        'ACCEPTED',
-        data.id, // Clerk user ID
-        data.id
-      )
-      
-      console.log(`Updated invitation ${invitation.id} to ACCEPTED for user ${data.id}`)
-    }
+    // Since we're using custom invitations, we don't need to handle invitation status here
+    // The invitation acceptance is handled in our custom API endpoint
+    console.log(`User created: ${data.id}`)
   } catch (error) {
     console.error('Error handling user.created:', error)
   }
@@ -146,7 +136,7 @@ async function handleInvitationCreated(data: any) {
           data.id,
           data.email_address,
           data.public_metadata?.role || 'BRAND',
-          'PENDING',
+          'INVITED',
           new Date(data.created_at),
           new Date(data.expires_at)
         ]
@@ -190,3 +180,4 @@ async function handleInvitationRevoked(data: any) {
     console.error('Error handling invitation.revoked:', error)
   }
 }
+

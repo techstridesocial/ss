@@ -16,7 +16,7 @@ export interface UserInvitation {
   revoked_at?: Date
   expires_at?: Date
   accepted_user_id?: string
-  clerk_user_id?: string
+  clerk_id?: string
   created_at: Date
   updated_at: Date
 }
@@ -158,7 +158,7 @@ export async function updateInvitationStatus(
       }
       if (clerkUserId) {
         paramCount++
-        updateFields.push(`clerk_user_id = $${paramCount}`)
+        updateFields.push(`clerk_id = $${paramCount}`)
         queryParams.push(clerkUserId)
       }
     } else if (status === 'DECLINED') {

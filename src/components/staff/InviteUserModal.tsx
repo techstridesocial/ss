@@ -55,26 +55,21 @@ export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUs
     setError('')
 
     try {
-      // Mock API call for development
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API delay
+      // Use real API to create invitation
+      const response = await fetch('/api/staff/invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
       
-      // Simulate occasional errors for testing
-      if (Math.random() < 0.1) {
-        throw new Error('Email already exists')
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send invitation')
       }
-
-      // Uncomment below to use real API
-      // const response = await fetch('/api/staff/invitations', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // })
-      // const data = await response.json()
-      // if (!response.ok) {
-      //   throw new Error(data.error || 'Failed to send invitation')
-      // }
+      
+      console.log('✅ Invitation created successfully:', data)
 
       // Reset form and close modal
       setFormData({

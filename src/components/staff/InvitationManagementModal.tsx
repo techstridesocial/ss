@@ -157,17 +157,13 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
     setError('')
 
     try {
-      // Use mock data for development
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API delay
-      setInvitations(mockInvitations)
-      
-      // Uncomment below to use real API
-      // const response = await fetch('/api/staff/invitations')
-      // const data = await response.json()
-      // if (!response.ok) {
-      //   throw new Error(data.error || 'Failed to fetch invitations')
-      // }
-      // setInvitations(data.invitations || [])
+      // Use real API to fetch invitations
+      const response = await fetch('/api/staff/invitations')
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch invitations')
+      }
+      setInvitations(data.invitations || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -190,22 +186,15 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
 
   const handleResendInvitation = async (invitationId: string) => {
     try {
-      // Mock resend - just update the invitation in the list
-      setInvitations(prev => prev.map(inv => 
-        inv.id === invitationId 
-          ? { ...inv, createdAt: new Date().toISOString() }
-          : inv
-      ))
-      
-      // Uncomment below to use real API
-      // const response = await fetch(`/api/staff/invitations/${invitationId}`, {
-      //   method: 'POST',
-      // })
-      // const data = await response.json()
-      // if (!response.ok) {
-      //   throw new Error(data.error || 'Failed to resend invitation')
-      // }
-      // await fetchInvitations()
+      // Use real API to resend invitation
+      const response = await fetch(`/api/staff/invitations/${invitationId}`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend invitation')
+      }
+      await fetchInvitations()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend invitation')
     }
@@ -213,22 +202,15 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
 
   const handleCancelInvitation = async (invitationId: string) => {
     try {
-      // Mock cancel - update status to revoked
-      setInvitations(prev => prev.map(inv => 
-        inv.id === invitationId 
-          ? { ...inv, status: 'revoked' as const }
-          : inv
-      ))
-      
-      // Uncomment below to use real API
-      // const response = await fetch(`/api/staff/invitations/${invitationId}`, {
-      //   method: 'DELETE',
-      // })
-      // const data = await response.json()
-      // if (!response.ok) {
-      //   throw new Error(data.error || 'Failed to cancel invitation')
-      // }
-      // await fetchInvitations()
+      // Use real API to cancel invitation
+      const response = await fetch(`/api/staff/invitations/${invitationId}`, {
+        method: 'DELETE',
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel invitation')
+      }
+      await fetchInvitations()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel invitation')
     }
