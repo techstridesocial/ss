@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
     if (!userRole) {
       // Verify this platform belongs to the current user
       const ownershipQuery = `
-        SELECT ip.modash_profile_id, ip.username, i.user_id
-        FROM influencer_platforms ip
-        JOIN influencers i ON ip.influencer_id = i.id
+        SELECT isa.user_id, isa.handle, i.user_id
+        FROM influencer_social_accounts isa
+        JOIN influencers i ON isa.influencer_id = i.id
         JOIN users u ON i.user_id = u.id
-        WHERE ip.id = $1 AND u.clerk_id = $2
+        WHERE isa.id = $1 AND u.clerk_id = $2
       `
       const ownershipResult = await query(ownershipQuery, [influencerPlatformId, userId])
       
@@ -52,16 +52,16 @@ export async function POST(request: NextRequest) {
         )
       }
       
-      targetModashUserId = ownershipResult[0].modash_profile_id || ownershipResult[0].username
+      targetModashUserId = ownershipResult[0].user_id || ownershipResult[0].handle
     } else {
       // Staff/Admin can refresh any profile
       const platformResult = await query(
-        'SELECT modash_profile_id, username FROM influencer_platforms WHERE id = $1',
+        'SELECT user_id, handle FROM influencer_social_accounts WHERE id = $1',
         [influencerPlatformId]
       )
       
       if (platformResult.length > 0) {
-        targetModashUserId = platformResult[0].modash_profile_id || platformResult[0].username
+        targetModashUserId = platformResult[0].user_id || platformResult[0].handle
       }
     }
 

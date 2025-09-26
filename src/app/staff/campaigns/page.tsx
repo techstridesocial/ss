@@ -25,10 +25,17 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  X
+  X,
+  Search,
+  Filter,
+  RefreshCw
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Campaign } from '@/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 // StatCard component for dashboard metrics
 interface StatCardProps {
@@ -87,9 +94,9 @@ function CampaignsPageClient() {
 
   // Filter states
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'all',
     brand: '',
-    platform: '',
+    platform: 'all',
     niche: '',
     budgetRange: '',
     dateRange: '',
@@ -255,13 +262,13 @@ function CampaignsPageClient() {
   const applyCampaignFilters = (campaigns: Campaign[]) => {
     return campaigns.filter(campaign => {
       // Status filter
-      if (filters.status && campaign.status !== filters.status) return false
+      if (filters.status && filters.status !== 'all' && campaign.status.toLowerCase() !== filters.status.toLowerCase()) return false
       
       // Brand filter
       if (filters.brand && !campaign.brand.toLowerCase().includes(filters.brand.toLowerCase())) return false
       
       // Platform filter
-      if (filters.platform && !campaign.requirements.platforms.includes(filters.platform)) return false
+      if (filters.platform && filters.platform !== 'all' && !campaign.requirements.platforms.includes(filters.platform)) return false
       
       // Search term
       if (searchTerm && !campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
@@ -295,9 +302,9 @@ function CampaignsPageClient() {
 
   const clearFilters = () => {
     setFilters({
-      status: '',
+      status: 'all',
       brand: '',
-      platform: '',
+      platform: 'all',
       niche: '',
       budgetRange: '',
       dateRange: '',
@@ -309,7 +316,7 @@ function CampaignsPageClient() {
 
   // Calculate dashboard stats
   const totalCampaigns = campaigns.length
-  const activeCampaigns = campaigns.filter(c => c.status === 'active').length
+  const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
   const totalBudget = campaigns.reduce((sum, c) => sum + c.budget.total, 0)
   const totalInfluencers = campaigns.reduce((sum, c) => sum + c.totalInfluencers, 0)
 
@@ -343,242 +350,305 @@ function CampaignsPageClient() {
       
       <div className="p-4 lg:p-6 pt-0">
         <div className="px-4 lg:px-8 py-8">
-        {/* Header */}
+        {/* Header - Redesigned */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Campaign Management</h1>
-            <p className="text-gray-600">Manage and track all influencer campaigns</p>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">Campaigns</h1>
+            <p className="text-slate-600">Manage and track all influencer campaigns</p>
           </div>
           <div className="flex gap-3 mt-4 lg:mt-0">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl flex items-center gap-2 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
-              <Plus size={20} />
+              <Plus size={18} />
               Create Campaign
             </button>
             <button
               onClick={handleExportReport}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-xl flex items-center gap-2 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
             >
-              <Package size={20} />
+              <Package size={18} />
               Export Report
             </button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Total Campaigns"
-            value={totalCampaigns}
-            icon={<Megaphone size={24} />}
-            color="blue"
-          />
-          <StatCard
-            title="Active Campaigns"
-            value={activeCampaigns}
-            icon={<Play size={24} />}
-            color="green"
-          />
-          <StatCard
-            title="Total Budget"
-            value={`£${totalBudget.toLocaleString()}`}
-            icon={<DollarSign size={24} />}
-            color="purple"
-          />
-          <StatCard
-            title="Total Influencers"
-            value={totalInfluencers}
-            icon={<Users size={24} />}
-            color="yellow"
-          />
-        </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <FilterIcon size={20} />
-                Filters
-                {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-              <input
-                type="text"
-                placeholder="Search campaigns..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+        {/* Stats Cards - Redesigned */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-1">Total Campaigns</p>
+                <p className="text-2xl font-bold text-slate-900">{totalCampaigns}</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Megaphone size={20} className="text-blue-600" />
+              </div>
             </div>
           </div>
-
-          {/* Expanded Filters */}
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-6 pt-6 border-t border-gray-200"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-                
-                <select
-                  value={filters.platform}
-                  onChange={(e) => handleFilterChange('platform', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="">All Platforms</option>
-                  <option value="instagram">Instagram</option>
-                  <option value="tiktok">TikTok</option>
-                  <option value="youtube">YouTube</option>
-                </select>
-                
-                <input
-                  type="text"
-                  placeholder="Filter by brand..."
-                  value={filters.brand}
-                  onChange={(e) => handleFilterChange('brand', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                />
-                
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm"
-                >
-                  Clear All
-                </button>
+          
+          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-1">Active Campaigns</p>
+                <p className="text-2xl font-bold text-slate-900">{activeCampaigns}</p>
               </div>
-            </motion.div>
-          )}
+              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                <Play size={20} className="text-emerald-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-1">Total Budget</p>
+                <p className="text-2xl font-bold text-slate-900">£{totalBudget.toLocaleString()}</p>
+              </div>
+              <div className="w-10 h-10 bg-violet-50 rounded-lg flex items-center justify-center">
+                <DollarSign size={20} className="text-violet-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-1">Total Influencers</p>
+                <p className="text-2xl font-bold text-slate-900">{totalInfluencers}</p>
+              </div>
+              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Users size={20} className="text-amber-600" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Campaigns Table */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Campaign
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Brand
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Budget
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Influencers
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payments
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timeline
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
+        {/* Filters and Search - Same as Finances Page */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search campaigns, brands, or descriptions..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="md:w-48">
+                <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="paused">Paused</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:w-48">
+                <Select value={filters.platform} onValueChange={(value) => handleFilterChange('platform', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Platforms</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="youtube">YouTube</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={() => setShowFilters(!showFilters)}
+                variant="outline"
+                className="md:w-auto"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Advanced Filters
+              </Button>
+              <Button
+                onClick={fetchCampaigns}
+                variant="outline"
+                className="md:w-auto"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Brand Filter</label>
+                  <Input
+                    placeholder="Filter by brand name"
+                    value={filters.brand}
+                    onChange={(e) => handleFilterChange('brand', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Show per page</label>
+                  <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={clearFilters}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Campaigns Table - Same as Finances Page */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Campaigns</CardTitle>
+              <div className="text-sm text-gray-500">
+                {filteredCampaigns.length} campaign{filteredCampaigns.length !== 1 ? 's' : ''} found
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Campaign
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Brand
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Budget
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Influencers
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Payments
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Timeline
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+              <tbody className="divide-y divide-slate-200">
                 {filteredCampaigns.map((campaign) => (
-                  <tr key={campaign.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={campaign.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-5">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
-                        <div className="text-sm text-gray-500">{campaign.description}</div>
+                        <div className="text-sm font-semibold text-slate-900 mb-1">{campaign.name}</div>
+                        <div className="text-xs text-slate-500 line-clamp-1">{campaign.description}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{campaign.brand}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        campaign.status === 'active' ? 'bg-green-100 text-green-800' :
-                        campaign.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                        campaign.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                        campaign.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                    <td className="px-6 py-5">
+                      <div className="text-sm font-medium text-slate-900">{campaign.brand}</div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${
+                        campaign.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' :
+                        campaign.status === 'PAUSED' ? 'bg-amber-100 text-amber-800' :
+                        campaign.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                        campaign.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                        'bg-slate-100 text-slate-800'
                       }`}>
-                        {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                        {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1).toLowerCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      £{campaign.budget.total.toLocaleString()}
+                    <td className="px-6 py-5">
+                      <div className="text-sm font-semibold text-slate-900">
+                        £{campaign.budget.total.toLocaleString()}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {campaign.totalInfluencers}
+                    <td className="px-6 py-5">
+                      <div className="text-sm font-semibold text-slate-900">
+                        {campaign.totalInfluencers}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="flex flex-col">
-                        <span className="text-green-600 font-medium">
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-xs font-medium text-emerald-600">
                           {campaign.paidCount || 0} Paid
                         </span>
-                        <span className="text-yellow-600 text-xs">
+                        <span className="text-xs text-amber-600">
                           {campaign.paymentPendingCount || 0} Pending
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {new Date(campaign.timeline.startDate).toLocaleDateString()} - {new Date(campaign.timeline.endDate).toLocaleDateString()}
+                    <td className="px-6 py-5">
+                      <div className="text-xs text-slate-600">
+                        <div>{new Date(campaign.timeline.startDate).toLocaleDateString()}</div>
+                        <div className="text-slate-400">to</div>
+                        <div>{new Date(campaign.timeline.endDate).toLocaleDateString()}</div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleViewCampaign(campaign)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Campaign"
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           onClick={() => handleEditCampaign(campaign.id)}
-                          className="text-gray-600 hover:text-gray-800 transition-colors"
+                          className="p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                          title="Edit Campaign"
                         >
                           <Edit size={16} />
                         </button>
-                        {campaign.status === 'active' && (
+                        {campaign.status === 'ACTIVE' && (
                           <button
                             onClick={() => handlePauseCampaign(campaign.id)}
-                            className="text-yellow-600 hover:text-yellow-800 transition-colors"
+                            className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Pause Campaign"
                           >
                             <Pause size={16} />
                           </button>
                         )}
-                        {campaign.status === 'paused' && (
+                        {campaign.status === 'PAUSED' && (
                           <button
                             onClick={() => handleResumeCampaign(campaign.id)}
-                            className="text-green-600 hover:text-green-800 transition-colors"
+                            className="p-2 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Resume Campaign"
                           >
                             <Play size={16} />
                           </button>
@@ -587,17 +657,28 @@ function CampaignsPageClient() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {filteredCampaigns.length === 0 && (
-            <div className="text-center py-12">
-              <Package size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">No campaigns found</p>
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+            
+            {filteredCampaigns.length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package size={32} className="text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No campaigns found</h3>
+                <p className="text-slate-500 mb-6">Try adjusting your filters or create a new campaign</p>
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  Create Campaign
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Campaign Detail Panel */}

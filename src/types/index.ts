@@ -150,6 +150,11 @@ export interface Campaign {
   pendingCount: number;
   paidCount?: number;
   paymentPendingCount?: number;
+  createdBy?: {
+    id: string;
+    email: string;
+    name: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

@@ -14,6 +14,56 @@ import {
   getCampaignTimeline
 } from '@/lib/db/queries/campaign-influencers'
 
+// Mock data for development
+const MOCK_CAMPAIGN_INFLUENCERS: any[] = []
+const MOCK_AVAILABLE_INFLUENCERS = [
+  {
+    id: 'inf_1',
+    display_name: 'Sarah Creator',
+    first_name: 'Sarah',
+    last_name: 'Creator',
+    total_followers: 125000,
+    niches: ['Lifestyle', 'Fashion'],
+    platform: 'Instagram'
+  },
+  {
+    id: 'inf_2',
+    display_name: 'Mike Tech',
+    first_name: 'Mike',
+    last_name: 'Tech',
+    total_followers: 89000,
+    niches: ['Tech', 'Gaming'],
+    platform: 'YouTube'
+  },
+  {
+    id: 'inf_3',
+    display_name: 'FitnessFiona',
+    first_name: 'Fiona',
+    last_name: 'Fit',
+    total_followers: 156000,
+    niches: ['Fitness', 'Health'],
+    platform: 'Instagram'
+  },
+  {
+    id: 'inf_4',
+    display_name: 'BeautyByBella',
+    first_name: 'Bella',
+    last_name: 'Beauty',
+    total_followers: 234000,
+    niches: ['Beauty', 'Lifestyle'],
+    platform: 'TikTok'
+  },
+  {
+    id: 'inf_5',
+    display_name: 'TravelTom',
+    first_name: 'Tom',
+    last_name: 'Travel',
+    total_followers: 78000,
+    niches: ['Travel', 'Adventure'],
+    platform: 'Instagram'
+  }
+]
+
 interface RouteParams {
   params: {
     id: string
@@ -34,25 +84,58 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const campaignId = params.id
 
-    // Get influencers with details
-    const influencers = await getCampaignInfluencersWithDetails(campaignId)
+    // TEMPORARY: Use mock data instead of database
+    console.log('📋 Using mock data for campaign influencers (campaignId:', campaignId, ')')
+    
+    const mockInfluencers = MOCK_CAMPAIGN_INFLUENCERS.map(ci => ({
+      ...ci,
+      influencer: MOCK_AVAILABLE_INFLUENCERS.find(inf => inf.id === ci.influencer_id) || ci.influencer
+    }))
 
-    // Get additional data if requested
+    // Mock stats if requested
     let stats = null
-    let timeline = null
-
     if (includeStats) {
-      stats = await getCampaignStatistics(campaignId)
+      stats = {
+        totalInfluencers: MOCK_CAMPAIGN_INFLUENCERS.length,
+        invitedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'INVITED').length,
+        acceptedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'ACCEPTED').length,
+        declinedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'DECLINED').length,
+        inProgressCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'IN_PROGRESS').length,
+        contentSubmittedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'CONTENT_SUBMITTED').length,
+        completedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'COMPLETED').length,
+        paidCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'PAID').length,
+        productShippedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.productShipped).length,
+        contentPostedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.contentPosted).length,
+        paymentReleasedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.paymentReleased).length
+      }
     }
 
+    // Mock timeline if requested
+    let timeline = null
     if (includeTimeline) {
-      timeline = await getCampaignTimeline(campaignId)
+      timeline = {
+        campaign: {
+          startDate: new Date('2024-01-01'),
+          endDate: new Date('2024-01-31'),
+          applicationDeadline: new Date('2024-01-15'),
+          contentDeadline: new Date('2024-01-25')
+        },
+        influencers: MOCK_CAMPAIGN_INFLUENCERS.map(ci => ({
+          influencerId: ci.influencer_id,
+          displayName: MOCK_AVAILABLE_INFLUENCERS.find(inf => inf.id === ci.influencer_id)?.display_name || 'Unknown',
+          deadline: ci.deadline || null,
+          status: ci.status || 'INVITED',
+          productShipped: ci.productShipped || false,
+          contentPosted: ci.contentPosted || false,
+          paymentReleased: ci.paymentReleased || false
+        }))
+      }
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        influencers,
+        influencers: mockInfluencers,
         stats,
         timeline
       }
@@ -101,35 +184,63 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Add influencer to campaign with enhanced tracking
-    const campaignInfluencer = await assignInfluencer(
-      campaignId,
-      influencerId,
-      rate,
-      data.deadline ? new Date(data.deadline) : undefined,
-      notes
-    )
-
-    // Update the status if it's not pending (default)
-    if (status !== 'pending') {
-      await updateStatus(
-        campaignId,
-        influencerId,
-        status as any,
-        notes
+    // TEMPORARY: Use mock data instead of database
+    console.log('📋 Adding influencer to campaign using mock data:', { campaignId, influencerId, status })
+    
+    // Find the influencer in our mock data
+    const influencer = MOCK_AVAILABLE_INFLUENCERS.find(inf => inf.id === influencerId)
+    if (!influencer) {
+      return NextResponse.json(
+        { error: 'Influencer not found' },
+        { status: 404 }
       )
     }
+
+    // Check if influencer is already in the campaign
+    const existingAssignment = MOCK_CAMPAIGN_INFLUENCERS.find(ci => 
+      ci.campaign_id === campaignId && ci.influencer_id === influencerId
+    )
+
+    if (existingAssignment) {
+      return NextResponse.json(
+        { error: 'Influencer is already assigned to this campaign' },
+        { status: 409 }
+      )
+    }
+
+    // Create mock campaign influencer
+    const mockCampaignInfluencer = {
+      id: `ci_${Date.now()}`,
+      campaignId,
+      influencerId,
+      status: status.toUpperCase(),
+      rate: rate || null,
+      notes: notes || null,
+      deadline: data.deadline ? new Date(data.deadline) : null,
+      appliedAt: null,
+      acceptedAt: status === 'accepted' ? new Date() : null,
+      declinedAt: status === 'declined' ? new Date() : null,
+      contentSubmittedAt: null,
+      contentLinks: [], // Initialize empty content links
+      discountCode: null, // Initialize discount code
+      paidAt: null,
+      productShipped: false,
+      contentPosted: false,
+      paymentReleased: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      influencer: influencer
+    }
+
+    // Add to mock data
+    MOCK_CAMPAIGN_INFLUENCERS.push(mockCampaignInfluencer)
+
+    console.log('✅ Successfully added influencer to campaign (mock):', mockCampaignInfluencer)
 
     return NextResponse.json({
       success: true,
       message: `Influencer ${status} for campaign successfully`,
-      campaignInfluencer: {
-        ...campaignInfluencer,
-        status,
-        notes,
-        acceptedAt: status === 'accepted' ? new Date().toISOString() : null,
-        declinedAt: status === 'declined' ? new Date().toISOString() : null
-      }
+      campaignInfluencer: mockCampaignInfluencer
     }, { status: 201 })
 
   } catch (error) {
@@ -168,44 +279,39 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Update the campaign influencer with content links and discount code
-    let updatedCampaignInfluencer
+    // TEMPORARY: Use mock data instead of database
+    console.log('📋 Updating campaign influencer using mock data:', { campaignId, influencerId, contentLinks, discountCode })
     
-    if (contentLinks !== undefined || discountCode !== undefined) {
-      // Update content links and discount code
-      const updateQuery = `
-        UPDATE campaign_influencers 
-        SET content_links = $1, discount_code = $2, updated_at = NOW()
-        WHERE campaign_id = $3 AND influencer_id = $4
-        RETURNING *
-      `
-      const result = await query(updateQuery, [
-        JSON.stringify(contentLinks || []),
-        discountCode || null,
-        campaignId,
-        influencerId
-      ])
-      updatedCampaignInfluencer = result[0]
-    } else if (status) {
-      // Update status only
-      updatedCampaignInfluencer = await updateCampaignInfluencerStatus(
-        campaignId,
-        influencerId,
-        status,
-        notes
-      )
-    }
+    // Find the campaign influencer in mock data
+    const campaignInfluencerIndex = MOCK_CAMPAIGN_INFLUENCERS.findIndex(ci => 
+      ci.campaignId === campaignId && ci.influencerId === influencerId
+    )
 
-    if (!updatedCampaignInfluencer) {
+    if (campaignInfluencerIndex === -1) {
       return NextResponse.json(
         { error: 'Campaign influencer assignment not found' },
         { status: 404 }
       )
     }
 
+    // Update the mock data
+    const updatedCampaignInfluencer = {
+      ...MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex],
+      contentLinks: contentLinks !== undefined ? contentLinks : MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].contentLinks,
+      discountCode: discountCode !== undefined ? discountCode : MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].discountCode,
+      status: status || MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].status,
+      notes: notes !== undefined ? notes : MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].notes,
+      updatedAt: new Date()
+    }
+
+    // Update the mock array
+    MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex] = updatedCampaignInfluencer
+
+    console.log('✅ Successfully updated campaign influencer (mock):', updatedCampaignInfluencer)
+
     return NextResponse.json({
       success: true,
-      message: `Influencer status updated to ${status}`,
+      message: `Campaign influencer updated successfully`,
       campaignInfluencer: updatedCampaignInfluencer
     })
 

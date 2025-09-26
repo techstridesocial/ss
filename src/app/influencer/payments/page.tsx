@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
-import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save, Loader2 } from 'lucide-react'
+import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save, Loader2, FileText, Eye, Download } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import InvoiceSubmissionModal from '../../../components/influencer/InvoiceSubmissionModal'
 
 interface PayPalDetails {
   email: string
@@ -12,9 +14,11 @@ interface PayPalDetails {
 }
 
 interface BankDetails {
+  accountType: string // Personal Account or Business Account
   accountHolderName: string
   accountNumber: string
   routingNumber: string // Changed from sortCode to routingNumber for international use
+  abaCode: string // ABA code for Australians
   bankName: string
   swiftCode: string // Added SWIFT code for international transfers
   iban: string // Added IBAN for European/international banking
@@ -22,6 +26,7 @@ interface BankDetails {
   city: string
   country: string // Changed from postcode to country
   currency: string // Added currency preference
+  vatRegistered: string // Yes or No
 }
 
 interface PaymentInfo {
@@ -56,6 +61,25 @@ interface PaymentHistoryItem {
   brand_name: string
 }
 
+interface Invoice {
+  id: string
+  invoice_number: string
+  invoice_date: string
+  due_date: string
+  creator_name: string
+  brand_name: string
+  content_description: string
+  content_link: string
+  agreed_price: number
+  currency: string
+  vat_amount: number
+  total_amount: number
+  status: 'DRAFT' | 'SENT' | 'VERIFIED' | 'DELAYED' | 'PAID' | 'VOIDED'
+  staff_notes?: string
+  pdf_path?: string
+  created_at: string
+}
+
 export default function InfluencerPayments() {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
   const [showPayPalForm, setShowPayPalForm] = useState(false)
@@ -73,6 +97,8 @@ export default function InfluencerPayments() {
     this_month: 0
   })
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   
   // PayPal form state
   const [paypalDetails, setPaypalDetails] = useState<PayPalDetails>({
@@ -83,16 +109,19 @@ export default function InfluencerPayments() {
 
   // Bank form state
   const [bankDetails, setBankDetails] = useState<BankDetails>({
+    accountType: '',
     accountHolderName: '',
     accountNumber: '',
     routingNumber: '',
+    abaCode: '',
     bankName: '',
     swiftCode: '',
     iban: '',
     address: '',
     city: '',
     country: '',
-    currency: 'GBP' // Default to GBP
+    currency: 'GBP', // Default to GBP
+    vatRegistered: ''
   })
 
   // Saved details (simulated)
@@ -102,6 +131,7 @@ export default function InfluencerPayments() {
   // Fetch payment data on component mount
   useEffect(() => {
     fetchPaymentData()
+    fetchInvoices()
   }, [])
 
   const fetchPaymentData = async () => {
@@ -288,6 +318,45 @@ export default function InfluencerPayments() {
       currency: 'GBP'
     })
   }
+
+  const fetchInvoices = async () => {
+    try {
+      const response = await fetch('/api/influencer/invoices')
+      if (response.ok) {
+        const data = await response.json()
+        setInvoices(data.invoices || [])
+      }
+    } catch (error) {
+      console.error('Error fetching invoices:', error)
+    }
+  }
+
+  const handleInvoiceCreated = () => {
+    fetchInvoices()
+    fetchPaymentData() // Refresh payment data
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'SENT': return 'text-blue-600 bg-blue-100'
+      case 'VERIFIED': return 'text-green-600 bg-green-100'
+      case 'DELAYED': return 'text-orange-600 bg-orange-100'
+      case 'PAID': return 'text-green-600 bg-green-100'
+      case 'VOIDED': return 'text-red-600 bg-red-100'
+      default: return 'text-gray-600 bg-gray-100'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'SENT': return <Clock className="h-4 w-4" />
+      case 'VERIFIED': return <CheckCircle className="h-4 w-4" />
+      case 'DELAYED': return <AlertTriangle className="h-4 w-4" />
+      case 'PAID': return <CheckCircle className="h-4 w-4" />
+      case 'VOIDED': return <X className="h-4 w-4" />
+      default: return <Clock className="h-4 w-4" />
+    }
+  }
   
   return (
     <InfluencerProtectedRoute>
@@ -307,7 +376,7 @@ export default function InfluencerPayments() {
                       <span className="text-gray-500">Loading...</span>
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-green-600 mt-2">£{paymentSummary.total_earned.toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-green-600 mt-2">£{Number(paymentSummary.total_earned).toFixed(2)}</p>
                   )}
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
@@ -324,7 +393,7 @@ export default function InfluencerPayments() {
                       <span className="text-gray-500">Loading...</span>
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-orange-600 mt-2">£{paymentSummary.pending_amount.toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-orange-600 mt-2">£{Number(paymentSummary.pending_amount).toFixed(2)}</p>
                   )}
                 </div>
                 <Clock className="h-8 w-8 text-orange-600" />
@@ -341,7 +410,7 @@ export default function InfluencerPayments() {
                       <span className="text-gray-500">Loading...</span>
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-blue-600 mt-2">£{paymentSummary.paid_out.toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-blue-600 mt-2">£{Number(paymentSummary.paid_out).toFixed(2)}</p>
                   )}
                 </div>
                 <CheckCircle className="h-8 w-8 text-blue-600" />
@@ -358,7 +427,7 @@ export default function InfluencerPayments() {
                       <span className="text-gray-500">Loading...</span>
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-purple-600 mt-2">£{paymentSummary.this_month.toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-purple-600 mt-2">£{Number(paymentSummary.this_month).toFixed(2)}</p>
                   )}
                 </div>
                 <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
@@ -490,6 +559,16 @@ export default function InfluencerPayments() {
                     </div>
                   </div>
                   
+                  {/* PayPal Fees Notice */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-amber-800">
+                        <strong>Please note:</strong> We do not cover any PayPal fees. Any fees charged by PayPal will be deducted from your payment.
+                      </p>
+                    </div>
+                  </div>
+                  
                   <div className="flex gap-4 pt-4">
                     <button
                       type="submit"
@@ -530,9 +609,26 @@ export default function InfluencerPayments() {
                 </div>
                 
                 <form onSubmit={handleBankSubmit} className="space-y-4">
+                  {/* Account Type Dropdown */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Account Holder Name *
+                      Account Type *
+                    </label>
+                    <select
+                      required
+                      value={bankDetails.accountType}
+                      onChange={(e) => setBankDetails(prev => ({ ...prev, accountType: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Account Type</option>
+                      <option value="Personal">Personal Account</option>
+                      <option value="Business">Business Account</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Account Name *
                     </label>
                     <input
                       type="text"
@@ -561,17 +657,30 @@ export default function InfluencerPayments() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Routing Number *
+                        Wire Routing Number/Sort Code (varies by country)
                       </label>
-                                              <input
-                          type="text"
-                          required
-                          value={bankDetails.routingNumber}
-                          onChange={(e) => setBankDetails(prev => ({ ...prev, routingNumber: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Routing/Sort Code (varies by country)"
-                        />
+                      <input
+                        type="text"
+                        value={bankDetails.routingNumber}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, routingNumber: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Wire Routing Number/Sort Code (varies by country)"
+                      />
                     </div>
+                  </div>
+                  
+                  {/* ABA Code for Australians */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ABA Code (for Australians)
+                    </label>
+                    <input
+                      type="text"
+                      value={bankDetails.abaCode}
+                      onChange={(e) => setBankDetails(prev => ({ ...prev, abaCode: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="ABA Code (for Australians)"
+                    />
                   </div>
                   
                   <div>
@@ -694,6 +803,23 @@ export default function InfluencerPayments() {
                        <option value="IDR">IDR - Indonesian Rupiah</option>
                      </select>
                   </div>
+
+                  {/* VAT Registered Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      VAT Registered *
+                    </label>
+                    <select
+                      required
+                      value={bankDetails.vatRegistered}
+                      onChange={(e) => setBankDetails(prev => ({ ...prev, vatRegistered: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select VAT Status</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
                   
                   <div className="flex gap-4 pt-4">
                     <button
@@ -769,7 +895,7 @@ export default function InfluencerPayments() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
-                            £{payment.amount.toFixed(2)}
+                            £{Number(payment.amount).toFixed(2)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -796,6 +922,126 @@ export default function InfluencerPayments() {
             )}
           </div>
 
+          {/* Invoice Management Section */}
+          <div className="bg-white rounded-lg shadow p-6 mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <FileText className="h-6 w-6 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Invoice Management</h3>
+              </div>
+              <Button
+                onClick={() => setShowInvoiceModal(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Invoice
+              </Button>
+            </div>
+
+            {invoices.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">No Invoices Yet</h4>
+                <p className="text-gray-600 mb-4">
+                  Create your first invoice to get paid for your campaigns.
+                </p>
+                <Button
+                  onClick={() => setShowInvoiceModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Invoice
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice #
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Campaign
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Due Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.invoice_number}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(invoice.invoice_date).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{invoice.brand_name}</div>
+                            <div className="text-sm text-gray-500">{invoice.content_description}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
+                          </div>
+                          {invoice.vat_amount > 0 && (
+                            <div className="text-sm text-gray-500">
+                              (incl. {invoice.currency} {Number(invoice.vat_amount).toFixed(2)} VAT)
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
+                            {getStatusIcon(invoice.status)}
+                            <span className="ml-1">{invoice.status}</span>
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(invoice.due_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(invoice.content_link, '_blank')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {invoice.pdf_path && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(invoice.pdf_path, '_blank')}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           {/* Important Notice */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mt-8">
             <div className="flex items-start">
@@ -813,6 +1059,13 @@ export default function InfluencerPayments() {
             </div>
           </div>
         </div>
+
+        {/* Invoice Submission Modal */}
+        <InvoiceSubmissionModal
+          isOpen={showInvoiceModal}
+          onClose={() => setShowInvoiceModal(false)}
+          onInvoiceCreated={handleInvoiceCreated}
+        />
       </div>
     </InfluencerProtectedRoute>
   )

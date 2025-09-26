@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
-import { getInfluencerCampaigns } from '@/lib/db/queries/campaigns'
 
-// GET - Fetch influencer campaign assignments
+// GET - Get campaigns for the current influencer
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -11,17 +10,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get influencer ID from users table
+    // Get user ID from Clerk ID
     const userResult = await query<{ id: string }>(
       'SELECT id FROM users WHERE clerk_id = $1',
       [userId]
     )
 
     if (userResult.length === 0) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const user_id = userResult[0]?.id
@@ -33,38 +29,33 @@ export async function GET(request: NextRequest) {
     )
 
     if (influencerResult.length === 0) {
-      return NextResponse.json(
-        { error: 'Influencer not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
     }
 
     const influencer_id = influencerResult[0]?.id
 
-    if (!influencer_id) {
-      return NextResponse.json(
-        { error: 'Influencer ID not found' },
-        { status: 404 }
-      )
-    }
+    // Get campaigns assigned to this influencer
+    const campaigns = await query(`
+      SELECT 
+        c.id,
+        c.name,
+        c.brand_name,
+        c.status,
+        c.created_at,
+        ci.status as assignment_status
+      FROM campaigns c
+      JOIN campaign_influencers ci ON c.id = ci.campaign_id
+      WHERE ci.influencer_id = $1
+      AND c.status IN ('ACTIVE', 'COMPLETED')
+      ORDER BY c.created_at DESC
+    `, [influencer_id])
 
-    // Use the new influencer campaigns function
-    const campaignsResult = await getInfluencerCampaigns(influencer_id)
-
-    if (!campaignsResult.success) {
-      return NextResponse.json(
-        { error: campaignsResult.error || 'Failed to fetch campaigns' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json(campaignsResult)
-
+    return NextResponse.json({ campaigns })
   } catch (error) {
-    console.error('Error fetching influencer campaigns:', error)
+    console.error('Error fetching campaigns:', error)
     return NextResponse.json(
       { error: 'Failed to fetch campaigns' },
       { status: 500 }
     )
   }
-} 
+}

@@ -28,6 +28,75 @@ interface CreateInfluencerRequest {
   discovered_engagement_rate?: number
 }
 
+// Mock data for influencers
+const MOCK_INFLUENCERS = [
+  {
+    id: 'inf_1',
+    display_name: 'Sarah Creator',
+    first_name: 'Sarah',
+    last_name: 'Creator',
+    total_followers: 125000,
+    niches: ['Lifestyle', 'Fashion'],
+    platform: 'Instagram',
+    total_engagement_rate: 3.8,
+    total_avg_views: 45000,
+    tier: 'GOLD',
+    is_active: true
+  },
+  {
+    id: 'inf_2',
+    display_name: 'Mike Tech',
+    first_name: 'Mike',
+    last_name: 'Tech',
+    total_followers: 89000,
+    niches: ['Tech', 'Gaming'],
+    platform: 'YouTube',
+    total_engagement_rate: 4.2,
+    total_avg_views: 32000,
+    tier: 'SILVER',
+    is_active: true
+  },
+  {
+    id: 'inf_3',
+    display_name: 'FitnessFiona',
+    first_name: 'Fiona',
+    last_name: 'Fit',
+    total_followers: 156000,
+    niches: ['Fitness', 'Health'],
+    platform: 'Instagram',
+    total_engagement_rate: 5.1,
+    total_avg_views: 62000,
+    tier: 'GOLD',
+    is_active: true
+  },
+  {
+    id: 'inf_4',
+    display_name: 'BeautyByBella',
+    first_name: 'Bella',
+    last_name: 'Beauty',
+    total_followers: 234000,
+    niches: ['Beauty', 'Lifestyle'],
+    platform: 'TikTok',
+    total_engagement_rate: 6.1,
+    total_avg_views: 89000,
+    tier: 'GOLD',
+    is_active: true
+  },
+  {
+    id: 'inf_5',
+    display_name: 'TravelTom',
+    first_name: 'Tom',
+    last_name: 'Travel',
+    total_followers: 78000,
+    niches: ['Travel', 'Adventure'],
+    platform: 'Instagram',
+    total_engagement_rate: 4.5,
+    total_avg_views: 28000,
+    tier: 'SILVER',
+    is_active: true
+  }
+]
+
 // GET - Fetch influencers (for roster page)
 export async function GET(request: NextRequest) {
   try {
@@ -43,77 +112,63 @@ export async function GET(request: NextRequest) {
       }, { status: 403 })
     }
 
-    // Fetch influencers with their profiles and platform data
-    const influencersQuery = `
+    // Fetch real influencers from database
+    console.log('📋 Fetching real influencers from database')
+    
+    const influencers = await query(`
       SELECT 
         i.id,
-        i.user_id,
         i.display_name,
-        i.niches,
+        i.influencer_type,
+        i.content_type,
+        i.agency_name,
+        i.tier,
         i.total_followers,
         i.total_engagement_rate,
         i.total_avg_views,
-        i.estimated_promotion_views,
-        i.tier,
         i.assigned_to,
-        i.labels,
         i.notes,
         i.created_at,
         i.updated_at,
         up.first_name,
         up.last_name,
-        up.avatar_url,
+        up.bio,
         up.location_country,
         up.location_city,
-        up.bio,
+        up.avatar_url,
+        up.phone,
+        up.is_onboarded,
         u.email,
-        u.role
+        u.status as user_status,
+        u.last_login,
+        -- Get platform data
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'platform', ip.platform,
+              'username', ip.username,
+              'followers', ip.followers,
+              'engagement_rate', ip.engagement_rate,
+              'avg_views', ip.avg_views,
+              'is_connected', ip.is_connected,
+              'profile_url', ip.profile_url
+            )
+          ) FILTER (WHERE ip.id IS NOT NULL),
+          '[]'::json
+        ) as platforms
       FROM influencers i
       LEFT JOIN users u ON i.user_id = u.id
       LEFT JOIN user_profiles up ON u.id = up.user_id
+      LEFT JOIN influencer_platforms ip ON i.id = ip.influencer_id
+      GROUP BY i.id, u.id, up.id
       ORDER BY i.created_at DESC
-    `
+    `)
 
-    const influencers = await query(influencersQuery)
-
-    // Get platform data for each influencer
-    const platformsQuery = `
-      SELECT 
-        influencer_id,
-        platform,
-        username,
-        followers,
-        engagement_rate,
-        avg_views,
-        is_connected,
-        last_synced
-      FROM influencer_platforms
-      ORDER BY influencer_id, platform
-    `
-
-    const platforms = await query(platformsQuery)
-
-    // Group platforms by influencer
-    const platformsByInfluencer = platforms.reduce((acc: any, platform: any) => {
-      if (!acc[platform.influencer_id]) {
-        acc[platform.influencer_id] = []
-      }
-      acc[platform.influencer_id].push(platform)
-      return acc
-    }, {})
-
-    // Combine data
-    const enrichedInfluencers = influencers.map((inf: any) => ({
-      ...inf,
-      platforms: platformsByInfluencer[inf.id] || [],
-      platform_count: (platformsByInfluencer[inf.id] || []).length,
-      influencer_type: mapRoleToInfluencerType(inf.role),
-      is_active: true // Default for now
-    }))
-
+    console.log(`✅ Loaded ${influencers.length} real influencers from database`)
+    
     return NextResponse.json({
       success: true,
-      data: enrichedInfluencers
+      data: influencers
     })
 
   } catch (error) {
@@ -189,9 +244,9 @@ export async function POST(request: NextRequest) {
         INSERT INTO influencers (
           user_id, display_name, niches, total_followers, 
           total_engagement_rate, total_avg_views, estimated_promotion_views,
-          tier, assigned_to
+          tier, assigned_to, influencer_type, content_type, agency_name, website_url
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING id
       `
       const influencerResult = await client.query(insertInfluencerQuery, [
@@ -203,7 +258,11 @@ export async function POST(request: NextRequest) {
         data.average_views || 0,
         Math.floor((data.average_views || 0) * 0.85), // 15% reduction for promotion views
         data.tier || 'SILVER',
-        null // No assignment initially
+        null, // No assignment initially
+        data.influencer_type,
+        data.content_type || 'STANDARD',
+        data.agency_name || null,
+        data.website_url || null
       ])
       const influencerId = influencerResult.rows[0].id
 
@@ -223,9 +282,9 @@ export async function POST(request: NextRequest) {
         const insertPlatformQuery = `
           INSERT INTO influencer_platforms (
             influencer_id, platform, username, followers, 
-            engagement_rate, avg_views, is_connected
+            engagement_rate, avg_views, is_connected, profile_url
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `
         await client.query(insertPlatformQuery, [
           influencerId,
@@ -234,7 +293,8 @@ export async function POST(request: NextRequest) {
           data.estimated_followers || 0,
           data.discovered_engagement_rate || 0,
           data.average_views || 0,
-          false // Not connected initially
+          false, // Not connected initially
+          `https://${platform?.toLowerCase()}.com/${username}`
         ])
       }
 

@@ -16,7 +16,8 @@ export function ProtectedRoute({
   requiredRole, 
   requiredPortal
 }: ProtectedRouteProps) {
-  const { isLoaded, isSignedIn } = useUser()
+  const user = useUser()
+  const { isLoaded, isSignedIn } = user || { isLoaded: false, isSignedIn: false }
   const userRole = useUserRole()
   const router = useRouter()
   const canAccessPortal = useCanAccessPortal(requiredPortal || 'brand')
@@ -44,16 +45,16 @@ export function ProtectedRoute({
 
   }, [isLoaded, isSignedIn, userRole, requiredRole, requiredPortal, canAccessPortal, router])
 
-  // Show minimal loading while Clerk is initializing
+  // Show loading state while Clerk is initializing
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
-  // Show minimal loading while redirecting
+  // Show loading while redirecting
   if (!isSignedIn || (requiredRole && userRole !== requiredRole) || (requiredPortal && !canAccessPortal)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -31,6 +31,8 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       SELECT 
         c.*,
         b.company_name as brand_name,
+        u.email as created_by_email,
+        u.name as created_by_name,
         COUNT(ci.id) as total_influencers,
         COUNT(CASE WHEN ci.status = 'ACCEPTED' THEN 1 END) as accepted_count,
         COUNT(CASE WHEN ci.status = 'INVITED' THEN 1 END) as pending_count,
@@ -38,8 +40,9 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
         COUNT(CASE WHEN ci.payment_status = 'PENDING' THEN 1 END) as payment_pending_count
       FROM campaigns c
       LEFT JOIN brands b ON c.brand_id = b.id
+      LEFT JOIN users u ON c.created_by = u.id
       LEFT JOIN campaign_influencers ci ON c.id = ci.campaign_id
-      GROUP BY c.id, b.company_name
+      GROUP BY c.id, b.company_name, u.email, u.name
       ORDER BY c.created_at DESC
     `);
     
@@ -74,6 +77,11 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       pendingCount: parseInt(row.pending_count) || 0,
       paidCount: parseInt(row.paid_count) || 0,
       paymentPendingCount: parseInt(row.payment_pending_count) || 0,
+      createdBy: {
+        id: row.created_by || 'unknown',
+        email: row.created_by_email || 'Unknown',
+        name: row.created_by_name || 'Unknown Staff'
+      },
       createdAt: row.created_at ? new Date(row.created_at) : new Date(),
       updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }));
@@ -208,8 +216,8 @@ export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt'
       name, brand, status, description, goals, start_date, end_date, 
       application_deadline, content_deadline, total_budget, per_influencer_budget,
       min_followers, max_followers, min_engagement, platforms, demographics,
-      content_guidelines, deliverables
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      content_guidelines, deliverables, created_by
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
     RETURNING *
   `, [
     campaign.name,
@@ -229,7 +237,8 @@ export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt'
     JSON.stringify(campaign.requirements.platforms),
     JSON.stringify(campaign.requirements.demographics),
     campaign.requirements.contentGuidelines,
-    JSON.stringify(campaign.deliverables)
+    JSON.stringify(campaign.deliverables),
+    campaign.createdBy?.id || null
   ]);
 
   const row = result[0];

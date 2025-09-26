@@ -1,12 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Menu, X, LogOut, Settings, LayoutDashboard, Building2, Users, Megaphone, Search, UserCog, Play } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Menu, X, LogOut, Settings, LayoutDashboard, Building2, Users, Megaphone, Search, UserCog, Play, Mail, UserPlus } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useUserRole } from '../../lib/auth/hooks'
+import InviteUserModal from '../staff/InviteUserModal'
+import UserManagementModal from '../staff/UserManagementModal'
 
 interface NavItemProps {
   href: string
@@ -37,6 +40,10 @@ export default function ModernStaffHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
   const { signOut } = useClerk()
   const { user } = useUser()
@@ -47,13 +54,25 @@ export default function ModernStaffHeader() {
     setIsClient(true)
   }, [])
 
+  // Calculate dropdown position
+  useEffect(() => {
+    if (isDropdownOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      })
+    }
+  }, [isDropdownOpen])
+
   // Navigation items based on role
   const getNavItems = () => {
     const baseItems = [
       { href: '/staff/roster', label: 'Roster' },
       { href: '/staff/brands', label: 'Brands' },
       { href: '/staff/campaigns', label: 'Campaigns' },
-      { href: '/staff/discovery', label: 'Discovery' }
+      { href: '/staff/discovery', label: 'Discovery' },
+      { href: '/staff/finances', label: 'Finances' }
     ]
 
     // Add admin-only items if user is admin
@@ -69,6 +88,12 @@ export default function ModernStaffHeader() {
 
   const handleSignOut = () => {
     signOut()
+  }
+
+  const handleInviteSuccess = () => {
+    // Close the invite modal
+    setIsInviteModalOpen(false)
+    // Optionally show a success message or refresh data
   }
 
   const getUserInitials = (firstName?: string, lastName?: string) => {
@@ -151,7 +176,7 @@ export default function ModernStaffHeader() {
     <>
       <div className="p-4 lg:p-6">
         <header 
-          className="rounded-2xl sticky top-0 z-50 bg-cover bg-center bg-no-repeat relative overflow-hidden"
+          className="rounded-2xl sticky top-0 z-50 bg-cover bg-center bg-no-repeat relative"
           style={{
             backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-cyan-DCLBrf9zXPufk7mvNq7d9hASFRCTQt.webp)'
           }}
@@ -190,8 +215,9 @@ export default function ModernStaffHeader() {
               {/* Right side - Profile Avatar */}
               <div className="flex items-center">
                 {/* Desktop Profile Avatar */}
-                <div className="hidden lg:block relative">
+                <div className="hidden lg:block relative z-[110]">
                   <button
+                    ref={buttonRef}
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-20 rounded-full p-1 transition-colors duration-200"
                   >
@@ -209,12 +235,16 @@ export default function ModernStaffHeader() {
                   </button>
 
                   {/* Desktop Dropdown Menu */}
-                  {isDropdownOpen && (
+                  {isDropdownOpen && isClient && createPortal(
                     <motion.div
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2"
+                      className="fixed w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-[100]"
+                      style={{
+                        top: `${dropdownPosition.top}px`,
+                        right: `${dropdownPosition.right}px`,
+                      }}
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">
@@ -236,6 +266,28 @@ export default function ModernStaffHeader() {
                         </Link>
                         
                         <button
+                          onClick={() => {
+                            setIsInviteModalOpen(true)
+                            setIsDropdownOpen(false)
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <UserPlus size={16} className="mr-3" />
+                          Invite User
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setIsUserManagementOpen(true)
+                            setIsDropdownOpen(false)
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <Mail size={16} className="mr-3" />
+                          User Management
+                        </button>
+                        
+                        <button
                           onClick={handleSignOut}
                           className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                         >
@@ -243,7 +295,8 @@ export default function ModernStaffHeader() {
                           Sign out
                         </button>
                       </div>
-                    </motion.div>
+                    </motion.div>,
+                    document.body
                   )}
                 </div>
 
@@ -334,6 +387,27 @@ export default function ModernStaffHeader() {
             >
               Profile Settings
             </Link>
+            
+            <button
+              onClick={() => {
+                setIsInviteModalOpen(true)
+                closeMobileMenu()
+              }}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg"
+            >
+              Invite User
+            </button>
+            
+            <button
+              onClick={() => {
+                setIsUserManagementOpen(true)
+                closeMobileMenu()
+              }}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg"
+            >
+              User Management
+            </button>
+            
             <button
               onClick={handleSignOut}
               className="block w-full text-left px-3 py-2 text-base font-medium text-red-300 hover:bg-red-900 hover:bg-opacity-50 rounded-lg"
@@ -351,6 +425,18 @@ export default function ModernStaffHeader() {
           onClick={() => setIsDropdownOpen(false)}
         />
       )}
+
+      {/* Invitation Modals */}
+      <InviteUserModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSuccess={handleInviteSuccess}
+      />
+
+      <UserManagementModal
+        isOpen={isUserManagementOpen}
+        onClose={() => setIsUserManagementOpen(false)}
+      />
     </>
   )
 }

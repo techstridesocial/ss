@@ -56,6 +56,22 @@ export async function POST(request: NextRequest) {
       hasRequirements: !!data.requirements,
       selectedInfluencers: data.selectedInfluencers?.length || 0
     })
+
+    // Get user's database ID
+    const { query } = await import('@/lib/db/connection')
+    const userResult = await query<{ id: string }>(
+      'SELECT id FROM users WHERE clerk_id = $1',
+      [userId]
+    )
+
+    if (userResult.length === 0) {
+      return NextResponse.json({ 
+        error: 'User not found in database' 
+      }, { status: 404 })
+    }
+
+    const userDbId = userResult[0].id
+    console.log('👤 User database ID:', userDbId)
     
     // Validate required fields
     const requiredFields = ['name', 'brand', 'description']
@@ -93,7 +109,10 @@ export async function POST(request: NextRequest) {
         demographics: data.requirements?.demographics || {},
         contentGuidelines: data.requirements?.contentGuidelines || ''
       },
-      deliverables: data.deliverables || []
+      deliverables: data.deliverables || [],
+      createdBy: {
+        id: userDbId
+      }
     }
 
     console.log('🗄️ Creating campaign in database...')

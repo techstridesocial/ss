@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone, CreditCard, Plus, ExternalLink, Tag } from 'lucide-react'
+import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone, CreditCard, Plus, ExternalLink, Tag, Search, Edit3, Save, Trash2, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PaymentManagementPanel from './PaymentManagementPanel'
 
@@ -245,6 +245,10 @@ export default function CampaignDetailPanel({
     contentLinks: [''],
     discountCode: ''
   })
+  const [influencerSearchTerm, setInfluencerSearchTerm] = useState('')
+  const [addingInfluencer, setAddingInfluencer] = useState<string | null>(null)
+  const [editingContentLinks, setEditingContentLinks] = useState<string | null>(null)
+  const [contentLinksInput, setContentLinksInput] = useState<string>('')
 
   console.log('CampaignDetailPanel rendered with:', { isOpen, campaign: campaign?.name })
 
@@ -279,6 +283,7 @@ export default function CampaignDetailPanel({
   }, [isOpen, campaign])
 
   const addInfluencerToCampaign = async (influencerId: string) => {
+    setAddingInfluencer(influencerId)
     try {
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'POST',
@@ -291,13 +296,101 @@ export default function CampaignDetailPanel({
       
       if (response.ok) {
         const result = await response.json()
-        setCampaignInfluencers(prev => [...prev, result.campaignInfluencer])
+        console.log('✅ Successfully added influencer:', result)
+        
+        // Refresh the campaign influencers list
+        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`)
+        if (campaignInfluencersResponse.ok) {
+          const campaignInfluencersResult = await campaignInfluencersResponse.json()
+          setCampaignInfluencers(campaignInfluencersResult.data?.influencers || [])
+        }
+        
         setShowAddInfluencerModal(false)
+        setInfluencerSearchTerm('') // Clear search when modal closes
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to add influencer:', errorData)
+        
+        // Handle authentication errors specifically
+        if (response.status === 403) {
+          alert('Authentication required: Please sign in to add influencers to campaigns.')
+        } else if (response.status === 401) {
+          alert('Session expired: Please sign in again to continue.')
+        } else {
+          alert(`Failed to add influencer: ${errorData.error || 'Unknown error'}`)
+        }
       }
     } catch (error) {
       console.error('Error adding influencer to campaign:', error)
+      alert(`Error adding influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setAddingInfluencer(null)
     }
   }
+
+  const handleCloseAddInfluencerModal = () => {
+    setShowAddInfluencerModal(false)
+    setInfluencerSearchTerm('') // Clear search when modal closes
+  }
+
+  const handleUpdateContentLinks = async (campaignInfluencerId: string, influencerId: string) => {
+    try {
+      // Parse the input links (split by newlines or commas)
+      const links = contentLinksInput
+        .split(/[\n,]/)
+        .map(link => link.trim())
+        .filter(link => link.length > 0)
+
+      const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          influencerId: influencerId,
+          contentLinks: links
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Successfully updated content links:', result)
+        
+        // Update the local state
+        setCampaignInfluencers(prev => 
+          prev.map(ci => 
+            ci.id === campaignInfluencerId 
+              ? { ...ci, contentLinks: links }
+              : ci
+          )
+        )
+        
+        // Close the editing mode
+        setEditingContentLinks(null)
+        setContentLinksInput('')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to update content links:', errorData)
+        alert(`Failed to update content links: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error updating content links:', error)
+      alert(`Error updating content links: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleStartEditingContentLinks = (campaignInfluencer: any) => {
+    setEditingContentLinks(campaignInfluencer.id)
+    setContentLinksInput(
+      campaignInfluencer.contentLinks 
+        ? campaignInfluencer.contentLinks.join('\n')
+        : ''
+    )
+  }
+
+  const handleCancelEditingContentLinks = () => {
+    setEditingContentLinks(null)
+    setContentLinksInput('')
+  }
+
 
   const handleEditInfluencer = (campaignInfluencer: any) => {
     setEditingInfluencer(campaignInfluencer)
@@ -358,6 +451,47 @@ export default function CampaignDetailPanel({
       ...prev,
       contentLinks: prev.contentLinks.map((link, i) => i === index ? value : link)
     }))
+  }
+
+  // Format follower count with proper units
+  const formatFollowerCount = (followers: number) => {
+    if (!followers) return 'No followers data'
+    
+    if (followers >= 1000000) {
+      const millions = (followers / 1000000).toFixed(1)
+      return `${millions}M followers`
+    } else if (followers >= 1000) {
+      const thousands = (followers / 1000).toFixed(0)
+      return `${thousands}K followers`
+    } else {
+      return `${followers.toLocaleString()} followers`
+    }
+  }
+
+  // Filter available influencers based on search term
+  const getFilteredInfluencers = () => {
+    if (!influencerSearchTerm.trim()) {
+      return availableInfluencers.filter(influencer => 
+        !campaignInfluencers.some(ci => ci.influencer_id === influencer.id)
+      )
+    }
+
+    const searchLower = influencerSearchTerm.toLowerCase()
+    return availableInfluencers.filter(influencer => {
+      // Check if already in campaign
+      if (campaignInfluencers.some(ci => ci.influencer_id === influencer.id)) {
+        return false
+      }
+
+      // Search in name, display name, niches, and platform
+      const name = influencer.display_name || `${influencer.first_name} ${influencer.last_name}`.trim()
+      const niches = influencer.niches?.join(' ') || ''
+      const platform = influencer.platform || ''
+
+      return name.toLowerCase().includes(searchLower) ||
+             niches.toLowerCase().includes(searchLower) ||
+             platform.toLowerCase().includes(searchLower)
+    })
   }
 
   if (!campaign) {
@@ -493,9 +627,6 @@ export default function CampaignDetailPanel({
               <div className="p-8">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-                      <Star size={32} className="text-white" />
-                    </div>
                     <div>
                       <div className="flex items-center space-x-3 mb-2">
                         <h2 className="text-2xl font-bold text-gray-900">{campaign.name}</h2>
@@ -517,6 +648,15 @@ export default function CampaignDetailPanel({
                           <Calendar size={14} />
                           <span>{new Date(campaign.end_date).toLocaleDateString()}</span>
                         </div>
+                        {campaign.createdBy && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center space-x-1">
+                              <User size={14} />
+                              <span>Created by: {campaign.createdBy.name}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -534,10 +674,9 @@ export default function CampaignDetailPanel({
                 {/* Tab Navigation */}
                 <div className="mt-6 border-b border-gray-200">
                   <nav className="-mb-px flex space-x-8">
-                    {[
+                    {                    [
                       { id: 'overview', label: 'Campaign Overview' },
-                      { id: 'influencers', label: 'Influencers & Status' },
-                      { id: 'analytics', label: 'Performance Analytics' }
+                      { id: 'influencers', label: 'Influencers & Status' }
                     ].map((tab) => (
                       <button
                         key={tab.id}
@@ -618,6 +757,13 @@ export default function CampaignDetailPanel({
                             type="date"
                             icon={<Calendar size={18} />}
                           />
+                          {campaign.createdBy && (
+                            <InfoField
+                              label="Created by"
+                              value={`${campaign.createdBy.name} (${campaign.createdBy.email})`}
+                              icon={<User size={18} />}
+                            />
+                          )}
                         </div>
                         
                         <div className="border-t border-gray-100 pt-6">
@@ -775,25 +921,74 @@ export default function CampaignDetailPanel({
 
                                   {/* Content Links Column */}
                                   <td className="px-6 py-4">
-                                    <div className="space-y-1">
-                                      {campaignInfluencer.contentLinks && campaignInfluencer.contentLinks.length > 0 ? (
-                                        campaignInfluencer.contentLinks.map((link: string, index: number) => (
-                                          <a 
-                                            key={index}
-                                            href={link} 
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                                          >
-                                            <ExternalLink size={12} />
-                                            Content {index + 1}
-                                          </a>
-                                        ))
+                                    <div className="space-y-2">
+                                      {editingContentLinks === campaignInfluencer.id ? (
+                                        <div className="space-y-2">
+                                          <textarea
+                                            value={contentLinksInput}
+                                            onChange={(e) => setContentLinksInput(e.target.value)}
+                                            placeholder="Enter content URLs (one per line or comma-separated)"
+                                            className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none"
+                                            rows={3}
+                                          />
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => handleUpdateContentLinks(campaignInfluencer.id, influencer.id)}
+                                              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                            >
+                                              <Check size={12} />
+                                              Save
+                                            </button>
+                                            <button
+                                              onClick={handleCancelEditingContentLinks}
+                                              className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
+                                            >
+                                              <X size={12} />
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        </div>
                                       ) : (
-                                        <span className="text-sm text-gray-400">No content yet</span>
+                                        <div className="space-y-1">
+                                          {campaignInfluencer.contentLinks && campaignInfluencer.contentLinks.length > 0 ? (
+                                            <>
+                                              {campaignInfluencer.contentLinks.map((link: string, index: number) => (
+                                                <a 
+                                                  key={index}
+                                                  href={link} 
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                                                >
+                                                  <ExternalLink size={12} />
+                                                  Content {index + 1}
+                                                </a>
+                                              ))}
+                                              <button
+                                                onClick={() => handleStartEditingContentLinks(campaignInfluencer)}
+                                                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-xs mt-1"
+                                              >
+                                                <Edit3 size={10} />
+                                                Edit Links
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <div className="space-y-1">
+                                              <span className="text-sm text-gray-400">No content yet</span>
+                                              <button
+                                                onClick={() => handleStartEditingContentLinks(campaignInfluencer)}
+                                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                                              >
+                                                <Plus size={10} />
+                                                Add Links
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
                                       )}
                                     </div>
                                   </td>
+
 
                                   {/* Discount Code Column */}
                                   <td className="px-6 py-4">
@@ -848,55 +1043,6 @@ export default function CampaignDetailPanel({
                   </>
                 )}
 
-                {/* Analytics Tab */}
-                {activeTab === 'analytics' && (
-                  <>
-                    <Section title="Performance Metrics" delay={0.1}>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <InfoField
-                            label="Total Reach"
-                            value={campaign.actual_reach?.toLocaleString() || '0'}
-                            icon={<TrendingUp size={18} />}
-                          />
-                          <InfoField
-                            label="Estimated Reach"
-                            value={campaign.estimated_reach?.toLocaleString() || '0'}
-                            icon={<Target size={18} />}
-                          />
-                        </div>
-                        <div className="space-y-4">
-                          <InfoField
-                            label="Engagement Rate"
-                            value={campaign.engagement_rate || 0}
-                            type="percentage"
-                            icon={<Star size={18} />}
-                          />
-                          <InfoField
-                            label="Cost Per Reach"
-                            value={campaign.actual_reach ? Math.round((campaign.spent || 0) / campaign.actual_reach * 1000) / 1000 : 0}
-                            type="currency"
-                            icon={<DollarSign size={18} />}
-                          />
-                        </div>
-                      </div>
-                    </Section>
-
-                    <Section title="ROI Analysis" delay={0.2}>
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold text-blue-900 mb-2">
-                            {campaign.actual_reach && campaign.budget 
-                              ? `${Math.round((campaign.actual_reach / (typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget)) * 100)}%` 
-                              : 'N/A'
-                            }
-                          </div>
-                          <div className="text-sm text-blue-700">Reach per Dollar Spent</div>
-                        </div>
-                      </div>
-                    </Section>
-                  </>
-                )}
               </div>
             </div>
 
@@ -1075,7 +1221,7 @@ export default function CampaignDetailPanel({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] p-4"
-          onClick={() => setShowAddInfluencerModal(false)}
+          onClick={handleCloseAddInfluencerModal}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -1085,59 +1231,109 @@ export default function CampaignDetailPanel({
             className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden"
           >
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Add Influencer to Campaign</h3>
-                <p className="text-sm text-gray-600">Select influencers from your roster to add to this campaign</p>
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Add Influencer to Campaign</h3>
+                  <p className="text-sm text-gray-600">Select influencers from your roster to add to this campaign</p>
+                </div>
+                <button
+                  onClick={handleCloseAddInfluencerModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
               </div>
-              <button
-                onClick={() => setShowAddInfluencerModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
+              
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Search influencers by name, niche, or platform..."
+                  value={influencerSearchTerm}
+                  onChange={(e) => setInfluencerSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-180px)]">
               {influencersLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
                   <span className="ml-3 text-gray-600">Loading influencers...</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {availableInfluencers
-                    .filter(influencer => !campaignInfluencers.some(ci => ci.influencer_id === influencer.id))
-                    .map((influencer) => (
-                      <div
-                        key={influencer.id}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer"
-                        onClick={() => addInfluencerToCampaign(influencer.id)}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-medium">
-                            {influencer.display_name?.charAt(0) || influencer.first_name?.charAt(0) || '?'}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                              {influencer.display_name || `${influencer.first_name} ${influencer.last_name}`.trim()}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {influencer.total_followers ? `${(influencer.total_followers / 1000).toFixed(0)}K followers` : 'No followers data'}
-                            </div>
-                            {influencer.niches && influencer.niches.length > 0 && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {influencer.niches.slice(0, 2).join(', ')}
-                              </div>
-                            )}
-                          </div>
-                          <Plus size={20} className="text-gray-400" />
-                        </div>
+                <>
+                  {getFilteredInfluencers().length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users size={48} className="mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {influencerSearchTerm.trim() ? 'No influencers found' : 'No available influencers'}
+                      </h3>
+                      <p className="text-gray-500">
+                        {influencerSearchTerm.trim() 
+                          ? `No influencers match "${influencerSearchTerm}". Try a different search term.`
+                          : 'All influencers have already been added to this campaign.'
+                        }
+                      </p>
+                      {influencerSearchTerm.trim() && (
+                        <button
+                          onClick={() => setInfluencerSearchTerm('')}
+                          className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Clear search
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-sm text-gray-600 mb-4">
+                        Showing {getFilteredInfluencers().length} influencer{getFilteredInfluencers().length !== 1 ? 's' : ''}
+                        {influencerSearchTerm.trim() && ` matching "${influencerSearchTerm}"`}
                       </div>
-                    ))
-                  }
-                </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {getFilteredInfluencers().map((influencer) => (
+                          <div
+                            key={influencer.id}
+                            className={`p-4 border border-gray-200 rounded-lg transition-colors ${
+                              addingInfluencer === influencer.id 
+                                ? 'bg-blue-100 border-blue-300 cursor-wait' 
+                                : 'hover:border-blue-300 hover:bg-blue-50 cursor-pointer'
+                            }`}
+                            onClick={() => addingInfluencer !== influencer.id && addInfluencerToCampaign(influencer.id)}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-medium">
+                                {influencer.display_name?.charAt(0) || influencer.first_name?.charAt(0) || '?'}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">
+                                  {influencer.display_name || `${influencer.first_name} ${influencer.last_name}`.trim()}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {formatFollowerCount(influencer.total_followers)}
+                                </div>
+                                {influencer.niches && influencer.niches.length > 0 && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {influencer.niches.slice(0, 2).join(', ')}
+                                  </div>
+                                )}
+                              </div>
+                              {addingInfluencer === influencer.id ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                              ) : (
+                                <Plus size={20} className="text-gray-400" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>

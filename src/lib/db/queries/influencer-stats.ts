@@ -143,13 +143,13 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
     const platformsQuery = `
       SELECT 
         platform,
-        username,
+        handle as username,
         followers,
         engagement_rate,
         avg_views,
         is_connected,
-        last_synced
-      FROM influencer_platforms
+        last_sync as last_synced
+      FROM influencer_social_accounts
       WHERE influencer_id = $1
       ORDER BY platform
     `
@@ -205,11 +205,12 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
       })
     )
 
-    // Calculate overall metrics
-    const totalFollowers = platformStats.reduce((sum, p) => sum + p.followers, 0)
-    const totalViews = platformStats.reduce((sum, p) => sum + p.avg_views, 0)
-    const avgEngagement = platformStats.length > 0 
-      ? platformStats.reduce((sum, p) => sum + p.engagement_rate, 0) / platformStats.length 
+    // Calculate overall metrics from connected platforms only
+    const connectedPlatforms = platformStats.filter(p => p.is_connected)
+    const totalFollowers = connectedPlatforms.reduce((sum, p) => sum + p.followers, 0)
+    const totalViews = connectedPlatforms.reduce((sum, p) => sum + p.avg_views, 0)
+    const avgEngagement = connectedPlatforms.length > 0 
+      ? connectedPlatforms.reduce((sum, p) => sum + p.engagement_rate, 0) / connectedPlatforms.length 
       : 0
 
     // Get content performance from database
@@ -291,13 +292,13 @@ export async function getPlatformStats(influencerId: string, platform: string): 
     const queryText = `
       SELECT 
         platform,
-        username,
+        handle as username,
         followers,
         engagement_rate,
         avg_views,
         is_connected,
-        last_synced
-      FROM influencer_platforms
+        last_sync as last_synced
+      FROM influencer_social_accounts
       WHERE influencer_id = $1 AND platform = $2
     `
 
