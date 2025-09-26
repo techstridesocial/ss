@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
 import { clerkClient } from '@clerk/nextjs/server'
-import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,27 +50,22 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
     // Create user in our database
     const userResult = await query(
       `INSERT INTO users (
         email, 
         first_name, 
         last_name, 
-        password_hash, 
         role, 
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING id, email, first_name, last_name, role`,
       [
         invitation.email,
         firstName,
         lastName,
-        hashedPassword,
         invitation.role,
         'ACTIVE'
       ]
