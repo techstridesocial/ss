@@ -404,73 +404,74 @@ function CampaignsPageClient() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <ModernStaffHeader />
       
-      <div className="p-4 lg:p-6 pt-0">
-        <div className="px-4 lg:px-8 py-8">
-        {/* Header - Redesigned */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Campaigns</h1>
-            <p className="text-slate-600">Manage and track all influencer campaigns</p>
-          </div>
-          <div className="flex gap-3 mt-4 lg:mt-0">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Plus size={18} />
-              Create Campaign
-            </button>
-          </div>
-        </div>
+      <main className="px-4 lg:px-8 pb-8">
+        {/* Stats Cards with Create Button - All on same row */}
+        <div className="mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Stat Card 1 */}
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
+                    <p className="text-2xl font-bold">{totalCampaignsCount}</p>
+                  </div>
+                  <Megaphone className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Stat Card 2 */}
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active</p>
+                    <p className="text-2xl font-bold">{activeCampaigns}</p>
+                  </div>
+                  <Play className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Stat Card 3 */}
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Budget</p>
+                    <p className="text-2xl font-bold">£{totalBudget.toLocaleString()}</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Stat Card 4 */}
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Influencers</p>
+                    <p className="text-2xl font-bold">{totalInfluencers}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-yellow-500" />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Stats Cards - Redesigned */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-1">Total Campaigns</p>
-                <p className="text-2xl font-bold text-slate-900">{totalCampaigns}</p>
-              </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Megaphone size={20} className="text-blue-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-1">Active Campaigns</p>
-                <p className="text-2xl font-bold text-slate-900">{activeCampaigns}</p>
-              </div>
-              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-                <Play size={20} className="text-emerald-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-1">Total Budget</p>
-                <p className="text-2xl font-bold text-slate-900">£{totalBudget.toLocaleString()}</p>
-              </div>
-              <div className="w-10 h-10 bg-violet-50 rounded-lg flex items-center justify-center">
-                <DollarSign size={20} className="text-violet-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-1">Total Influencers</p>
-                <p className="text-2xl font-bold text-slate-900">{totalInfluencers}</p>
-              </div>
-              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                <Users size={20} className="text-amber-600" />
-              </div>
-            </div>
+            {/* Create Campaign Button Card */}
+            <Card className="border-slate-200 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all cursor-pointer group">
+              <CardContent 
+                className="p-6 h-full flex items-center justify-center"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <div className="text-center text-white">
+                  <Plus className="h-8 w-8 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="text-sm font-semibold">Create Campaign</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -841,7 +842,6 @@ function CampaignsPageClient() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Campaign Detail Panel */}
       <AnimatePresence>
@@ -923,8 +923,8 @@ function CampaignsPageClient() {
           </div>
         )}
       </AnimatePresence>
-        </div>
-      </div>
+      </main>
+    </div>
   )
 }
 

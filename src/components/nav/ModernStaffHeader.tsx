@@ -155,8 +155,8 @@ export default function ModernStaffHeader() {
       }
     } else if (pathname === '/staff/campaigns' || pathname.startsWith('/staff/campaigns/')) {
       return {
-        title: 'Campaign Management',
-        subtitle: 'Create, manage, and track influencer marketing campaigns'
+        title: 'Campaigns',
+        subtitle: 'Manage and track all influencer campaigns'
       }
     } else if (pathname === '/staff/discovery' || pathname.startsWith('/staff/discovery/')) {
       return {
