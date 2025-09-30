@@ -6,14 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 interface CreateCampaignModalProps {
   isOpen: boolean
-  onClose: () => void
-  onSave: (campaignData: any) => void
+  onCloseAction: () => void
+  onSaveAction: (campaignData: any) => void
 }
 
 export default function CreateCampaignModal({
   isOpen,
-  onClose,
-  onSave
+  onCloseAction,
+  onSaveAction
 }: CreateCampaignModalProps) {
   const [formData, setFormData] = useState({
     name: '',
@@ -136,15 +136,19 @@ export default function CreateCampaignModal({
   const handleInputChange = (field: string, value: string | string[] | object) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.')
+      const parentKey = parent as keyof typeof formData
+      const childKey = child as string
+      
       setFormData(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
+        [parentKey]: {
+          ...(prev[parentKey] as any || {}),
+          [childKey]: value
         }
       }))
     } else {
-      setFormData(prev => ({ ...prev, [field]: value }))
+      const fieldKey = field as keyof typeof formData
+      setFormData(prev => ({ ...prev, [fieldKey]: value }))
     }
     
     // Clear error when user starts typing
@@ -291,7 +295,7 @@ export default function CreateCampaignModal({
         selectedInfluencers: selectedInfluencers
       }
       
-      await onSave(campaignData)
+      await onSaveAction(campaignData)
       
       // Reset form
       setFormData({
@@ -312,7 +316,7 @@ export default function CreateCampaignModal({
       })
       setActiveSection('basic')
       setSelectedInfluencers([])
-      onClose()
+        onCloseAction()
     } catch (error) {
       console.error('Error creating campaign:', error)
     } finally {
@@ -322,7 +326,7 @@ export default function CreateCampaignModal({
 
   const handleCancel = () => {
     // Just close the modal, keep the form data in case user wants to continue later
-    onClose()
+        onCloseAction()
   }
 
   // Close dropdown when clicking outside
@@ -349,7 +353,7 @@ export default function CreateCampaignModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={onCloseAction}
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           />
           
@@ -368,7 +372,7 @@ export default function CreateCampaignModal({
                   <p className="text-gray-600 mt-1">Set up a new influencer marketing campaign</p>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={onCloseAction}
                   className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                 >
                   <X size={24} className="text-gray-500" />

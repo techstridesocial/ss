@@ -103,10 +103,87 @@ function CampaignsPageClient() {
     performance: ''
   })
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' })
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [sortConfig, setSortConfig] = useState<{
+    key: string | null
+    direction: 'asc' | 'desc'
+  }>({
+    key: 'created_at',
+    direction: 'desc'
+  })
   const [showFilters, setShowFilters] = useState(false)
+
+  // Filter function - MUST be defined before useMemo
+  const applyCampaignFilters = (campaigns: Campaign[]) => {
+    return campaigns.filter(campaign => {
+      // Status filter
+      if (filters.status && filters.status !== 'all' && campaign.status.toLowerCase() !== filters.status.toLowerCase()) return false
+      
+      // Brand filter
+      if (filters.brand && !campaign.brand.toLowerCase().includes(filters.brand.toLowerCase())) return false
+      
+      // Platform filter
+      if (filters.platform && filters.platform !== 'all' && !campaign.requirements.platforms.includes(filters.platform)) return false
+      
+      // Search term
+      if (searchTerm && !campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+          !campaign.brand.toLowerCase().includes(searchTerm.toLowerCase())) return false
+      
+      return true
+    })
+  }
+
+  // Apply sorting - MUST be called unconditionally (Rules of Hooks)
+  const sortedCampaigns = React.useMemo(() => {
+    const filteredCampaigns = applyCampaignFilters(campaigns)
+    
+    if (!sortConfig.key) return filteredCampaigns
+
+    return [...filteredCampaigns].sort((a, b) => {
+      let aValue: any = a[sortConfig.key as keyof typeof a]
+      let bValue: any = b[sortConfig.key as keyof typeof b]
+
+      // Handle nested properties
+      if (sortConfig.key === 'brand_name') {
+        aValue = typeof a.brand === 'string' ? a.brand : (a.brand as any)?.name || ''
+        bValue = typeof b.brand === 'string' ? b.brand : (b.brand as any)?.name || ''
+      } else if (sortConfig.key === 'budget') {
+        aValue = parseFloat(a.budget?.total?.toString() || '0')
+        bValue = parseFloat(b.budget?.total?.toString() || '0')
+      } else if (sortConfig.key === 'influencer_count') {
+        aValue = a.totalInfluencers || 0
+        bValue = b.totalInfluencers || 0
+      }
+
+      // Handle date sorting
+      if (sortConfig.key && (sortConfig.key.includes('_at') || sortConfig.key === 'start_date' || sortConfig.key === 'end_date')) {
+        aValue = new Date(aValue).getTime()
+        bValue = new Date(bValue).getTime()
+      }
+
+      // Handle string comparison
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase()
+        bValue = bValue.toLowerCase()
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1
+      }
+      return 0
+    })
+  }, [campaigns, sortConfig, filters, searchTerm])
+
+  // Pagination calculations
+  const totalCampaigns = sortedCampaigns.length
+  const totalPages = Math.ceil(totalCampaigns / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedCampaigns = sortedCampaigns.slice(startIndex, endIndex)
 
   // Fetch campaigns from API
   useEffect(() => {
@@ -182,9 +259,6 @@ function CampaignsPageClient() {
     }
   }
 
-  const handleExportReport = () => {
-    showNotificationModal('Export', 'Campaign report exported successfully', 'success')
-  }
 
   const handleViewCampaign = (campaign: Campaign) => {
     console.log('handleViewCampaign called with:', campaign)
@@ -259,47 +333,6 @@ function CampaignsPageClient() {
     }
   }
 
-  const applyCampaignFilters = (campaigns: Campaign[]) => {
-    return campaigns.filter(campaign => {
-      // Status filter
-      if (filters.status && filters.status !== 'all' && campaign.status.toLowerCase() !== filters.status.toLowerCase()) return false
-      
-      // Brand filter
-      if (filters.brand && !campaign.brand.toLowerCase().includes(filters.brand.toLowerCase())) return false
-      
-      // Platform filter
-      if (filters.platform && filters.platform !== 'all' && !campaign.requirements.platforms.includes(filters.platform)) return false
-      
-      // Search term
-      if (searchTerm && !campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !campaign.brand.toLowerCase().includes(searchTerm.toLowerCase())) return false
-      
-      return true
-    })
-  }
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
-    setCurrentPage(1)
-  }
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value)
-    setCurrentPage(1)
-  }
-
-  const handlePageSizeChange = (newSize: number) => {
-    setPageSize(newSize)
-    setCurrentPage(1)
-  }
-
-  const handleSort = (key: string) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }))
-  }
-
   const clearFilters = () => {
     setFilters({
       status: 'all',
@@ -315,7 +348,7 @@ function CampaignsPageClient() {
   }
 
   // Calculate dashboard stats
-  const totalCampaigns = campaigns.length
+  const totalCampaignsCount = campaigns.length
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
   const totalBudget = campaigns.reduce((sum, c) => sum + c.budget.total, 0)
   const totalInfluencers = campaigns.reduce((sum, c) => sum + c.totalInfluencers, 0)
@@ -342,7 +375,30 @@ function CampaignsPageClient() {
     )
   }
 
-  const filteredCampaigns = applyCampaignFilters(campaigns)
+  // Sort handler
+  const handleSort = (key: string) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }))
+    setCurrentPage(1)
+  }
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+    setCurrentPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setCurrentPage(1)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -363,13 +419,6 @@ function CampaignsPageClient() {
             >
               <Plus size={18} />
               Create Campaign
-            </button>
-            <button
-              onClick={handleExportReport}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Package size={18} />
-              Export Report
             </button>
           </div>
         </div>
@@ -534,7 +583,7 @@ function CampaignsPageClient() {
             <div className="flex items-center justify-between">
               <CardTitle>Campaigns</CardTitle>
               <div className="text-sm text-gray-500">
-                {filteredCampaigns.length} campaign{filteredCampaigns.length !== 1 ? 's' : ''} found
+                {totalCampaigns} campaign{totalCampaigns !== 1 ? 's' : ''} found
               </div>
             </div>
           </CardHeader>
@@ -543,26 +592,77 @@ function CampaignsPageClient() {
               <table className="w-full">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Campaign
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Campaign</span>
+                        <div className="flex flex-col">
+                          <ChevronUp size={12} className={`${sortConfig.key === 'name' && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <ChevronDown size={12} className={`${sortConfig.key === 'name' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Brand
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+                      onClick={() => handleSort('brand_name')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Brand</span>
+                        <div className="flex flex-col">
+                          <ChevronUp size={12} className={`${sortConfig.key === 'brand_name' && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <ChevronDown size={12} className={`${sortConfig.key === 'brand_name' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Status
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Status</span>
+                        <div className="flex flex-col">
+                          <ChevronUp size={12} className={`${sortConfig.key === 'status' && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <ChevronDown size={12} className={`${sortConfig.key === 'status' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Budget
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+                      onClick={() => handleSort('budget')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Budget</span>
+                        <div className="flex flex-col">
+                          <ChevronUp size={12} className={`${sortConfig.key === 'budget' && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <ChevronDown size={12} className={`${sortConfig.key === 'budget' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Influencers
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+                      onClick={() => handleSort('influencer_count')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Influencers</span>
+                        <div className="flex flex-col">
+                          <ChevronUp size={12} className={`${sortConfig.key === 'influencer_count' && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <ChevronDown size={12} className={`${sortConfig.key === 'influencer_count' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Payments
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Timeline
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+                      onClick={() => handleSort('start_date')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Timeline</span>
+                        <div className="flex flex-col">
+                          <ChevronUp size={12} className={`${sortConfig.key === 'start_date' && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <ChevronDown size={12} className={`${sortConfig.key === 'start_date' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Actions
@@ -570,7 +670,7 @@ function CampaignsPageClient() {
                   </tr>
                 </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredCampaigns.map((campaign) => (
+                {paginatedCampaigns.map((campaign) => (
                   <tr key={campaign.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-5">
                       <div>
@@ -600,16 +700,6 @@ function CampaignsPageClient() {
                     <td className="px-6 py-5">
                       <div className="text-sm font-semibold text-slate-900">
                         {campaign.totalInfluencers}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col space-y-1">
-                        <span className="text-xs font-medium text-emerald-600">
-                          {campaign.paidCount || 0} Paid
-                        </span>
-                        <span className="text-xs text-amber-600">
-                          {campaign.paymentPendingCount || 0} Pending
-                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
@@ -660,8 +750,80 @@ function CampaignsPageClient() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalCampaigns > 0 && (
+              <div className="flex items-center justify-between mt-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-4">
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm font-medium text-gray-700">
+                    Showing {startIndex + 1} to {Math.min(endIndex, totalCampaigns)} of {totalCampaigns} campaigns
+                  </span>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Rows per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                      className="px-3 py-1 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 transition-all duration-300"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                    className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex space-x-1">
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                            currentPage === pageNum
+                              ? 'bg-blue-600 text-white shadow-lg'
+                              : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                    className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
             
-            {filteredCampaigns.length === 0 && (
+            {totalCampaigns === 0 && (
               <div className="text-center py-16">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package size={32} className="text-slate-400" />
@@ -702,8 +864,8 @@ function CampaignsPageClient() {
         {showCreateModal && (
           <CreateCampaignModal
             isOpen={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
-            onSave={handleCreateCampaign}
+            onCloseAction={() => setShowCreateModal(false)}
+            onSaveAction={handleCreateCampaign}
           />
         )}
       </AnimatePresence>

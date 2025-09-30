@@ -33,10 +33,10 @@ export async function query<T = any>(
   text: string, 
   params?: any[]
 ): Promise<T[]> {
-  const client = getDatabase()
+  const pool = getDatabase()
   
   try {
-    const result = await client.query(text, params)
+    const result = await pool.query(text, params)
     return result.rows
   } catch (error) {
     console.error('Database query error:', error)

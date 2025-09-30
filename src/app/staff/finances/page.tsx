@@ -223,14 +223,6 @@ export default function StaffFinancePage() {
         <ModernStaffHeader />
         
         <main className="px-4 lg:px-8 pb-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Finances Management</h1>
-            <p className="text-gray-600 mt-2">
-              Manage influencer invoices and payment processing
-            </p>
-          </div>
-
           {/* Summary Cards */}
           {summary && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -163,6 +163,11 @@ export default function ModernStaffHeader() {
         title: 'Influencer Discovery',
         subtitle: 'Discover, analyze, and import new influencers'
       }
+    } else if (pathname === '/staff/finances' || pathname.startsWith('/staff/finances/')) {
+      return {
+        title: 'Finances Management',
+        subtitle: 'Manage influencer invoices and payment processing'
+      }
     } else {
       // Default fallback - show greeting format
       return {

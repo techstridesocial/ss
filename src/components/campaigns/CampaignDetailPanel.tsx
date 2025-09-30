@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone, CreditCard, Plus, ExternalLink, Tag, Search, Edit3, Save, Trash2, Check } from 'lucide-react'
+import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone, Plus, ExternalLink, Tag, Search, Edit3, Save, Trash2, Check, Heart, Eye } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import PaymentManagementPanel from './PaymentManagementPanel'
+import { useAuth } from '@clerk/nextjs'
 
 interface CampaignDetailPanelProps {
   isOpen: boolean
@@ -11,6 +11,16 @@ interface CampaignDetailPanelProps {
   campaign: any
   onPauseCampaign?: (campaignId: string) => void
   onResumeCampaign?: (campaignId: string) => void
+}
+
+// Helper function to format numbers (e.g., 31500 -> 31.5k)
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M'
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'k'
+  }
+  return num.toString()
 }
 
 // Enhanced Section component with animation
@@ -232,7 +242,6 @@ export default function CampaignDetailPanel({
   onPauseCampaign,
   onResumeCampaign
 }: CampaignDetailPanelProps) {
-  const [showPaymentPanel, setShowPaymentPanel] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'influencers' | 'analytics'>('overview')
   const [isLoading, setIsLoading] = useState(false)
   const [showAddInfluencerModal, setShowAddInfluencerModal] = useState(false)
@@ -249,8 +258,79 @@ export default function CampaignDetailPanel({
   const [addingInfluencer, setAddingInfluencer] = useState<string | null>(null)
   const [editingContentLinks, setEditingContentLinks] = useState<string | null>(null)
   const [contentLinksInput, setContentLinksInput] = useState<string>('')
+  const [newLinkInput, setNewLinkInput] = useState<string>('')
+  const [addingLinkTo, setAddingLinkTo] = useState<{campaignInfluencerId: string, platform: string} | null>(null)
+  const [editingDiscountCode, setEditingDiscountCode] = useState<string | null>(null)
+  const [discountCodeInput, setDiscountCodeInput] = useState<string>('')
+
+  // Move useAuth to the top level of the component
+  const { getToken } = useAuth()
 
   console.log('CampaignDetailPanel rendered with:', { isOpen, campaign: campaign?.name })
+
+  // Platform detection functions
+  const getPlatformFromUrl = (url: string): string => {
+    if (url.includes('instagram.com')) return 'instagram'
+    if (url.includes('tiktok.com')) return 'tiktok'
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
+    if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter'
+    if (url.includes('linkedin.com')) return 'linkedin'
+    if (url.includes('facebook.com')) return 'facebook'
+    return 'unknown'
+  }
+
+  const getPlatformIcon = (platform: string): string => {
+    const icons = {
+      instagram: '📷',
+      tiktok: '📱',
+      youtube: '📺',
+      twitter: '🐦',
+      linkedin: '💼',
+      facebook: '📘',
+      unknown: '🌐'
+    }
+    return icons[platform as keyof typeof icons] || '🌐'
+  }
+
+  const getPlatformName = (platform: string): string => {
+    const names = {
+      instagram: 'Instagram',
+      tiktok: 'TikTok',
+      youtube: 'YouTube',
+      twitter: 'Twitter',
+      linkedin: 'LinkedIn',
+      facebook: 'Facebook',
+      unknown: 'Other'
+    }
+    return names[platform as keyof typeof names] || 'Other'
+  }
+
+  const groupLinksByPlatform = (contentLinks: string[]) => {
+    return contentLinks.reduce((acc, link) => {
+      const platform = getPlatformFromUrl(link)
+      if (!acc[platform]) acc[platform] = []
+      acc[platform].push(link)
+      return acc
+    }, {} as Record<string, string[]>)
+  }
+
+  const getPrimaryPlatform = (contentLinks: string[]): string => {
+    if (!contentLinks || contentLinks.length === 0) return 'unknown'
+    
+    const platforms = contentLinks.map(link => getPlatformFromUrl(link))
+    const platformCounts = platforms.reduce((acc, platform) => {
+      acc[platform] = (acc[platform] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    // Return most common platform
+    const platformKeys = Object.keys(platformCounts)
+    if (platformKeys.length === 0) return 'unknown'
+    
+    return platformKeys.reduce((a, b) => 
+      (platformCounts[a] || 0) > (platformCounts[b] || 0) ? a : b
+    )
+  }
 
   // Fetch campaign influencers and available influencers
   useEffect(() => {
@@ -259,15 +339,37 @@ export default function CampaignDetailPanel({
       
       setInfluencersLoading(true)
       try {
+        const token = await getToken()
+        
+        if (!token) {
+          console.error('❌ No auth token available for fetching influencers')
+          setInfluencersLoading(false)
+          return
+        }
+
         // Fetch campaign influencers
-        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`)
+        console.log('🔄 Initial fetch: Getting campaign influencers for campaign:', campaign.id)
+        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
         if (campaignInfluencersResponse.ok) {
           const campaignInfluencersResult = await campaignInfluencersResponse.json()
+          console.log('📊 Initial campaign influencers loaded:', campaignInfluencersResult.data?.influencers)
           setCampaignInfluencers(campaignInfluencersResult.data?.influencers || [])
+        } else {
+          console.error('❌ Failed to fetch initial campaign influencers:', campaignInfluencersResponse.status)
         }
 
         // Fetch all available influencers
-        const influencersResponse = await fetch('/api/influencers')
+        const influencersResponse = await fetch('/api/influencers', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
         if (influencersResponse.ok) {
           const influencersResult = await influencersResponse.json()
           setAvailableInfluencers(influencersResult.data || [])
@@ -280,14 +382,25 @@ export default function CampaignDetailPanel({
     }
     
     fetchInfluencers()
-  }, [isOpen, campaign])
+  }, [isOpen, campaign, getToken])
 
   const addInfluencerToCampaign = async (influencerId: string) => {
     setAddingInfluencer(influencerId)
     try {
+      const token = await getToken()
+      
+      if (!token) {
+        console.error('❌ No auth token available')
+        alert('Authentication required: Please sign in to add influencers to campaigns.')
+        return
+      }
+
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ 
           influencerId: influencerId,
           status: 'accepted'
@@ -299,17 +412,34 @@ export default function CampaignDetailPanel({
         console.log('✅ Successfully added influencer:', result)
         
         // Refresh the campaign influencers list
-        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`)
+        console.log('🔄 Refreshing campaign influencers list...')
+        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
         if (campaignInfluencersResponse.ok) {
           const campaignInfluencersResult = await campaignInfluencersResponse.json()
+          console.log('📊 Refreshed campaign influencers:', campaignInfluencersResult.data?.influencers)
           setCampaignInfluencers(campaignInfluencersResult.data?.influencers || [])
+        } else {
+          console.error('❌ Failed to refresh campaign influencers:', campaignInfluencersResponse.status)
         }
         
         setShowAddInfluencerModal(false)
         setInfluencerSearchTerm('') // Clear search when modal closes
       } else {
-        const errorData = await response.json()
-        console.error('❌ Failed to add influencer:', errorData)
+        console.error('❌ Response not ok:', response.status, response.statusText)
+        let errorData = {}
+        try {
+          errorData = await response.json()
+          console.error('❌ Error response data:', errorData)
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response as JSON:', parseError)
+          const textResponse = await response.text()
+          console.error('❌ Raw error response:', textResponse)
+        }
         
         // Handle authentication errors specifically
         if (response.status === 403) {
@@ -317,7 +447,12 @@ export default function CampaignDetailPanel({
         } else if (response.status === 401) {
           alert('Session expired: Please sign in again to continue.')
         } else {
-          alert(`Failed to add influencer: ${errorData.error || 'Unknown error'}`)
+          const errorMessage = (errorData as any)?.details || (errorData as any)?.error || 'Unknown error';
+          if (errorMessage.includes('already added to this campaign')) {
+            alert('This influencer is already part of this campaign');
+          } else {
+            alert(`Failed to add influencer: ${errorMessage}`);
+          }
         }
       }
     } catch (error) {
@@ -341,9 +476,13 @@ export default function CampaignDetailPanel({
         .map(link => link.trim())
         .filter(link => link.length > 0)
 
+      const token = await getToken()
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ 
           influencerId: influencerId,
           contentLinks: links
@@ -391,6 +530,161 @@ export default function CampaignDetailPanel({
     setContentLinksInput('')
   }
 
+  const handleStartAddingLink = (campaignInfluencerId: string, platform: string) => {
+    setAddingLinkTo({ campaignInfluencerId, platform })
+    setNewLinkInput('')
+  }
+
+  const handleCancelAddingLink = () => {
+    setAddingLinkTo(null)
+    setNewLinkInput('')
+  }
+
+  const handleAddSingleLink = async (campaignInfluencerId: string, influencerId: string) => {
+    if (!newLinkInput.trim()) return
+
+    try {
+      const token = await getToken()
+      const currentCampaignInfluencer = campaignInfluencers.find(ci => ci.id === campaignInfluencerId)
+      const existingLinks = currentCampaignInfluencer?.contentLinks || []
+      const updatedLinks = [...existingLinks, newLinkInput.trim()]
+
+      const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          influencerId: influencerId,
+          contentLinks: updatedLinks
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Successfully added single link:', result)
+        
+        // Update the local state
+        setCampaignInfluencers(prev => 
+          prev.map(ci => 
+            ci.id === campaignInfluencerId 
+              ? { ...ci, contentLinks: updatedLinks }
+              : ci
+          )
+        )
+        
+        // Close the adding mode
+        setAddingLinkTo(null)
+        setNewLinkInput('')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to add link:', errorData)
+        alert(`Failed to add link: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error adding single link:', error)
+      alert(`Error adding link: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleRemoveLink = async (campaignInfluencerId: string, influencerId: string, linkToRemove: string) => {
+    try {
+      const token = await getToken()
+      const currentCampaignInfluencer = campaignInfluencers.find(ci => ci.id === campaignInfluencerId)
+      const existingLinks = currentCampaignInfluencer?.contentLinks || []
+      const updatedLinks = existingLinks.filter((link: string) => link !== linkToRemove)
+
+      const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          influencerId: influencerId,
+          contentLinks: updatedLinks
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Successfully removed link:', result)
+        
+        // Update the local state
+        setCampaignInfluencers(prev => 
+          prev.map(ci => 
+            ci.id === campaignInfluencerId 
+              ? { ...ci, contentLinks: updatedLinks }
+              : ci
+          )
+        )
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to remove link:', errorData)
+        alert(`Failed to remove link: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error removing link:', error)
+      alert(`Error removing link: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleStartEditingDiscountCode = (campaignInfluencer: any) => {
+    setEditingDiscountCode(campaignInfluencer.id)
+    setDiscountCodeInput(campaignInfluencer.discountCode || '')
+  }
+
+  const handleCancelEditingDiscountCode = () => {
+    setEditingDiscountCode(null)
+    setDiscountCodeInput('')
+  }
+
+  const handleUpdateDiscountCode = async (campaignInfluencerId: string, influencerId: string) => {
+    if (!discountCodeInput.trim()) return
+
+    try {
+      const token = await getToken()
+
+      const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          influencerId: influencerId,
+          discountCode: discountCodeInput.trim()
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Successfully updated discount code:', result)
+        
+        // Update the local state
+        setCampaignInfluencers(prev => 
+          prev.map(ci => 
+            ci.id === campaignInfluencerId 
+              ? { ...ci, discountCode: discountCodeInput.trim() }
+              : ci
+          )
+        )
+        
+        // Close the editing mode
+        setEditingDiscountCode(null)
+        setDiscountCodeInput('')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to update discount code:', errorData)
+        alert(`Failed to update discount code: ${(errorData as any)?.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error updating discount code:', error)
+      alert(`Error updating discount code: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
 
   const handleEditInfluencer = (campaignInfluencer: any) => {
     setEditingInfluencer(campaignInfluencer)
@@ -404,9 +698,13 @@ export default function CampaignDetailPanel({
   const handleSaveEdit = async () => {
     try {
       // Update the campaign influencer with content links and discount code
+      const token = await getToken()
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({
           influencerId: editingInfluencer.influencer_id || editingInfluencer.id,
           contentLinks: editForm.contentLinks.filter(link => link.trim()),
@@ -653,7 +951,16 @@ export default function CampaignDetailPanel({
                             <span>•</span>
                             <div className="flex items-center space-x-1">
                               <User size={14} />
-                              <span>Created by: {campaign.createdBy.name}</span>
+                              <span>Created by: {campaign.createdBy.name || campaign.createdBy.display_name || 'Staff Member'}</span>
+                            </div>
+                          </>
+                        )}
+                        {!campaign.createdBy && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center space-x-1">
+                              <User size={14} />
+                              <span>Created by: Staff Member</span>
                             </div>
                           </>
                         )}
@@ -872,6 +1179,113 @@ export default function CampaignDetailPanel({
                       </div>
                     </Section>
 
+                    <Section title="Campaign Analytics Summary" delay={0.15}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                        {/* Total Engagements */}
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Heart size={20} className="text-red-500" />
+                          </div>
+                          <div className="text-2xl font-bold text-red-600">
+                            {(() => {
+                              const total = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.total_engagements || 0)
+                              }, 0)
+                              return total > 0 ? formatNumber(total) : '0'
+                            })()}
+                          </div>
+                          <div className="text-sm text-red-800">Total Engagements</div>
+                        </div>
+
+                        {/* Average ER% */}
+                        <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Heart size={20} className="text-pink-500" />
+                          </div>
+                          <div className="text-2xl font-bold text-pink-600">
+                            {(() => {
+                              if (campaignInfluencers.length === 0) return '0%'
+                              const avgRate = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.avg_engagement_rate || 0)
+                              }, 0) / campaignInfluencers.length
+                              return isNaN(avgRate) ? '0%' : `${(avgRate * 100).toFixed(2)}%`
+                            })()}
+                          </div>
+                          <div className="text-sm text-pink-800">Avg ER%</div>
+                        </div>
+
+                        {/* Est. Reach */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Users size={20} className="text-blue-500" />
+                          </div>
+                          <div className="text-2xl font-bold text-blue-600">
+                            {(() => {
+                              const total = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.estimated_reach || 0)
+                              }, 0)
+                              return total > 0 ? formatNumber(total) : '0'
+                            })()}
+                          </div>
+                          <div className="text-sm text-blue-800">Est. Reach</div>
+                        </div>
+
+                        {/* Total Likes */}
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Heart size={20} className="text-red-500" />
+                          </div>
+                          <div className="text-2xl font-bold text-red-600">
+                            {(() => {
+                              const total = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.total_likes || 0)
+                              }, 0)
+                              return total > 0 ? formatNumber(total) : '0'
+                            })()}
+                          </div>
+                          <div className="text-sm text-red-800">Total Likes</div>
+                        </div>
+
+                        {/* Total Comments */}
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <MessageCircle size={20} className="text-green-500" />
+                          </div>
+                          <div className="text-2xl font-bold text-green-600">
+                            {(() => {
+                              const total = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.total_comments || 0)
+                              }, 0)
+                              return total > 0 ? formatNumber(total) : '0'
+                            })()}
+                          </div>
+                          <div className="text-sm text-green-800">Total Comments</div>
+                        </div>
+
+                        {/* Total Views */}
+                        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <Eye size={20} className="text-purple-500" />
+                          </div>
+                          <div className="text-2xl font-bold text-purple-600">
+                            {(() => {
+                              const total = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.total_views || 0)
+                              }, 0)
+                              return total > 0 ? formatNumber(total) : '0'
+                            })()}
+                          </div>
+                          <div className="text-sm text-purple-800">Total Views</div>
+                        </div>
+                      </div>
+                    </Section>
+
                     <Section title="Campaign Influencers" delay={0.2}>
                       <div className="space-y-4">
                         {/* Add Influencer Button */}
@@ -900,7 +1314,28 @@ export default function CampaignDetailPanel({
                                   Content Links
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Platform
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   Discount Code
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Total Engagements
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Avg ER%
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Est. Reach
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Total Likes
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Total Comments
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Views
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   Actions
@@ -921,88 +1356,257 @@ export default function CampaignDetailPanel({
 
                                   {/* Content Links Column */}
                                   <td className="px-6 py-4">
-                                    <div className="space-y-2">
-                                      {editingContentLinks === campaignInfluencer.id ? (
-                                        <div className="space-y-2">
-                                          <textarea
-                                            value={contentLinksInput}
-                                            onChange={(e) => setContentLinksInput(e.target.value)}
-                                            placeholder="Enter content URLs (one per line or comma-separated)"
-                                            className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none"
-                                            rows={3}
-                                          />
-                                          <div className="flex gap-2">
+                                    <div className="space-y-3">
+                                      {campaignInfluencer.contentLinks && campaignInfluencer.contentLinks.length > 0 ? (
+                                        <>
+                                          {Object.entries(groupLinksByPlatform(campaignInfluencer.contentLinks)).map(([platform, links]) => (
+                                            <div key={platform} className="space-y-2">
+                                              <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                  <span>{getPlatformIcon(platform)}</span>
+                                                  <span className="font-medium">{getPlatformName(platform)}</span>
+                                                  <span className="text-gray-400">({links.length})</span>
+                                                </div>
+                                                <button
+                                                  onClick={() => handleStartAddingLink(campaignInfluencer.id, platform)}
+                                                  className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs hover:bg-blue-100"
+                                                >
+                                                  <Plus size={10} />
+                                                  Add {getPlatformName(platform)} Link
+                                                </button>
+                                              </div>
+                                              
+                                              {/* Adding new link for this platform */}
+                                              {addingLinkTo?.campaignInfluencerId === campaignInfluencer.id && addingLinkTo?.platform === platform && (
+                                                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                                  <input
+                                                    type="url"
+                                                    value={newLinkInput}
+                                                    onChange={(e) => setNewLinkInput(e.target.value)}
+                                                    placeholder={`Enter ${getPlatformName(platform)} URL...`}
+                                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                    autoFocus
+                                                  />
+                                                  <button
+                                                    onClick={() => handleAddSingleLink(campaignInfluencer.id, influencer.id)}
+                                                    className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                                  >
+                                                    <Check size={12} />
+                                                  </button>
+                                                  <button
+                                                    onClick={handleCancelAddingLink}
+                                                    className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
+                                                  >
+                                                    <X size={12} />
+                                                  </button>
+                                                </div>
+                                              )}
+                                              
+                                              <div className="space-y-1 ml-4">
+                                                {links.map((link: string, index: number) => (
+                                                  <div key={index} className="flex items-center gap-2 group">
+                                                    <a 
+                                                      href={link} 
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm flex-1"
+                                                    >
+                                                      <ExternalLink size={10} />
+                                                      Link {index + 1}
+                                                    </a>
+                                                    <button
+                                                      onClick={() => handleRemoveLink(campaignInfluencer.id, influencer.id, link)}
+                                                      className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-1"
+                                                    >
+                                                      <X size={10} />
+                                                    </button>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          ))}
+                                          
+                                          {/* Add new platform button */}
+                                          <div className="pt-2 border-t border-gray-200">
                                             <button
-                                              onClick={() => handleUpdateContentLinks(campaignInfluencer.id, influencer.id)}
-                                              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                              onClick={() => handleStartAddingLink(campaignInfluencer.id, 'auto-detect')}
+                                              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
                                             >
-                                              <Check size={12} />
-                                              Save
-                                            </button>
-                                            <button
-                                              onClick={handleCancelEditingContentLinks}
-                                              className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
-                                            >
-                                              <X size={12} />
-                                              Cancel
+                                              <Plus size={10} />
+                                              Add Link (Auto-detect Platform)
                                             </button>
                                           </div>
-                                        </div>
+                                        </>
                                       ) : (
-                                        <div className="space-y-1">
-                                          {campaignInfluencer.contentLinks && campaignInfluencer.contentLinks.length > 0 ? (
-                                            <>
-                                              {campaignInfluencer.contentLinks.map((link: string, index: number) => (
-                                                <a 
-                                                  key={index}
-                                                  href={link} 
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                                                >
-                                                  <ExternalLink size={12} />
-                                                  Content {index + 1}
-                                                </a>
-                                              ))}
-                                              <button
-                                                onClick={() => handleStartEditingContentLinks(campaignInfluencer)}
-                                                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-xs mt-1"
-                                              >
-                                                <Edit3 size={10} />
-                                                Edit Links
-                                              </button>
-                                            </>
-                                          ) : (
-                                            <div className="space-y-1">
-                                              <span className="text-sm text-gray-400">No content yet</span>
-                                              <button
-                                                onClick={() => handleStartEditingContentLinks(campaignInfluencer)}
-                                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
-                                              >
-                                                <Plus size={10} />
-                                                Add Links
-                                              </button>
-                                            </div>
-                                          )}
+                                        <div className="space-y-2">
+                                          <span className="text-sm text-gray-400">No content yet</span>
+                                          <button
+                                            onClick={() => handleStartAddingLink(campaignInfluencer.id, 'auto-detect')}
+                                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                                          >
+                                            <Plus size={10} />
+                                            Add First Link
+                                          </button>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Adding new link with auto-detect */}
+                                      {addingLinkTo?.campaignInfluencerId === campaignInfluencer.id && addingLinkTo?.platform === 'auto-detect' && (
+                                        <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                          <input
+                                            type="url"
+                                            value={newLinkInput}
+                                            onChange={(e) => setNewLinkInput(e.target.value)}
+                                            placeholder="Enter any social media URL..."
+                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                            autoFocus
+                                          />
+                                          <button
+                                            onClick={() => handleAddSingleLink(campaignInfluencer.id, influencer.id)}
+                                            className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                          >
+                                            <Check size={12} />
+                                          </button>
+                                          <button
+                                            onClick={handleCancelAddingLink}
+                                            className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
+                                          >
+                                            <X size={12} />
+                                          </button>
                                         </div>
                                       )}
                                     </div>
                                   </td>
 
+                                  {/* Platform Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      {campaignInfluencer.contentLinks && campaignInfluencer.contentLinks.length > 0 ? (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg">{getPlatformIcon(getPrimaryPlatform(campaignInfluencer.contentLinks))}</span>
+                                          <span className="text-sm text-gray-600">
+                                            {getPlatformName(getPrimaryPlatform(campaignInfluencer.contentLinks))}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-sm text-gray-400">No content</span>
+                                      )}
+                                    </div>
+                                  </td>
 
                                   {/* Discount Code Column */}
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
-                                      <Tag size={14} className="text-gray-400" />
-                                      <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
-                                        {campaignInfluencer.discountCode || (influencer.display_name || influencer.name || 'UNKNOWN').replace(/\s+/g, '').toUpperCase().slice(0, 8) + '20'}
-                                      </code>
+                                      {editingDiscountCode === campaignInfluencer.id ? (
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="text"
+                                            value={discountCodeInput}
+                                            onChange={(e) => setDiscountCodeInput(e.target.value)}
+                                            placeholder="Enter discount code..."
+                                            className="px-2 py-1 border border-gray-300 rounded text-sm font-mono"
+                                            autoFocus
+                                          />
+                                          <button
+                                            onClick={() => handleUpdateDiscountCode(campaignInfluencer.id, influencer.id)}
+                                            className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                          >
+                                            <Check size={12} />
+                                          </button>
+                                          <button
+                                            onClick={handleCancelEditingDiscountCode}
+                                            className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
+                                          >
+                                            <X size={12} />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-2 group">
+                                          <Tag size={14} className="text-gray-400" />
+                                          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                                            {campaignInfluencer.discountCode || (influencer.display_name || influencer.name || 'UNKNOWN').replace(/\s+/g, '').toUpperCase().slice(0, 8) + '20'}
+                                          </code>
+                                          <button
+                                            onClick={() => handleStartEditingDiscountCode(campaignInfluencer)}
+                                            className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-blue-700 p-1"
+                                          >
+                                            <Edit3 size={10} />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  {/* Total Engagements Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <Heart size={14} className="text-red-400" />
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {influencer.total_engagements ? formatNumber(influencer.total_engagements) : '0'}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Avg ER% Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <Heart size={14} className="text-red-400" />
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {influencer.avg_engagement_rate ? `${(influencer.avg_engagement_rate * 100).toFixed(2)}%` : '0%'}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Est. Reach Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <Users size={14} className="text-blue-400" />
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {influencer.estimated_reach ? formatNumber(influencer.estimated_reach) : '0'}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Total Likes Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <Heart size={14} className="text-red-400" />
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {influencer.total_likes ? formatNumber(influencer.total_likes) : '0'}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Total Comments Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <MessageCircle size={14} className="text-green-400" />
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {influencer.total_comments ? formatNumber(influencer.total_comments) : '0'}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Views Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <Eye size={14} className="text-purple-400" />
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {influencer.total_views ? formatNumber(influencer.total_views) : '0'}
+                                      </span>
                                     </div>
                                   </td>
 
                                   {/* Actions Column */}
                                   <td className="px-6 py-4 text-right text-sm font-medium">
                                     <div className="flex items-center gap-2">
+                                      <button 
+                                        onClick={() => window.open(`/staff/roster/${influencer.id}`, '_blank')}
+                                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                                        title="View detailed analytics and performance"
+                                      >
+                                        <TrendingUp size={14} />
+                                      </button>
                                       <button 
                                         onClick={() => handleEditInfluencer(campaignInfluencer)}
                                         className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
@@ -1074,15 +1678,6 @@ export default function CampaignDetailPanel({
                     </motion.button>
                   )}
                   
-                  <motion.button
-                    onClick={() => setShowPaymentPanel(true)}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center space-x-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <CreditCard size={16} />
-                    <span>Manage Payments</span>
-                  </motion.button>
                   
                   <motion.button
                     onClick={onClose}
@@ -1099,17 +1694,6 @@ export default function CampaignDetailPanel({
         </>
       )}
 
-      {/* Payment Management Panel */}
-      <PaymentManagementPanel
-        isOpen={showPaymentPanel}
-        campaignId={campaign.id}
-        campaignName={campaign.name}
-        onClose={() => setShowPaymentPanel(false)}
-        onPaymentUpdated={() => {
-          // Refresh campaign data if needed
-          setShowPaymentPanel(false)
-        }}
-      />
 
       {/* Edit Influencer Modal */}
       {showEditModal && editingInfluencer && (

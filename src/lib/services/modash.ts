@@ -94,6 +94,62 @@ export async function getPerformanceData(
   return modashApiRequest(`/${platform}/performance-data`, { url })
 }
 
+// RAW API - Get media info for any platform (auto-detects platform)
+export async function getMediaInfo(url: string) {
+  const platform = detectPlatformFromUrl(url)
+  
+  switch (platform) {
+    case 'instagram':
+      return getInstagramMediaInfo(url)
+    case 'tiktok':
+      return getTikTokMediaInfo(url)
+    case 'youtube':
+      return getYouTubeMediaInfo(url)
+    default:
+      throw new Error(`Unsupported platform: ${platform}. Supported platforms: instagram, tiktok, youtube`)
+  }
+}
+
+// RAW API - Get media info for Instagram post
+export async function getInstagramMediaInfo(instagramUrl: string) {
+  // Extract shortcode from Instagram URL
+  const shortcode = extractShortcodeFromUrl(instagramUrl)
+  if (!shortcode) {
+    throw new Error('Invalid Instagram URL - could not extract shortcode')
+  }
+  
+  return modashApiRequest('/raw/ig/media-info', { code: shortcode })
+}
+
+// RAW API - Get media info for TikTok video
+export async function getTikTokMediaInfo(tiktokUrl: string) {
+  return modashApiRequest('/raw/tiktok/media-info', { url: tiktokUrl })
+}
+
+// RAW API - Get media info for YouTube video
+export async function getYouTubeMediaInfo(youtubeUrl: string) {
+  return modashApiRequest('/raw/youtube/video-info', { url: youtubeUrl })
+}
+
+// Auto-detect platform from URL
+export function detectPlatformFromUrl(url: string): 'instagram' | 'tiktok' | 'youtube' | 'unknown' {
+  if (url.includes('instagram.com/p/') || url.includes('instagram.com/reel/')) {
+    return 'instagram'
+  } else if (url.includes('tiktok.com/') || url.includes('vm.tiktok.com/')) {
+    return 'tiktok'
+  } else if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+    return 'youtube'
+  } else {
+    return 'unknown'
+  }
+}
+
+// Helper function to extract shortcode from Instagram URL
+function extractShortcodeFromUrl(url: string): string | null {
+  const match = url.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/)
+  return match ? match[1] : null
+}
+
 // Hashtags based on content (platform-aware)
 export async function listHashtags(
   platform: 'instagram' | 'tiktok' | 'youtube',

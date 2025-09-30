@@ -41,6 +41,8 @@ export default function Page() {
             afterSignInUrl="/"
             afterSignUpUrl="/"
             routing="hash"
+            signUpUrl="/sign-up"
+            redirectUrl="/"
           />
         </div>
       </div>

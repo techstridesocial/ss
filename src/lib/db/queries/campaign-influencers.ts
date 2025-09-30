@@ -56,6 +56,14 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
         i.niche_primary,
         i.total_followers,
         i.total_engagement_rate,
+        i.total_engagements,
+        i.avg_engagement_rate,
+        i.estimated_reach,
+        i.total_likes,
+        i.total_comments,
+        i.total_views,
+        i.analytics_updated_at,
+        i.notes as influencer_notes,
         up.avatar_url as profile_image_url,
         c.name as campaign_name,
         c.brand as campaign_brand,
@@ -77,7 +85,14 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
       acceptedAt: row.accepted_at ? new Date(row.accepted_at) : undefined,
       declinedAt: row.declined_at ? new Date(row.declined_at) : undefined,
       contentSubmittedAt: row.content_submitted_at ? new Date(row.content_submitted_at) : undefined,
-      contentLinks: row.content_links ? JSON.parse(row.content_links) : [],
+      contentLinks: (() => {
+        try {
+          return row.content_links && row.content_links !== '' ? JSON.parse(row.content_links) : [];
+        } catch (error) {
+          console.warn('Failed to parse content_links for campaign influencer:', row.id, 'Value:', row.content_links);
+          return [];
+        }
+      })(),
       discountCode: row.discount_code,
       paidAt: row.paid_at ? new Date(row.paid_at) : undefined,
       notes: row.notes,
@@ -94,7 +109,15 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
         niche_primary: row.niche_primary,
         total_followers: row.total_followers,
         total_engagement_rate: row.total_engagement_rate,
-        profile_image_url: row.profile_image_url
+        profile_image_url: row.profile_image_url,
+        // Analytics fields from database
+        total_engagements: row.total_engagements || 0,
+        avg_engagement_rate: row.avg_engagement_rate || 0,
+        estimated_reach: row.estimated_reach || 0,
+        total_likes: row.total_likes || 0,
+        total_comments: row.total_comments || 0,
+        total_views: row.total_views || 0,
+        analytics_updated_at: row.analytics_updated_at
       },
       campaign: {
         id: row.campaign_id,

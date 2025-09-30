@@ -28,74 +28,7 @@ interface CreateInfluencerRequest {
   discovered_engagement_rate?: number
 }
 
-// Mock data for influencers
-const MOCK_INFLUENCERS = [
-  {
-    id: 'inf_1',
-    display_name: 'Sarah Creator',
-    first_name: 'Sarah',
-    last_name: 'Creator',
-    total_followers: 125000,
-    niches: ['Lifestyle', 'Fashion'],
-    platform: 'Instagram',
-    total_engagement_rate: 3.8,
-    total_avg_views: 45000,
-    tier: 'GOLD',
-    is_active: true
-  },
-  {
-    id: 'inf_2',
-    display_name: 'Mike Tech',
-    first_name: 'Mike',
-    last_name: 'Tech',
-    total_followers: 89000,
-    niches: ['Tech', 'Gaming'],
-    platform: 'YouTube',
-    total_engagement_rate: 4.2,
-    total_avg_views: 32000,
-    tier: 'SILVER',
-    is_active: true
-  },
-  {
-    id: 'inf_3',
-    display_name: 'FitnessFiona',
-    first_name: 'Fiona',
-    last_name: 'Fit',
-    total_followers: 156000,
-    niches: ['Fitness', 'Health'],
-    platform: 'Instagram',
-    total_engagement_rate: 5.1,
-    total_avg_views: 62000,
-    tier: 'GOLD',
-    is_active: true
-  },
-  {
-    id: 'inf_4',
-    display_name: 'BeautyByBella',
-    first_name: 'Bella',
-    last_name: 'Beauty',
-    total_followers: 234000,
-    niches: ['Beauty', 'Lifestyle'],
-    platform: 'TikTok',
-    total_engagement_rate: 6.1,
-    total_avg_views: 89000,
-    tier: 'GOLD',
-    is_active: true
-  },
-  {
-    id: 'inf_5',
-    display_name: 'TravelTom',
-    first_name: 'Tom',
-    last_name: 'Travel',
-    total_followers: 78000,
-    niches: ['Travel', 'Adventure'],
-    platform: 'Instagram',
-    total_engagement_rate: 4.5,
-    total_avg_views: 28000,
-    tier: 'SILVER',
-    is_active: true
-  }
-]
+// Mock data removed - using real database queries only
 
 // GET - Fetch influencers (for roster page)
 export async function GET(request: NextRequest) {
@@ -126,6 +59,7 @@ export async function GET(request: NextRequest) {
         i.total_followers,
         i.total_engagement_rate,
         i.total_avg_views,
+        i.estimated_promotion_views,
         i.assigned_to,
         i.notes,
         i.created_at,
@@ -166,16 +100,51 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Loaded ${influencers.length} real influencers from database`)
     
+    // Transform data to match frontend expectations
+    const transformedInfluencers = influencers.map(inf => ({
+      ...inf,
+      // Ensure platforms is always an array
+      platforms: Array.isArray(inf.platforms) ? inf.platforms : [],
+      // Add platform_count for compatibility
+      platform_count: Array.isArray(inf.platforms) ? inf.platforms.length : 0,
+      // Ensure boolean fields are properly typed
+      is_active: inf.user_status === 'ACTIVE',
+      // Add estimated_promotion_views if missing
+      estimated_promotion_views: inf.estimated_promotion_views || Math.floor((inf.total_avg_views || 0) * 0.85)
+    }))
+    
     return NextResponse.json({
       success: true,
-      data: influencers
+      data: transformedInfluencers,
+      count: transformedInfluencers.length
     })
 
   } catch (error) {
-    console.error('Error fetching influencers:', error)
+    console.error('❌ Error fetching influencers:', error)
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to fetch influencers'
+    let statusCode = 500
+    
+    if (error instanceof Error) {
+      if (error.message.includes('connection')) {
+        errorMessage = 'Database connection failed. Please try again.'
+        statusCode = 503
+      } else if (error.message.includes('permission')) {
+        errorMessage = 'Database permission error. Please contact support.'
+        statusCode = 500
+      } else {
+        errorMessage = `Database error: ${error.message}`
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch influencers' },
-      { status: 500 }
+      { 
+        success: false,
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      },
+      { status: statusCode }
     )
   }
 }

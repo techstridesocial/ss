@@ -32,16 +32,16 @@ interface PaymentManagementPanelProps {
   isOpen: boolean
   campaignId: string
   campaignName: string
-  onClose: () => void
-  onPaymentUpdated: () => void
+  onCloseAction: () => void
+  onPaymentUpdatedAction: () => void
 }
 
 export default function PaymentManagementPanel({
   isOpen,
   campaignId,
   campaignName,
-  onClose,
-  onPaymentUpdated
+  onCloseAction,
+  onPaymentUpdatedAction
 }: PaymentManagementPanelProps) {
   const { toast } = useToast()
   const [payments, setPayments] = useState<Payment[]>([])
@@ -108,7 +108,7 @@ export default function PaymentManagementPanel({
         await loadPayments()
         
         // Notify parent component
-        onPaymentUpdated()
+        onPaymentUpdatedAction()
       } else {
         const error = await response.json()
         toast({
@@ -165,7 +165,7 @@ export default function PaymentManagementPanel({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onClose}
+            onClick={onCloseAction}
             className="text-gray-500 hover:text-gray-700"
           >
             <X size={20} />

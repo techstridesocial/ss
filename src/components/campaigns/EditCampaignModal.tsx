@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Calendar, DollarSign, Users, Target, Package, Play, Pause, CheckCircle, AlertCircle, Search } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@clerk/nextjs'
 
 interface EditCampaignModalProps {
   isOpen: boolean
@@ -17,6 +18,7 @@ export default function EditCampaignModal({
   campaign,
   onSave
 }: EditCampaignModalProps) {
+  const { getToken } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -68,7 +70,13 @@ export default function EditCampaignModal({
         }
 
         // Fetch campaign influencers
-        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`)
+        const token = await getToken()
+        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
         if (campaignInfluencersResponse.ok) {
           const campaignInfluencersResult = await campaignInfluencersResponse.json()
           setCampaignInfluencers(campaignInfluencersResult.data || [])
@@ -116,9 +124,13 @@ export default function EditCampaignModal({
 
   const addInfluencerToCampaign = async (influencerId: string) => {
     try {
+      const token = await getToken()
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ 
           influencerId: influencerId,
           status: 'pending'
@@ -136,9 +148,13 @@ export default function EditCampaignModal({
 
   const removeInfluencerFromCampaign = async (campaignInfluencer: any) => {
     try {
+      const token = await getToken()
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ 
           influencerId: campaignInfluencer.influencer_id,
           status: 'declined',

@@ -14,55 +14,7 @@ import {
   getCampaignTimeline
 } from '@/lib/db/queries/campaign-influencers'
 
-// Mock data for development
-const MOCK_CAMPAIGN_INFLUENCERS: any[] = []
-const MOCK_AVAILABLE_INFLUENCERS = [
-  {
-    id: 'inf_1',
-    display_name: 'Sarah Creator',
-    first_name: 'Sarah',
-    last_name: 'Creator',
-    total_followers: 125000,
-    niches: ['Lifestyle', 'Fashion'],
-    platform: 'Instagram'
-  },
-  {
-    id: 'inf_2',
-    display_name: 'Mike Tech',
-    first_name: 'Mike',
-    last_name: 'Tech',
-    total_followers: 89000,
-    niches: ['Tech', 'Gaming'],
-    platform: 'YouTube'
-  },
-  {
-    id: 'inf_3',
-    display_name: 'FitnessFiona',
-    first_name: 'Fiona',
-    last_name: 'Fit',
-    total_followers: 156000,
-    niches: ['Fitness', 'Health'],
-    platform: 'Instagram'
-  },
-  {
-    id: 'inf_4',
-    display_name: 'BeautyByBella',
-    first_name: 'Bella',
-    last_name: 'Beauty',
-    total_followers: 234000,
-    niches: ['Beauty', 'Lifestyle'],
-    platform: 'TikTok'
-  },
-  {
-    id: 'inf_5',
-    display_name: 'TravelTom',
-    first_name: 'Tom',
-    last_name: 'Travel',
-    total_followers: 78000,
-    niches: ['Travel', 'Adventure'],
-    platform: 'Instagram'
-  }
-]
+// No mock data - using real database queries
 
 interface RouteParams {
   params: {
@@ -82,60 +34,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const includeStats = searchParams.get('stats') === 'true'
     const includeTimeline = searchParams.get('timeline') === 'true'
 
-    const campaignId = params.id
+    // Fix: await params in Next.js 15
+    const { id: campaignId } = await params
 
-    // TEMPORARY: Use mock data instead of database
-    console.log('📋 Using mock data for campaign influencers (campaignId:', campaignId, ')')
+    // Fetch real campaign influencers from database
+    console.log('📋 Fetching real campaign influencers from database (campaignId:', campaignId, ')')
     
-    const mockInfluencers = MOCK_CAMPAIGN_INFLUENCERS.map(ci => ({
-      ...ci,
-      influencer: MOCK_AVAILABLE_INFLUENCERS.find(inf => inf.id === ci.influencer_id) || ci.influencer
-    }))
+    const campaignInfluencers = await getCampaignInfluencersWithDetails(campaignId)
+    console.log('✅ Loaded', campaignInfluencers.length, 'campaign influencers from database')
 
-    // Mock stats if requested
+    // Calculate real stats if requested
     let stats = null
     if (includeStats) {
-      stats = {
-        totalInfluencers: MOCK_CAMPAIGN_INFLUENCERS.length,
-        invitedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'INVITED').length,
-        acceptedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'ACCEPTED').length,
-        declinedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'DECLINED').length,
-        inProgressCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'IN_PROGRESS').length,
-        contentSubmittedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'CONTENT_SUBMITTED').length,
-        completedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'COMPLETED').length,
-        paidCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.status === 'PAID').length,
-        productShippedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.productShipped).length,
-        contentPostedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.contentPosted).length,
-        paymentReleasedCount: MOCK_CAMPAIGN_INFLUENCERS.filter(ci => ci.paymentReleased).length
-      }
+      stats = await getCampaignStatistics(campaignId)
+      console.log('✅ Loaded campaign statistics from database')
     }
 
-    // Mock timeline if requested
+    // Get real timeline if requested
     let timeline = null
     if (includeTimeline) {
-      timeline = {
-        campaign: {
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-01-31'),
-          applicationDeadline: new Date('2024-01-15'),
-          contentDeadline: new Date('2024-01-25')
-        },
-        influencers: MOCK_CAMPAIGN_INFLUENCERS.map(ci => ({
-          influencerId: ci.influencer_id,
-          displayName: MOCK_AVAILABLE_INFLUENCERS.find(inf => inf.id === ci.influencer_id)?.display_name || 'Unknown',
-          deadline: ci.deadline || null,
-          status: ci.status || 'INVITED',
-          productShipped: ci.productShipped || false,
-          contentPosted: ci.contentPosted || false,
-          paymentReleased: ci.paymentReleased || false
-        }))
-      }
+      timeline = await getCampaignTimeline(campaignId)
+      console.log('✅ Loaded campaign timeline from database')
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        influencers: mockInfluencers,
+        influencers: campaignInfluencers,
         stats,
         timeline
       }
@@ -153,19 +78,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // POST - Add influencer to campaign (when staff marks them as accepted)
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    console.log('🔐 Starting authentication for campaign influencer assignment...')
+    
     // Authenticate
     await auth.protect()
+    console.log('✅ Auth.protect() passed')
+    
     const userRole = await getCurrentUserRole()
+    console.log('👤 User role:', userRole)
 
     // Verify user is staff or admin
     if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
+      console.log('❌ Access denied - user role:', userRole)
       return NextResponse.json(
         { error: 'Only staff members can assign influencers to campaigns' },
         { status: 403 }
       )
     }
+    
+    console.log('✅ User role verification passed')
 
-    const { id: campaignId } = params
+    // Fix: await params in Next.js 15
+    const { id: campaignId } = await params
     const data = await request.json()
 
     const { influencerId, status, rate, notes } = data
@@ -184,69 +118,42 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // TEMPORARY: Use mock data instead of database
-    console.log('📋 Adding influencer to campaign using mock data:', { campaignId, influencerId, status })
+    // Add influencer to campaign using real database
+    console.log('📋 Adding influencer to campaign using database:', { campaignId, influencerId, status, rate })
     
-    // Find the influencer in our mock data
-    const influencer = MOCK_AVAILABLE_INFLUENCERS.find(inf => inf.id === influencerId)
-    if (!influencer) {
-      return NextResponse.json(
-        { error: 'Influencer not found' },
-        { status: 404 }
+    let campaignInfluencer
+    try {
+      campaignInfluencer = await addInfluencerToCampaign(
+        campaignId,
+        influencerId,
+        rate
       )
+      console.log('✅ Successfully added influencer to campaign:', campaignInfluencer)
+    } catch (dbError) {
+      console.error('❌ Database error in addInfluencerToCampaign:', dbError)
+      throw dbError
     }
-
-    // Check if influencer is already in the campaign
-    const existingAssignment = MOCK_CAMPAIGN_INFLUENCERS.find(ci => 
-      ci.campaign_id === campaignId && ci.influencer_id === influencerId
-    )
-
-    if (existingAssignment) {
-      return NextResponse.json(
-        { error: 'Influencer is already assigned to this campaign' },
-        { status: 409 }
-      )
-    }
-
-    // Create mock campaign influencer
-    const mockCampaignInfluencer = {
-      id: `ci_${Date.now()}`,
-      campaignId,
-      influencerId,
-      status: status.toUpperCase(),
-      rate: rate || null,
-      notes: notes || null,
-      deadline: data.deadline ? new Date(data.deadline) : null,
-      appliedAt: null,
-      acceptedAt: status === 'accepted' ? new Date() : null,
-      declinedAt: status === 'declined' ? new Date() : null,
-      contentSubmittedAt: null,
-      contentLinks: [], // Initialize empty content links
-      discountCode: null, // Initialize discount code
-      paidAt: null,
-      productShipped: false,
-      contentPosted: false,
-      paymentReleased: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      influencer: influencer
-    }
-
-    // Add to mock data
-    MOCK_CAMPAIGN_INFLUENCERS.push(mockCampaignInfluencer)
-
-    console.log('✅ Successfully added influencer to campaign (mock):', mockCampaignInfluencer)
 
     return NextResponse.json({
       success: true,
       message: `Influencer ${status} for campaign successfully`,
-      campaignInfluencer: mockCampaignInfluencer
+      campaignInfluencer: campaignInfluencer
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Error adding influencer to campaign:', error)
+    console.error('❌ Error adding influencer to campaign:', error)
+    console.error('❌ Error type:', typeof error)
+    console.error('❌ Error message:', error instanceof Error ? error.message : 'No message')
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack')
+    
     return NextResponse.json(
-      { success: false, error: 'Failed to add influencer to campaign' },
+      { 
+        success: false, 
+        error: 'Failed to add influencer to campaign',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error
+      },
       { status: 500 }
     )
   }
@@ -267,7 +174,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { id: campaignId } = params
+    // Fix: await params in Next.js 15
+    const { id: campaignId } = await params
     const data = await request.json()
 
     const { influencerId, status, notes, contentLinks, discountCode } = data
@@ -279,35 +187,59 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // TEMPORARY: Use mock data instead of database
-    console.log('📋 Updating campaign influencer using mock data:', { campaignId, influencerId, contentLinks, discountCode })
+    // Update campaign influencer using real database
+    console.log('📋 Updating campaign influencer using database:', { campaignId, influencerId, contentLinks, discountCode })
     
-    // Find the campaign influencer in mock data
-    const campaignInfluencerIndex = MOCK_CAMPAIGN_INFLUENCERS.findIndex(ci => 
-      ci.campaignId === campaignId && ci.influencerId === influencerId
+    const updatedCampaignInfluencer = await updateCampaignInfluencerStatus(
+      campaignId,
+      influencerId,
+      status as any,
+      notes,
+      contentLinks,
+      discountCode
     )
 
-    if (campaignInfluencerIndex === -1) {
+    if (!updatedCampaignInfluencer) {
       return NextResponse.json(
         { error: 'Campaign influencer assignment not found' },
         { status: 404 }
       )
     }
 
-    // Update the mock data
-    const updatedCampaignInfluencer = {
-      ...MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex],
-      contentLinks: contentLinks !== undefined ? contentLinks : MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].contentLinks,
-      discountCode: discountCode !== undefined ? discountCode : MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].discountCode,
-      status: status || MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].status,
-      notes: notes !== undefined ? notes : MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex].notes,
-      updatedAt: new Date()
+    // 🎯 AUTOMATIC ANALYTICS UPDATE: Only when content links are added
+    console.log('🔍 Checking for content links:', { contentLinks, hasContentLinks: contentLinks && contentLinks.length > 0 })
+    
+    if (contentLinks && contentLinks.length > 0) {
+      console.log('🔄 Content links detected - triggering automatic analytics update...')
+      console.log('📋 Content links to process:', contentLinks)
+      console.log('👤 Influencer ID:', influencerId)
+      
+      try {
+        // Import analytics updater
+        const { updateInfluencerAnalyticsFromContentLinks } = await import('@/lib/services/analytics-updater')
+        
+        // Update analytics for this specific influencer using content links
+        console.log('🚀 Calling updateInfluencerAnalyticsFromContentLinks...')
+        const analyticsUpdated = await updateInfluencerAnalyticsFromContentLinks(influencerId, contentLinks)
+        
+        if (analyticsUpdated) {
+          console.log('✅ Analytics automatically updated from content links for influencer:', influencerId)
+        } else {
+          console.log('⚠️ Analytics update failed for influencer:', influencerId)
+        }
+      } catch (analyticsError) {
+        console.error('❌ Error updating analytics automatically:', analyticsError)
+        console.error('❌ Analytics error details:', {
+          message: analyticsError instanceof Error ? analyticsError.message : 'Unknown error',
+          stack: analyticsError instanceof Error ? analyticsError.stack : 'No stack'
+        })
+        // Don't fail the main operation, just log the error
+      }
+    } else {
+      console.log('📊 No content links provided - analytics will remain at 0')
     }
 
-    // Update the mock array
-    MOCK_CAMPAIGN_INFLUENCERS[campaignInfluencerIndex] = updatedCampaignInfluencer
-
-    console.log('✅ Successfully updated campaign influencer (mock):', updatedCampaignInfluencer)
+    console.log('✅ Successfully updated campaign influencer:', updatedCampaignInfluencer)
 
     return NextResponse.json({
       success: true,

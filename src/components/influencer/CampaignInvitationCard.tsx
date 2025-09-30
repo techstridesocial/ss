@@ -27,14 +27,14 @@ interface CampaignInvitationCardProps {
     invited_at: string
     expires_at?: string
   }
-  onAccept: (invitationId: string) => void
-  onDecline: (invitationId: string, reason: string) => void
+  onAcceptAction: (invitationId: string) => void
+  onDeclineAction: (invitationId: string, reason: string) => void
 }
 
 export default function CampaignInvitationCard({ 
   invitation, 
-  onAccept, 
-  onDecline 
+  onAcceptAction, 
+  onDeclineAction 
 }: CampaignInvitationCardProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showDeclineForm, setShowDeclineForm] = useState(false)
@@ -43,7 +43,7 @@ export default function CampaignInvitationCard({
   const handleAccept = async () => {
     setIsProcessing(true)
     try {
-      await onAccept(invitation.id)
+      await onAcceptAction(invitation.id)
     } finally {
       setIsProcessing(false)
     }
@@ -57,7 +57,7 @@ export default function CampaignInvitationCard({
     
     setIsProcessing(true)
     try {
-      await onDecline(invitation.id, declineReason)
+      await onDeclineAction(invitation.id, declineReason)
     } finally {
       setIsProcessing(false)
       setShowDeclineForm(false)
