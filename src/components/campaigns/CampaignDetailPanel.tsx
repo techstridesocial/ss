@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Star, Building2, Calendar, DollarSign, Users, CheckCircle, Play, Pause, Edit, TrendingUp, Target, Clock, Package, MessageCircle, ChevronDown, ChevronUp, User, Mail, Phone, Plus, ExternalLink, Tag, Search, Edit3, Save, Trash2, Check, Heart, Eye } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@clerk/nextjs'
@@ -20,7 +20,7 @@ const formatNumber = (num: number): string => {
   } else if (num >= 1000) {
     return (num / 1000).toFixed(1) + 'k'
   }
-  return num.toString()
+  return num.toLocaleString() // Use commas for numbers under 1000
 }
 
 // Enhanced Section component with animation
@@ -242,7 +242,7 @@ export default function CampaignDetailPanel({
   onPauseCampaign,
   onResumeCampaign
 }: CampaignDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'influencers' | 'analytics'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'influencers'>('overview')
   const [isLoading, setIsLoading] = useState(false)
   const [showAddInfluencerModal, setShowAddInfluencerModal] = useState(false)
   const [availableInfluencers, setAvailableInfluencers] = useState<Array<any>>([])
@@ -279,17 +279,62 @@ export default function CampaignDetailPanel({
     return 'unknown'
   }
 
-  const getPlatformIcon = (platform: string): string => {
-    const icons = {
-      instagram: '📷',
-      tiktok: '📱',
-      youtube: '📺',
-      twitter: '🐦',
-      linkedin: '💼',
-      facebook: '📘',
-      unknown: '🌐'
+  const getPlatformIcon = (platform: string): React.JSX.Element => {
+    const iconProps = { className: "w-5 h-5" }
+    
+    switch(platform) {
+      case 'instagram':
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="url(#instagram-gradient)">
+            <defs>
+              <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" style={{stopColor: '#FED373', stopOpacity: 1}} />
+                <stop offset="15%" style={{stopColor: '#F15245', stopOpacity: 1}} />
+                <stop offset="40%" style={{stopColor: '#D92E7F', stopOpacity: 1}} />
+                <stop offset="75%" style={{stopColor: '#9B36B7', stopOpacity: 1}} />
+                <stop offset="100%" style={{stopColor: '#515ECF', stopOpacity: 1}} />
+              </linearGradient>
+            </defs>
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+        )
+      case 'tiktok':
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#000000"/>
+          </svg>
+        )
+      case 'youtube':
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="#FF0000">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        )
+      case 'twitter':
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="#1DA1F2">
+            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+          </svg>
+        )
+      case 'linkedin':
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="#0A66C2">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        )
+      case 'facebook':
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="#1877F2">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        )
+      default:
+        return (
+          <svg {...iconProps} viewBox="0 0 24 24" fill="#6B7280">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        )
     }
-    return icons[platform as keyof typeof icons] || '🌐'
   }
 
   const getPlatformName = (platform: string): string => {
@@ -544,6 +589,9 @@ export default function CampaignDetailPanel({
     if (!newLinkInput.trim()) return
 
     try {
+      setIsLoading(true)
+      console.log('➕ Adding new link:', newLinkInput)
+      
       const token = await getToken()
       const currentCampaignInfluencer = campaignInfluencers.find(ci => ci.id === campaignInfluencerId)
       const existingLinks = currentCampaignInfluencer?.contentLinks || []
@@ -557,22 +605,28 @@ export default function CampaignDetailPanel({
         },
         body: JSON.stringify({ 
           influencerId: influencerId,
-          contentLinks: updatedLinks
+          contentLinks: updatedLinks,
+          status: currentCampaignInfluencer?.status || 'INVITED'
         })
       })
       
       if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Successfully added single link:', result)
+        console.log('✅ Link added to database! Refetching analytics...')
         
-        // Update the local state
-        setCampaignInfluencers(prev => 
-          prev.map(ci => 
-            ci.id === campaignInfluencerId 
-              ? { ...ci, contentLinks: updatedLinks }
-              : ci
-          )
-        )
+        // CRITICAL: Refetch to get updated analytics instantly
+        const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json()
+          console.log('📊 Fresh analytics after adding link:', data)
+          
+          if (data.influencers) {
+            setCampaignInfluencers(data.influencers)
+            console.log('⚡ ANALYTICS UPDATED AFTER ADDING LINK!')
+          }
+        }
         
         // Close the adding mode
         setAddingLinkTo(null)
@@ -583,14 +637,157 @@ export default function CampaignDetailPanel({
         alert(`Failed to add link: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error adding single link:', error)
+      console.error('❌ Error adding single link:', error)
       alert(`Error adding link: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleClearAllContentLinks = async (campaignInfluencerId: string, influencerId: string) => {
+    try {
+      setIsLoading(true)
+      console.log('🗑️ Clearing ALL content links for influencer:', influencerId)
+      
+      const token = await getToken()
+
+      // Use the new comprehensive deletion service to clear all content links
+      const deleteResponse = await fetch('/api/content-links/delete', {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          influencerId: influencerId,
+          campaignId: campaign.id,
+          deleteAll: true
+        })
+      })
+
+      if (deleteResponse.ok) {
+        const deleteResult = await deleteResponse.json()
+        console.log('✅ All content links cleared from all tables:', deleteResult)
+        
+        // Update local state to reflect the change
+        setCampaignInfluencers(prev => prev.map(ci => 
+          ci.id === campaignInfluencerId 
+            ? { ...ci, contentLinks: [] }
+            : ci
+        ))
+
+        console.log(`📋 Updated local state - cleared all content links`)
+        
+        // Show success message
+        if (deleteResult.result.deletedFrom.length > 0) {
+          console.log(`✅ Content links cleared from: ${deleteResult.result.deletedFrom.join(', ')}`)
+        }
+        
+        if (deleteResult.result.analyticsReset) {
+          console.log('🔄 Analytics reset due to clearing all content links')
+        }
+        
+        alert('All content links cleared successfully!')
+      } else {
+        const errorData = await deleteResponse.json()
+        console.error('❌ Failed to clear content links:', errorData)
+        alert(`Failed to clear content links: ${errorData.error || 'Unknown error'}`)
+      }
+
+      // Also update the campaign_influencers table for consistency
+      const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          influencerId: influencerId,
+          contentLinks: [],
+          status: campaignInfluencers.find(ci => ci.id === campaignInfluencerId)?.status || 'INVITED'
+        })
+      })
+      
+      if (response.ok) {
+        console.log('✅ All content links cleared from database!')
+        
+        // Refetch to get updated analytics
+        const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers?stats=true&timeline=true`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json()
+          if (data.influencers) {
+            setCampaignInfluencers(data.influencers)
+            console.log('⚡ ANALYTICS UPDATED AFTER CLEARING ALL LINKS!')
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error clearing all content links:', error)
+      alert(`Error clearing content links: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleRemoveLink = async (campaignInfluencerId: string, influencerId: string, linkToRemove: string) => {
     try {
+      setIsLoading(true)
+      console.log('🗑️ Deleting link from ALL tables:', linkToRemove)
+      
       const token = await getToken()
+
+      // Use the new comprehensive deletion service
+      const deleteResponse = await fetch('/api/content-links/delete', {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          contentLink: linkToRemove,
+          influencerId: influencerId,
+          campaignId: campaign.id
+        })
+      })
+
+      if (deleteResponse.ok) {
+        const deleteResult = await deleteResponse.json()
+        console.log('✅ Content link deleted from all tables:', deleteResult)
+        
+        // Update local state to reflect the change
+        const currentCampaignInfluencer = campaignInfluencers.find(ci => ci.id === campaignInfluencerId)
+        const existingLinks = currentCampaignInfluencer?.contentLinks || []
+        const updatedLinks = existingLinks.filter((link: string) => link !== linkToRemove)
+
+        // Update the local state
+        setCampaignInfluencers(prev => prev.map(ci => 
+          ci.id === campaignInfluencerId 
+            ? { ...ci, contentLinks: updatedLinks }
+            : ci
+        ))
+
+        console.log(`📋 Updated local state - removed link from ${existingLinks.length} to ${updatedLinks.length}`)
+        
+        // Show success message
+        if (deleteResult.result.deletedFrom.length > 0) {
+          console.log(`✅ Link deleted from: ${deleteResult.result.deletedFrom.join(', ')}`)
+        }
+        
+        if (deleteResult.result.analyticsReset) {
+          console.log('🔄 Analytics reset due to no remaining content links')
+        }
+      } else {
+        const errorData = await deleteResponse.json()
+        console.error('❌ Failed to delete link:', errorData)
+        alert(`Failed to delete link: ${errorData.error || 'Unknown error'}`)
+        return
+      }
+
+      // Also update the campaign_influencers table for consistency
       const currentCampaignInfluencer = campaignInfluencers.find(ci => ci.id === campaignInfluencerId)
       const existingLinks = currentCampaignInfluencer?.contentLinks || []
       const updatedLinks = existingLinks.filter((link: string) => link !== linkToRemove)
@@ -603,30 +800,38 @@ export default function CampaignDetailPanel({
         },
         body: JSON.stringify({ 
           influencerId: influencerId,
-          contentLinks: updatedLinks
+          contentLinks: updatedLinks,
+          status: currentCampaignInfluencer?.status || 'INVITED'
         })
       })
       
       if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Successfully removed link:', result)
+        console.log('✅ Link deleted from database! Refetching analytics...')
         
-        // Update the local state
-        setCampaignInfluencers(prev => 
-          prev.map(ci => 
-            ci.id === campaignInfluencerId 
-              ? { ...ci, contentLinks: updatedLinks }
-              : ci
-          )
-        )
+        // CRITICAL: Refetch to get updated analytics instantly
+        const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json()
+          console.log('📊 Fresh analytics after deletion:', data)
+          
+          if (data.influencers) {
+            setCampaignInfluencers(data.influencers)
+            console.log('⚡ ANALYTICS UPDATED AFTER DELETION!')
+          }
+        }
       } else {
         const errorData = await response.json()
         console.error('❌ Failed to remove link:', errorData)
         alert(`Failed to remove link: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error removing link:', error)
+      console.error('❌ Error removing link:', error)
       alert(`Error removing link: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -697,36 +902,105 @@ export default function CampaignDetailPanel({
 
   const handleSaveEdit = async () => {
     try {
+      setIsLoading(true)
+      console.log('💾 [FRONTEND DEBUG] Starting content links save...')
+      console.log('💾 [FRONTEND DEBUG] Campaign ID:', campaign.id)
+      console.log('💾 [FRONTEND DEBUG] Influencer ID:', editingInfluencer.influencer_id || editingInfluencer.id)
+      console.log('💾 [FRONTEND DEBUG] Original content links:', editForm.contentLinks)
+      
+      const filteredLinks = editForm.contentLinks.filter(link => link.trim())
+      console.log('💾 [FRONTEND DEBUG] Filtered content links:', filteredLinks)
+      console.log('💾 [FRONTEND DEBUG] Filtered links count:', filteredLinks.length)
+      
       // Update the campaign influencer with content links and discount code
       const token = await getToken()
+      console.log('💾 [FRONTEND DEBUG] Auth token obtained:', token ? 'Yes' : 'No')
+      
+      const requestBody = {
+        influencerId: editingInfluencer.influencer_id || editingInfluencer.id,
+        contentLinks: filteredLinks,
+        discountCode: editForm.discountCode,
+        status: editingInfluencer.status
+      }
+      
+      console.log('💾 [FRONTEND DEBUG] Request body:', JSON.stringify(requestBody, null, 2))
+      
       const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json' 
         },
-        body: JSON.stringify({
-          influencerId: editingInfluencer.influencer_id || editingInfluencer.id,
-          contentLinks: editForm.contentLinks.filter(link => link.trim()),
-          discountCode: editForm.discountCode,
-          status: editingInfluencer.status
-        })
+        body: JSON.stringify(requestBody)
       })
+      
+      console.log('💾 [FRONTEND DEBUG] Response status:', response.status)
+      console.log('💾 [FRONTEND DEBUG] Response ok:', response.ok)
 
       if (response.ok) {
-        // Update local state
-        setCampaignInfluencers(prev => 
-          prev.map(ci => 
-            ci.id === editingInfluencer.id 
-              ? { ...ci, contentLinks: editForm.contentLinks, discountCode: editForm.discountCode }
-              : ci
-          )
-        )
+        console.log('✅ [FRONTEND DEBUG] Content links saved successfully!')
+        
+        // Get response data to see what the backend returned
+        const responseData = await response.json()
+        console.log('✅ [FRONTEND DEBUG] Backend response:', JSON.stringify(responseData, null, 2))
+        
+        console.log('🔄 [FRONTEND DEBUG] Now fetching updated analytics...')
+        
+        // CRITICAL: Refetch campaign influencers to get REAL-TIME updated analytics
+        const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        
+        console.log('🔄 [FRONTEND DEBUG] Refresh response status:', refreshResponse.status)
+        console.log('🔄 [FRONTEND DEBUG] Refresh response ok:', refreshResponse.ok)
+        
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json()
+          console.log('📊 [FRONTEND DEBUG] Fresh analytics data received:', JSON.stringify(refreshData, null, 2))
+          
+          // FIX: API returns data wrapped in { data: { influencers: [...] } }
+          if (refreshData.data && refreshData.data.influencers) {
+            console.log('📊 [FRONTEND DEBUG] Found influencers in data.influencers:', refreshData.data.influencers.length)
+            setCampaignInfluencers(refreshData.data.influencers)
+            console.log('⚡ [FRONTEND DEBUG] ANALYTICS UPDATED INSTANTLY! Updated influencers:', refreshData.data.influencers.length)
+            
+            // Log the specific influencer we updated
+            const updatedInfluencer = refreshData.data.influencers.find(inf => 
+              inf.influencer_id === (editingInfluencer.influencer_id || editingInfluencer.id)
+            )
+            if (updatedInfluencer) {
+              console.log('📊 [FRONTEND DEBUG] Updated influencer analytics:', {
+                total_engagements: updatedInfluencer.influencer?.total_engagements,
+                avg_engagement_rate: updatedInfluencer.influencer?.avg_engagement_rate,
+                estimated_reach: updatedInfluencer.influencer?.estimated_reach,
+                total_likes: updatedInfluencer.influencer?.total_likes,
+                total_comments: updatedInfluencer.influencer?.total_comments,
+                total_views: updatedInfluencer.influencer?.total_views
+              })
+            }
+          } else if (refreshData.influencers) {
+            // Fallback in case API structure changes
+            console.log('📊 [FRONTEND DEBUG] Found influencers in direct property (fallback)')
+            setCampaignInfluencers(refreshData.influencers)
+            console.log('⚡ [FRONTEND DEBUG] ANALYTICS UPDATED INSTANTLY! (fallback path)')
+          } else {
+            console.error('❌ [FRONTEND DEBUG] Unexpected response structure:', refreshData)
+          }
+        } else {
+          console.error('❌ [FRONTEND DEBUG] Failed to refresh campaign data:', refreshResponse.status, refreshResponse.statusText)
+        }
+        
         setShowEditModal(false)
         setEditingInfluencer(null)
+      } else {
+        console.error('❌ [FRONTEND DEBUG] Failed to save content links:', response.status, response.statusText)
+        const errorData = await response.json()
+        console.error('❌ [FRONTEND DEBUG] Error response:', errorData)
       }
     } catch (error) {
-      console.error('Error updating influencer:', error)
+      console.error('❌ Error updating influencer:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -738,10 +1012,14 @@ export default function CampaignDetailPanel({
   }
 
   const removeContentLink = (index: number) => {
-    setEditForm(prev => ({
-      ...prev,
-      contentLinks: prev.contentLinks.filter((_, i) => i !== index)
-    }))
+    setEditForm(prev => {
+      const newLinks = prev.contentLinks.filter((_, i) => i !== index)
+      // If we removed the last link, ensure we have at least one empty field
+      if (newLinks.length === 0) {
+        return { ...prev, contentLinks: [''] }
+      }
+      return { ...prev, contentLinks: newLinks }
+    })
   }
 
   const updateContentLink = (index: number, value: string) => {
@@ -922,48 +1200,45 @@ export default function CampaignDetailPanel({
               transition={{ delay: 0.2, duration: 0.4 }}
               className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex-shrink-0"
             >
-              <div className="p-8">
+              <div className="p-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div>
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h2 className="text-2xl font-bold text-gray-900">{campaign.name}</h2>
-                        <StatusBadge status={campaign.status} />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-1">
+                      <h2 className="text-xl font-bold text-gray-900">{campaign.name}</h2>
+                      <StatusBadge status={campaign.status} />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium mb-4">{campaign.brand_name}</p>
+                    
+                    {/* Campaign Stats Grid */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Users size={14} className="text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{campaign.assigned_influencers}</div>
+                          <div className="text-xs text-gray-500">Influencers</div>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 font-medium mb-2">{campaign.brand_name}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <Users size={14} />
-                          <span>{campaign.assigned_influencers} influencers</span>
+                      
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <DollarSign size={14} className="text-gray-600" />
                         </div>
-                        <span>•</span>
-                        <div className="flex items-center space-x-1">
-                          <DollarSign size={14} />
-                          <span>${(typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget).toLocaleString()} budget</span>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">${(typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">Budget</div>
                         </div>
-                        <span>•</span>
-                        <div className="flex items-center space-x-1">
-                          <Calendar size={14} />
-                          <span>{new Date(campaign.end_date).toLocaleDateString()}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Calendar size={14} className="text-gray-600" />
                         </div>
-                        {campaign.createdBy && (
-                          <>
-                            <span>•</span>
-                            <div className="flex items-center space-x-1">
-                              <User size={14} />
-                              <span>Created by: {campaign.createdBy.name || campaign.createdBy.display_name || 'Staff Member'}</span>
-                            </div>
-                          </>
-                        )}
-                        {!campaign.createdBy && (
-                          <>
-                            <span>•</span>
-                            <div className="flex items-center space-x-1">
-                              <User size={14} />
-                              <span>Created by: Staff Member</span>
-                            </div>
-                          </>
-                        )}
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{new Date(campaign.end_date).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-500">End Date</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -979,22 +1254,23 @@ export default function CampaignDetailPanel({
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="mt-6 border-b border-gray-200">
-                  <nav className="-mb-px flex space-x-8">
-                    {                    [
-                      { id: 'overview', label: 'Campaign Overview' },
-                      { id: 'influencers', label: 'Influencers & Status' }
+                <div className="mt-4 border-b border-gray-200">
+                  <nav className="-mb-px flex space-x-6">
+                    {[
+                      { id: 'overview', name: 'Overview', icon: <TrendingUp size={16} /> },
+                      { id: 'influencers', name: 'Influencers & Analytics', icon: <Users size={16} /> }
                     ].map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
                           activeTab === tab.id
-                            ? 'border-black text-black'
+                            ? 'border-blue-500 text-blue-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
-                        {tab.label}
+                        {tab.icon}
+                        <span>{tab.name}</span>
                       </button>
                     ))}
                   </nav>
@@ -1023,7 +1299,7 @@ export default function CampaignDetailPanel({
                 }
               `}</style>
               
-              <div className="p-8 space-y-10">
+              <div className="p-6 space-y-8">
                 {/* Campaign Overview Tab */}
                 {activeTab === 'overview' && (
                   <>
@@ -1192,7 +1468,7 @@ export default function CampaignDetailPanel({
                                 const inf = ci.influencer || ci
                                 return sum + (inf.total_engagements || 0)
                               }, 0)
-                              return total > 0 ? formatNumber(total) : '0'
+                              return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
                           <div className="text-sm text-red-800">Total Engagements</div>
@@ -1206,11 +1482,22 @@ export default function CampaignDetailPanel({
                           <div className="text-2xl font-bold text-pink-600">
                             {(() => {
                               if (campaignInfluencers.length === 0) return '0%'
-                              const avgRate = campaignInfluencers.reduce((sum, ci) => {
+                              
+                              // Calculate campaign-wide engagement rate (not average of individual rates)
+                              const totalEngagements = campaignInfluencers.reduce((sum, ci) => {
                                 const inf = ci.influencer || ci
-                                return sum + (inf.avg_engagement_rate || 0)
-                              }, 0) / campaignInfluencers.length
-                              return isNaN(avgRate) ? '0%' : `${(avgRate * 100).toFixed(2)}%`
+                                return sum + (inf.total_engagements || 0)
+                              }, 0)
+                              
+                              const totalViews = campaignInfluencers.reduce((sum, ci) => {
+                                const inf = ci.influencer || ci
+                                return sum + (inf.total_views || 0)
+                              }, 0)
+                              
+                              if (totalViews === 0) return '0%'
+                              
+                              const campaignER = (totalEngagements / totalViews) * 100
+                              return isNaN(campaignER) ? '0%' : `${campaignER.toFixed(2)}%`
                             })()}
                           </div>
                           <div className="text-sm text-pink-800">Avg ER%</div>
@@ -1227,7 +1514,7 @@ export default function CampaignDetailPanel({
                                 const inf = ci.influencer || ci
                                 return sum + (inf.estimated_reach || 0)
                               }, 0)
-                              return total > 0 ? formatNumber(total) : '0'
+                              return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
                           <div className="text-sm text-blue-800">Est. Reach</div>
@@ -1244,7 +1531,7 @@ export default function CampaignDetailPanel({
                                 const inf = ci.influencer || ci
                                 return sum + (inf.total_likes || 0)
                               }, 0)
-                              return total > 0 ? formatNumber(total) : '0'
+                              return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
                           <div className="text-sm text-red-800">Total Likes</div>
@@ -1261,7 +1548,7 @@ export default function CampaignDetailPanel({
                                 const inf = ci.influencer || ci
                                 return sum + (inf.total_comments || 0)
                               }, 0)
-                              return total > 0 ? formatNumber(total) : '0'
+                              return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
                           <div className="text-sm text-green-800">Total Comments</div>
@@ -1278,7 +1565,7 @@ export default function CampaignDetailPanel({
                                 const inf = ci.influencer || ci
                                 return sum + (inf.total_views || 0)
                               }, 0)
-                              return total > 0 ? formatNumber(total) : '0'
+                              return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
                           <div className="text-sm text-purple-800">Total Views</div>
@@ -1363,7 +1650,7 @@ export default function CampaignDetailPanel({
                                             <div key={platform} className="space-y-2">
                                               <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2 text-xs text-gray-600">
-                                                  <span>{getPlatformIcon(platform)}</span>
+                                                  {getPlatformIcon(platform)}
                                                   <span className="font-medium">{getPlatformName(platform)}</span>
                                                   <span className="text-gray-400">({links.length})</span>
                                                 </div>
@@ -1483,7 +1770,7 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       {campaignInfluencer.contentLinks && campaignInfluencer.contentLinks.length > 0 ? (
                                         <div className="flex items-center gap-2">
-                                          <span className="text-lg">{getPlatformIcon(getPrimaryPlatform(campaignInfluencer.contentLinks))}</span>
+                                          {getPlatformIcon(getPrimaryPlatform(campaignInfluencer.contentLinks))}
                                           <span className="text-sm text-gray-600">
                                             {getPlatformName(getPrimaryPlatform(campaignInfluencer.contentLinks))}
                                           </span>
@@ -1731,9 +2018,21 @@ export default function CampaignDetailPanel({
             <div className="p-6 space-y-6">
               {/* Content Links Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Content Links
-                </label>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Content Links {editForm.contentLinks.length > 0 && editForm.contentLinks.some(link => link.trim()) && `(${editForm.contentLinks.filter(link => link.trim()).length})`}
+                  </label>
+                  {editForm.contentLinks.length > 0 && editForm.contentLinks.some(link => link.trim()) && (
+                    <button
+                      onClick={() => setEditForm(prev => ({ ...prev, contentLinks: [''] }))}
+                      className="text-red-600 hover:text-red-800 text-xs flex items-center gap-1"
+                      title="Clear all content links and reset analytics"
+                    >
+                      <Trash2 size={14} />
+                      Clear All
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {editForm.contentLinks.map((link, index) => (
                     <div key={index} className="flex items-center gap-2">
@@ -1741,27 +2040,29 @@ export default function CampaignDetailPanel({
                         type="url"
                         value={link}
                         onChange={(e) => updateContentLink(index, e.target.value)}
-                        placeholder="https://instagram.com/p/..."
+                        placeholder="https://instagram.com/p/... or https://tiktok.com/..."
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                      {editForm.contentLinks.length > 1 && (
-                        <button
-                          onClick={() => removeContentLink(index)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
-                        >
-                          <X size={16} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => removeContentLink(index)}
+                        className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+                        title="Delete this link"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   ))}
                   <button
                     onClick={addContentLink}
-                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                   >
                     <Plus size={16} />
                     Add another link
                   </button>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Removing all content links will reset analytics to 0
+                </p>
               </div>
 
               {/* Discount Code Section */}

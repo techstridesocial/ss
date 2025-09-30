@@ -1,92 +1,95 @@
-// Analytics Updater Service
-// Updates influencer analytics from Modash RAW API data
+// analytics-updater.ts - Content Link Analytics Processing
 
+import { getMediaInfo, detectPlatformFromUrl } from './modash'
 import { query } from '../db/connection'
-import { getProfileReport } from './modash'
 
-interface ModashProfileData {
-  profile?: {
-    followers?: number
-    engagement_rate?: number
-    avg_views?: number
-    total_posts?: number
-    total_likes?: number
-    total_comments?: number
-    total_shares?: number
-    reach?: number
-  }
-  posts?: {
-    total?: number
-    avg_likes?: number
-    avg_comments?: number
-    avg_views?: number
-  }
-  reels?: {
-    total?: number
-    avg_likes?: number
-    avg_comments?: number
-    avg_views?: number
-  }
+interface ContentAnalytics {
+  platform: string
+  views: number
+  likes: number
+  comments: number
+  shares?: number
+  saves?: number
+  engagement_rate?: number
+  url: string
+}
+
+interface AggregatedAnalytics {
+  total_views: number
+  total_likes: number
+  total_comments: number
+  total_shares: number
+  total_saves: number
+  avg_engagement_rate: number
+  content_count: number
 }
 
 /**
- * Update influencer analytics from Modash data stored in notes
+ * Main function to update influencer analytics from content links
+ * Called when content links are added/updated in campaigns
  */
-export async function updateInfluencerAnalyticsFromModash(influencerId: string): Promise<boolean> {
+export async function updateInfluencerAnalyticsFromContentLinks(
+  influencerId: string, 
+  contentLinks: string[]
+): Promise<boolean> {
+  console.log(`🔄 Starting analytics update for influencer ${influencerId}`)
+  console.log(`📋 Processing ${contentLinks.length} content links`)
+  
   try {
-    // Get influencer with notes
-    const result = await query(`
-      SELECT id, display_name, notes 
-      FROM influencers 
-      WHERE id = $1
-    `, [influencerId])
-
-    if (result.length === 0) {
-      console.log(`❌ Influencer ${influencerId} not found`)
-      return false
+    // Handle empty content links - reset analytics to 0
+    if (!contentLinks || contentLinks.length === 0) {
+      console.log(`🔄 No content links provided - resetting analytics to 0 for influencer ${influencerId}`)
+      await resetInfluencerAnalytics(influencerId)
+      return true
     }
 
-    const influencer = result[0]
-    const notes = influencer.notes ? JSON.parse(influencer.notes) : {}
-    const modashData = notes.modash_data
+    // Validate and filter content links
+    const validLinks = contentLinks.filter(link => {
+      const trimmed = link.trim()
+      return trimmed && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))
+    })
 
-    if (!modashData) {
-      console.log(`❌ No Modash data found for influencer ${influencer.display_name}`)
-      return false
+    if (validLinks.length === 0) {
+      console.log(`⚠️ No valid content links found - resetting analytics to 0 for influencer ${influencerId}`)
+      await resetInfluencerAnalytics(influencerId)
+      return true
     }
 
-    // Extract analytics from Modash data
-    const analytics = extractAnalyticsFromModashData(modashData)
+    console.log(`✅ Found ${validLinks.length} valid content links`)
+
+    // Process each content link with Modash API
+    const analyticsResults: ContentAnalytics[] = []
     
-    if (!analytics) {
-      console.log(`❌ Could not extract analytics from Modash data for ${influencer.display_name}`)
-      return false
+    for (const link of validLinks) {
+      try {
+        console.log(`🔍 Processing content link: ${link}`)
+        const analytics = await processContentLink(link)
+        if (analytics) {
+          analyticsResults.push(analytics)
+          console.log(`✅ Successfully processed: ${analytics.platform} - ${analytics.views} views, ${analytics.likes} likes`)
+        } else {
+          console.log(`⚠️ No analytics data returned for: ${link}`)
+        }
+      } catch (error) {
+        console.error(`❌ Error processing content link ${link}:`, error)
+        // Continue processing other links even if one fails
+      }
     }
 
-    // Update database with analytics
-    await query(`
-      UPDATE influencers 
-      SET 
-        total_engagements = $1,
-        avg_engagement_rate = $2,
-        estimated_reach = $3,
-        total_likes = $4,
-        total_comments = $5,
-        total_views = $6,
-        analytics_updated_at = NOW(),
-        updated_at = NOW()
-      WHERE id = $7
-    `, [
-      analytics.total_engagements,
-      analytics.avg_engagement_rate,
-      analytics.estimated_reach,
-      analytics.total_likes,
-      analytics.total_comments,
-      analytics.total_views,
-      influencerId
-    ])
+    if (analyticsResults.length === 0) {
+      console.log(`⚠️ No analytics data collected - resetting analytics to 0 for influencer ${influencerId}`)
+      await resetInfluencerAnalytics(influencerId)
+      return true
+    }
 
-    console.log(`✅ Updated analytics for ${influencer.display_name}:`, analytics)
+    // Aggregate analytics from all content pieces
+    const aggregatedAnalytics = aggregateAnalytics(analyticsResults)
+    console.log(`📊 Aggregated analytics:`, aggregatedAnalytics)
+
+    // Update influencer analytics in database
+    await updateInfluencerAnalytics(influencerId, aggregatedAnalytics)
+    
+    console.log(`✅ Successfully updated analytics for influencer ${influencerId}`)
     return true
 
   } catch (error) {
@@ -96,360 +99,384 @@ export async function updateInfluencerAnalyticsFromModash(influencerId: string):
 }
 
 /**
- * Update influencer analytics from content links using Modash RAW API
+ * Process a single content link using Modash Raw API
  */
-export async function updateInfluencerAnalyticsFromContentLinks(
-  influencerId: string, 
-  contentLinks: string[]
-): Promise<boolean> {
+async function processContentLink(url: string): Promise<ContentAnalytics | null> {
   try {
-    console.log(`🔄 Updating analytics from content links for influencer ${influencerId}:`, contentLinks)
-
-    if (!contentLinks || contentLinks.length === 0) {
-      console.log(`❌ No content links provided for influencer ${influencerId}`)
-      return false
-    }
-
-    // Import Modash service
-    const { getMediaInfo } = await import('@/lib/services/modash')
+    const platform = detectPlatformFromUrl(url)
     
-    let totalEngagements = 0
-    let totalLikes = 0
-    let totalComments = 0
-    let totalViews = 0
-    let validLinks = 0
-
-    // Process each content link
-    for (const link of contentLinks) {
-      try {
-        console.log(`🔍 Processing content link: ${link}`)
-        
-        // Get media info from Modash RAW API
-        const mediaInfo = await getMediaInfo(link)
-        console.log(`📊 Raw Modash response for ${link}:`, JSON.stringify(mediaInfo, null, 2))
-        
-        if (mediaInfo && !mediaInfo.error) {
-          // Extract analytics based on platform
-          const analytics = extractAnalyticsFromMediaInfo(mediaInfo, link)
-          console.log(`📈 Extracted analytics for ${link}:`, analytics)
-          
-          if (analytics) {
-            totalEngagements += (analytics.like_count || 0) + (analytics.comment_count || 0)
-            totalLikes += analytics.like_count || 0
-            totalComments += analytics.comment_count || 0
-            totalViews += analytics.play_count || analytics.view_count || 0
-            validLinks++
-            
-            console.log(`✅ Extracted analytics from ${link}:`, analytics)
-          } else {
-            console.log(`⚠️ No analytics extracted from ${link}`)
-          }
-        } else {
-          console.log(`⚠️ Failed to get analytics for ${link}:`, mediaInfo?.error)
-        }
-      } catch (linkError) {
-        console.error(`❌ Error processing content link ${link}:`, linkError)
-      }
+    if (platform === 'unknown') {
+      console.log(`⚠️ Unsupported platform for URL: ${url}`)
+      return null
     }
 
-    console.log(`📊 Analytics summary:`, {
-      totalEngagements,
-      totalLikes,
-      totalComments,
-      totalViews,
-      validLinks
-    })
-
-    if (validLinks === 0) {
-      console.log(`❌ No valid content links processed for influencer ${influencerId}`)
-      return false
+    console.log(`🔍 Getting media info for ${platform} content: ${url}`)
+    
+    // Call Modash Raw API
+    const mediaInfo = await getMediaInfo(url)
+    
+    if (!mediaInfo || mediaInfo.error) {
+      console.error(`❌ Modash API error for ${url}:`, mediaInfo?.error)
+      return null
     }
 
-    // Calculate average engagement rate
-    const avgEngagementRate = totalViews > 0 ? totalEngagements / totalViews : 0
-    const estimatedReach = Math.floor(totalViews * 0.1) // Rough estimate: 10% of views as reach
+    // Extract analytics based on platform
+    const analytics = extractAnalyticsFromMediaInfo(mediaInfo, platform, url)
+    
+    if (!analytics) {
+      console.log(`⚠️ Could not extract analytics from ${platform} response for: ${url}`)
+      return null
+    }
 
-    console.log(`💾 Updating database for influencer ${influencerId} with:`, {
-      totalEngagements,
-      avgEngagementRate,
-      estimatedReach,
-      totalLikes,
-      totalComments,
-      totalViews
-    })
+    return analytics
 
-    // Update database with analytics
+  } catch (error) {
+    console.error(`❌ Error processing content link ${url}:`, error)
+    return null
+  }
+}
+
+/**
+ * Extract analytics from Modash API response based on platform
+ */
+function extractAnalyticsFromMediaInfo(mediaInfo: any, platform: string, url: string): ContentAnalytics | null {
+  try {
+    let analytics: ContentAnalytics | null = null
+
+    switch (platform) {
+      case 'instagram':
+        analytics = extractInstagramAnalytics(mediaInfo, url)
+        break
+      case 'tiktok':
+        analytics = extractTikTokAnalytics(mediaInfo, url)
+        break
+      case 'youtube':
+        analytics = extractYouTubeAnalytics(mediaInfo, url)
+        break
+      default:
+        console.log(`⚠️ Unsupported platform: ${platform}`)
+        return null
+    }
+
+    // Calculate engagement rate if we have the data
+    if (analytics && analytics.views > 0) {
+      const totalEngagements = analytics.likes + analytics.comments + (analytics.shares || 0) + (analytics.saves || 0)
+      analytics.engagement_rate = (totalEngagements / analytics.views) * 100
+    }
+
+    return analytics
+
+  } catch (error) {
+    console.error(`❌ Error extracting analytics from ${platform} response:`, error)
+    return null
+  }
+}
+
+/**
+ * Extract Instagram analytics from Modash response
+ */
+function extractInstagramAnalytics(mediaInfo: any, url: string): ContentAnalytics | null {
+  try {
+    // Instagram response structure: items[0] contains the post data
+    const postData = mediaInfo?.items?.[0]
+    if (!postData) {
+      console.log(`⚠️ No post data found in Instagram response for: ${url}`)
+      return null
+    }
+
+    return {
+      platform: 'instagram',
+      views: postData.view_count || 0,
+      likes: postData.like_count || 0,
+      comments: postData.comment_count || 0,
+      shares: postData.share_count || 0,
+      saves: postData.save_count || 0,
+      url: url
+    }
+  } catch (error) {
+    console.error(`❌ Error extracting Instagram analytics:`, error)
+    return null
+  }
+}
+
+/**
+ * Extract TikTok analytics from Modash response
+ */
+function extractTikTokAnalytics(mediaInfo: any, url: string): ContentAnalytics | null {
+  try {
+    // TikTok response structure: itemStruct contains the video data
+    const videoData = mediaInfo?.itemStruct
+    if (!videoData) {
+      console.log(`⚠️ No video data found in TikTok response for: ${url}`)
+      return null
+    }
+
+    return {
+      platform: 'tiktok',
+      views: videoData.stats?.playCount || 0,
+      likes: videoData.stats?.diggCount || 0,
+      comments: videoData.stats?.commentCount || 0,
+      shares: videoData.stats?.shareCount || 0,
+      url: url
+    }
+  } catch (error) {
+    console.error(`❌ Error extracting TikTok analytics:`, error)
+    return null
+  }
+}
+
+/**
+ * Extract YouTube analytics from Modash response
+ */
+function extractYouTubeAnalytics(mediaInfo: any, url: string): ContentAnalytics | null {
+  try {
+    // YouTube response structure varies - adjust based on actual API response
+    const videoData = mediaInfo?.items?.[0] || mediaInfo?.videoData
+    if (!videoData) {
+      console.log(`⚠️ No video data found in YouTube response for: ${url}`)
+      return null
+    }
+
+    return {
+      platform: 'youtube',
+      views: videoData.statistics?.viewCount || videoData.views || 0,
+      likes: videoData.statistics?.likeCount || videoData.likes || 0,
+      comments: videoData.statistics?.commentCount || videoData.comments || 0,
+      url: url
+    }
+  } catch (error) {
+    console.error(`❌ Error extracting YouTube analytics:`, error)
+    return null
+  }
+}
+
+/**
+ * Aggregate analytics from multiple content pieces
+ */
+function aggregateAnalytics(analyticsList: ContentAnalytics[]): AggregatedAnalytics {
+  if (analyticsList.length === 0) {
+    return {
+      total_views: 0,
+      total_likes: 0,
+      total_comments: 0,
+      total_shares: 0,
+      total_saves: 0,
+      avg_engagement_rate: 0,
+      content_count: 0
+    }
+  }
+
+  const totals = analyticsList.reduce((acc, analytics) => {
+    acc.total_views += analytics.views || 0
+    acc.total_likes += analytics.likes || 0
+    acc.total_comments += analytics.comments || 0
+    acc.total_shares += analytics.shares || 0
+    acc.total_saves += analytics.saves || 0
+    return acc
+  }, {
+    total_views: 0,
+    total_likes: 0,
+    total_comments: 0,
+    total_shares: 0,
+    total_saves: 0
+  })
+
+  // Calculate average engagement rate
+  const validEngagementRates = analyticsList
+    .map(a => a.engagement_rate)
+    .filter(rate => rate !== undefined && rate !== null)
+  
+  const avg_engagement_rate = validEngagementRates.length > 0
+    ? validEngagementRates.reduce((sum, rate) => sum + (rate || 0), 0) / validEngagementRates.length
+    : 0
+
+  return {
+    ...totals,
+    avg_engagement_rate,
+    content_count: analyticsList.length
+  }
+}
+
+/**
+ * Update influencer analytics in the database
+ */
+async function updateInfluencerAnalytics(
+  influencerId: string, 
+  analytics: AggregatedAnalytics
+): Promise<void> {
+  try {
+    console.log(`💾 Updating database analytics for influencer ${influencerId}`)
+    
+    // Update main influencer table with analytics columns
     await query(`
       UPDATE influencers 
       SET 
-        total_engagements = $1,
-        avg_engagement_rate = $2,
-        estimated_reach = $3,
-        total_likes = $4,
-        total_comments = $5,
-        total_views = $6,
+        total_followers = GREATEST(total_followers, $2),
+        total_engagement_rate = $3,
+        total_avg_views = $4,
+        estimated_promotion_views = ROUND($4 * 0.15),
+        total_engagements = $5,
+        avg_engagement_rate = $6,
+        estimated_reach = $7,
+        total_likes = $8,
+        total_comments = $9,
+        total_views = $10,
         analytics_updated_at = NOW(),
-        updated_at = NOW()
-      WHERE id = $7
+        modash_last_updated = NOW()
+      WHERE id = $1
     `, [
-      totalEngagements,
-      avgEngagementRate,
-      estimatedReach,
-      totalLikes,
-      totalComments,
-      totalViews,
-      influencerId
+      influencerId,
+      analytics.total_views, // Use total_views as a proxy for followers if higher
+      analytics.avg_engagement_rate,
+      Math.round(analytics.total_views / analytics.content_count), // Average views per content
+      analytics.total_likes + analytics.total_comments + analytics.total_shares + analytics.total_saves, // Total engagements
+      analytics.avg_engagement_rate,
+      analytics.total_views, // Estimated reach
+      analytics.total_likes,
+      analytics.total_comments,
+      analytics.total_views
     ])
 
-    console.log(`✅ Updated analytics from content links for influencer ${influencerId}:`, {
-      totalEngagements,
-      avgEngagementRate,
-      estimatedReach,
-      totalLikes,
-      totalComments,
-      totalViews,
-      validLinks
-    })
-    
-    return true
+    // Update platform-specific tables if they exist
+    // This ensures platform-specific data is also updated
+    await query(`
+      UPDATE influencer_platforms 
+      SET 
+        avg_views = $2,
+        engagement_rate = $3,
+        last_synced = NOW()
+      WHERE influencer_id = $1
+    `, [
+      influencerId,
+      Math.round(analytics.total_views / analytics.content_count),
+      analytics.avg_engagement_rate
+    ])
+
+    console.log(`✅ Database updated successfully for influencer ${influencerId}`)
 
   } catch (error) {
-    console.error(`❌ Error updating analytics from content links for influencer ${influencerId}:`, error)
-    return false
+    console.error(`❌ Error updating database for influencer ${influencerId}:`, error)
+    throw error
   }
 }
 
 /**
- * Extract analytics from media info response
+ * Reset influencer analytics to 0 (when no content links)
  */
-function extractAnalyticsFromMediaInfo(data: any, url: string): any {
-  // Detect platform from URL
-  if (url.includes('instagram.com')) {
-    return extractInstagramAnalytics(data)
-  } else if (url.includes('tiktok.com')) {
-    return extractTikTokAnalytics(data)
-  } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    return extractYouTubeAnalytics(data)
-  }
-  return null
-}
-
-/**
- * Extract analytics from Instagram response
- */
-function extractInstagramAnalytics(data: any) {
-  if (!data?.items || data.items.length === 0) {
-    return null
-  }
-
-  const item = data.items[0]
-  
-  return {
-    like_count: item.like_count || 0,
-    comment_count: item.comment_count || 0,
-    play_count: item.play_count || 0,
-    view_count: item.view_count || 0
-  }
-}
-
-/**
- * Extract analytics from TikTok response
- */
-function extractTikTokAnalytics(data: any) {
-  if (!data?.itemStruct) {
-    return null
-  }
-
-  const item = data.itemStruct
-  const stats = item.stats || {}
-  
-  return {
-    like_count: stats.diggCount || 0,
-    comment_count: stats.commentCount || 0,
-    play_count: stats.playCount || 0,
-    view_count: 0
-  }
-}
-
-/**
- * Extract analytics from YouTube response
- */
-function extractYouTubeAnalytics(data: any) {
-  if (!data?.video_info) {
-    return null
-  }
-
-  const video = data.video_info
-  
-  return {
-    like_count: video.likes || 0,
-    comment_count: video.comments || 0,
-    play_count: 0,
-    view_count: video.views || 0
-  }
-}
-
-/**
- * Extract analytics from Modash data structure
- */
-function extractAnalyticsFromModashData(modashData: any): {
-  total_engagements: number
-  avg_engagement_rate: number
-  estimated_reach: number
-  total_likes: number
-  total_comments: number
-  total_views: number
-} | null {
+async function resetInfluencerAnalytics(influencerId: string): Promise<void> {
   try {
-    // Handle different Modash data structures
-    let profile = modashData.profile || modashData
-    let posts = modashData.posts || {}
-    let reels = modashData.reels || {}
+    console.log(`🔄 Resetting analytics to 0 for influencer ${influencerId}`)
     
-    // If it's the old structure with different field names
-    if (modashData.followers !== undefined) {
-      profile = {
-        followers: modashData.followers,
-        engagement_rate: modashData.engagementRate,
-        total_posts: modashData.postsCount,
-        total_likes: modashData.avgLikes * (modashData.postsCount || 0),
-        total_comments: modashData.avgComments * (modashData.postsCount || 0),
-        avg_views: modashData.avgViews
-      }
-    }
-    
-    // Handle TikTok data structure
-    if (modashData.itemStruct) {
-      const item = modashData.itemStruct
-      const stats = item.stats || {}
-      const author = item.author || {}
-      const authorStats = author.stats || {}
-      
-      profile = {
-        followers: authorStats.followerCount || 0,
-        engagement_rate: calculateEngagementRate(stats),
-        total_posts: authorStats.videoCount || 0,
-        total_likes: stats.diggCount || 0,
-        total_comments: stats.commentCount || 0,
-        avg_views: stats.playCount || 0
-      }
-    }
-    
-    // Handle YouTube data structure
-    if (modashData.video_info) {
-      const video = modashData.video_info
-      
-      profile = {
-        followers: 0, // YouTube doesn't provide follower count in video info
-        engagement_rate: calculateYouTubeEngagementRate(video),
-        total_posts: 0, // Would need channel info for this
-        total_likes: video.likes || 0,
-        total_comments: video.comments || 0,
-        avg_views: video.views || 0
-      }
-    }
+    await query(`
+      UPDATE influencers 
+      SET 
+        total_engagements = 0,
+        total_engagement_rate = 0,
+        avg_engagement_rate = 0,
+        estimated_reach = 0,
+        total_avg_views = 0,
+        estimated_promotion_views = 0,
+        total_likes = 0,
+        total_comments = 0,
+        total_views = 0,
+        analytics_updated_at = NOW()
+      WHERE id = $1
+    `, [influencerId])
 
-    // Calculate total engagements (likes + comments + shares)
-    const totalLikes = (profile.total_likes || 0) + (posts.avg_likes || 0) * (posts.total || 0) + (reels.avg_likes || 0) * (reels.total || 0)
-    const totalComments = (profile.total_comments || 0) + (posts.avg_comments || 0) * (posts.total || 0) + (reels.avg_comments || 0) * (reels.total || 0)
-    const totalShares = profile.total_shares || 0
-    const totalEngagements = totalLikes + totalComments + totalShares
+    // Also reset platform-specific analytics
+    await query(`
+      UPDATE influencer_platforms 
+      SET 
+        avg_views = 0,
+        engagement_rate = 0,
+        last_synced = NOW()
+      WHERE influencer_id = $1
+    `, [influencerId])
 
-    // Calculate average engagement rate
-    const avgEngagementRate = profile.engagement_rate || 0
-
-    // Calculate estimated reach (followers * engagement rate)
-    const followers = profile.followers || 0
-    const estimatedReach = Math.floor(followers * avgEngagementRate)
-
-    // Calculate total views
-    const totalViews = (profile.avg_views || 0) * (profile.total_posts || 0) + 
-                      (posts.avg_views || 0) * (posts.total || 0) + 
-                      (reels.avg_views || 0) * (reels.total || 0)
-
-    console.log('📊 Extracted analytics:', {
-      total_engagements: Math.floor(totalEngagements),
-      avg_engagement_rate: avgEngagementRate,
-      estimated_reach: estimatedReach,
-      total_likes: Math.floor(totalLikes),
-      total_comments: Math.floor(totalComments),
-      total_views: Math.floor(totalViews)
-    })
-
-    return {
-      total_engagements: Math.floor(totalEngagements),
-      avg_engagement_rate: avgEngagementRate,
-      estimated_reach: estimatedReach,
-      total_likes: Math.floor(totalLikes),
-      total_comments: Math.floor(totalComments),
-      total_views: Math.floor(totalViews)
-    }
+    console.log(`✅ Analytics reset to 0 for influencer ${influencerId}`)
 
   } catch (error) {
-    console.error('❌ Error extracting analytics from Modash data:', error)
-    return null
+    console.error(`❌ Error resetting analytics for influencer ${influencerId}:`, error)
+    throw error
   }
 }
 
 /**
- * Update analytics for all influencers that have Modash data
+ * Batch process multiple influencers' content links
+ * Useful for bulk updates or scheduled refreshes
  */
-export async function updateAllInfluencerAnalytics(): Promise<{ success: number, failed: number }> {
-  try {
-    // Get all influencers with Modash data
-    const result = await query(`
-      SELECT id, display_name, notes 
-      FROM influencers 
-      WHERE notes IS NOT NULL 
-      AND notes::text LIKE '%modash_data%'
-    `)
+export async function batchUpdateInfluencerAnalytics(
+  influencerUpdates: Array<{ influencerId: string, contentLinks: string[] }>
+): Promise<{ success: number, failed: number, errors: string[] }> {
+  console.log(`🔄 Starting batch analytics update for ${influencerUpdates.length} influencers`)
+  
+  let success = 0
+  let failed = 0
+  const errors: string[] = []
 
-    let success = 0
-    let failed = 0
-
-    for (const influencer of result) {
-      const updated = await updateInfluencerAnalyticsFromModash(influencer.id)
-      if (updated) {
+  for (const update of influencerUpdates) {
+    try {
+      const result = await updateInfluencerAnalyticsFromContentLinks(
+        update.influencerId, 
+        update.contentLinks
+      )
+      
+      if (result) {
         success++
       } else {
         failed++
+        errors.push(`Failed to update influencer ${update.influencerId}`)
       }
+    } catch (error) {
+      failed++
+      const errorMsg = `Error updating influencer ${update.influencerId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      errors.push(errorMsg)
+      console.error(`❌ ${errorMsg}`)
+    }
+  }
+
+  console.log(`✅ Batch update completed: ${success} success, ${failed} failed`)
+  return { success, failed, errors }
+}
+
+/**
+ * Get analytics summary for an influencer
+ */
+export async function getInfluencerAnalyticsSummary(influencerId: string): Promise<{
+  total_views: number
+  total_likes: number
+  total_comments: number
+  engagement_rate: number
+  last_updated: Date | null
+} | null> {
+  try {
+    const result = await query(`
+      SELECT 
+        total_avg_views,
+        total_likes,
+        total_comments,
+        total_engagement_rate,
+        total_views,
+        analytics_updated_at
+      FROM influencers 
+      WHERE id = $1
+    `, [influencerId])
+
+    if (result.length === 0) {
+      return null
     }
 
-    console.log(`🎯 Analytics update completed: ${success} success, ${failed} failed`)
-    return { success, failed }
+    const row = result[0]
+    return {
+      total_views: row.total_views || row.total_avg_views || 0,
+      total_likes: row.total_likes || 0,
+      total_comments: row.total_comments || 0,
+      engagement_rate: row.total_engagement_rate || 0,
+      last_updated: row.analytics_updated_at
+    }
 
   } catch (error) {
-    console.error('❌ Error updating all influencer analytics:', error)
-    return { success: 0, failed: 0 }
+    console.error(`❌ Error getting analytics summary for influencer ${influencerId}:`, error)
+    return null
   }
-}
-
-/**
- * Calculate engagement rate from TikTok stats
- */
-function calculateEngagementRate(stats: any): number {
-  const playCount = stats.playCount || 0
-  const likeCount = stats.diggCount || 0
-  const commentCount = stats.commentCount || 0
-  const shareCount = stats.shareCount || 0
-  
-  if (playCount === 0) return 0
-  
-  const totalEngagements = likeCount + commentCount + shareCount
-  return totalEngagements / playCount
-}
-
-/**
- * Calculate engagement rate from YouTube video data
- */
-function calculateYouTubeEngagementRate(video: any): number {
-  const views = video.views || 0
-  const likes = video.likes || 0
-  const comments = video.comments || 0
-  
-  if (views === 0) return 0
-  
-  const totalEngagements = likes + comments
-  return totalEngagements / views
 }

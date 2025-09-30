@@ -57,6 +57,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       console.log('✅ Loaded campaign timeline from database')
     }
 
+    // Debug: Log what we're returning
+    console.log('📊 [API DEBUG] Returning campaign influencers:', {
+      count: campaignInfluencers.length,
+      influencers: campaignInfluencers.map(inf => ({
+        id: inf.influencerId,
+        display_name: inf.influencer.display_name,
+        analytics: {
+          total_engagements: inf.influencer.total_engagements,
+          avg_engagement_rate: inf.influencer.avg_engagement_rate,
+          estimated_reach: inf.influencer.estimated_reach,
+          total_likes: inf.influencer.total_likes,
+          total_comments: inf.influencer.total_comments,
+          total_views: inf.influencer.total_views
+        }
+      }))
+    })
+
     return NextResponse.json({
       success: true,
       data: {
@@ -206,37 +223,38 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // 🎯 AUTOMATIC ANALYTICS UPDATE: Only when content links are added
+    // 🎯 AUTOMATIC ANALYTICS UPDATE: Always update analytics when content links change
     console.log('🔍 Checking for content links:', { contentLinks, hasContentLinks: contentLinks && contentLinks.length > 0 })
     
-    if (contentLinks && contentLinks.length > 0) {
-      console.log('🔄 Content links detected - triggering automatic analytics update...')
-      console.log('📋 Content links to process:', contentLinks)
-      console.log('👤 Influencer ID:', influencerId)
+    // Always trigger analytics update - whether adding, updating, or removing content links
+    console.log('🔄 Content links changed - triggering automatic analytics update...')
+    console.log('📋 Content links to process:', contentLinks || [])
+    console.log('👤 Influencer ID:', influencerId)
+    
+    try {
+      // Import analytics updater
+      const { updateInfluencerAnalyticsFromContentLinks } = await import('@/lib/services/analytics-updater')
       
-      try {
-        // Import analytics updater
-        const { updateInfluencerAnalyticsFromContentLinks } = await import('@/lib/services/analytics-updater')
-        
-        // Update analytics for this specific influencer using content links
-        console.log('🚀 Calling updateInfluencerAnalyticsFromContentLinks...')
-        const analyticsUpdated = await updateInfluencerAnalyticsFromContentLinks(influencerId, contentLinks)
-        
-        if (analyticsUpdated) {
+      // Update analytics for this specific influencer using content links (empty array will reset to 0)
+      console.log('🚀 Calling updateInfluencerAnalyticsFromContentLinks...')
+      const analyticsUpdated = await updateInfluencerAnalyticsFromContentLinks(influencerId, contentLinks || [])
+      
+      if (analyticsUpdated) {
+        if (contentLinks && contentLinks.length > 0) {
           console.log('✅ Analytics automatically updated from content links for influencer:', influencerId)
         } else {
-          console.log('⚠️ Analytics update failed for influencer:', influencerId)
+          console.log('✅ Analytics automatically reset to 0 (no content links) for influencer:', influencerId)
         }
-      } catch (analyticsError) {
-        console.error('❌ Error updating analytics automatically:', analyticsError)
-        console.error('❌ Analytics error details:', {
-          message: analyticsError instanceof Error ? analyticsError.message : 'Unknown error',
-          stack: analyticsError instanceof Error ? analyticsError.stack : 'No stack'
-        })
-        // Don't fail the main operation, just log the error
+      } else {
+        console.log('⚠️ Analytics update failed for influencer:', influencerId)
       }
-    } else {
-      console.log('📊 No content links provided - analytics will remain at 0')
+    } catch (analyticsError) {
+      console.error('❌ Error updating analytics automatically:', analyticsError)
+      console.error('❌ Analytics error details:', {
+        message: analyticsError instanceof Error ? analyticsError.message : 'Unknown error',
+        stack: analyticsError instanceof Error ? analyticsError.stack : 'No stack'
+      })
+      // Don't fail the main operation, just log the error
     }
 
     console.log('✅ Successfully updated campaign influencer:', updatedCampaignInfluencer)
