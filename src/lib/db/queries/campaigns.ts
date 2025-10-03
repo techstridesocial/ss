@@ -51,6 +51,7 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       campaignId: row.campaign_id || undefined,
       name: row.name || 'Untitled Campaign',
       brand: row.brand_name || row.brand || 'Unknown Brand',
+      brand_name: row.brand_name || row.brand || 'Unknown Brand', // Add brand_name for panel compatibility
       status: (row.status || 'DRAFT') as CampaignStatus,
       description: row.description || '',
       goals: safeJsonParse(row.goals, []),
@@ -73,6 +74,8 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
         contentGuidelines: row.content_guidelines || ''
       },
       deliverables: safeJsonParse(row.deliverables, []),
+      target_niches: safeJsonParse(row.target_niches, []), // Add target_niches
+      target_platforms: safeJsonParse(row.target_platforms, []), // Add target_platforms
       totalInfluencers: parseInt(row.total_influencers) || 0,
       acceptedCount: parseInt(row.accepted_count) || 0,
       pendingCount: parseInt(row.pending_count) || 0,

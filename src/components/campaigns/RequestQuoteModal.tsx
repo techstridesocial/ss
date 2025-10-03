@@ -24,6 +24,8 @@ export default function RequestQuoteModal({
     budget_range: '',
     campaign_duration: '',
     deliverables: [] as string[],
+    target_niches: [] as string[],
+    target_platforms: [] as string[],
   })
 
   const deliverableOptions = [
@@ -37,12 +39,52 @@ export default function RequestQuoteModal({
     'Facebook Post',
   ]
 
+  const platformOptions = [
+    'Instagram',
+    'TikTok',
+    'YouTube',
+    'Twitter',
+    'Facebook',
+    'LinkedIn',
+  ]
+
+  const nicheOptions = [
+    'Fashion',
+    'Beauty',
+    'Fitness',
+    'Gaming',
+    'Lifestyle',
+    'Technology',
+    'Food',
+    'Travel',
+    'Business',
+    'Entertainment',
+  ]
+
   const handleDeliverableToggle = (deliverable: string) => {
     setFormData(prev => ({
       ...prev,
       deliverables: prev.deliverables.includes(deliverable)
         ? prev.deliverables.filter(d => d !== deliverable)
         : [...prev.deliverables, deliverable]
+    }))
+  }
+
+  const handlePlatformToggle = (platform: string) => {
+    setFormData(prev => ({
+      ...prev,
+      target_platforms: prev.target_platforms.includes(platform)
+        ? prev.target_platforms.filter(p => p !== platform)
+        : [...prev.target_platforms, platform]
+    }))
+  }
+
+  const handleNicheToggle = (niche: string) => {
+    setFormData(prev => ({
+      ...prev,
+      target_niches: prev.target_niches.includes(niche)
+        ? prev.target_niches.filter(n => n !== niche)
+        : [...prev.target_niches, niche]
     }))
   }
 
@@ -78,6 +120,8 @@ export default function RequestQuoteModal({
           budget_range: formData.budget_range,
           campaign_duration: formData.campaign_duration,
           deliverables: formData.deliverables,
+          target_niches: formData.target_niches,
+          target_platforms: formData.target_platforms,
           influencer_count: selectedInfluencers.length,
           selected_influencers: selectedInfluencers.map(inf => inf.id || inf.influencerId)
         })
@@ -94,6 +138,8 @@ export default function RequestQuoteModal({
           budget_range: '',
           campaign_duration: '',
           deliverables: [],
+          target_niches: [],
+          target_platforms: [],
         })
       } else {
         const result = await response.json()
@@ -233,6 +279,52 @@ export default function RequestQuoteModal({
                     }`}
                   >
                     {deliverable}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Target Platforms */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Target Platforms
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {platformOptions.map(platform => (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => handlePlatformToggle(platform)}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      formData.target_platforms.includes(platform)
+                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }`}
+                  >
+                    {platform}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Target Niches */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Target Niches
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {nicheOptions.map(niche => (
+                  <button
+                    key={niche}
+                    type="button"
+                    onClick={() => handleNicheToggle(niche)}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      formData.target_niches.includes(niche)
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }`}
+                  >
+                    {niche}
                   </button>
                 ))}
               </div>
