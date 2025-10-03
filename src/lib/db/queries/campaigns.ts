@@ -456,8 +456,14 @@ export async function updateCampaignInfluencerStatus(
     values.push(notes);
   }
 
-  // Handle content links update - JSONB column requires proper casting
+  // Handle content links update - TEXT column stores JSON string
   if (contentLinks !== undefined) {
+    console.log(`🔗 [CONTENT LINKS SAVE DEBUG] Saving content links for influencer ${influencerId}:`, {
+      contentLinks,
+      contentLinksLength: contentLinks.length,
+      contentLinksType: typeof contentLinks,
+      jsonString: JSON.stringify(contentLinks)
+    });
     updateFields.push(`content_links = $${paramCount++}`);
     values.push(JSON.stringify(contentLinks));
   }
