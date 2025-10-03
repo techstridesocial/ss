@@ -139,6 +139,67 @@ export default function BrandShortlistsPage() {
   const [confirmRemove, setConfirmRemove] = useState<{ shortlistId: string; influencerId: string; name: string } | null>(null)
 
   const { shortlists, isLoading, removeInfluencerFromShortlist } = useHeartedInfluencers()
+  const [isMigrating, setIsMigrating] = useState(false)
+
+  // Force migration of localStorage to database
+  const forceLocalStorageMigration = async () => {
+    setIsMigrating(true)
+    try {
+      const savedShortlists = localStorage.getItem('brandShortlists')
+      if (!savedShortlists) {
+        alert('No localStorage shortlists found to migrate')
+        return
+      }
+
+      const localShortlists = JSON.parse(savedShortlists)
+      console.log('🔄 Migrating', localShortlists.length, 'shortlists to database...')
+
+      for (const localShortlist of localShortlists) {
+        try {
+          // Create in database via API
+          const response = await fetch('/api/shortlists', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: localShortlist.name,
+              description: localShortlist.description
+            })
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            const newShortlistId = result.data.id
+
+            // Add influencers
+            for (const influencer of localShortlist.influencers || []) {
+              await fetch('/api/shortlists/influencers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  shortlist_id: newShortlistId,
+                  influencer_id: influencer.id
+                })
+              })
+            }
+
+            console.log(`✅ Migrated: ${localShortlist.name}`)
+          }
+        } catch (error) {
+          console.error(`Failed to migrate ${localShortlist.name}:`, error)
+        }
+      }
+
+      // Clear localStorage
+      localStorage.removeItem('brandShortlists')
+      alert('Migration complete! Refreshing...')
+      window.location.reload()
+    } catch (error) {
+      console.error('Migration failed:', error)
+      alert('Migration failed. Check console for details.')
+    } finally {
+      setIsMigrating(false)
+    }
+  }
 
   // Get current shortlist
   const currentShortlist = shortlists.find(s => s.id === currentShortlistId) || shortlists[0]
@@ -243,6 +304,26 @@ export default function BrandShortlistsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {/* Migration Button - Only show if localStorage data exists */}
+                {typeof window !== 'undefined' && localStorage.getItem('brandShortlists') && (
+                  <button
+                    onClick={forceLocalStorageMigration}
+                    disabled={isMigrating}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    title="Migrate localStorage shortlists to database"
+                  >
+                    {isMigrating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Migrating...
+                      </>
+                    ) : (
+                      <>
+                        🔄 Migrate to Database
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={() => setRequestQuoteModalOpen(true)}
                   disabled={shortlists.length === 0 || shortlists.reduce((total, s) => total + s.influencers.length, 0) === 0}
