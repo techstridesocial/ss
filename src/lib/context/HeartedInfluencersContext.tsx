@@ -275,8 +275,11 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
 
   // Multi-shortlist functions
   const createShortlist = async (name: string, description?: string): Promise<string> => {
+    console.log('🆕 Creating shortlist:', { name, description, userId: !!userId })
+    
     if (!userId) {
       // Fallback to localStorage for non-authenticated users
+      console.log('📦 Creating in localStorage (no userId)')
       const id = `shortlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const newShortlist: Shortlist = {
         id,
@@ -290,15 +293,20 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       return id
     }
 
+    console.log('🌐 Creating in database (authenticated user)')
     try {
+      console.log('📤 Sending POST request to /api/shortlists')
       const response = await fetch('/api/shortlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description })
       })
 
+      console.log('📥 Response status:', response.status, response.ok)
+
       if (response.ok) {
         const result = await response.json()
+        console.log('✅ API response:', result)
         if (result.success) {
           // Add to local state
           const newShortlist: Shortlist = {
@@ -309,25 +317,27 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             createdAt: new Date(result.data.created_at),
             updatedAt: new Date(result.data.updated_at)
           }
-          setShortlists(prev => [...prev, newShortlist])
+          console.log('📊 Adding to local state:', newShortlist)
+          setShortlists(prev => {
+            const updated = [...prev, newShortlist]
+            console.log('📊 Updated shortlists count:', updated.length)
+            return updated
+          })
+          console.log('🎉 Shortlist created successfully:', result.data.id)
           return result.data.id
         }
+      } else {
+        const errorData = await response.json()
+        console.error('❌ API error response:', errorData)
+        throw new Error(`API Error: ${errorData.error || 'Unknown error'}`)
       }
       throw new Error('Failed to create shortlist')
     } catch (error) {
-      console.error('Error creating shortlist:', error)
-      // Fallback to local creation
-      const id = `shortlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      const newShortlist: Shortlist = {
-        id,
-        name,
-        description,
-        influencers: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      setShortlists(prev => [...prev, newShortlist])
-      return id
+      console.error('🚨 CRITICAL ERROR creating shortlist:', error)
+      console.error('🚨 API failed for authenticated user - NO FALLBACK TO LOCALSTORAGE!')
+      
+      // NEVER fallback to localStorage for authenticated users
+      throw new Error(`Database shortlist creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
