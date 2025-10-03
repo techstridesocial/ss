@@ -32,6 +32,13 @@ export default function DashboardInfoPanel({
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const userRole = useUserRole()
   
+  // WhatsApp group link state
+  const [isAddingWhatsApp, setIsAddingWhatsApp] = useState(false)
+  const [whatsappUrl, setWhatsappUrl] = useState(influencer?.whatsapp_url || '')
+  const [whatsappInput, setWhatsappInput] = useState('')
+  const [whatsappSaving, setWhatsappSaving] = useState(false)
+  const [whatsappError, setWhatsappError] = useState('')
+  
   // Check if user is staff or admin
   const isStaff = userRole === 'STAFF' || userRole === 'ADMIN'
 
@@ -134,6 +141,88 @@ export default function DashboardInfoPanel({
       setValidationErrors({ general: 'Network error. Please try again.' })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  // Handle WhatsApp URL save
+  const handleWhatsAppSave = async () => {
+    if (!influencer?.id) return
+    
+    // Validate URL
+    if (!whatsappInput.trim()) {
+      setWhatsappError('Please enter a WhatsApp URL')
+      return
+    }
+    
+    // Basic URL validation
+    if (!whatsappInput.startsWith('http://') && !whatsappInput.startsWith('https://')) {
+      setWhatsappError('Please enter a valid URL starting with http:// or https://')
+      return
+    }
+    
+    setWhatsappSaving(true)
+    setWhatsappError('')
+    
+    try {
+      const response = await fetch(`/api/influencers/${influencer.id}/whatsapp`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          whatsapp_url: whatsappInput
+        })
+      })
+
+      if (response.ok) {
+        setWhatsappUrl(whatsappInput)
+        influencer.whatsapp_url = whatsappInput
+        setIsAddingWhatsApp(false)
+        setWhatsappInput('')
+        
+        // Notify parent component of data update
+        onDataUpdate?.({ ...influencer, whatsapp_url: whatsappInput })
+      } else {
+        const errorData = await response.json()
+        setWhatsappError(errorData.error || 'Failed to save WhatsApp URL')
+      }
+    } catch (error) {
+      console.error('Error saving WhatsApp URL:', error)
+      setWhatsappError('Network error. Please try again.')
+    } finally {
+      setWhatsappSaving(false)
+    }
+  }
+
+  // Handle WhatsApp URL removal
+  const handleWhatsAppRemove = async () => {
+    if (!influencer?.id) return
+    
+    setWhatsappSaving(true)
+    
+    try {
+      const response = await fetch(`/api/influencers/${influencer.id}/whatsapp`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (response.ok) {
+        setWhatsappUrl('')
+        influencer.whatsapp_url = ''
+        
+        // Notify parent component of data update
+        onDataUpdate?.({ ...influencer, whatsapp_url: '' })
+      } else {
+        const errorData = await response.json()
+        setWhatsappError(errorData.error || 'Failed to remove WhatsApp URL')
+      }
+    } catch (error) {
+      console.error('Error removing WhatsApp URL:', error)
+      setWhatsappError('Network error. Please try again.')
+    } finally {
+      setWhatsappSaving(false)
     }
   }
 
@@ -581,6 +670,99 @@ export default function DashboardInfoPanel({
                   <div className="flex items-center space-x-3">
                     <Calendar size={16} className="text-gray-400" />
                     <span className="text-sm text-gray-600">Joined {formatDate(influencer.created_at)}</span>
+                  </div>
+
+                  {/* WhatsApp Group Link */}
+                  <div className="pt-2 border-t border-gray-100">
+                    {whatsappUrl ? (
+                      <div className="flex items-center justify-between">
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-3 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group flex-1"
+                        >
+                          <svg className="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                          </svg>
+                          <span className="text-sm font-medium text-green-700 group-hover:text-green-800">WhatsApp Group Chat</span>
+                          <svg className="w-4 h-4 text-green-600 group-hover:text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                        {isStaff && (
+                          <button
+                            onClick={handleWhatsAppRemove}
+                            disabled={whatsappSaving}
+                            className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Remove WhatsApp link"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
+                    ) : isStaff && isAddingWhatsApp ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            WhatsApp Group URL
+                          </label>
+                          <input
+                            type="url"
+                            value={whatsappInput}
+                            onChange={(e) => {
+                              setWhatsappInput(e.target.value)
+                              if (whatsappError) setWhatsappError('')
+                            }}
+                            placeholder="https://chat.whatsapp.com/..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                          />
+                          {whatsappError && (
+                            <p className="mt-1 text-xs text-red-600">{whatsappError}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={handleWhatsAppSave}
+                            disabled={whatsappSaving}
+                            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm transition-colors"
+                          >
+                            {whatsappSaving ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save size={16} className="mr-2" />
+                                Save
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsAddingWhatsApp(false)
+                              setWhatsappInput('')
+                              setWhatsappError('')
+                            }}
+                            disabled={whatsappSaving}
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : isStaff ? (
+                      <button
+                        onClick={() => setIsAddingWhatsApp(true)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                        <span>Add WhatsApp Group</span>
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </PremiumSection>
