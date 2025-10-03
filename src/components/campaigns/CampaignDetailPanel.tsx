@@ -1701,19 +1701,19 @@ export default function CampaignDetailPanel({
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                           <div className="text-2xl font-bold text-green-600">
-                            {mockInfluencers.filter(inf => inf.contact_status === 'confirmed').length}
+                            {campaignInfluencers.filter(inf => inf.status === 'ACCEPTED' || inf.status === 'CONFIRMED').length}
                           </div>
                           <div className="text-sm text-green-800">{campaignHasStarted ? 'Active Influencers' : 'Confirmed'}</div>
                         </div>
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
                           <div className="text-2xl font-bold text-yellow-600">
-                            {mockInfluencers.filter(inf => inf.contact_status === 'contacted').length}
+                            {campaignInfluencers.filter(inf => inf.status === 'INVITED' || inf.status === 'PENDING').length}
                           </div>
                           <div className="text-sm text-yellow-800">{campaignHasStarted ? 'In Progress' : 'Contacted'}</div>
                         </div>
                         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
                           <div className="text-2xl font-bold text-gray-600">
-                            {mockInfluencers.filter(inf => inf.contact_status === 'pending').length}
+                            {campaignInfluencers.filter(inf => inf.status === 'DRAFT' || !inf.status).length}
                           </div>
                           <div className="text-sm text-gray-800">{campaignHasStarted ? 'Not Started' : 'Pending Contact'}</div>
                         </div>
