@@ -201,10 +201,19 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
     if (!isLoaded) return
     
     if (userId) {
-      loadShortlists().then(() => {
-        // After loading, check if we need to migrate localStorage data
-        migrateLocalStorageToDatabase()
-      })
+      // First check if migration is needed
+      const hasLocalStorage = typeof window !== 'undefined' && localStorage.getItem('brandShortlists')
+      
+      if (hasLocalStorage) {
+        console.log('🔄 localStorage data detected, will migrate after loading from database')
+        // Load from database first, then migrate
+        loadShortlists().then(() => {
+          migrateLocalStorageToDatabase()
+        })
+      } else {
+        // Just load from database
+        loadShortlists()
+      }
     } else {
       // Load legacy data for non-authenticated users
       loadFromLocalStorage()
