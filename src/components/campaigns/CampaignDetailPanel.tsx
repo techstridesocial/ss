@@ -1600,12 +1600,6 @@ export default function CampaignDetailPanel({
                             icon={<DollarSign size={18} />}
                           />
                           <InfoField
-                            label="Spent"
-                            value={campaign.spent || 0}
-                            type="currency"
-                            icon={<TrendingUp size={18} />}
-                          />
-                          <InfoField
                             label="Start Date"
                             value={campaign.timeline?.startDate || campaign.start_date}
                             type="date"
@@ -1683,12 +1677,6 @@ export default function CampaignDetailPanel({
 
                     <Section title="Progress Overview" delay={0.2}>
                       <div className="space-y-6">
-                        <ProgressBar
-                          current={campaign.spent}
-                          total={typeof campaign.budget === 'object' ? campaign.budget.total : campaign.budget}
-                          label="Budget Usage"
-                          color="blue"
-                        />
                         <ProgressBar
                           current={campaign.completed_deliverables}
                           total={campaign.assigned_influencers}
