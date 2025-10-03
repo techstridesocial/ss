@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
       selectedInfluencers: data.selectedInfluencers?.length || 0
     })
 
-    // Get user's database ID
+    // Get user's database ID and details
     const { query } = await import('@/lib/db/connection')
-    const userResult = await query<{ id: string }>(
-      'SELECT id FROM users WHERE clerk_id = $1',
+    const userResult = await query<{ id: string; email: string; first_name: string; last_name: string }>(
+      'SELECT id, email, first_name, last_name FROM users WHERE clerk_id = $1',
       [userId]
     )
 
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    const userDbId = userResult[0].id
-    console.log('👤 User database ID:', userDbId)
+    const user = userResult[0]!
+    console.log('👤 User database ID:', user.id)
     
     // Validate required fields
     const requiredFields = ['name', 'brand', 'description']
@@ -111,9 +111,11 @@ export async function POST(request: NextRequest) {
       },
       deliverables: data.deliverables || [],
       createdBy: {
-        id: userDbId
+        id: user.id,
+        email: user.email || 'unknown@email.com',
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User'
       }
-    }
+    } as any
 
     console.log('🗄️ Creating campaign in database...')
     console.log('📊 Campaign data to save:', JSON.stringify(campaignData, null, 2))
@@ -125,9 +127,18 @@ export async function POST(request: NextRequest) {
     if (data.selectedInfluencers && data.selectedInfluencers.length > 0) {
       console.log('👥 Adding selected influencers to campaign...')
       try {
-        for (const influencerId of data.selectedInfluencers) {
-          // Manually added influencers are automatically accepted
-          await addInfluencerToCampaign(campaign.id, influencerId)
+        for (const influencer of data.selectedInfluencers) {
+          // Extract ID from influencer object (could be influencer.id or influencer.influencerId)
+          const influencerId = typeof influencer === 'string' 
+            ? influencer 
+            : (influencer.id || influencer.influencerId)
+          
+          if (influencerId) {
+            // Manually added influencers are automatically accepted
+            await addInfluencerToCampaign(campaign.id, influencerId)
+          } else {
+            console.warn('⚠️ Skipping influencer without valid ID:', influencer)
+          }
         }
         console.log(`✅ Added ${data.selectedInfluencers.length} influencers to campaign`)
       } catch (influencerError) {
