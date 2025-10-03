@@ -116,6 +116,12 @@ async function processContentLink(url: string): Promise<ContentAnalytics | null>
 
     console.log(`🔍 Getting media info for ${platform} content: ${url}`)
     
+    // Special debugging for TikTok
+    if (platform === 'tiktok') {
+      console.log(`🎵 [TIKTOK DEBUG] Processing TikTok URL: ${url}`)
+      console.log(`🎵 [TIKTOK DEBUG] Platform detected: ${platform}`)
+    }
+    
     // Call Modash Raw API
     const mediaInfo = await getMediaInfo(url)
     
@@ -300,6 +306,20 @@ function extractTikTokAnalytics(mediaInfo: any, url: string): ContentAnalytics |
     }
 
     console.log(`✅ [TT DEBUG] Extracted analytics:`, analytics)
+    
+    // Additional TikTok debugging
+    if (analytics) {
+      console.log(`🎵 [TIKTOK SUCCESS] TikTok analytics extracted successfully:`, {
+        platform: analytics.platform,
+        views: analytics.views,
+        likes: analytics.likes,
+        comments: analytics.comments,
+        shares: analytics.shares,
+        engagement_rate: analytics.engagement_rate,
+        url: analytics.url
+      })
+    }
+    
     return analytics
   } catch (error) {
     console.error(`❌ Error extracting TikTok analytics:`, error)

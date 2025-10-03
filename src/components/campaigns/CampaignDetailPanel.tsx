@@ -1989,7 +1989,14 @@ export default function CampaignDetailPanel({
                                           campaignInfluencer: campaignInfluencer,
                                           totalEngagements: campaignInfluencer.totalEngagements,
                                           influencer: influencer,
-                                          influencer_total_engagements: influencer.total_engagements
+                                          influencer_total_engagements: influencer.total_engagements,
+                                          contentLinks: campaignInfluencer.contentLinks,
+                                          platform: campaignInfluencer.contentLinks?.map(link => {
+                                            if (link.includes('tiktok.com')) return 'TikTok';
+                                            if (link.includes('instagram.com')) return 'Instagram';
+                                            if (link.includes('youtube.com')) return 'YouTube';
+                                            return 'Unknown';
+                                          })
                                         })}
                                         {campaignInfluencer.totalEngagements ? formatNumber(campaignInfluencer.totalEngagements) : '0'}
                                       </span>
