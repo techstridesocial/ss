@@ -112,9 +112,16 @@ export async function POST(request: NextRequest) {
     
     if (duplicate_from) {
       // Duplicate existing shortlist
-      shortlist = await duplicateShortlist(duplicate_from, name.trim(), description?.trim())
-      if (!shortlist) {
-        return NextResponse.json({ error: 'Source shortlist not found' }, { status: 404 })
+      console.log('Duplicating shortlist:', { duplicate_from, name: name.trim(), description: description?.trim() })
+      try {
+        shortlist = await duplicateShortlist(duplicate_from, name.trim(), description?.trim())
+        console.log('Duplicate result:', shortlist)
+        if (!shortlist) {
+          return NextResponse.json({ error: 'Source shortlist not found' }, { status: 404 })
+        }
+      } catch (error) {
+        console.error('Error in duplicateShortlist:', error)
+        return NextResponse.json({ error: 'Failed to duplicate shortlist' }, { status: 500 })
       }
     } else {
       // Get brand ID from Clerk userId

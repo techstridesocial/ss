@@ -376,6 +376,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
 
       if (response.ok) {
         const result = await response.json()
+        console.log('Duplicate API response:', result)
         if (result.success) {
           // Add to local state
           const newShortlist: Shortlist = {
@@ -388,9 +389,15 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           }
           setShortlists(prev => [...prev, newShortlist])
           return result.data.id
+        } else {
+          console.error('API returned success: false:', result.error)
+          throw new Error(result.error || 'Failed to duplicate shortlist')
         }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('API error response:', response.status, errorData)
+        throw new Error(errorData.error || 'Failed to duplicate shortlist')
       }
-      throw new Error('Failed to duplicate shortlist')
     } catch (error) {
       console.error('Error duplicating shortlist:', error)
       // Fallback to local duplication
