@@ -96,17 +96,35 @@ export async function getPerformanceData(
 
 // RAW API - Get media info for any platform (auto-detects platform)
 export async function getMediaInfo(url: string) {
-  const platform = detectPlatformFromUrl(url)
+  console.log(`🔍 [MODASH DEBUG] Getting media info for URL: ${url}`)
   
-  switch (platform) {
-    case 'instagram':
-      return getInstagramMediaInfo(url)
-    case 'tiktok':
-      return getTikTokMediaInfo(url)
-    case 'youtube':
-      return getYouTubeMediaInfo(url)
-    default:
-      throw new Error(`Unsupported platform: ${platform}. Supported platforms: instagram, tiktok, youtube`)
+  const platform = detectPlatformFromUrl(url)
+  console.log(`🔍 [MODASH DEBUG] Detected platform: ${platform}`)
+  
+  try {
+    let result
+    switch (platform) {
+      case 'instagram':
+        console.log(`🔍 [MODASH DEBUG] Calling getInstagramMediaInfo for: ${url}`)
+        result = await getInstagramMediaInfo(url)
+        break
+      case 'tiktok':
+        console.log(`🔍 [MODASH DEBUG] Calling getTikTokMediaInfo for: ${url}`)
+        result = await getTikTokMediaInfo(url)
+        break
+      case 'youtube':
+        console.log(`🔍 [MODASH DEBUG] Calling getYouTubeMediaInfo for: ${url}`)
+        result = await getYouTubeMediaInfo(url)
+        break
+      default:
+        throw new Error(`Unsupported platform: ${platform}. Supported platforms: instagram, tiktok, youtube`)
+    }
+    
+    console.log(`✅ [MODASH DEBUG] Media info result for ${url}:`, JSON.stringify(result, null, 2))
+    return result
+  } catch (error) {
+    console.error(`❌ [MODASH DEBUG] Error getting media info for ${url}:`, error)
+    throw error
   }
 }
 

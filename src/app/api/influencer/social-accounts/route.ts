@@ -27,27 +27,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
     }
 
-    // Get social accounts
+    // Get social accounts from influencer_platforms
     const socialAccounts = await query(`
       SELECT 
         id,
         platform,
-        handle,
+        username as handle,
         followers,
         engagement_rate,
-        avg_likes,
-        avg_comments,
+        0 as avg_likes,
+        0 as avg_comments,
         avg_views,
-        credibility_score,
-        profile_picture_url,
-        bio,
-        verified,
-        is_private,
+        0 as credibility_score,
+        profile_url as profile_picture_url,
+        NULL as bio,
+        false as verified,
+        false as is_private,
         is_connected,
-        last_sync,
+        last_synced as last_sync,
         created_at,
         updated_at
-      FROM influencer_social_accounts
+      FROM influencer_platforms
       WHERE influencer_id = $1
       ORDER BY platform
     `, [influencerResult.id])
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Check if account already exists
     const existingAccount = await queryOne(`
-      SELECT id FROM influencer_social_accounts
+      SELECT id FROM influencer_platforms
       WHERE influencer_id = $1 AND platform = $2
     `, [influencerResult.id, platform])
 
@@ -114,42 +114,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Insert new social account
+    // Insert new social account into influencer_platforms
     const newAccount = await queryOne(`
-      INSERT INTO influencer_social_accounts (
+      INSERT INTO influencer_platforms (
         influencer_id,
         platform,
-        handle,
-        user_id,
+        username,
+        profile_url,
         followers,
         engagement_rate,
-        avg_likes,
-        avg_comments,
         avg_views,
-        credibility_score,
-        profile_picture_url,
-        bio,
-        verified,
-        is_private,
         is_connected,
-        last_sync
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+        last_synced
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
       RETURNING *
     `, [
       influencerResult.id,
       platform,
       handle,
-      profileData?.userId || null,
+      profileData?.profileUrl || null,
       profileData?.followers || 0,
       profileData?.engagementRate || 0,
-      profileData?.avgLikes || 0,
-      profileData?.avgComments || 0,
       profileData?.avgViews || 0,
-      profileData?.credibility || 0,
-      profileData?.profilePicture || null,
-      profileData?.bio || null,
-      profileData?.verified || false,
-      profileData?.isPrivate || false,
       true
     ])
 
@@ -203,35 +189,23 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
     }
 
-    // Update social account
+    // Update social account in influencer_platforms
     const updatedAccount = await queryOne(`
-      UPDATE influencer_social_accounts
+      UPDATE influencer_platforms
       SET 
         followers = COALESCE($2, followers),
         engagement_rate = COALESCE($3, engagement_rate),
-        avg_likes = COALESCE($4, avg_likes),
-        avg_comments = COALESCE($5, avg_comments),
-        avg_views = COALESCE($6, avg_views),
-        credibility_score = COALESCE($7, credibility_score),
-        profile_picture_url = COALESCE($8, profile_picture_url),
-        bio = COALESCE($9, bio),
-        verified = COALESCE($10, verified),
-        is_private = COALESCE($11, is_private),
-        last_sync = NOW()
-      WHERE id = $1 AND influencer_id = $12
+        avg_views = COALESCE($4, avg_views),
+        profile_url = COALESCE($5, profile_url),
+        last_synced = NOW()
+      WHERE id = $1 AND influencer_id = $6
       RETURNING *
     `, [
       accountId,
       updateData?.followers,
       updateData?.engagementRate,
-      updateData?.avgLikes,
-      updateData?.avgComments,
       updateData?.avgViews,
-      updateData?.credibility,
       updateData?.profilePicture,
-      updateData?.bio,
-      updateData?.verified,
-      updateData?.isPrivate,
       influencerResult.id
     ])
 
@@ -292,9 +266,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
     }
 
-    // Delete social account
+    // Delete social account from influencer_platforms
     const deletedAccount = await queryOne(`
-      DELETE FROM influencer_social_accounts
+      DELETE FROM influencer_platforms
       WHERE id = $1 AND influencer_id = $2
       RETURNING *
     `, [accountId, influencerResult.id])

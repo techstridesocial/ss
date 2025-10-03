@@ -391,7 +391,7 @@ export async function addInfluencerToCampaign(campaignId: string, influencerId: 
   try {
     const result = await query(`
       INSERT INTO campaign_influencers (campaign_id, influencer_id, status, compensation_amount)
-      VALUES ($1, $2, 'INVITED', $3)
+      VALUES ($1, $2, 'ACCEPTED', $3)
       RETURNING *
     `, [campaignId, influencerId, rate]);
 
@@ -456,7 +456,7 @@ export async function updateCampaignInfluencerStatus(
     values.push(notes);
   }
 
-  // Handle content links update
+  // Handle content links update - JSONB column requires proper casting
   if (contentLinks !== undefined) {
     updateFields.push(`content_links = $${paramCount++}`);
     values.push(JSON.stringify(contentLinks));

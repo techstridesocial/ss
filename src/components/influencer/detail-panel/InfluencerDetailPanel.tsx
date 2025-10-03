@@ -85,28 +85,48 @@ const PlatformSwitcherTabs = memo(({
         const isActive = currentPlatform === platform.id
         const hasData = influencerPlatforms?.[platform.id]
         
+        // Check if the influencer has an account on this platform by looking at contacts
+        const hasAccount = influencer.contacts?.some((contact: SocialContact) => 
+          contact.type === platform.id
+        ) ?? false
+        
+        // Disable the button if the influencer doesn't have an account on this platform
+        const isDisabled = loading || !hasAccount
+        
         return (
           <button
             key={platform.id}
-            onClick={() => onPlatformSwitch(platform.id)}
-            disabled={loading}
+            onClick={() => hasAccount ? onPlatformSwitch(platform.id) : undefined}
+            disabled={isDisabled}
             className={`flex-1 flex items-center justify-center space-x-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
               isActive
                 ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                : hasAccount 
+                  ? 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-400 cursor-not-allowed opacity-60'
             } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title={hasData ? `View ${platform.name} analytics` : `Load ${platform.name} analytics`}
-            aria-label={`Switch to ${platform.name} analytics${isActive ? ' (currently selected)' : ''}`}
+            title={
+              !hasAccount 
+                ? `${platform.name} account not available`
+                : hasData 
+                  ? `View ${platform.name} analytics` 
+                  : `Load ${platform.name} analytics`
+            }
+            aria-label={`Switch to ${platform.name} analytics${isActive ? ' (currently selected)' : ''}${!hasAccount ? ' (not available)' : ''}`}
             aria-pressed={isActive}
+            aria-disabled={!hasAccount}
             role="tab"
             tabIndex={isActive ? 0 : -1}
           >
-            <span>{platform.logo}</span>
-            <span className="font-bold">{platform.name}</span>
+            <span className={hasAccount ? '' : 'opacity-50'}>{platform.logo}</span>
+            <span className={`font-bold ${hasAccount ? '' : 'opacity-50'}`}>{platform.name}</span>
             {loading && isActive && (
               <div className="ml-1 w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
             )}
-            {!hasData && !isActive && !loading && (
+            {!hasAccount && !loading && (
+              <span className="ml-1 w-2 h-2 bg-gray-400 rounded-full opacity-50" title="Account not available"></span>
+            )}
+            {hasAccount && !hasData && !isActive && !loading && (
               <span className="ml-1 w-2 h-2 bg-blue-500 rounded-full" title="Click to load data"></span>
             )}
           </button>

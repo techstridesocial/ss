@@ -52,6 +52,8 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
     const result = await query(`
       SELECT 
         ci.*,
+        ci.content_links,
+        ci.discount_code,
         i.display_name,
         i.niche_primary,
         i.total_followers,
@@ -76,56 +78,127 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
       ORDER BY ci.created_at DESC
     `, [campaignId])
 
-    return result.map(row => ({
-      id: row.id,
-      campaignId: row.campaign_id,
-      influencerId: row.influencer_id,
-      status: row.status as ParticipationStatus,
-      appliedAt: row.applied_at ? new Date(row.applied_at) : undefined,
-      acceptedAt: row.accepted_at ? new Date(row.accepted_at) : undefined,
-      declinedAt: row.declined_at ? new Date(row.declined_at) : undefined,
-      contentSubmittedAt: row.content_submitted_at ? new Date(row.content_submitted_at) : undefined,
-      contentLinks: (() => {
-        try {
-          return row.content_links && row.content_links !== '' ? JSON.parse(row.content_links) : [];
-        } catch (error) {
-          console.warn('Failed to parse content_links for campaign influencer:', row.id, 'Value:', row.content_links);
-          return [];
-        }
-      })(),
-      discountCode: row.discount_code,
-      paidAt: row.paid_at ? new Date(row.paid_at) : undefined,
-      notes: row.notes,
-      rate: row.compensation_amount,
-      deadline: row.deadline ? new Date(row.deadline) : undefined,
-      productShipped: row.product_shipped,
-      contentPosted: row.content_posted,
-      paymentReleased: row.payment_released,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-      influencer: {
-        id: row.influencer_id,
-        display_name: row.display_name,
-        niche_primary: row.niche_primary,
-        total_followers: row.total_followers,
-        total_engagement_rate: row.total_engagement_rate,
-        profile_image_url: row.profile_image_url,
-        // Analytics fields from database
-        total_engagements: row.total_engagements || 0,
-        avg_engagement_rate: row.avg_engagement_rate || 0,
-        estimated_reach: row.estimated_reach || 0,
-        total_likes: row.total_likes || 0,
-        total_comments: row.total_comments || 0,
-        total_views: row.total_views || 0,
+    return result.map(row => {
+      // Debug: Log the raw database row for analytics and content links
+      console.log(`🔍 [DB DEBUG] Raw data for influencer ${row.influencer_id}:`, {
+        content_links: row.content_links,
+        discount_code: row.discount_code,
+        total_engagements: row.total_engagements,
+        avg_engagement_rate: row.avg_engagement_rate,
+        estimated_reach: row.estimated_reach,
+        total_likes: row.total_likes,
+        total_comments: row.total_comments,
+        total_views: row.total_views,
         analytics_updated_at: row.analytics_updated_at
-      },
-      campaign: {
-        id: row.campaign_id,
-        name: row.campaign_name,
-        brand: row.campaign_brand,
-        status: row.campaign_status
+      })
+      
+      return {
+        id: row.id,
+        campaignId: row.campaign_id,
+        influencerId: row.influencer_id,
+        status: row.status as ParticipationStatus,
+        appliedAt: row.applied_at ? new Date(row.applied_at) : undefined,
+        acceptedAt: row.accepted_at ? new Date(row.accepted_at) : undefined,
+        declinedAt: row.declined_at ? new Date(row.declined_at) : undefined,
+        contentSubmittedAt: row.content_submitted_at ? new Date(row.content_submitted_at) : undefined,
+        contentLinks: (() => {
+          console.log(`🔍 [CONTENT LINKS DEBUG] Processing content_links for campaign influencer ${row.id}:`, {
+            rawValue: row.content_links,
+            type: typeof row.content_links,
+            isArray: Array.isArray(row.content_links),
+            isString: typeof row.content_links === 'string',
+            isEmpty: !row.content_links || row.content_links === ''
+          })
+          
+          let links: string[] = [];
+          
+          // Handle both JSONB (already parsed) and TEXT (needs parsing) column types
+          if (Array.isArray(row.content_links)) {
+            links = row.content_links;
+          } else if (typeof row.content_links === 'string' && row.content_links !== '') {
+            try {
+              const parsed = JSON.parse(row.content_links);
+              links = Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+              console.warn('❌ [CONTENT LINKS DEBUG] Failed to parse content_links string for campaign influencer:', row.id, 'Content:', row.content_links, 'Error:', error);
+              return [];
+            }
+          }
+          
+          // Filter out debug strings and invalid URLs
+          const cleanLinks = links.filter(link => {
+            if (typeof link !== 'string') return false;
+            const trimmed = link.trim();
+            // Filter out debug strings and ensure it's a valid URL
+            return trimmed && 
+                   !trimmed.includes('🔍') && 
+                   !trimmed.includes('DEBUG') && 
+                   !trimmed.includes('✅') && 
+                   !trimmed.includes('analytics') &&
+                   (trimmed.startsWith('http://') || trimmed.startsWith('https://'));
+          });
+          
+          console.log(`✅ [CONTENT LINKS DEBUG] Cleaned links:`, cleanLinks)
+          return cleanLinks;
+        })(),
+        discountCode: row.discount_code,
+        paidAt: row.paid_at ? new Date(row.paid_at) : undefined,
+        notes: row.notes,
+        rate: row.compensation_amount,
+        deadline: row.deadline ? new Date(row.deadline) : undefined,
+        productShipped: row.product_shipped,
+        contentPosted: row.content_posted,
+        paymentReleased: row.payment_released,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+        // Analytics fields at top level for frontend access (convert strings to numbers)
+        totalEngagements: (() => {
+          const value = parseInt(row.total_engagements) || 0;
+          console.log(`🔢 [ANALYTICS DEBUG] totalEngagements: '${row.total_engagements}' → ${value}`);
+          return value;
+        })(),
+        avgEngagementRate: (() => {
+          const value = parseFloat(row.avg_engagement_rate) || 0;
+          console.log(`🔢 [ANALYTICS DEBUG] avgEngagementRate: '${row.avg_engagement_rate}' → ${value}`);
+          return value;
+        })(),
+        estimatedReach: (() => {
+          const value = parseInt(row.estimated_reach) || 0;
+          console.log(`🔢 [ANALYTICS DEBUG] estimatedReach: '${row.estimated_reach}' → ${value}`);
+          return value;
+        })(),
+        totalLikes: (() => {
+          const value = parseInt(row.total_likes) || 0;
+          console.log(`🔢 [ANALYTICS DEBUG] totalLikes: '${row.total_likes}' → ${value}`);
+          return value;
+        })(),
+        totalComments: (() => {
+          const value = parseInt(row.total_comments) || 0;
+          console.log(`🔢 [ANALYTICS DEBUG] totalComments: '${row.total_comments}' → ${value}`);
+          return value;
+        })(),
+        totalViews: (() => {
+          const value = parseInt(row.total_views) || 0;
+          console.log(`🔢 [ANALYTICS DEBUG] totalViews: '${row.total_views}' → ${value}`);
+          return value;
+        })(),
+        analyticsUpdatedAt: row.analytics_updated_at,
+        influencer: {
+          id: row.influencer_id,
+          display_name: row.display_name,
+          niche_primary: row.niche_primary,
+          total_followers: row.total_followers,
+          total_engagement_rate: row.total_engagement_rate,
+          profile_image_url: row.profile_image_url
+        },
+        campaign: {
+          id: row.campaign_id,
+          name: row.campaign_name,
+          brand: row.campaign_brand,
+          status: row.campaign_status
+        }
       }
-    }))
+    })
   } catch (error) {
     console.error('Error getting campaign influencers with details:', error)
     throw error

@@ -456,21 +456,27 @@ export default function CampaignDetailPanel({
         const result = await response.json()
         console.log('✅ Successfully added influencer:', result)
         
-        // Refresh the campaign influencers list
+        // Refresh the campaign influencers list with a small delay to ensure database consistency
         console.log('🔄 Refreshing campaign influencers list...')
-        const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        setTimeout(async () => {
+          try {
+            const campaignInfluencersResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            })
+            if (campaignInfluencersResponse.ok) {
+              const campaignInfluencersResult = await campaignInfluencersResponse.json()
+              console.log('📊 Refreshed campaign influencers:', campaignInfluencersResult.data?.influencers)
+              setCampaignInfluencers(campaignInfluencersResult.data?.influencers || [])
+            } else {
+              console.error('❌ Failed to refresh campaign influencers:', campaignInfluencersResponse.status)
+            }
+          } catch (refreshError) {
+            console.error('❌ Error during refresh:', refreshError)
           }
-        })
-        if (campaignInfluencersResponse.ok) {
-          const campaignInfluencersResult = await campaignInfluencersResponse.json()
-          console.log('📊 Refreshed campaign influencers:', campaignInfluencersResult.data?.influencers)
-          setCampaignInfluencers(campaignInfluencersResult.data?.influencers || [])
-        } else {
-          console.error('❌ Failed to refresh campaign influencers:', campaignInfluencersResponse.status)
-        }
+        }, 500) // 500ms delay to ensure database write is complete
         
         setShowAddInfluencerModal(false)
         setInfluencerSearchTerm('') // Clear search when modal closes
@@ -547,6 +553,47 @@ export default function CampaignDetailPanel({
           )
         )
         
+        // Wait a moment for analytics processing, then refresh the specific row with updated analytics
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Refreshing analytics for the updated row...')
+            const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json()
+              if (data.influencers) {
+                // Find the updated influencer and merge analytics
+                const updatedInfluencer = data.influencers.find((inf: any) => inf.id === campaignInfluencerId)
+                if (updatedInfluencer) {
+                  setCampaignInfluencers(prev => 
+                    prev.map(ci => 
+                      ci.id === campaignInfluencerId 
+                        ? { 
+                            ...ci, 
+                            contentLinks: links,
+                            // Update analytics from the refreshed data
+                            totalEngagements: updatedInfluencer.totalEngagements,
+                            avgEngagementRate: updatedInfluencer.avgEngagementRate,
+                            estimatedReach: updatedInfluencer.estimatedReach,
+                            totalLikes: updatedInfluencer.totalLikes,
+                            totalComments: updatedInfluencer.totalComments,
+                            totalViews: updatedInfluencer.totalViews,
+                            analyticsUpdatedAt: updatedInfluencer.analyticsUpdatedAt
+                          }
+                        : ci
+                    )
+                  )
+                  console.log('📊 ANALYTICS REFRESHED FOR THE ROW!')
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error refreshing analytics:', error)
+          }
+        }, 2000) // Wait 2 seconds for analytics processing
+        
         // Close the editing mode
         setEditingContentLinks(null)
         setContentLinksInput('')
@@ -611,22 +658,59 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        console.log('✅ Link added to database! Refetching analytics...')
+        console.log('✅ Link added to database! Updating local state...')
         
-        // CRITICAL: Refetch to get updated analytics instantly
-        const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        // Update only the specific row in the state instead of refetching all data
+        setCampaignInfluencers(prev => 
+          prev.map(ci => 
+            ci.id === campaignInfluencerId 
+              ? { ...ci, contentLinks: updatedLinks }
+              : ci
+          )
+        )
         
-        if (refreshResponse.ok) {
-          const data = await refreshResponse.json()
-          console.log('📊 Fresh analytics after adding link:', data)
-          
-          if (data.influencers) {
-            setCampaignInfluencers(data.influencers)
-            console.log('⚡ ANALYTICS UPDATED AFTER ADDING LINK!')
+        console.log('⚡ CONTENT LINKS UPDATED LOCALLY!')
+        
+        // Wait a moment for analytics processing, then refresh the specific row with updated analytics
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Refreshing analytics for the updated row...')
+            const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json()
+              if (data.influencers) {
+                // Find the updated influencer and merge analytics
+                const updatedInfluencer = data.influencers.find((inf: any) => inf.id === campaignInfluencerId)
+                if (updatedInfluencer) {
+                  setCampaignInfluencers(prev => 
+                    prev.map(ci => 
+                      ci.id === campaignInfluencerId 
+                        ? { 
+                            ...ci, 
+                            contentLinks: updatedLinks,
+                            // Update analytics from the refreshed data
+                            totalEngagements: updatedInfluencer.totalEngagements,
+                            avgEngagementRate: updatedInfluencer.avgEngagementRate,
+                            estimatedReach: updatedInfluencer.estimatedReach,
+                            totalLikes: updatedInfluencer.totalLikes,
+                            totalComments: updatedInfluencer.totalComments,
+                            totalViews: updatedInfluencer.totalViews,
+                            analyticsUpdatedAt: updatedInfluencer.analyticsUpdatedAt
+                          }
+                        : ci
+                    )
+                  )
+                  console.log('📊 ANALYTICS REFRESHED FOR THE ROW!')
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error refreshing analytics:', error)
           }
-        }
+        }, 2000) // Wait 2 seconds for analytics processing
         
         // Close the adding mode
         setAddingLinkTo(null)
@@ -672,11 +756,62 @@ export default function CampaignDetailPanel({
         // Update local state to reflect the change
         setCampaignInfluencers(prev => prev.map(ci => 
           ci.id === campaignInfluencerId 
-            ? { ...ci, contentLinks: [] }
+            ? { 
+                ...ci, 
+                contentLinks: [],
+                // Reset all analytics to 0 when clearing all links
+                totalEngagements: 0,
+                avgEngagementRate: 0,
+                estimatedReach: 0,
+                totalLikes: 0,
+                totalComments: 0,
+                totalViews: 0
+              }
             : ci
         ))
 
-        console.log(`📋 Updated local state - cleared all content links`)
+        console.log(`📋 Updated local state - cleared all content links and reset analytics to 0`)
+        
+        // Wait a moment for backend analytics processing, then refresh with real data
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Refreshing analytics after clearing all links...')
+            const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json()
+              if (data.influencers) {
+                // Find the updated influencer and merge real analytics
+                const updatedInfluencer = data.influencers.find((inf: any) => inf.id === campaignInfluencerId)
+                if (updatedInfluencer) {
+                  setCampaignInfluencers(prev => 
+                    prev.map(ci => 
+                      ci.id === campaignInfluencerId 
+                        ? { 
+                            ...ci, 
+                            contentLinks: [],
+                            // Update with real analytics from backend (should be 0)
+                            totalEngagements: updatedInfluencer.totalEngagements,
+                            avgEngagementRate: updatedInfluencer.avgEngagementRate,
+                            estimatedReach: updatedInfluencer.estimatedReach,
+                            totalLikes: updatedInfluencer.totalLikes,
+                            totalComments: updatedInfluencer.totalComments,
+                            totalViews: updatedInfluencer.totalViews,
+                            analyticsUpdatedAt: updatedInfluencer.analyticsUpdatedAt
+                          }
+                        : ci
+                    )
+                  )
+                  console.log('📊 ANALYTICS REFRESHED AFTER CLEARING ALL LINKS!')
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error refreshing analytics after clearing all links:', error)
+          }
+        }, 1000) // Wait 1 second for backend processing
         
         // Show success message
         if (deleteResult.result.deletedFrom.length > 0) {
@@ -684,10 +819,10 @@ export default function CampaignDetailPanel({
         }
         
         if (deleteResult.result.analyticsReset) {
-          console.log('🔄 Analytics reset due to clearing all content links')
+          console.log('🔄 Backend analytics reset due to clearing all content links')
         }
         
-        alert('All content links cleared successfully!')
+        alert('All content links cleared successfully! Analytics reset to 0.')
       } else {
         const errorData = await deleteResponse.json()
         console.error('❌ Failed to clear content links:', errorData)
@@ -763,14 +898,69 @@ export default function CampaignDetailPanel({
         const existingLinks = currentCampaignInfluencer?.contentLinks || []
         const updatedLinks = existingLinks.filter((link: string) => link !== linkToRemove)
 
-        // Update the local state
+        // Update the local state with removed link
         setCampaignInfluencers(prev => prev.map(ci => 
           ci.id === campaignInfluencerId 
-            ? { ...ci, contentLinks: updatedLinks }
+            ? { 
+                ...ci, 
+                contentLinks: updatedLinks,
+                // Reset analytics to 0 when links are removed
+                totalEngagements: updatedLinks.length === 0 ? 0 : ci.totalEngagements,
+                avgEngagementRate: updatedLinks.length === 0 ? 0 : ci.avgEngagementRate,
+                estimatedReach: updatedLinks.length === 0 ? 0 : ci.estimatedReach,
+                totalLikes: updatedLinks.length === 0 ? 0 : ci.totalLikes,
+                totalComments: updatedLinks.length === 0 ? 0 : ci.totalComments,
+                totalViews: updatedLinks.length === 0 ? 0 : ci.totalViews
+              }
             : ci
         ))
 
         console.log(`📋 Updated local state - removed link from ${existingLinks.length} to ${updatedLinks.length}`)
+        
+        if (updatedLinks.length === 0) {
+          console.log('🔄 Analytics reset to 0 due to no remaining content links')
+        }
+        
+        // Wait a moment for backend analytics processing, then refresh with real data
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Refreshing analytics after deletion...')
+            const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json()
+              if (data.influencers) {
+                // Find the updated influencer and merge real analytics
+                const updatedInfluencer = data.influencers.find((inf: any) => inf.id === campaignInfluencerId)
+                if (updatedInfluencer) {
+                  setCampaignInfluencers(prev => 
+                    prev.map(ci => 
+                      ci.id === campaignInfluencerId 
+                        ? { 
+                            ...ci, 
+                            contentLinks: updatedLinks,
+                            // Update with real analytics from backend
+                            totalEngagements: updatedInfluencer.totalEngagements,
+                            avgEngagementRate: updatedInfluencer.avgEngagementRate,
+                            estimatedReach: updatedInfluencer.estimatedReach,
+                            totalLikes: updatedInfluencer.totalLikes,
+                            totalComments: updatedInfluencer.totalComments,
+                            totalViews: updatedInfluencer.totalViews,
+                            analyticsUpdatedAt: updatedInfluencer.analyticsUpdatedAt
+                          }
+                        : ci
+                    )
+                  )
+                  console.log('📊 ANALYTICS REFRESHED AFTER DELETION!')
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error refreshing analytics after deletion:', error)
+          }
+        }, 1000) // Wait 1 second for backend processing
         
         // Show success message
         if (deleteResult.result.deletedFrom.length > 0) {
@@ -778,7 +968,7 @@ export default function CampaignDetailPanel({
         }
         
         if (deleteResult.result.analyticsReset) {
-          console.log('🔄 Analytics reset due to no remaining content links')
+          console.log('🔄 Backend analytics reset due to no remaining content links')
         }
       } else {
         const errorData = await deleteResponse.json()
@@ -788,45 +978,8 @@ export default function CampaignDetailPanel({
       }
 
       // Also update the campaign_influencers table for consistency
-      const currentCampaignInfluencer = campaignInfluencers.find(ci => ci.id === campaignInfluencerId)
-      const existingLinks = currentCampaignInfluencer?.contentLinks || []
-      const updatedLinks = existingLinks.filter((link: string) => link !== linkToRemove)
-
-      const response = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
-        method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({ 
-          influencerId: influencerId,
-          contentLinks: updatedLinks,
-          status: currentCampaignInfluencer?.status || 'INVITED'
-        })
-      })
-      
-      if (response.ok) {
-        console.log('✅ Link deleted from database! Refetching analytics...')
-        
-        // CRITICAL: Refetch to get updated analytics instantly
-        const refreshResponse = await fetch(`/api/campaigns/${campaign.id}/influencers`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        
-        if (refreshResponse.ok) {
-          const data = await refreshResponse.json()
-          console.log('📊 Fresh analytics after deletion:', data)
-          
-          if (data.influencers) {
-            setCampaignInfluencers(data.influencers)
-            console.log('⚡ ANALYTICS UPDATED AFTER DELETION!')
-          }
-        }
-      } else {
-        const errorData = await response.json()
-        console.error('❌ Failed to remove link:', errorData)
-        alert(`Failed to remove link: ${errorData.error || 'Unknown error'}`)
-      }
+      // This function is deprecated - using the comprehensive deletion service above instead
+      console.log('⚠️ This old removal method should not be called - using comprehensive deletion service instead')
     } catch (error) {
       console.error('❌ Error removing link:', error)
       alert(`Error removing link: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -965,7 +1118,7 @@ export default function CampaignDetailPanel({
             console.log('⚡ [FRONTEND DEBUG] ANALYTICS UPDATED INSTANTLY! Updated influencers:', refreshData.data.influencers.length)
             
             // Log the specific influencer we updated
-            const updatedInfluencer = refreshData.data.influencers.find(inf => 
+            const updatedInfluencer = refreshData.data.influencers.find((inf: any) => 
               inf.influencer_id === (editingInfluencer.influencer_id || editingInfluencer.id)
             )
             if (updatedInfluencer) {
@@ -1465,9 +1618,12 @@ export default function CampaignDetailPanel({
                           <div className="text-2xl font-bold text-red-600">
                             {(() => {
                               const total = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.total_engagements || 0)
+                                const value = ci.totalEngagements || 0;
+                                console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Processing influencer ${ci.influencer?.display_name}: totalEngagements = ${ci.totalEngagements}`);
+                                return sum + value;
                               }, 0)
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Final Total Engagements: ${total}`)
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Campaign influencers array:`, campaignInfluencers)
                               return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
@@ -1485,14 +1641,14 @@ export default function CampaignDetailPanel({
                               
                               // Calculate campaign-wide engagement rate (not average of individual rates)
                               const totalEngagements = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.total_engagements || 0)
+                                return sum + (ci.totalEngagements || 0)
                               }, 0)
                               
                               const totalViews = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.total_views || 0)
+                                return sum + (ci.totalViews || 0)
                               }, 0)
+                              
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Avg ER% - Engagements: ${totalEngagements}, Views: ${totalViews}`)
                               
                               if (totalViews === 0) return '0%'
                               
@@ -1511,9 +1667,9 @@ export default function CampaignDetailPanel({
                           <div className="text-2xl font-bold text-blue-600">
                             {(() => {
                               const total = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.estimated_reach || 0)
+                                return sum + (ci.estimatedReach || 0)
                               }, 0)
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Est. Reach: ${total}`)
                               return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
@@ -1528,9 +1684,9 @@ export default function CampaignDetailPanel({
                           <div className="text-2xl font-bold text-red-600">
                             {(() => {
                               const total = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.total_likes || 0)
+                                return sum + (ci.totalLikes || 0)
                               }, 0)
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Total Likes: ${total}`)
                               return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
@@ -1545,9 +1701,9 @@ export default function CampaignDetailPanel({
                           <div className="text-2xl font-bold text-green-600">
                             {(() => {
                               const total = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.total_comments || 0)
+                                return sum + (ci.totalComments || 0)
                               }, 0)
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Total Comments: ${total}`)
                               return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
@@ -1562,9 +1718,9 @@ export default function CampaignDetailPanel({
                           <div className="text-2xl font-bold text-purple-600">
                             {(() => {
                               const total = campaignInfluencers.reduce((sum, ci) => {
-                                const inf = ci.influencer || ci
-                                return sum + (inf.total_views || 0)
+                                return sum + (ci.totalViews || 0)
                               }, 0)
+                              console.log(`📊 [CAMPAIGN SUMMARY DEBUG] Total Views: ${total}`)
                               return total.toLocaleString() // No k/M suffixes for overall summary
                             })()}
                           </div>
@@ -1829,7 +1985,13 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Heart size={14} className="text-red-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {influencer.total_engagements ? formatNumber(influencer.total_engagements) : '0'}
+                                        {console.log(`📊 [FRONTEND DEBUG] Total Engagements for ${influencer.display_name}:`, {
+                                          campaignInfluencer: campaignInfluencer,
+                                          totalEngagements: campaignInfluencer.totalEngagements,
+                                          influencer: influencer,
+                                          influencer_total_engagements: influencer.total_engagements
+                                        })}
+                                        {campaignInfluencer.totalEngagements ? formatNumber(campaignInfluencer.totalEngagements) : '0'}
                                       </span>
                                     </div>
                                   </td>
@@ -1839,7 +2001,7 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Heart size={14} className="text-red-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {influencer.avg_engagement_rate ? `${(influencer.avg_engagement_rate * 100).toFixed(2)}%` : '0%'}
+                                        {campaignInfluencer.avgEngagementRate ? `${campaignInfluencer.avgEngagementRate.toFixed(2)}%` : '0%'}
                                       </span>
                                     </div>
                                   </td>
@@ -1849,7 +2011,7 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Users size={14} className="text-blue-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {influencer.estimated_reach ? formatNumber(influencer.estimated_reach) : '0'}
+                                        {campaignInfluencer.estimatedReach ? formatNumber(campaignInfluencer.estimatedReach) : '0'}
                                       </span>
                                     </div>
                                   </td>
@@ -1859,7 +2021,7 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Heart size={14} className="text-red-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {influencer.total_likes ? formatNumber(influencer.total_likes) : '0'}
+                                        {campaignInfluencer.totalLikes ? formatNumber(campaignInfluencer.totalLikes) : '0'}
                                       </span>
                                     </div>
                                   </td>
@@ -1869,7 +2031,7 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <MessageCircle size={14} className="text-green-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {influencer.total_comments ? formatNumber(influencer.total_comments) : '0'}
+                                        {campaignInfluencer.totalComments ? formatNumber(campaignInfluencer.totalComments) : '0'}
                                       </span>
                                     </div>
                                   </td>
@@ -1879,7 +2041,7 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Eye size={14} className="text-purple-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {influencer.total_views ? formatNumber(influencer.total_views) : '0'}
+                                        {campaignInfluencer.totalViews ? formatNumber(campaignInfluencer.totalViews) : '0'}
                                       </span>
                                     </div>
                                   </td>

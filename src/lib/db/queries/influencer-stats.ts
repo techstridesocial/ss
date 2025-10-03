@@ -143,13 +143,13 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
     const platformsQuery = `
       SELECT 
         platform,
-        handle as username,
+        username,
         followers,
         engagement_rate,
         avg_views,
         is_connected,
-        last_sync as last_synced
-      FROM influencer_social_accounts
+        last_synced
+      FROM influencer_platforms
       WHERE influencer_id = $1
       ORDER BY platform
     `
@@ -292,13 +292,13 @@ export async function getPlatformStats(influencerId: string, platform: string): 
     const queryText = `
       SELECT 
         platform,
-        handle as username,
+        username,
         followers,
         engagement_rate,
         avg_views,
         is_connected,
-        last_sync as last_synced
-      FROM influencer_social_accounts
+        last_synced
+      FROM influencer_platforms
       WHERE influencer_id = $1 AND platform = $2
     `
 

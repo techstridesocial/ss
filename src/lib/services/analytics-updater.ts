@@ -66,12 +66,16 @@ export async function updateInfluencerAnalyticsFromContentLinks(
         const analytics = await processContentLink(link)
         if (analytics) {
           analyticsResults.push(analytics)
-          console.log(`✅ Successfully processed: ${analytics.platform} - ${analytics.views} views, ${analytics.likes} likes`)
+          console.log(`✅ Successfully processed: ${analytics.platform} - ${analytics.views} views, ${analytics.likes} likes, ${analytics.comments} comments`)
         } else {
           console.log(`⚠️ No analytics data returned for: ${link}`)
         }
       } catch (error) {
         console.error(`❌ Error processing content link ${link}:`, error)
+        console.error(`❌ Error details:`, {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack'
+        })
         // Continue processing other links even if one fails
       }
     }
@@ -114,6 +118,8 @@ async function processContentLink(url: string): Promise<ContentAnalytics | null>
     
     // Call Modash Raw API
     const mediaInfo = await getMediaInfo(url)
+    
+    console.log(`🔍 [ANALYTICS DEBUG] Modash API response for ${url}:`, JSON.stringify(mediaInfo, null, 2))
     
     if (!mediaInfo || mediaInfo.error) {
       console.error(`❌ Modash API error for ${url}:`, mediaInfo?.error)
@@ -177,22 +183,61 @@ function extractAnalyticsFromMediaInfo(mediaInfo: any, platform: string, url: st
  */
 function extractInstagramAnalytics(mediaInfo: any, url: string): ContentAnalytics | null {
   try {
-    // Instagram response structure: items[0] contains the post data
-    const postData = mediaInfo?.items?.[0]
+    console.log(`🔍 [IG DEBUG] Processing Instagram response structure:`, {
+      hasItems: !!mediaInfo?.items,
+      itemsLength: mediaInfo?.items?.length,
+      firstItem: mediaInfo?.items?.[0] ? Object.keys(mediaInfo.items[0]) : 'none',
+      directData: mediaInfo ? Object.keys(mediaInfo) : 'none'
+    })
+
+    // Try different response structures
+    let postData = null
+    
+    // Structure 1: items[0] contains the post data
+    if (mediaInfo?.items?.[0]) {
+      postData = mediaInfo.items[0]
+      console.log(`✅ [IG DEBUG] Using items[0] structure`)
+    }
+    // Structure 2: Direct data in response
+    else if (mediaInfo?.like_count !== undefined || mediaInfo?.view_count !== undefined) {
+      postData = mediaInfo
+      console.log(`✅ [IG DEBUG] Using direct structure`)
+    }
+    // Structure 3: data property
+    else if (mediaInfo?.data) {
+      postData = mediaInfo.data
+      console.log(`✅ [IG DEBUG] Using data property structure`)
+    }
+
     if (!postData) {
-      console.log(`⚠️ No post data found in Instagram response for: ${url}`)
+      console.log(`⚠️ [IG DEBUG] No post data found in Instagram response for: ${url}`)
+      console.log(`⚠️ [IG DEBUG] Available keys:`, mediaInfo ? Object.keys(mediaInfo) : 'none')
       return null
     }
 
-    return {
+    console.log(`🔍 [IG DEBUG] Post data keys:`, Object.keys(postData))
+    console.log(`🔍 [IG DEBUG] Post data values:`, {
+      view_count: postData.view_count,
+      like_count: postData.like_count,
+      comment_count: postData.comment_count,
+      play_count: postData.play_count,
+      views: postData.views,
+      likes: postData.likes,
+      comments: postData.comments
+    })
+
+    const analytics = {
       platform: 'instagram',
-      views: postData.view_count || 0,
-      likes: postData.like_count || 0,
-      comments: postData.comment_count || 0,
-      shares: postData.share_count || 0,
-      saves: postData.save_count || 0,
+      views: postData.view_count || postData.play_count || postData.views || 0,
+      likes: postData.like_count || postData.likes || 0,
+      comments: postData.comment_count || postData.comments || 0,
+      shares: postData.share_count || postData.shares || 0,
+      saves: postData.save_count || postData.saves || 0,
       url: url
     }
+
+    console.log(`✅ [IG DEBUG] Extracted analytics:`, analytics)
+    return analytics
   } catch (error) {
     console.error(`❌ Error extracting Instagram analytics:`, error)
     return null
@@ -204,21 +249,58 @@ function extractInstagramAnalytics(mediaInfo: any, url: string): ContentAnalytic
  */
 function extractTikTokAnalytics(mediaInfo: any, url: string): ContentAnalytics | null {
   try {
-    // TikTok response structure: itemStruct contains the video data
-    const videoData = mediaInfo?.itemStruct
+    console.log(`🔍 [TT DEBUG] Processing TikTok response structure:`, {
+      hasItemStruct: !!mediaInfo?.itemStruct,
+      hasStats: !!mediaInfo?.itemStruct?.stats,
+      directData: mediaInfo ? Object.keys(mediaInfo) : 'none'
+    })
+
+    // Try different response structures
+    let videoData = null
+    
+    // Structure 1: itemStruct contains the video data
+    if (mediaInfo?.itemStruct) {
+      videoData = mediaInfo.itemStruct
+      console.log(`✅ [TT DEBUG] Using itemStruct structure`)
+    }
+    // Structure 2: Direct data in response
+    else if (mediaInfo?.stats || mediaInfo?.playCount !== undefined) {
+      videoData = mediaInfo
+      console.log(`✅ [TT DEBUG] Using direct structure`)
+    }
+    // Structure 3: data property
+    else if (mediaInfo?.data) {
+      videoData = mediaInfo.data
+      console.log(`✅ [TT DEBUG] Using data property structure`)
+    }
+
     if (!videoData) {
-      console.log(`⚠️ No video data found in TikTok response for: ${url}`)
+      console.log(`⚠️ [TT DEBUG] No video data found in TikTok response for: ${url}`)
+      console.log(`⚠️ [TT DEBUG] Available keys:`, mediaInfo ? Object.keys(mediaInfo) : 'none')
       return null
     }
 
-    return {
+    const stats = videoData.stats || videoData
+    console.log(`🔍 [TT DEBUG] Stats data:`, {
+      playCount: stats?.playCount,
+      diggCount: stats?.diggCount,
+      commentCount: stats?.commentCount,
+      shareCount: stats?.shareCount,
+      views: stats?.views,
+      likes: stats?.likes
+    })
+
+    const analytics = {
       platform: 'tiktok',
-      views: videoData.stats?.playCount || 0,
-      likes: videoData.stats?.diggCount || 0,
-      comments: videoData.stats?.commentCount || 0,
-      shares: videoData.stats?.shareCount || 0,
+      views: stats?.playCount || stats?.views || 0,
+      likes: stats?.diggCount || stats?.likes || 0,
+      comments: stats?.commentCount || stats?.comments || 0,
+      shares: stats?.shareCount || stats?.shares || 0,
       url: url
     }
+
+    console.log(`✅ [TT DEBUG] Extracted analytics:`, analytics)
+    return analytics
   } catch (error) {
     console.error(`❌ Error extracting TikTok analytics:`, error)
     return null
@@ -230,20 +312,63 @@ function extractTikTokAnalytics(mediaInfo: any, url: string): ContentAnalytics |
  */
 function extractYouTubeAnalytics(mediaInfo: any, url: string): ContentAnalytics | null {
   try {
-    // YouTube response structure varies - adjust based on actual API response
-    const videoData = mediaInfo?.items?.[0] || mediaInfo?.videoData
+    console.log(`🔍 [YT DEBUG] Processing YouTube response structure:`, {
+      hasItems: !!mediaInfo?.items,
+      hasVideoData: !!mediaInfo?.videoData,
+      hasStatistics: !!mediaInfo?.statistics,
+      directData: mediaInfo ? Object.keys(mediaInfo) : 'none'
+    })
+
+    // Try different response structures
+    let videoData = null
+    
+    // Structure 1: items[0] contains the video data
+    if (mediaInfo?.items?.[0]) {
+      videoData = mediaInfo.items[0]
+      console.log(`✅ [YT DEBUG] Using items[0] structure`)
+    }
+    // Structure 2: videoData property
+    else if (mediaInfo?.videoData) {
+      videoData = mediaInfo.videoData
+      console.log(`✅ [YT DEBUG] Using videoData structure`)
+    }
+    // Structure 3: Direct data in response
+    else if (mediaInfo?.statistics || mediaInfo?.viewCount !== undefined) {
+      videoData = mediaInfo
+      console.log(`✅ [YT DEBUG] Using direct structure`)
+    }
+    // Structure 4: data property
+    else if (mediaInfo?.data) {
+      videoData = mediaInfo.data
+      console.log(`✅ [YT DEBUG] Using data property structure`)
+    }
+
     if (!videoData) {
-      console.log(`⚠️ No video data found in YouTube response for: ${url}`)
+      console.log(`⚠️ [YT DEBUG] No video data found in YouTube response for: ${url}`)
+      console.log(`⚠️ [YT DEBUG] Available keys:`, mediaInfo ? Object.keys(mediaInfo) : 'none')
       return null
     }
 
-    return {
+    const stats = videoData.statistics || videoData
+    console.log(`🔍 [YT DEBUG] Stats data:`, {
+      viewCount: stats?.viewCount,
+      likeCount: stats?.likeCount,
+      commentCount: stats?.commentCount,
+      views: stats?.views,
+      likes: stats?.likes,
+      comments: stats?.comments
+    })
+
+    const analytics = {
       platform: 'youtube',
-      views: videoData.statistics?.viewCount || videoData.views || 0,
-      likes: videoData.statistics?.likeCount || videoData.likes || 0,
-      comments: videoData.statistics?.commentCount || videoData.comments || 0,
+      views: parseInt(stats?.viewCount) || stats?.views || 0,
+      likes: parseInt(stats?.likeCount) || stats?.likes || 0,
+      comments: parseInt(stats?.commentCount) || stats?.comments || 0,
       url: url
     }
+
+    console.log(`✅ [YT DEBUG] Extracted analytics:`, analytics)
+    return analytics
   } catch (error) {
     console.error(`❌ Error extracting YouTube analytics:`, error)
     return null
@@ -311,30 +436,22 @@ async function updateInfluencerAnalytics(
     await query(`
       UPDATE influencers 
       SET 
-        total_followers = GREATEST(total_followers, $2),
-        total_engagement_rate = $3,
-        total_avg_views = $4,
-        estimated_promotion_views = ROUND($4 * 0.15),
-        total_engagements = $5,
-        avg_engagement_rate = $6,
-        estimated_reach = $7,
-        total_likes = $8,
-        total_comments = $9,
-        total_views = $10,
-        analytics_updated_at = NOW(),
-        modash_last_updated = NOW()
+        total_engagements = $2,
+        avg_engagement_rate = $3,
+        estimated_reach = $4,
+        total_likes = $5,
+        total_comments = $6,
+        total_views = $7,
+        analytics_updated_at = NOW()
       WHERE id = $1
     `, [
       influencerId,
-      analytics.total_views, // Use total_views as a proxy for followers if higher
-      analytics.avg_engagement_rate,
-      Math.round(analytics.total_views / analytics.content_count), // Average views per content
-      analytics.total_likes + analytics.total_comments + analytics.total_shares + analytics.total_saves, // Total engagements
-      analytics.avg_engagement_rate,
-      analytics.total_views, // Estimated reach
-      analytics.total_likes,
-      analytics.total_comments,
-      analytics.total_views
+      Math.round(analytics.total_likes + analytics.total_comments + analytics.total_shares + analytics.total_saves), // Total engagements
+      parseFloat(analytics.avg_engagement_rate.toFixed(4)), // Ensure proper decimal format
+      Math.round(analytics.total_views), // Estimated reach
+      Math.round(analytics.total_likes),
+      Math.round(analytics.total_comments),
+      Math.round(analytics.total_views)
     ])
 
     // Update platform-specific tables if they exist
@@ -349,7 +466,7 @@ async function updateInfluencerAnalytics(
     `, [
       influencerId,
       Math.round(analytics.total_views / analytics.content_count),
-      analytics.avg_engagement_rate
+      parseFloat(analytics.avg_engagement_rate.toFixed(4))
     ])
 
     console.log(`✅ Database updated successfully for influencer ${influencerId}`)

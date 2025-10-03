@@ -8,20 +8,13 @@ interface SocialAccount {
   id: string
   influencer_id: string
   platform: string
-  handle: string
-  user_id?: string
+  username: string
+  profile_url?: string
   followers: number
   engagement_rate: number
-  avg_likes: number
-  avg_comments: number
   avg_views: number
-  credibility_score: number
-  profile_picture_url?: string
-  bio?: string
-  verified: boolean
-  is_private: boolean
   is_connected: boolean
-  last_sync?: Date
+  last_synced?: Date
   created_at: Date
   updated_at: Date
 }
@@ -43,7 +36,7 @@ export class SocialAccountsCache {
   async getInfluencerAccounts(influencerId: string): Promise<SocialAccount[]> {
     try {
       const accounts = await query(`
-        SELECT * FROM influencer_social_accounts
+        SELECT * FROM influencer_platforms
         WHERE influencer_id = $1
         ORDER BY platform
       `, [influencerId])
@@ -61,10 +54,10 @@ export class SocialAccountsCache {
   async getAccountsNeedingUpdate(limit: number = 50): Promise<SocialAccount[]> {
     try {
       const accounts = await query(`
-        SELECT * FROM influencer_social_accounts
+        SELECT * FROM influencer_platforms
         WHERE is_connected = true
-          AND (last_sync IS NULL OR last_sync < NOW() - INTERVAL '${this.CACHE_DURATION_HOURS} hours')
-        ORDER BY last_sync ASC NULLS FIRST
+          AND (last_synced IS NULL OR last_synced < NOW() - INTERVAL '${this.CACHE_DURATION_HOURS} hours')
+        ORDER BY last_synced ASC NULLS FIRST
         LIMIT $1
       `, [limit])
 
@@ -82,7 +75,7 @@ export class SocialAccountsCache {
     try {
       // Get the account details
       const account = await queryOne(`
-        SELECT * FROM influencer_social_accounts WHERE id = $1
+        SELECT * FROM influencer_platforms WHERE id = $1
       `, [accountId])
 
       if (!account) {
@@ -90,45 +83,33 @@ export class SocialAccountsCache {
       }
 
       // Fetch fresh data from Modash API
-      const freshData = await this.fetchFreshData(account.handle, account.platform)
+      const freshData = await this.fetchFreshData(account.username, account.platform)
       
       if (!freshData) {
-        console.warn(`No fresh data available for ${account.handle} on ${account.platform}`)
+        console.warn(`No fresh data available for ${account.username} on ${account.platform}`)
         return account
       }
 
       // Update the account with fresh data
       const updatedAccount = await queryOne(`
-        UPDATE influencer_social_accounts
+        UPDATE influencer_platforms
         SET 
           followers = $2,
           engagement_rate = $3,
-          avg_likes = $4,
-          avg_comments = $5,
-          avg_views = $6,
-          credibility_score = $7,
-          profile_picture_url = $8,
-          bio = $9,
-          verified = $10,
-          is_private = $11,
-          last_sync = NOW()
+          avg_views = $4,
+          profile_url = $5,
+          last_synced = NOW()
         WHERE id = $1
         RETURNING *
       `, [
         accountId,
         freshData.followers,
         freshData.engagementRate,
-        freshData.avgLikes,
-        freshData.avgComments,
         freshData.avgViews,
-        freshData.credibility,
-        freshData.profilePicture,
-        freshData.bio,
-        freshData.verified,
-        freshData.isPrivate
+        freshData.profileUrl
       ])
 
-      console.log(`✅ Updated ${account.handle} on ${account.platform}`)
+      console.log(`✅ Updated ${account.username} on ${account.platform}`)
       return updatedAccount
 
     } catch (error) {
@@ -178,9 +159,9 @@ export class SocialAccountsCache {
         SELECT 
           COUNT(*) as total_accounts,
           COUNT(CASE WHEN is_connected THEN 1 END) as connected_accounts,
-          COUNT(CASE WHEN is_connected AND (last_sync IS NULL OR last_sync < NOW() - INTERVAL '${this.CACHE_DURATION_HOURS} hours') THEN 1 END) as accounts_needing_update,
-          MAX(last_sync) as last_sync_time
-        FROM influencer_social_accounts
+          COUNT(CASE WHEN is_connected AND (last_synced IS NULL OR last_synced < NOW() - INTERVAL '${this.CACHE_DURATION_HOURS} hours') THEN 1 END) as accounts_needing_update,
+          MAX(last_synced) as last_sync_time
+        FROM influencer_platforms
       `)
 
       return {
@@ -250,14 +231,8 @@ export class SocialAccountsCache {
       return {
         followers: profileData.followers || 0,
         engagementRate: profileData.engagementRate || 0,
-        avgLikes: profileData.avgLikes || 0,
-        avgComments: profileData.avgComments || 0,
         avgViews: profileData.avgViews || 0,
-        credibility: profileData.audience?.credibility || 0,
-        profilePicture: profileData.profilePicture || null,
-        bio: profileData.bio || null,
-        verified: profileData.verified || false,
-        isPrivate: profileData.isPrivate || false
+        profileUrl: profileData.url || null
       }
 
     } catch (error) {
@@ -284,9 +259,9 @@ export class SocialAccountsCache {
   async getAccountsByPlatform(platform: string): Promise<SocialAccount[]> {
     try {
       const accounts = await query(`
-        SELECT * FROM influencer_social_accounts
+        SELECT * FROM influencer_platforms
         WHERE platform = $1 AND is_connected = true
-        ORDER BY last_sync ASC NULLS FIRST
+        ORDER BY last_synced ASC NULLS FIRST
       `, [platform])
 
       return accounts
@@ -302,7 +277,7 @@ export class SocialAccountsCache {
   async disconnectAccount(accountId: string): Promise<boolean> {
     try {
       const result = await queryOne(`
-        UPDATE influencer_social_accounts
+        UPDATE influencer_platforms
         SET is_connected = false, updated_at = NOW()
         WHERE id = $1
         RETURNING id
@@ -321,7 +296,7 @@ export class SocialAccountsCache {
   async reconnectAccount(accountId: string): Promise<boolean> {
     try {
       const result = await queryOne(`
-        UPDATE influencer_social_accounts
+        UPDATE influencer_platforms
         SET is_connected = true, updated_at = NOW()
         WHERE id = $1
         RETURNING id
