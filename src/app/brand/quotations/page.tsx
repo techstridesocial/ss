@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { BrandProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { ModernBrandHeader } from '@/components/nav/ModernBrandHeader'
+import ModernBrandHeader from '@/components/nav/ModernBrandHeader'
 import { FileText, Clock, CheckCircle, XCircle, Calendar, DollarSign, Users, ChevronRight, Plus, Send } from 'lucide-react'
 
 interface Quotation {
