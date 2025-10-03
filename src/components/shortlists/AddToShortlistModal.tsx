@@ -32,6 +32,7 @@ export function AddToShortlistModal({
   const [newShortlistDescription, setNewShortlistDescription] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [addingToShortlists, setAddingToShortlists] = useState<Set<string>>(new Set())
+  const [isQuickAdding, setIsQuickAdding] = useState(false)
 
   const { 
     shortlists, 
@@ -98,15 +99,30 @@ export function AddToShortlistModal({
     }
   }
 
-  const handleQuickAdd = () => {
-    // Add to default shortlist quickly
-    const defaultShortlist = shortlists.find(s => s.id === 'default')
-    if (defaultShortlist) {
-      handleAddToShortlist('default')
-      setTimeout(() => {
-        onSuccess?.()
-        onClose()
-      }, 400)
+  const handleQuickAdd = async () => {
+    setIsQuickAdding(true)
+    try {
+      // Add to default shortlist quickly
+      const defaultShortlist = shortlists.find(s => s.id === 'default')
+      if (defaultShortlist) {
+        await handleAddToShortlist('default')
+        setTimeout(() => {
+          onSuccess?.()
+          onClose()
+        }, 400)
+      } else {
+        // If no default shortlist exists, create one first
+        const newShortlistId = await createShortlist('My Shortlist', 'Default shortlist for saved influencers')
+        await addInfluencerToShortlist(newShortlistId, influencer)
+        setTimeout(() => {
+          onSuccess?.()
+          onClose()
+        }, 400)
+      }
+    } catch (error) {
+      console.error('Error in quick add:', error)
+    } finally {
+      setIsQuickAdding(false)
     }
   }
 
@@ -163,10 +179,20 @@ export function AddToShortlistModal({
           <div className="p-4 border-b border-gray-100">
             <button
               onClick={handleQuickAdd}
-              className="w-full p-3 bg-pink-50 hover:bg-pink-100 border-2 border-dashed border-pink-200 rounded-lg transition-colors flex items-center justify-center gap-2 text-pink-700 font-medium"
+              disabled={isQuickAdding}
+              className="w-full p-3 bg-pink-50 hover:bg-pink-100 border-2 border-dashed border-pink-200 rounded-lg transition-colors flex items-center justify-center gap-2 text-pink-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Heart size={16} />
-              Quick Add to Default Shortlist
+              {isQuickAdding ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600"></div>
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Heart size={16} />
+                  Quick Add to Default Shortlist
+                </>
+              )}
             </button>
           </div>
 
