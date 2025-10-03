@@ -155,12 +155,56 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
     }
   }
 
+  // Migrate localStorage shortlists to database
+  const migrateLocalStorageToDatabase = async () => {
+    if (!userId) return
+
+    try {
+      const savedShortlists = localStorage.getItem('brandShortlists')
+      if (!savedShortlists) return
+
+      const localShortlists = JSON.parse(savedShortlists)
+      console.log('🔄 Found localStorage shortlists, migrating to database...', localShortlists.length)
+
+      for (const localShortlist of localShortlists) {
+        try {
+          // Create shortlist in database
+          const newShortlistId = await createShortlist(
+            localShortlist.name,
+            localShortlist.description
+          )
+
+          // Add all influencers to the new shortlist
+          for (const influencer of localShortlist.influencers) {
+            await addInfluencerToShortlist(newShortlistId, influencer)
+          }
+
+          console.log(`✅ Migrated shortlist: ${localShortlist.name}`)
+        } catch (error) {
+          console.error(`❌ Failed to migrate shortlist: ${localShortlist.name}`, error)
+        }
+      }
+
+      // Clear localStorage after successful migration
+      localStorage.removeItem('brandShortlists')
+      console.log('✅ Migration complete, localStorage cleared')
+
+      // Reload shortlists from database
+      await loadShortlists()
+    } catch (error) {
+      console.error('Migration error:', error)
+    }
+  }
+
   // Load data when auth is ready
   useEffect(() => {
     if (!isLoaded) return
     
     if (userId) {
-      loadShortlists()
+      loadShortlists().then(() => {
+        // After loading, check if we need to migrate localStorage data
+        migrateLocalStorageToDatabase()
+      })
     } else {
       // Load legacy data for non-authenticated users
       loadFromLocalStorage()
