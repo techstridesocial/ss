@@ -1,38 +1,72 @@
-// Simple script to run the SQL to clear content links
-const fs = require('fs')
-const path = require('path')
+const { Pool } = require('pg');
+require('dotenv').config({ path: '.env.local' });
 
-async function runClearContentLinksSQL() {
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+async function clearAllContentLinks() {
+  const client = await pool.connect();
+  
   try {
-    console.log('🧹 Running content links cleanup SQL...')
+    console.log('🗑️  Starting to clear all content links...');
     
-    // Read the comprehensive SQL file
-    const sqlPath = path.join(__dirname, 'clear-all-content-links.sql')
-    const sql = fs.readFileSync(sqlPath, 'utf8')
+    // First, let's see how many content links exist (safer query)
+    const countResult = await client.query(`
+      SELECT 
+        COUNT(*) as total_campaign_influencers,
+        COUNT(CASE WHEN content_links IS NOT NULL AND content_links::text != '[]' AND content_links::text != '' THEN 1 END) as with_content_links
+      FROM campaign_influencers
+    `);
     
-    console.log('📋 SQL script loaded successfully')
-    console.log('\n' + '='.repeat(60))
-    console.log('📝 EXECUTE THIS SQL IN YOUR DATABASE:')
-    console.log('='.repeat(60))
-    console.log(sql)
-    console.log('='.repeat(60))
+    console.log('📊 Current state:');
+    console.log(`   Total campaign influencers: ${countResult.rows[0].total_campaign_influencers}`);
+    console.log(`   With content links: ${countResult.rows[0].with_content_links}`);
     
-    console.log('\n✅ Instructions:')
-    console.log('1. Copy the SQL above')
-    console.log('2. Run it in your database (psql, pgAdmin, or any PostgreSQL client)')
-    console.log('3. The script will show before/after counts and clear all content links')
+    if (countResult.rows[0].with_content_links === '0') {
+      console.log('✅ No content links found to clear.');
+      return;
+    }
     
-    console.log('\n🔧 Alternative: Use the API endpoint (requires authentication):')
-    console.log('POST http://localhost:3004/api/admin/clear-content-links')
+    // Clear all content links (safer approach)
+    const updateResult = await client.query(`
+      UPDATE campaign_influencers 
+      SET content_links = NULL
+      WHERE content_links IS NOT NULL
+    `);
+    
+    console.log(`✅ Cleared content links from ${updateResult.rowCount} campaign influencers`);
+    
+    // Verify the cleanup
+    const verifyResult = await client.query(`
+      SELECT 
+        COUNT(*) as total_campaign_influencers,
+        COUNT(CASE WHEN content_links IS NOT NULL THEN 1 END) as with_content_links
+      FROM campaign_influencers
+    `);
+    
+    console.log('📊 After cleanup:');
+    console.log(`   Total campaign influencers: ${verifyResult.rows[0].total_campaign_influencers}`);
+    console.log(`   With content links: ${verifyResult.rows[0].with_content_links}`);
+    
+    console.log('🎉 All content links have been cleared!');
     
   } catch (error) {
-    console.error('❌ Error:', error.message)
+    console.error('❌ Error clearing content links:', error);
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  runClearContentLinksSQL()
-}
-
-module.exports = { runClearContentLinksSQL }
+clearAllContentLinks()
+  .then(() => {
+    console.log('✅ Script completed successfully');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Script failed:', error);
+    process.exit(1);
+  });
