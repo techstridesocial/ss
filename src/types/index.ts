@@ -121,6 +121,7 @@ export interface ContentSubmissionStats {
 
 export interface Campaign {
   id: string;
+  campaignId?: string; // Manual campaign ID for external tracking
   name: string;
   brand: string;
   status: CampaignStatus;

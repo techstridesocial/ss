@@ -148,21 +148,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  // Handle URL state for influencer selection
+  // Handle platform parameter from URL only
   useEffect(() => {
-    const influencerId = urlSearchParams.get('influencer')
     const platform = urlSearchParams.get('platform')
-    
-    if (influencerId && influencerId !== selectedInfluencerDetail?.id) {
-      // Load influencer from URL
-      handleInfluencerFromUrl(influencerId)
-    } else if (!influencerId && detailPanelOpen) {
-      // Close panel if no influencer in URL
-      setDetailPanelOpen(false)
-      setSelectedInfluencerDetail(null)
-      onPanelStateChange?.(false)
-    }
-    
     if (platform) {
       setSelectedPlatform(platform)
     }
@@ -226,6 +214,20 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   useEffect(() => {
     loadInfluencers()
   }, [])
+
+  // Handle URL parameters on page load
+  useEffect(() => {
+    const influencerId = urlSearchParams.get('influencer')
+    if (influencerId && influencers.length > 0) {
+      const influencer = influencers.find(inf => inf.id === influencerId)
+      if (influencer) {
+        // Open the dashboard panel for this influencer (not analytics)
+        setSelectedDashboardInfluencer(influencer)
+        setDashboardPanelOpen(true)
+        onPanelStateChange?.(true)
+      }
+    }
+  }, [urlSearchParams, influencers, onPanelStateChange])
 
   // Define the influencer type for consistency
   type InfluencerType = typeof influencers[0]
@@ -735,34 +737,37 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     return colors[platform] || 'bg-gray-100 text-gray-800'
   }
 
-  const handleViewInfluencer = async (influencer: any) => {
-    // Use URL state management instead of directly setting panel state
-    // Handle platform data structure from API: [{platform: 'INSTAGRAM', ...}, ...]
-    let defaultPlatform = 'instagram'
-    
-    if (influencer.platforms && Array.isArray(influencer.platforms) && influencer.platforms.length > 0) {
-      // API returns array of platform objects: [{platform: 'INSTAGRAM', username: '...', ...}]
-      const firstPlatform = influencer.platforms[0]
-      if (firstPlatform && firstPlatform.platform) {
-        defaultPlatform = firstPlatform.platform.toLowerCase()
-      }
-    }
-    
-    updateUrl(influencer.id, defaultPlatform)
-    
-    // The actual panel opening will be handled by the useEffect that watches URL changes
+  const handleViewInfluencer = (influencer: any) => {
+    console.log('👤 Viewing influencer analytics:', influencer.display_name)
+    // Open analytics panel (no URL change)
+    setSelectedInfluencerDetail(influencer)
+    setDetailPanelOpen(true)
     onPanelStateChange?.(true)
   }
 
   const handleViewDashboardInfo = (influencer: any) => {
     console.log('👤 Viewing dashboard info for:', influencer.display_name)
+    // Update URL with influencer ID
+    const url = new URL(window.location.href)
+    url.searchParams.set('influencer', influencer.id)
+    window.history.pushState({}, '', url.toString())
+    
+    // Close any other panels first
+    setDetailPanelOpen(false)
+    setSelectedInfluencerDetail(null)
+    
+    // Open ONLY the dashboard panel
     setSelectedDashboardInfluencer(influencer)
     setDashboardPanelOpen(true)
     onPanelStateChange?.(true)
   }
 
   const handleClosePanels = () => {
-    updateUrl(null) // Clear URL
+    // Clear URL parameter
+    const url = new URL(window.location.href)
+    url.searchParams.delete('influencer')
+    window.history.replaceState({}, '', url.toString())
+    
     setDetailPanelOpen(false)
     setSelectedInfluencerDetail(null)
     setSelectedInfluencer(null)
@@ -1050,7 +1055,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             placeholder="Search influencers by name, niche, or location..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400 font-medium"
+            className={`w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 placeholder:text-gray-400 font-medium ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'transition-all duration-300'}`}
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1306,7 +1311,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             <button
               key={tab.key}
               onClick={() => handleTabChange(tab.key as any)}
-              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'transition-all duration-200'} ${
                 activeTab === tab.key
                   ? 'bg-white text-gray-900 shadow-sm'
                   : tab.urgent && tab.count > 0
@@ -1383,12 +1388,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </tr>
                 ))
               ) : paginatedInfluencers.map((influencer) => (
-                <tr key={influencer.id} className={`hover:bg-white/70 transition-colors duration-150 ${
+                <tr key={influencer.id} className={`${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-white/70 transition-colors duration-150'} ${
                   needsAssignment(influencer) ? 'bg-orange-50 border-l-4 border-orange-400' : ''
                 }`}>
                   {/* Influencer Info */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                    <div 
+                      className={`flex items-center cursor-pointer rounded-lg p-2 -m-2 ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-gray-50 transition-colors duration-200'}`}
+                      onClick={() => handleViewDashboardInfo(influencer)}
+                      title="Click to view dashboard info"
+                    >
                       <div className="flex-shrink-0 h-12 w-12">
                         {influencer.avatar_url ? (
                           <img 
@@ -1542,29 +1551,26 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
                   {/* Actions */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
                       {/* Analytics Button */}
                       <button
                         onClick={() => handleViewInfluencer(influencer)}
                         disabled={isLoading}
-                        className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
                         title="View Analytics & Performance"
                       >
-                        <BarChart3 size={14} className="mr-1" />
-                        Analytics
+                        <BarChart3 size={16} />
                       </button>
                       
                       {/* Dashboard Info Button */}
                       <button
                         onClick={() => handleViewDashboardInfo(influencer)}
                         disabled={isLoading}
-                        className="flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
                         title="View Dashboard Info & Account Status"
                       >
-                        <User size={14} className="mr-1" />
-                        Dashboard
+                        <User size={16} />
                       </button>
-                      
                       
                       {/* Delete Button */}
                       <button
@@ -1573,7 +1579,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                           setDeleteModalOpen(true)
                         }}
                         disabled={isLoading}
-                        className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1"
+                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
                         title="Delete Influencer"
                       >
                         <Trash2 size={16} />

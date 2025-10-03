@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
-import { X, User, Mail, Phone, MapPin, Calendar, DollarSign, Users, CheckCircle, AlertTriangle, Clock, Settings, ChevronDown, ChevronUp, Edit3, Save, X as XIcon, Check } from 'lucide-react'
+import { X, User, Mail, Phone, MapPin, Calendar, DollarSign, Users, CheckCircle, AlertTriangle, Clock, Settings, ChevronDown, ChevronUp, Edit3, Save, X as XIcon, Check, CreditCard, Shield, Eye, EyeOff } from 'lucide-react'
 import { useUserRole } from '../../lib/auth/hooks'
+import { PaymentMethodsSection } from './PaymentMethodsSection'
 
 interface DashboardInfoPanelProps {
   influencer: any
@@ -594,15 +595,9 @@ export default function DashboardInfoPanel({
                 </div>
               </PremiumSection>
 
-              {/* Internal Notes Section */}
-              {influencer.notes && (
-                <PremiumSection title="Internal Notes" defaultOpen={false}>
-                  <div className="bg-yellow-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 leading-relaxed">{influencer.notes}</p>
-                  </div>
-                </PremiumSection>
-              )}
-              
+              {/* Payment Methods Section */}
+              <PaymentMethodsSection influencer={influencer} />
+
               {/* Bottom spacing for better scrolling experience */}
               <div className="h-8"></div>
             </div>

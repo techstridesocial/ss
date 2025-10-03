@@ -48,6 +48,7 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
     
     return result.map((row: any) => ({
       id: row.id,
+      campaignId: row.campaign_id || undefined,
       name: row.name || 'Untitled Campaign',
       brand: row.brand_name || row.brand || 'Unknown Brand',
       status: (row.status || 'DRAFT') as CampaignStatus,
@@ -112,6 +113,7 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
   const row = result[0];
   return {
     id: row.id,
+    campaignId: row.campaign_id || undefined,
     name: row.name,
     brand: row.brand,
     status: row.status as CampaignStatus,
@@ -286,6 +288,10 @@ export async function updateCampaign(id: string, updates: Partial<Campaign>): Pr
   if (updates.deliverables !== undefined) {
     setClauses.push(`deliverables = $${paramCount++}`);
     values.push(JSON.stringify(updates.deliverables));
+  }
+  if (updates.campaignId !== undefined) {
+    setClauses.push(`campaign_id = $${paramCount++}`);
+    values.push(updates.campaignId);
   }
 
   if (setClauses.length === 0) {

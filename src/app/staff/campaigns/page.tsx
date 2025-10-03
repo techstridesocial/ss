@@ -99,7 +99,22 @@ function CampaignsPageClient() {
     platform: 'all',
     niche: '',
     budgetRange: '',
-    dateRange: '',
+    startDate: '',
+    endDate: '',
+    timelineStatus: 'all', // New filter for timeline-based status
+    performance: ''
+  })
+  
+  // Applied filters state (what's actually being used for filtering)
+  const [appliedFilters, setAppliedFilters] = useState({
+    status: 'all',
+    brand: '',
+    platform: 'all',
+    niche: '',
+    budgetRange: '',
+    startDate: '',
+    endDate: '',
+    timelineStatus: 'all',
     performance: ''
   })
   const [searchTerm, setSearchTerm] = useState('')
@@ -118,17 +133,66 @@ function CampaignsPageClient() {
   const applyCampaignFilters = (campaigns: Campaign[]) => {
     return campaigns.filter(campaign => {
       // Status filter
-      if (filters.status && filters.status !== 'all' && campaign.status.toLowerCase() !== filters.status.toLowerCase()) return false
+      if (appliedFilters.status && appliedFilters.status !== 'all' && campaign.status.toLowerCase() !== appliedFilters.status.toLowerCase()) return false
       
       // Brand filter
-      if (filters.brand && !campaign.brand.toLowerCase().includes(filters.brand.toLowerCase())) return false
+      if (appliedFilters.brand && !campaign.brand.toLowerCase().includes(appliedFilters.brand.toLowerCase())) return false
       
       // Platform filter
-      if (filters.platform && filters.platform !== 'all' && !campaign.requirements.platforms.includes(filters.platform)) return false
+      if (appliedFilters.platform && appliedFilters.platform !== 'all' && !campaign.requirements.platforms.includes(appliedFilters.platform)) return false
       
       // Search term
       if (searchTerm && !campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !campaign.brand.toLowerCase().includes(searchTerm.toLowerCase())) return false
+          !campaign.brand.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !(campaign.campaignId && campaign.campaignId.toLowerCase().includes(searchTerm.toLowerCase()))) return false
+      
+      // Date filters - using the actual nested timeline structure from the API
+      if (appliedFilters.startDate) {
+        const campaignStartDate = new Date(campaign.timeline?.startDate || campaign.start_date)
+        // Parse the filter date correctly (YYYY-MM-DD format from HTML date input)
+        const filterStartDate = new Date(appliedFilters.startDate + 'T00:00:00')
+        // Show campaigns that start on or after the filter date
+        if (campaignStartDate < filterStartDate) return false
+      }
+      
+      if (appliedFilters.endDate) {
+        const campaignEndDate = new Date(campaign.timeline?.endDate || campaign.end_date)
+        // Parse the filter date correctly (YYYY-MM-DD format from HTML date input)
+        const filterEndDate = new Date(appliedFilters.endDate + 'T23:59:59')
+        // Show campaigns that end on or before the filter date
+        if (campaignEndDate > filterEndDate) return false
+      }
+      
+      // Timeline status filter - based on current date vs campaign dates
+      if (appliedFilters.timelineStatus && appliedFilters.timelineStatus !== 'all') {
+        const now = new Date()
+        const campaignStartDate = new Date(campaign.timeline?.startDate || campaign.start_date)
+        const campaignEndDate = new Date(campaign.timeline?.endDate || campaign.end_date)
+        
+        switch (appliedFilters.timelineStatus) {
+          case 'upcoming':
+            // Campaigns that haven't started yet
+            if (campaignStartDate <= now) return false
+            break
+          case 'active':
+            // Campaigns currently running
+            if (campaignStartDate > now || campaignEndDate < now) return false
+            break
+          case 'ended':
+            // Campaigns that have ended
+            if (campaignEndDate >= now) return false
+            break
+          case 'starting_soon':
+            // Campaigns starting within next 7 days
+            const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+            if (campaignStartDate < now || campaignStartDate > weekFromNow) return false
+            break
+          case 'ending_soon':
+            // Campaigns ending within next 7 days
+            if (campaignEndDate < now || campaignEndDate > weekFromNow) return false
+            break
+        }
+      }
       
       return true
     })
@@ -176,7 +240,7 @@ function CampaignsPageClient() {
       }
       return 0
     })
-  }, [campaigns, sortConfig, filters, searchTerm])
+  }, [campaigns, sortConfig, appliedFilters, searchTerm])
 
   // Pagination calculations
   const totalCampaigns = sortedCampaigns.length
@@ -333,6 +397,11 @@ function CampaignsPageClient() {
     }
   }
 
+  const applyFilters = () => {
+    setAppliedFilters({ ...filters })
+    setCurrentPage(1)
+  }
+
   const clearFilters = () => {
     setFilters({
       status: 'all',
@@ -340,11 +409,56 @@ function CampaignsPageClient() {
       platform: 'all',
       niche: '',
       budgetRange: '',
-      dateRange: '',
+      startDate: '',
+      endDate: '',
+      timelineStatus: 'all',
+      performance: ''
+    })
+    setAppliedFilters({
+      status: 'all',
+      brand: '',
+      platform: 'all',
+      niche: '',
+      budgetRange: '',
+      startDate: '',
+      endDate: '',
+      timelineStatus: 'all',
       performance: ''
     })
     setSearchTerm('')
     setCurrentPage(1)
+  }
+
+  // Check if any filters are active
+  const hasActiveFilters = () => {
+    return (
+      appliedFilters.status !== 'all' ||
+      appliedFilters.brand !== '' ||
+      appliedFilters.platform !== 'all' ||
+      appliedFilters.niche !== '' ||
+      appliedFilters.budgetRange !== '' ||
+      appliedFilters.startDate !== '' ||
+      appliedFilters.endDate !== '' ||
+      appliedFilters.timelineStatus !== 'all' ||
+      appliedFilters.performance !== '' ||
+      searchTerm !== ''
+    )
+  }
+
+  // Get count of active filters
+  const getActiveFilterCount = () => {
+    let count = 0
+    if (appliedFilters.status !== 'all') count++
+    if (appliedFilters.brand !== '') count++
+    if (appliedFilters.platform !== 'all') count++
+    if (appliedFilters.niche !== '') count++
+    if (appliedFilters.budgetRange !== '') count++
+    if (appliedFilters.startDate !== '') count++
+    if (appliedFilters.endDate !== '') count++
+    if (appliedFilters.timelineStatus !== 'all') count++
+    if (appliedFilters.performance !== '') count++
+    if (searchTerm !== '') count++
+    return count
   }
 
   // Calculate dashboard stats
@@ -483,7 +597,7 @@ function CampaignsPageClient() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search campaigns, brands, or descriptions..."
+                    placeholder="Search campaigns, brands, campaign IDs, or descriptions..."
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-10"
@@ -525,6 +639,11 @@ function CampaignsPageClient() {
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Advanced Filters
+                {hasActiveFilters() && (
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-full">
+                    {getActiveFilterCount()}
+                  </span>
+                )}
               </Button>
               <Button
                 onClick={fetchCampaigns}
@@ -538,11 +657,80 @@ function CampaignsPageClient() {
           </CardContent>
         </Card>
 
+        {/* Active Filters Display */}
+        {hasActiveFilters() && (
+          <Card className="mb-6 border-slate-200 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100">
+                    <Filter className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-slate-900">
+                      {getActiveFilterCount()} filter{getActiveFilterCount() !== 1 ? 's' : ''} applied
+                    </span>
+                    <p className="text-xs text-slate-500">
+                      {sortedCampaigns.length} campaign{sortedCampaigns.length !== 1 ? 's' : ''} found
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={clearFilters}
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear All
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {appliedFilters.status !== 'all' && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                    Status: <span className="ml-1 font-semibold">{appliedFilters.status}</span>
+                  </span>
+                )}
+                {appliedFilters.brand && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                    Brand: <span className="ml-1 font-semibold">{appliedFilters.brand}</span>
+                  </span>
+                )}
+                {appliedFilters.platform !== 'all' && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                    Platform: <span className="ml-1 font-semibold capitalize">{appliedFilters.platform}</span>
+                  </span>
+                )}
+                {appliedFilters.startDate && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    From: <span className="ml-1 font-semibold">{appliedFilters.startDate}</span>
+                  </span>
+                )}
+                {appliedFilters.endDate && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+                    To: <span className="ml-1 font-semibold">{appliedFilters.endDate}</span>
+                  </span>
+                )}
+                {appliedFilters.timelineStatus !== 'all' && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                    Timeline: <span className="ml-1 font-semibold capitalize">{appliedFilters.timelineStatus.replace(/_/g, ' ')}</span>
+                  </span>
+                )}
+                {searchTerm && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    Search: <span className="ml-1 font-semibold">"{searchTerm}"</span>
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Advanced Filters */}
         {showFilters && (
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Brand Filter</label>
                   <Input
@@ -550,6 +738,38 @@ function CampaignsPageClient() {
                     value={filters.brand}
                     onChange={(e) => handleFilterChange('brand', e.target.value)}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date (From)</label>
+                  <Input
+                    type="date"
+                    value={filters.startDate}
+                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date (To)</label>
+                  <Input
+                    type="date"
+                    value={filters.endDate}
+                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Timeline Status</label>
+                  <Select value={filters.timelineStatus} onValueChange={(value) => handleFilterChange('timelineStatus', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by timeline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Campaigns</SelectItem>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="active">Currently Active</SelectItem>
+                      <SelectItem value="ended">Ended</SelectItem>
+                      <SelectItem value="starting_soon">Starting Soon (7 days)</SelectItem>
+                      <SelectItem value="ending_soon">Ending Soon (7 days)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Show per page</label>
@@ -564,11 +784,17 @@ function CampaignsPageClient() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end space-x-2">
+                  <Button
+                    onClick={applyFilters}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Apply Filters
+                  </Button>
                   <Button
                     onClick={clearFilters}
                     variant="outline"
-                    className="w-full"
+                    className="flex-1"
                   >
                     Clear Filters
                   </Button>
@@ -604,6 +830,9 @@ function CampaignsPageClient() {
                           <ChevronDown size={12} className={`${sortConfig.key === 'name' && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-400'}`} />
                         </div>
                       </div>
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Campaign ID
                     </th>
                     <th 
                       className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
@@ -677,6 +906,13 @@ function CampaignsPageClient() {
                       <div>
                         <div className="text-sm font-semibold text-slate-900 mb-1">{campaign.name}</div>
                         <div className="text-xs text-slate-500 line-clamp-1">{campaign.description}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="text-sm font-medium text-slate-900">
+                        {campaign.campaignId || (
+                          <span className="text-slate-400 italic">No ID set</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-5">

@@ -48,6 +48,7 @@ import { GeographicReachSection } from './sections/GeographicReachSection'
 
 
 
+
 // Helper function to map contact types to our platform types
 const mapContactToPlatform = (contactType: string): 'instagram' | 'tiktok' | 'youtube' | null => {
   const mapping: Record<string, 'instagram' | 'tiktok' | 'youtube'> = {
@@ -705,6 +706,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   <PremiumAnalyticsSection influencer={influencer} sectionType="analytics" />
                   <PremiumAnalyticsSection influencer={influencer} sectionType="growth" />
                   <PremiumAnalyticsSection influencer={influencer} sectionType="insights" />
+                  
                   
 
 

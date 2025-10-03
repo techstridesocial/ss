@@ -23,6 +23,94 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString() // Use commas for numbers under 1000
 }
 
+// Campaign ID Field Component
+interface CampaignIdFieldProps {
+  campaignId?: string
+  campaignUuid: string
+  onUpdate: (newId: string) => void
+}
+
+const CampaignIdField = ({ campaignId, campaignUuid, onUpdate }: CampaignIdFieldProps) => {
+  const [isEditing, setIsEditing] = useState(false)
+  const [inputValue, setInputValue] = useState(campaignId || '')
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSave = async () => {
+    if (inputValue.trim() === campaignId) {
+      setIsEditing(false)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await onUpdate(inputValue.trim())
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Error updating campaign ID:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setInputValue(campaignId || '')
+    setIsEditing(false)
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-600 uppercase tracking-wide flex items-center">
+        <Tag size={16} className="mr-2" />
+        Campaign ID
+      </label>
+      {isEditing ? (
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Enter campaign ID"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={isLoading}
+          />
+          <button
+            onClick={handleSave}
+            disabled={isLoading}
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={isLoading}
+            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-900">
+              {campaignId || 'No ID set'}
+            </span>
+            {!campaignId && (
+              <span className="text-xs text-gray-500 italic">Click to add</span>
+            )}
+          </div>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            title="Edit Campaign ID"
+          >
+            <Edit3 size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Enhanced Section component with animation
 const Section = ({ 
   title, 
@@ -267,6 +355,37 @@ export default function CampaignDetailPanel({
   const { getToken } = useAuth()
 
   console.log('CampaignDetailPanel rendered with:', { isOpen, campaign: campaign?.name })
+
+  // Handle Campaign ID update
+  const handleCampaignIdUpdate = async (newCampaignId: string) => {
+    if (!campaign?.id) return
+    
+    setIsLoading(true)
+    try {
+      const token = await getToken()
+      const response = await fetch(`/api/campaigns/${campaign.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ campaignId: newCampaignId })
+      })
+      
+      if (response.ok) {
+        console.log('✅ Campaign ID updated successfully')
+        // Optionally show a success message or refresh the campaign data
+      } else {
+        console.error('❌ Failed to update campaign ID')
+        alert('Failed to update campaign ID. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error updating campaign ID:', error)
+      alert('Error updating campaign ID. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Platform detection functions
   const getPlatformFromUrl = (url: string): string => {
@@ -1468,6 +1587,11 @@ export default function CampaignDetailPanel({
                             label="Campaign Name"
                             value={campaign.name}
                             icon={<Star size={18} />}
+                          />
+                          <CampaignIdField
+                            campaignId={campaign.campaignId}
+                            campaignUuid={campaign.id}
+                            onUpdate={handleCampaignIdUpdate}
                           />
                           <InfoField
                             label="Budget"
