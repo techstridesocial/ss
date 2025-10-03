@@ -51,7 +51,8 @@ export default function ModernBrandHeader() {
   const navItems = [
     { href: '/brand/campaigns', label: 'Campaigns' },
     { href: '/brand/influencers', label: 'Influencers' },
-    { href: '/brand/shortlists', label: 'Shortlists' }
+    { href: '/brand/shortlists', label: 'Shortlists' },
+    { href: '/brand/quotations', label: 'Quotations' }
   ]
 
   const handleSignOut = () => {

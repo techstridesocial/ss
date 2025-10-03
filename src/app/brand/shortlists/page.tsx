@@ -29,6 +29,7 @@ import {
   DeleteShortlistModal 
 } from '../../../components/shortlists/ShortlistManagement'
 import CreateCampaignFromShortlistsModal from '../../../components/campaigns/CreateCampaignFromShortlistsModal'
+import RequestQuoteModal from '../../../components/campaigns/RequestQuoteModal'
 
 // Helper function to format numbers
 const formatNumber = (num: number): string => {
@@ -129,6 +130,7 @@ export default function BrandShortlistsPage() {
   const [selectedShortlist, setSelectedShortlist] = useState<Shortlist | null>(null)
   const [createCampaignModalOpen, setCreateCampaignModalOpen] = useState(false)
   const [selectedShortlistsForCampaign, setSelectedShortlistsForCampaign] = useState<string[]>([])
+  const [requestQuoteModalOpen, setRequestQuoteModalOpen] = useState(false)
   
   // Selected shortlist to view
   const [currentShortlistId, setCurrentShortlistId] = useState<string>('default')
@@ -242,11 +244,8 @@ export default function BrandShortlistsPage() {
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => {
-                    setSelectedShortlistsForCampaign([])
-                    setCreateCampaignModalOpen(true)
-                  }}
-                  disabled={shortlists.length === 0}
+                  onClick={() => setRequestQuoteModalOpen(true)}
+                  disabled={shortlists.length === 0 || shortlists.reduce((total, s) => total + s.influencers.length, 0) === 0}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send size={16} />
@@ -573,6 +572,13 @@ export default function BrandShortlistsPage() {
           }}
           onSave={handleCreateCampaign}
           preSelectedShortlists={selectedShortlistsForCampaign}
+        />
+
+        {/* Request Quote Modal */}
+        <RequestQuoteModal
+          isOpen={requestQuoteModalOpen}
+          onClose={() => setRequestQuoteModalOpen(false)}
+          selectedInfluencers={shortlists.flatMap(s => s.influencers)}
         />
       </div>
     </BrandProtectedRoute>

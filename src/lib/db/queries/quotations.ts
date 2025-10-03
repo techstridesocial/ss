@@ -285,6 +285,127 @@ export async function updateQuotation(id: string, updates: Partial<Quotation>): 
   return getQuotationById(id);
 }
 
+// Get all quotations for a specific brand
+export async function getBrandQuotations(brandId: string): Promise<Quotation[]> {
+  const result = await query(`
+    SELECT 
+      q.*,
+      COUNT(qi.id) as influencer_count
+    FROM quotations q
+    LEFT JOIN quotation_influencers qi ON q.id = qi.quotation_id
+    WHERE q.brand_id = $1
+    GROUP BY q.id
+    ORDER BY q.created_at DESC
+  `, [brandId]);
+
+  return Promise.all(result.map(async (row) => {
+    // Get influencers for this quotation
+    const influencersResult = await query(`
+      SELECT * FROM quotation_influencers WHERE quotation_id = $1
+    `, [row.id]);
+
+    return {
+      id: row.id,
+      brandName: row.brand_name || 'Unknown Brand',
+      brandEmail: '', // Not stored in current schema
+      industry: '', // Not stored in current schema
+      campaignDescription: row.description || row.campaign_name || '',
+      targetAudience: row.target_demographics || '',
+      budget: parseFloat(row.total_quote || '0'),
+      timeline: row.campaign_duration || '',
+      deliverables: safeJsonParse(row.deliverables, []),
+      platforms: [], // Not stored in current schema
+      status: row.status || 'PENDING_REVIEW',
+      submittedAt: row.requested_at || row.created_at,
+      reviewedAt: row.quoted_at || row.approved_at || row.rejected_at,
+      reviewedBy: undefined,
+      notes: row.quote_notes || '',
+      influencers: influencersResult.map(inf => ({
+        id: inf.id,
+        quotationId: inf.quotation_id,
+        influencerId: inf.influencer_id,
+        proposedRate: parseFloat(inf.quoted_price || '0'),
+        notes: inf.notes || '',
+        createdAt: inf.created_at,
+        updatedAt: inf.created_at
+      })),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }));
+}
+
+// Create a new quotation request from a brand
+export async function createQuotationRequest(data: {
+  brand_id: string;
+  brand_name: string;
+  campaign_name: string;
+  description: string;
+  influencer_count: number;
+  budget_range?: string;
+  campaign_duration?: string;
+  deliverables?: string[];
+  target_demographics?: string;
+  selected_influencers?: string[];
+}): Promise<Quotation> {
+  const result = await query(`
+    INSERT INTO quotations (
+      brand_id, brand_name, campaign_name, description, 
+      influencer_count, budget_range, campaign_duration, 
+      deliverables, target_demographics, status
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    RETURNING *
+  `, [
+    data.brand_id,
+    data.brand_name,
+    data.campaign_name,
+    data.description,
+    data.influencer_count,
+    data.budget_range || null,
+    data.campaign_duration || null,
+    JSON.stringify(data.deliverables || []),
+    data.target_demographics || null,
+    'PENDING_REVIEW'
+  ]);
+
+  const quotation = result[0];
+
+  // If influencers are selected, add them to quotation_influencers
+  if (data.selected_influencers && data.selected_influencers.length > 0) {
+    for (const influencerId of data.selected_influencers) {
+      // Get influencer details
+      const infResult = await query(`
+        SELECT 
+          i.id, i.display_name, i.total_followers, i.total_engagement_rate,
+          ip.platform
+        FROM influencers i
+        LEFT JOIN influencer_platforms ip ON i.id = ip.influencer_id
+        WHERE i.id = $1
+        LIMIT 1
+      `, [influencerId]);
+
+      if (infResult.length > 0) {
+        const inf = infResult[0];
+        await query(`
+          INSERT INTO quotation_influencers (
+            quotation_id, influencer_id, influencer_name, 
+            platform, followers, engagement
+          ) VALUES ($1, $2, $3, $4, $5, $6)
+        `, [
+          quotation.id,
+          inf.id,
+          inf.display_name || 'Unknown',
+          inf.platform || 'INSTAGRAM',
+          inf.total_followers ? `${(inf.total_followers / 1000).toFixed(1)}K` : '0',
+          inf.total_engagement_rate ? `${(inf.total_engagement_rate * 100).toFixed(1)}%` : '0%'
+        ]);
+      }
+    }
+  }
+
+  return getQuotationById(quotation.id) as Promise<Quotation>;
+}
+
 export async function deleteQuotation(id: string): Promise<boolean> {
   // First delete related quotation_influencers
   await query('DELETE FROM quotation_influencers WHERE quotation_id = $1', [id]);
