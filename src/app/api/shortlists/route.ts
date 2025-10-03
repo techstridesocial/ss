@@ -218,48 +218,66 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/shortlists - Delete shortlist
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    console.log('🗑️ DELETE API called')
+    const authResult = await auth()
+    const userId = authResult?.userId
+    
+    console.log('👤 User ID:', userId)
     
     if (!userId) {
+      console.error('❌ No userId found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Verify user is a brand
     const userRole = await getCurrentUserRole()
+    console.log('👔 User role:', userRole)
+    
     if (!userRole || userRole !== 'BRAND') {
+      console.error('❌ Not a brand user')
       return NextResponse.json({ error: 'Forbidden - Brand access required' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
     const shortlistId = searchParams.get('id')
+    console.log('📋 Shortlist ID to delete:', shortlistId)
 
     if (!shortlistId) {
+      console.error('❌ No shortlist ID provided')
       return NextResponse.json({ error: 'Shortlist ID is required' }, { status: 400 })
     }
 
     // Get brand ID to verify ownership
     let brand_id: string
     try {
+      console.log('🔍 Getting brand ID for user:', userId)
       brand_id = await getBrandIdFromUserId(userId)
+      console.log('🏢 Brand ID:', brand_id)
     } catch (error) {
-      console.error('Error getting brand ID:', error)
-      return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
+      console.error('❌ Error getting brand ID:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return NextResponse.json({ error: `Brand profile error: ${errorMessage}` }, { status: 404 })
     }
 
     // Verify the shortlist belongs to this brand before deleting
+    console.log('🔐 Verifying ownership...')
     const shortlist = await query(
       'SELECT id FROM shortlists WHERE id = $1 AND brand_id = $2',
       [shortlistId, brand_id]
     )
 
+    console.log('📊 Ownership query result:', shortlist.length, 'rows')
+
     if (shortlist.length === 0) {
-      console.error(`Shortlist ${shortlistId} not found or doesn't belong to brand ${brand_id}`)
+      console.error(`❌ Shortlist ${shortlistId} not found or doesn't belong to brand ${brand_id}`)
       return NextResponse.json({ error: 'Shortlist not found or access denied' }, { status: 404 })
     }
 
+    console.log('✅ Ownership verified, deleting...')
     const success = await deleteShortlist(shortlistId)
     
     if (!success) {
+      console.error('❌ Database delete failed')
       return NextResponse.json({ error: 'Failed to delete shortlist' }, { status: 500 })
     }
     
@@ -269,9 +287,12 @@ export async function DELETE(request: NextRequest) {
       message: 'Shortlist deleted successfully'
     })
   } catch (error) {
-    console.error('Error deleting shortlist:', error)
+    console.error('💥 Unexpected error deleting shortlist:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : ''
+    console.error('Stack:', errorStack)
     return NextResponse.json(
-      { success: false, error: 'Failed to delete shortlist' },
+      { success: false, error: `Failed to delete shortlist: ${errorMessage}` },
       { status: 500 }
     )
   }
