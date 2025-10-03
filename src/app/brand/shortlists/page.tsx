@@ -140,6 +140,21 @@ export default function BrandShortlistsPage() {
 
   const { shortlists, isLoading, removeInfluencerFromShortlist } = useHeartedInfluencers()
 
+  // Debug: Check if shortlists are from localStorage
+  const hasLocalStorageShortlists = shortlists.some(s => 
+    s.id === 'default' || 
+    s.id.startsWith('shortlist_') || 
+    !s.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+  )
+
+  // Force clear localStorage and reload
+  const handleClearLocalStorage = () => {
+    if (confirm('This will clear browser cache and reload from database. Continue?')) {
+      localStorage.clear()
+      window.location.reload()
+    }
+  }
+
   // Get current shortlist
   const currentShortlist = shortlists.find(s => s.id === currentShortlistId) || shortlists[0]
   
@@ -241,6 +256,19 @@ export default function BrandShortlistsPage() {
                 <p className="text-gray-600">
                   {shortlists.length} shortlist{shortlists.length !== 1 ? 's' : ''} with {shortlists.reduce((total, s) => total + s.influencers.length, 0)} total influencers
                 </p>
+                {hasLocalStorageShortlists && (
+                  <div className="mt-2 flex items-center gap-2 text-sm">
+                    <div className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                      ⚠️ Using browser cache - data not synced
+                    </div>
+                    <button
+                      onClick={handleClearLocalStorage}
+                      className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    >
+                      Switch to Database
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <button
