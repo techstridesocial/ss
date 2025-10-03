@@ -269,9 +269,9 @@ export default function BrandShortlistsPage() {
               <span className="ml-3 text-gray-600">Loading shortlists...</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 overflow-visible">
               {shortlists.map((shortlist) => (
-              <div key={shortlist.id} className="bg-white rounded-2xl shadow-xl border border-white/30 overflow-hidden hover:shadow-2xl transition-shadow">
+              <div key={shortlist.id} className="bg-white rounded-2xl shadow-xl border border-white/30 overflow-visible hover:shadow-2xl transition-shadow">
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
@@ -288,7 +288,7 @@ export default function BrandShortlistsPage() {
                       </button>
                       
                       {/* Dropdown */}
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="py-1">
                           <button
                             onClick={() => handleEditShortlist(shortlist)}
