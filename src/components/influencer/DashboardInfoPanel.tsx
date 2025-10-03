@@ -754,7 +754,10 @@ export default function DashboardInfoPanel({
                       </div>
                     ) : isStaff ? (
                       <button
-                        onClick={() => setIsAddingWhatsApp(true)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setIsAddingWhatsApp(true)
+                        }}
                         className="flex items-center space-x-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 rounded-lg transition-colors text-sm font-medium w-full justify-center"
                       >
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">

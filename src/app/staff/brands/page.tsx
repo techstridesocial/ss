@@ -1007,20 +1007,7 @@ function BrandsPageClient() {
                       <>
                         {/* Brand Info */}
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-12 w-12">
-                              {item.logo_url ? (
-                                <img className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" src={item.logo_url} alt="" />
-                              ) : (
-                                <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
-                                  <Building2 size={20} className="text-gray-500" />
-          </div>
-        )}
-                </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-semibold text-gray-900">{item.company_name}</div>
-              </div>
-                          </div>
+                          <div className="text-sm font-semibold text-gray-900">{item.company_name}</div>
                         </td>
 
                         {/* Contact */}
