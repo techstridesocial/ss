@@ -406,18 +406,21 @@ export function DeleteShortlistModal({
   onDeleteConfirm?: () => void
 }) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const { deleteShortlist } = useHeartedInfluencers()
 
   const handleDelete = async () => {
     if (!shortlist) return
 
     setIsDeleting(true)
+    setDeleteError(null)
     try {
       await deleteShortlist(shortlist.id)
       onDeleteConfirm?.()
       onClose()
     } catch (error) {
       console.error('Error deleting shortlist:', error)
+      setDeleteError(error instanceof Error ? error.message : 'Failed to delete shortlist')
     } finally {
       setIsDeleting(false)
     }
@@ -476,6 +479,14 @@ export function DeleteShortlistModal({
                   This action cannot be undone. All {shortlist.influencers.length} influencer(s) in this shortlist will be permanently removed from it.
                 </p>
               </div>
+
+              {deleteError && (
+                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+                  <p className="text-sm text-red-800">
+                    <strong>Error:</strong> {deleteError}
+                  </p>
+                </div>
+              )}
 
               <div className="flex space-x-3">
                 <button

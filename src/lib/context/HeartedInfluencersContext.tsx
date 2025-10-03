@@ -320,27 +320,45 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
   }
 
   const deleteShortlist = async (id: string) => {
-    if (id === 'default') return // Prevent deletion of default shortlist
+    console.log('🗑️ Deleting shortlist:', id)
+    if (id === 'default') {
+      console.log('❌ Cannot delete default shortlist')
+      return // Prevent deletion of default shortlist
+    }
     
     if (!userId) {
       // Fallback to localStorage for non-authenticated users
+      console.log('📦 Deleting from localStorage')
       setShortlists(prev => prev.filter(shortlist => shortlist.id !== id))
       return
     }
 
     try {
+      console.log('🌐 Calling DELETE API for shortlist:', id)
       const response = await fetch(`/api/shortlists?id=${id}`, {
         method: 'DELETE'
       })
 
+      console.log('📥 API response:', response.status, response.ok)
+      
       if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Delete successful, updating local state')
         // Remove from local state
-        setShortlists(prev => prev.filter(shortlist => shortlist.id !== id))
+        setShortlists(prev => {
+          const filtered = prev.filter(shortlist => shortlist.id !== id)
+          console.log('📊 Shortlists after delete:', filtered.length, 'remaining')
+          return filtered
+        })
+      } else {
+        const error = await response.json()
+        console.error('❌ Delete failed:', error)
+        throw new Error(error.error || 'Failed to delete shortlist')
       }
     } catch (error) {
-      console.error('Error deleting shortlist:', error)
-      // Fallback to local deletion
-      setShortlists(prev => prev.filter(shortlist => shortlist.id !== id))
+      console.error('💥 Error deleting shortlist:', error)
+      // Don't fallback to local deletion on API error - let user know something went wrong
+      throw error
     }
   }
 
