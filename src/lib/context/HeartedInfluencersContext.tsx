@@ -201,19 +201,17 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
     if (!isLoaded) return
     
     if (userId) {
-      // First check if migration is needed
-      const hasLocalStorage = typeof window !== 'undefined' && localStorage.getItem('brandShortlists')
+      // FORCE: For authenticated users, ALWAYS clear localStorage first
+      console.log('🚨 AUTHENTICATED USER: Clearing localStorage and loading from database ONLY')
       
-      if (hasLocalStorage) {
-        console.log('🔄 localStorage data detected, will migrate after loading from database')
-        // Load from database first, then migrate
-        loadShortlists().then(() => {
-          migrateLocalStorageToDatabase()
-        })
-      } else {
-        // Just load from database
-        loadShortlists()
+      // Clear localStorage immediately
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('brandShortlists')
+        console.log('🗑️ localStorage cleared for authenticated user')
       }
+      
+      // ONLY load from database
+      loadShortlists()
     } else {
       // Load legacy data for non-authenticated users
       loadFromLocalStorage()
@@ -385,10 +383,20 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       return // Prevent deletion of default shortlist
     }
     
+    // FORCE: If user is authenticated, NEVER use localStorage
     if (!userId) {
       // Fallback to localStorage for non-authenticated users
       console.log('📦 Deleting from localStorage')
       setShortlists(prev => prev.filter(shortlist => shortlist.id !== id))
+      return
+    }
+
+    // CRITICAL: Check if trying to delete localStorage shortlist with database user
+    if (!id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      console.error('🚨 CRITICAL: Trying to delete localStorage shortlist with database user!')
+      console.error('🚨 This means localStorage was not cleared!')
+      console.error('🚨 Shortlist ID:', id)
+      alert('ERROR: You are still using browser cache data!\n\nClick "Switch to Database" button first!')
       return
     }
 
