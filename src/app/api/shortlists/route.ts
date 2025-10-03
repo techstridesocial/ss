@@ -237,12 +237,33 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Shortlist ID is required' }, { status: 400 })
     }
 
+    // Get brand ID to verify ownership
+    let brand_id: string
+    try {
+      brand_id = await getBrandIdFromUserId(userId)
+    } catch (error) {
+      console.error('Error getting brand ID:', error)
+      return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
+    }
+
+    // Verify the shortlist belongs to this brand before deleting
+    const shortlist = await query(
+      'SELECT id FROM shortlists WHERE id = $1 AND brand_id = $2',
+      [shortlistId, brand_id]
+    )
+
+    if (shortlist.length === 0) {
+      console.error(`Shortlist ${shortlistId} not found or doesn't belong to brand ${brand_id}`)
+      return NextResponse.json({ error: 'Shortlist not found or access denied' }, { status: 404 })
+    }
+
     const success = await deleteShortlist(shortlistId)
     
     if (!success) {
-      return NextResponse.json({ error: 'Shortlist not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Failed to delete shortlist' }, { status: 500 })
     }
     
+    console.log(`✅ Shortlist ${shortlistId} deleted successfully for brand ${brand_id}`)
     return NextResponse.json({
       success: true,
       message: 'Shortlist deleted successfully'

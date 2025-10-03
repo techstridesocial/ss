@@ -64,9 +64,14 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
     }
 
     try {
+      console.log('📥 Loading shortlists from API...')
       const response = await fetch('/api/shortlists')
+      console.log('📡 API response status:', response.status)
+      
       if (response.ok) {
         const result = await response.json()
+        console.log('📦 API result:', result)
+        
         if (result.success) {
           // Convert database format to context format
           const dbShortlists = result.data.map((shortlist: any) => ({
@@ -88,6 +93,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             createdAt: new Date(shortlist.created_at),
             updatedAt: new Date(shortlist.updated_at)
           }))
+          console.log(`✅ Loaded ${dbShortlists.length} shortlists from database:`, dbShortlists.map(s => ({ id: s.id, name: s.name })))
           setShortlists(dbShortlists)
         }
       } else {
