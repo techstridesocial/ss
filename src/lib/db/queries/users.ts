@@ -242,6 +242,20 @@ export async function getUsers(
 }
 
 /**
+ * Get user by Clerk ID
+ */
+export async function getUserFromClerkId(clerkId: string): Promise<User | null> {
+  const sql = `
+    SELECT id, email, role, status, created_at, updated_at
+    FROM users 
+    WHERE clerk_id = $1
+  `
+  
+  const row = await queryOne<User>(sql, [clerkId])
+  return row
+}
+
+/**
  * Get user by ID with profile
  */
 export async function getUserById(userId: string): Promise<UserWithProfile | null> {
