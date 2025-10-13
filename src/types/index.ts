@@ -156,6 +156,13 @@ export interface Campaign {
     email: string;
     name: string;
   };
+  assignedStaff?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+  } | null;
   createdAt: Date;
   updatedAt: Date;
 }

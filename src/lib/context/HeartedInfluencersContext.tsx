@@ -428,9 +428,16 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           return filtered
         })
       } else {
-        const error = await response.json()
-        console.error('❌ Delete failed:', error)
-        throw new Error(error.error || 'Failed to delete shortlist')
+        let errorMessage = 'Failed to delete shortlist'
+        try {
+          const error = await response.json()
+          console.error('❌ Delete failed:', error)
+          errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`
+        } catch (parseError) {
+          console.error('❌ Could not parse error response:', parseError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
     } catch (error) {
       console.error('💥 Error deleting shortlist:', error)

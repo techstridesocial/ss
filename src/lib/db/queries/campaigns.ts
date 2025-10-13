@@ -33,6 +33,11 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
         b.company_name as brand_name,
         u.email as created_by_email,
         u.email as created_by_name,
+        -- Assigned staff information
+        assigned_u.id as assigned_staff_id,
+        assigned_u.email as assigned_staff_email,
+        assigned_up.first_name as assigned_staff_first_name,
+        assigned_up.last_name as assigned_staff_last_name,
         COUNT(ci.id) as total_influencers,
         COUNT(CASE WHEN ci.status = 'ACCEPTED' THEN 1 END) as accepted_count,
         COUNT(CASE WHEN ci.status = 'INVITED' THEN 1 END) as pending_count,
@@ -41,8 +46,10 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       FROM campaigns c
       LEFT JOIN brands b ON c.brand_id = b.id
       LEFT JOIN users u ON c.created_by = u.id
+      LEFT JOIN users assigned_u ON c.assigned_staff_id = assigned_u.id
+      LEFT JOIN user_profiles assigned_up ON assigned_u.id = assigned_up.user_id
       LEFT JOIN campaign_influencers ci ON c.id = ci.campaign_id
-      GROUP BY c.id, b.company_name, u.email
+      GROUP BY c.id, b.company_name, u.email, assigned_u.id, assigned_u.email, assigned_up.first_name, assigned_up.last_name
       ORDER BY c.created_at DESC
     `);
     
@@ -86,6 +93,13 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
         email: row.created_by_email || 'Unknown',
         name: row.created_by_name || 'Unknown Staff'
       },
+      assignedStaff: row.assigned_staff_id ? {
+        id: row.assigned_staff_id,
+        email: row.assigned_staff_email,
+        firstName: row.assigned_staff_first_name || '',
+        lastName: row.assigned_staff_last_name || '',
+        fullName: `${row.assigned_staff_first_name || ''} ${row.assigned_staff_last_name || ''}`.trim() || row.assigned_staff_email
+      } : null,
       createdAt: row.created_at ? new Date(row.created_at) : new Date(),
       updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }));

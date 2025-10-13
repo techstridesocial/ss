@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getBrandIdFromUserId } from '@/lib/db/queries/brand-campaigns'
 import { getBrandQuotations, createQuotationRequest } from '@/lib/db/queries/quotations'
+import { notifyQuoteSubmitted } from '@/lib/services/notifications'
 
 // GET - Fetch all quotations for the brand
 export async function GET(request: NextRequest) {
@@ -101,6 +102,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle staff assignment
+    let assignedStaffId = data.assigned_staff_id || null
+    
+    // If no staff assigned, try to auto-assign based on brand's assigned staff
+    if (!assignedStaffId) {
+      try {
+        const { query: dbQuery } = await import('@/lib/db/connection')
+        const brandStaffResult = await dbQuery(`
+          SELECT assigned_staff_id FROM brands WHERE id = $1 AND assigned_staff_id IS NOT NULL
+        `, [brandId])
+        
+        if (brandStaffResult.length > 0) {
+          assignedStaffId = brandStaffResult[0].assigned_staff_id
+          console.log('🎯 Auto-assigned quote to brand manager:', assignedStaffId)
+        }
+      } catch (error) {
+        console.log('⚠️ Could not auto-assign staff, will remain unassigned')
+      }
+    }
+
     // Create the quotation request
     const quotationData = {
       brand_id: brandId,
@@ -112,10 +133,27 @@ export async function POST(request: NextRequest) {
       campaign_duration: data.campaign_duration || '',
       deliverables: data.deliverables || [],
       target_demographics: data.target_demographics || '',
-      selected_influencers: data.selected_influencers || [] // Array of influencer IDs
+      selected_influencers: data.selected_influencers || [], // Array of influencer IDs
+      assigned_staff_id: assignedStaffId
     }
 
     const quotation = await createQuotationRequest(quotationData)
+    
+    // Send notification to assigned staff member
+    if (assignedStaffId) {
+      try {
+        await notifyQuoteSubmitted(
+          assignedStaffId,
+          brandName,
+          data.campaign_name,
+          quotation.id
+        )
+        console.log(`📬 Notification sent to staff ${assignedStaffId} for new quote`)
+      } catch (error) {
+        console.error('Failed to send notification:', error)
+        // Don't fail the request if notification fails
+      }
+    }
     
     return NextResponse.json({ 
       success: true, 

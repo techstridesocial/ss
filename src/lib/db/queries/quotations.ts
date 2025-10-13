@@ -347,13 +347,14 @@ export async function createQuotationRequest(data: {
   deliverables?: string[];
   target_demographics?: string;
   selected_influencers?: string[];
+  assigned_staff_id?: string;
 }): Promise<Quotation> {
   const result = await query(`
     INSERT INTO quotations (
       brand_id, brand_name, campaign_name, description, 
       influencer_count, budget_range, campaign_duration, 
-      deliverables, target_demographics, status
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      deliverables, target_demographics, status, assigned_staff_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     RETURNING *
   `, [
     data.brand_id,
@@ -365,7 +366,8 @@ export async function createQuotationRequest(data: {
     data.campaign_duration || null,
     JSON.stringify(data.deliverables || []),
     data.target_demographics || null,
-    'PENDING_REVIEW'
+    'PENDING_REVIEW',
+    data.assigned_staff_id || null
   ]);
 
   const quotation = result[0];

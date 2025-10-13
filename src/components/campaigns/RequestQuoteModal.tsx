@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Send, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -17,6 +17,8 @@ export default function RequestQuoteModal({
 }: RequestQuoteModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [staffMembers, setStaffMembers] = useState<any[]>([])
+  const [loadingStaff, setLoadingStaff] = useState(false)
   const [formData, setFormData] = useState({
     campaign_name: '',
     description: '',
@@ -26,6 +28,7 @@ export default function RequestQuoteModal({
     deliverables: [] as string[],
     target_niches: [] as string[],
     target_platforms: [] as string[],
+    assigned_staff_id: '', // New field for staff assignment
   })
 
   const deliverableOptions = [
@@ -60,6 +63,30 @@ export default function RequestQuoteModal({
     'Business',
     'Entertainment',
   ]
+
+  // Load staff members when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadStaffMembers()
+    }
+  }, [isOpen])
+
+  const loadStaffMembers = async () => {
+    setLoadingStaff(true)
+    try {
+      const response = await fetch('/api/staff/members')
+      if (response.ok) {
+        const result = await response.json()
+        setStaffMembers(result.data || [])
+      } else {
+        console.error('Failed to load staff members')
+      }
+    } catch (error) {
+      console.error('Error loading staff members:', error)
+    } finally {
+      setLoadingStaff(false)
+    }
+  }
 
   const handleDeliverableToggle = (deliverable: string) => {
     setFormData(prev => ({
@@ -123,7 +150,8 @@ export default function RequestQuoteModal({
           target_niches: formData.target_niches,
           target_platforms: formData.target_platforms,
           influencer_count: selectedInfluencers.length,
-          selected_influencers: selectedInfluencers.map(inf => inf.id || inf.influencerId)
+          selected_influencers: selectedInfluencers.map(inf => inf.id || inf.influencerId),
+          assigned_staff_id: formData.assigned_staff_id || null
         })
       })
 
@@ -140,6 +168,7 @@ export default function RequestQuoteModal({
           deliverables: [],
           target_niches: [],
           target_platforms: [],
+          assigned_staff_id: '',
         })
       } else {
         const result = await response.json()
@@ -259,6 +288,31 @@ export default function RequestQuoteModal({
                 placeholder="e.g., 2 weeks, 1 month"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+
+            {/* Staff Assignment */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Assign to Team Member
+              </label>
+              <select
+                value={formData.assigned_staff_id}
+                onChange={(e) => setFormData(prev => ({ ...prev, assigned_staff_id: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loadingStaff}
+              >
+                <option value="">Auto-assign to your account manager</option>
+                {staffMembers.map(staff => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.fullName} ({staff.role})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {loadingStaff ? 'Loading team members...' : 
+                 formData.assigned_staff_id ? 'Quote will be assigned to selected team member' :
+                 'Quote will be automatically assigned to your account manager (if available)'}
+              </p>
             </div>
 
             {/* Deliverables */}

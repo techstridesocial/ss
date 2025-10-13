@@ -10,6 +10,7 @@ import { useClerk, useUser } from '@clerk/nextjs'
 import { useUserRole } from '../../lib/auth/hooks'
 import InviteUserModal from '../staff/InviteUserModal'
 import UserManagementModal from '../staff/UserManagementModal'
+import NotificationBell from '../notifications/NotificationBell'
 
 interface NavItemProps {
   href: string
@@ -217,8 +218,13 @@ export default function ModernStaffHeader() {
                 ))}
               </nav>
 
-              {/* Right side - Profile Avatar */}
-              <div className="flex items-center">
+              {/* Right side - Notifications & Profile */}
+              <div className="flex items-center space-x-2">
+                {/* Notification Bell */}
+                <div className="hidden lg:block">
+                  <NotificationBell />
+                </div>
+                
                 {/* Desktop Profile Avatar */}
                 <div className="hidden lg:block relative z-[110]">
                   <button

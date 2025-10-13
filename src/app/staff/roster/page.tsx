@@ -6,6 +6,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import { useAuth } from '@clerk/nextjs'
+import { useCurrentUserId } from '@/lib/auth/current-user'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
@@ -24,6 +25,7 @@ interface InfluencerTableProps {
 }
 
 function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerTableProps) {
+  const currentUserId = useCurrentUserId()
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -32,7 +34,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT'>('ALL')
+  const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram')
@@ -376,6 +378,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         if (influencer.influencer_type !== 'PARTNERED') {
           return false
         }
+  } else if (activeTab === 'MY_CREATORS') {
+        // Filter for creators assigned to current user
+        if (!influencer.assigned_to || !currentUserId || influencer.assigned_to !== currentUserId) {
+          return false
+        }
   } else {
         if (influencer.influencer_type !== activeTab) {
           return false
@@ -439,6 +446,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         }
       } else if (tabType === 'PENDING_ASSIGNMENT') {
         if (!needsAssignment(influencer)) {
+          return false
+        }
+      } else if (tabType === 'MY_CREATORS') {
+        // Filter for creators assigned to current user
+        if (!influencer.assigned_to || !currentUserId || influencer.assigned_to !== currentUserId) {
           return false
         }
       } else {
@@ -788,13 +800,29 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     if (!selectedInfluencerDetail) return
     
     setIsLoading(true)
-    console.log('Saving management data:', data)
+    console.log('🔄 Saving management data to database:', data)
     
     try {
-      // Simulate API delay for realistic UX
-      await new Promise(resolve => setTimeout(resolve, 800))
+      // Call the real API to update influencer management data
+      const response = await fetch(`/api/influencers/${selectedInfluencerDetail.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assigned_to: data.assigned_to || null,
+          labels: data.labels || [],
+          notes: data.notes || null
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save management data')
+      }
+
+      const result = await response.json()
+      console.log('✅ API response:', result)
       
-      // Update the influencer in state (mock data approach)
+      // Update the influencer in state with the returned data
       setInfluencers(prev => prev.map(inf => {
         if (inf.id === selectedInfluencerDetail.id) {
           return {
@@ -817,11 +845,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         })
       }
       
-      console.log('✅ Management data saved successfully (mock)!')
-      // No alert needed since the panel handles success feedback
+      console.log('✅ Management data saved successfully to database!')
       
     } catch (error) {
-      console.error('Error saving management data:', error)
+      console.error('❌ Error saving management data:', error)
       alert(`❌ Error saving management data: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
@@ -1303,6 +1330,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
           {[
             { key: 'ALL', label: 'All Influencers', count: applyFiltersForTab(influencers, 'ALL').length },
+            { key: 'MY_CREATORS', label: 'My Creators', count: applyFiltersForTab(influencers, 'MY_CREATORS').length, highlight: true },
             { key: 'PENDING_ASSIGNMENT', label: 'Pending Assignment', count: applyFiltersForTab(influencers, 'PENDING_ASSIGNMENT').length, urgent: true },
             { key: 'SIGNED', label: 'Signed', count: applyFiltersForTab(influencers, 'SIGNED').length },
             { key: 'PARTNERED', label: 'Partnered', count: applyFiltersForTab(influencers, 'PARTNERED').length },
@@ -1316,6 +1344,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   ? 'bg-white text-gray-900 shadow-sm'
                   : tab.urgent && tab.count > 0
                   ? 'text-orange-600 hover:text-orange-700 bg-orange-50'
+                  : tab.highlight
+                  ? 'text-blue-600 hover:text-blue-700 bg-blue-50'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >

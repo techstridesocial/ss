@@ -162,11 +162,22 @@ export async function updateShortlist(
 
 // Delete a shortlist
 export async function deleteShortlist(shortlistId: string): Promise<boolean> {
-  const result = await query(`
-    DELETE FROM shortlists WHERE id = $1
-  `, [shortlistId])
-  
-  return result.rowCount > 0
+  try {
+    console.log('🗑️ Executing DELETE query for shortlist:', shortlistId)
+    const result = await query(`
+      DELETE FROM shortlists WHERE id = $1 RETURNING id
+    `, [shortlistId])
+    
+    console.log('📊 Delete query result:', result)
+    
+    // Check if we got a result back (means deletion worked)
+    const success = result && result.length > 0
+    console.log('✅ Delete success:', success)
+    return success
+  } catch (error) {
+    console.error('💥 Error in deleteShortlist:', error)
+    throw error
+  }
 }
 
 // Duplicate a shortlist

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCurrentUserId } from '@/lib/auth/current-user'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import BulkApproveModal from '@/components/modals/BulkApproveModal'
 import AddBrandPanel from '@/components/brands/AddBrandPanel'
@@ -23,7 +24,9 @@ const MOCK_BRANDS = [
     active_campaigns: 2,
     total_spend: 15420,
     last_activity: '2024-01-15',
-    status: 'active'
+    status: 'active',
+    assigned_staff_id: 'staff_1' as string | null,
+    assigned_staff_name: 'Alex Thompson' as string | null
   },
   {
     id: 'brand_2',
@@ -36,7 +39,9 @@ const MOCK_BRANDS = [
     active_campaigns: 1,
     total_spend: 8750,
     last_activity: '2024-01-14',
-    status: 'active'
+    status: 'active',
+    assigned_staff_id: null,
+    assigned_staff_name: null
   },
   {
     id: 'brand_3',
@@ -49,8 +54,18 @@ const MOCK_BRANDS = [
     active_campaigns: 0,
     total_spend: 3200,
     last_activity: '2024-01-10',
-    status: 'inactive'
+    status: 'inactive',
+    assigned_staff_id: 'staff_2' as string | null,
+    assigned_staff_name: 'Sarah Wilson' as string | null
   }
+]
+
+// Mock staff members for assignment dropdowns
+const MOCK_STAFF = [
+  { id: 'staff_1', name: 'Alex Thompson', email: 'alex@stridesocial.com' },
+  { id: 'staff_2', name: 'Sarah Wilson', email: 'sarah@stridesocial.com' },
+  { id: 'staff_3', name: 'Mike Johnson', email: 'mike@stridesocial.com' },
+  { id: 'staff_4', name: 'Emma Davis', email: 'emma@stridesocial.com' }
 ]
 
 const MOCK_SHORTLISTS = [
@@ -228,8 +243,14 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
 
 function BrandsPageClient() {
   const router = useRouter()
+  const currentUserId = useCurrentUserId()
   const [activeTab, setActiveTab] = useState<'clients' | 'quotations'>('clients')
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Assignment state
+  const [brands, setBrands] = useState(MOCK_BRANDS)
+  const [staffMembers, setStaffMembers] = useState(MOCK_STAFF)
+  const [assignmentLoading, setAssignmentLoading] = useState<string | null>(null)
   
   // Panel states
   const [addBrandPanelOpen, setAddBrandPanelOpen] = useState(false)
@@ -265,7 +286,8 @@ function BrandsPageClient() {
       status: '',
       spendRange: '',
     campaignCount: '',
-    lastActivity: ''
+    lastActivity: '',
+    assignment: '' // New filter for assignment
     })
 
   // Quotation filters
@@ -314,6 +336,12 @@ function BrandsPageClient() {
       { value: 'week', label: 'This Week' },
       { value: 'month', label: 'This Month' },
       { value: 'older', label: 'Older' }
+    ],
+    assignment: [
+      { value: '', label: 'All Assignments' },
+      { value: 'assigned_to_me', label: 'Assigned to Me' },
+      { value: 'unassigned', label: 'Unassigned' },
+      { value: 'assigned_to_others', label: 'Assigned to Others' }
     ]
   }
 
@@ -371,8 +399,24 @@ function BrandsPageClient() {
     const matchesSpendRange = !brandFilters.spendRange || checkSpendRange(brand.total_spend, brandFilters.spendRange)
     const matchesCampaignCount = !brandFilters.campaignCount || checkCampaignCount(brand.active_campaigns, brandFilters.campaignCount)
       const matchesLastActivity = !brandFilters.lastActivity || checkLastActivity(brand.last_activity, brandFilters.lastActivity)
+      
+      // Assignment filter
+      const matchesAssignment = (() => {
+        if (!brandFilters.assignment) return true
+        
+        switch (brandFilters.assignment) {
+          case 'assigned_to_me':
+            return brand.assigned_staff_id && currentUserId && brand.assigned_staff_id === currentUserId
+          case 'unassigned':
+            return !brand.assigned_staff_id
+          case 'assigned_to_others':
+            return brand.assigned_staff_id && currentUserId && brand.assigned_staff_id !== currentUserId
+          default:
+            return true
+        }
+      })()
 
-      return matchesIndustry && matchesStatus && matchesSpendRange && matchesCampaignCount && matchesLastActivity
+      return matchesIndustry && matchesStatus && matchesSpendRange && matchesCampaignCount && matchesLastActivity && matchesAssignment
     })
   }
 
@@ -470,7 +514,7 @@ function BrandsPageClient() {
   }
 
   // Apply filters - always calculate both for correct tab counts
-  const filteredBrands = applyBrandFilters(MOCK_BRANDS)
+  const filteredBrands = applyBrandFilters(brands)
   const filteredQuotations = applyQuotationFilters(MOCK_QUOTATION_REQUESTS)
   
   // Apply sorting
@@ -596,7 +640,8 @@ function BrandsPageClient() {
         status: '',
         spendRange: '',
         campaignCount: '',
-        lastActivity: ''
+        lastActivity: '',
+        assignment: ''
       })
     } else {
       setQuotationFilters({
@@ -729,6 +774,44 @@ function BrandsPageClient() {
       console.error('Error sending quotation:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       alert(`Failed to send quotation: ${errorMessage}`)
+    }
+  }
+
+  // Handle brand assignment
+  const handleAssignBrand = async (brandId: string, staffId: string) => {
+    setAssignmentLoading(brandId)
+    
+    try {
+      // Mock API call - in real app, this would call /api/brands/[id]/assign
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Update local state
+      setBrands(prev => prev.map(brand => {
+        if (brand.id === brandId) {
+          const staff = staffMembers.find(s => s.id === staffId)
+          return {
+            ...brand,
+            assigned_staff_id: staffId || null,
+            assigned_staff_name: staff?.name || null
+          }
+        }
+        return brand
+      }))
+      
+      const staff = staffMembers.find(s => s.id === staffId)
+      const brand = brands.find(b => b.id === brandId)
+      
+      if (staffId) {
+        alert(`✅ ${brand?.company_name} assigned to ${staff?.name}`)
+      } else {
+        alert(`✅ Assignment removed from ${brand?.company_name}`)
+      }
+      
+    } catch (error) {
+      console.error('Error assigning brand:', error)
+      alert('❌ Error updating assignment. Please try again.')
+    } finally {
+      setAssignmentLoading(null)
     }
   }
 
@@ -984,6 +1067,7 @@ function BrandsPageClient() {
                       <SortableHeader sortKey="shortlists_count">Shortlists</SortableHeader>
                       <SortableHeader sortKey="active_campaigns">Campaigns</SortableHeader>
                       <SortableHeader sortKey="total_spend">Total Spend</SortableHeader>
+                      <SortableHeader sortKey="assigned_staff_name">Assigned To</SortableHeader>
                       <SortableHeader sortKey="status">Status</SortableHeader>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </>
@@ -1048,6 +1132,29 @@ function BrandsPageClient() {
                             <DollarSign size={14} className="mr-1 text-gray-400" />
                             {formatNumber(item.total_spend)}
                           </div>
+                        </td>
+
+                        {/* Assigned To */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            value={item.assigned_staff_id || ''}
+                            onChange={(e) => handleAssignBrand(item.id, e.target.value)}
+                            disabled={assignmentLoading === item.id}
+                            className="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="">Unassigned</option>
+                            {staffMembers.map(staff => (
+                              <option key={staff.id} value={staff.id}>
+                                {staff.name}
+                              </option>
+                            ))}
+                          </select>
+                          {assignmentLoading === item.id && (
+                            <div className="mt-1 flex items-center text-xs text-gray-500">
+                              <div className="animate-spin rounded-full h-3 w-3 border border-gray-300 border-t-blue-600 mr-1"></div>
+                              Updating...
+                            </div>
+                          )}
                         </td>
 
                         {/* Status */}

@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { Campaign } from '@/types'
 import { Button } from '@/components/ui/button'
+import { useCurrentUserId } from '@/lib/auth/current-user'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -74,6 +75,7 @@ function StatCard({ title, value, icon, color, trend }: StatCardProps) {
 }
 
 function CampaignsPageClient() {
+  const currentUserId = useCurrentUserId()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -102,7 +104,8 @@ function CampaignsPageClient() {
     startDate: '',
     endDate: '',
     timelineStatus: 'all', // New filter for timeline-based status
-    performance: ''
+    performance: '',
+    assignment: '' // New filter for assignment
   })
   
   // Applied filters state (what's actually being used for filtering)
@@ -115,8 +118,13 @@ function CampaignsPageClient() {
     startDate: '',
     endDate: '',
     timelineStatus: 'all',
-    performance: ''
+    performance: '',
+    assignment: ''
   })
+  
+  // Assignment state
+  const [staffMembers, setStaffMembers] = useState<any[]>([])
+  const [assignmentLoading, setAssignmentLoading] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -140,6 +148,21 @@ function CampaignsPageClient() {
       
       // Platform filter
       if (appliedFilters.platform && appliedFilters.platform !== 'all' && !campaign.requirements.platforms.includes(appliedFilters.platform)) return false
+      
+      // Assignment filter
+      if (appliedFilters.assignment) {
+        switch (appliedFilters.assignment) {
+          case 'assigned_to_me':
+            if (!campaign.assignedStaff || !currentUserId || campaign.assignedStaff.id !== currentUserId) return false
+            break
+          case 'unassigned':
+            if (campaign.assignedStaff) return false
+            break
+          case 'assigned_to_others':
+            if (!campaign.assignedStaff || !currentUserId || campaign.assignedStaff.id === currentUserId) return false
+            break
+        }
+      }
       
       // Search term
       if (searchTerm && !campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
@@ -252,6 +275,7 @@ function CampaignsPageClient() {
   // Fetch campaigns from API
   useEffect(() => {
     fetchCampaigns()
+    loadStaffMembers()
   }, [])
 
   const fetchCampaigns = async () => {
@@ -271,6 +295,65 @@ function CampaignsPageClient() {
       setError(err instanceof Error ? err.message : 'Failed to fetch campaigns')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadStaffMembers = async () => {
+    try {
+      const response = await fetch('/api/staff/members')
+      if (response.ok) {
+        const result = await response.json()
+        setStaffMembers(result.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading staff members:', error)
+    }
+  }
+
+  // Handle campaign assignment
+  const handleAssignCampaign = async (campaignId: string, staffId: string) => {
+    setAssignmentLoading(campaignId)
+    
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_staff_id: staffId || null })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to assign campaign')
+      }
+
+      const result = await response.json()
+      
+      // Update local state
+      setCampaigns(prev => prev.map(campaign => {
+        if (campaign.id === campaignId) {
+          return {
+            ...campaign,
+            assignedStaff: result.data.assignedStaff
+          }
+        }
+        return campaign
+      }))
+      
+      showNotificationModal(
+        'Assignment Updated',
+        result.message,
+        'success'
+      )
+      
+    } catch (error) {
+      console.error('Error assigning campaign:', error)
+      showNotificationModal(
+        'Assignment Failed',
+        error instanceof Error ? error.message : 'Failed to update assignment',
+        'error'
+      )
+    } finally {
+      setAssignmentLoading(null)
     }
   }
 
@@ -441,6 +524,7 @@ function CampaignsPageClient() {
       appliedFilters.endDate !== '' ||
       appliedFilters.timelineStatus !== 'all' ||
       appliedFilters.performance !== '' ||
+      appliedFilters.assignment !== '' ||
       searchTerm !== ''
     )
   }
@@ -457,6 +541,7 @@ function CampaignsPageClient() {
     if (appliedFilters.endDate !== '') count++
     if (appliedFilters.timelineStatus !== 'all') count++
     if (appliedFilters.performance !== '') count++
+    if (appliedFilters.assignment !== '') count++
     if (searchTerm !== '') count++
     return count
   }
@@ -632,6 +717,19 @@ function CampaignsPageClient() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="md:w-48">
+                <Select value={filters.assignment} onValueChange={(value) => handleFilterChange('assignment', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by assignment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Assignments</SelectItem>
+                    <SelectItem value="assigned_to_me">Assigned to Me</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="assigned_to_others">Assigned to Others</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant="outline"
@@ -714,6 +812,11 @@ function CampaignsPageClient() {
                 {appliedFilters.timelineStatus !== 'all' && (
                   <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
                     Timeline: <span className="ml-1 font-semibold capitalize">{appliedFilters.timelineStatus.replace(/_/g, ' ')}</span>
+                  </span>
+                )}
+                {appliedFilters.assignment && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Assignment: <span className="ml-1 font-semibold capitalize">{appliedFilters.assignment.replace(/_/g, ' ')}</span>
                   </span>
                 )}
                 {searchTerm && (
@@ -895,6 +998,9 @@ function CampaignsPageClient() {
                       </div>
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Assigned To
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -945,6 +1051,27 @@ function CampaignsPageClient() {
                         <div className="text-slate-400">to</div>
                         <div>{new Date(campaign.timeline.endDate).toLocaleDateString()}</div>
                       </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <select
+                        value={campaign.assignedStaff?.id || ''}
+                        onChange={(e) => handleAssignCampaign(campaign.id, e.target.value)}
+                        disabled={assignmentLoading === campaign.id}
+                        className="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+                      >
+                        <option value="">Unassigned</option>
+                        {staffMembers.map(staff => (
+                          <option key={staff.id} value={staff.id}>
+                            {staff.fullName}
+                          </option>
+                        ))}
+                      </select>
+                      {assignmentLoading === campaign.id && (
+                        <div className="mt-1 flex items-center text-xs text-gray-500">
+                          <div className="animate-spin rounded-full h-3 w-3 border border-gray-300 border-t-blue-600 mr-1"></div>
+                          Updating...
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-1">

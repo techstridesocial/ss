@@ -28,47 +28,117 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { influencer_type, content_type, agency_name } = body
+    const { 
+      influencer_type, 
+      content_type, 
+      agency_name, 
+      assigned_to, 
+      labels, 
+      notes 
+    } = body
 
-    // Validate required fields
-    if (!influencer_type || !content_type) {
+    // For management updates, we don't require influencer_type and content_type
+    const isManagementUpdate = assigned_to !== undefined || labels !== undefined || notes !== undefined
+    
+    // Validate required fields only for non-management updates
+    if (!isManagementUpdate && (!influencer_type || !content_type)) {
       return NextResponse.json({ 
         error: 'influencer_type and content_type are required' 
       }, { status: 400 })
     }
 
-    // Validate influencer_type
-    if (!['SIGNED', 'PARTNERED', 'AGENCY_PARTNER'].includes(influencer_type)) {
+    // Validate influencer_type (only if provided)
+    if (influencer_type && !['SIGNED', 'PARTNERED', 'AGENCY_PARTNER'].includes(influencer_type)) {
       return NextResponse.json({ 
         error: 'Invalid influencer_type. Must be SIGNED, PARTNERED, or AGENCY_PARTNER' 
       }, { status: 400 })
     }
 
-    // Validate content_type
-    if (!['STANDARD', 'UGC', 'SEEDING'].includes(content_type)) {
+    // Validate content_type (only if provided)
+    if (content_type && !['STANDARD', 'UGC', 'SEEDING'].includes(content_type)) {
       return NextResponse.json({ 
         error: 'Invalid content_type. Must be STANDARD, UGC, or SEEDING' 
       }, { status: 400 })
     }
 
-    // Validate agency_name for AGENCY_PARTNER
+    // Validate agency_name for AGENCY_PARTNER (only if influencer_type is provided)
     if (influencer_type === 'AGENCY_PARTNER' && (!agency_name || !agency_name.trim())) {
       return NextResponse.json({ 
         error: 'agency_name is required for AGENCY_PARTNER type' 
       }, { status: 400 })
     }
 
+    // Validate assigned_to (should be a valid user ID if provided)
+    if (assigned_to !== undefined && assigned_to !== null && assigned_to !== '') {
+      const staffResult = await query(`
+        SELECT id FROM users WHERE id = $1 AND role IN ('STAFF', 'ADMIN')
+      `, [assigned_to])
+      
+      if (staffResult.length === 0) {
+        return NextResponse.json({ 
+          error: 'Invalid assigned_to. Must be a valid staff or admin user ID' 
+        }, { status: 400 })
+      }
+    }
+
+    // Build dynamic update query
+    const updateFields = []
+    const updateValues = []
+    let paramCounter = 1
+
+    if (influencer_type !== undefined) {
+      updateFields.push(`influencer_type = $${paramCounter}`)
+      updateValues.push(influencer_type)
+      paramCounter++
+    }
+
+    if (content_type !== undefined) {
+      updateFields.push(`content_type = $${paramCounter}`)
+      updateValues.push(content_type)
+      paramCounter++
+    }
+
+    if (agency_name !== undefined) {
+      updateFields.push(`agency_name = $${paramCounter}`)
+      updateValues.push(agency_name || null)
+      paramCounter++
+    }
+
+    if (assigned_to !== undefined) {
+      updateFields.push(`assigned_to = $${paramCounter}`)
+      updateValues.push(assigned_to || null)
+      paramCounter++
+    }
+
+    if (labels !== undefined) {
+      updateFields.push(`labels = $${paramCounter}`)
+      updateValues.push(JSON.stringify(labels || []))
+      paramCounter++
+    }
+
+    if (notes !== undefined) {
+      updateFields.push(`notes = $${paramCounter}`)
+      updateValues.push(notes || null)
+      paramCounter++
+    }
+
+    // Always update the timestamp
+    updateFields.push('updated_at = NOW()')
+    updateValues.push(params.id)
+
+    if (updateFields.length === 1) { // Only timestamp update
+      return NextResponse.json({ 
+        error: 'No fields to update' 
+      }, { status: 400 })
+    }
+
     // Update influencer data
     const updateResult = await query(`
       UPDATE influencers 
-      SET 
-        influencer_type = $1,
-        content_type = $2,
-        agency_name = $3,
-        updated_at = NOW()
-      WHERE id = $4
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramCounter}
       RETURNING *
-    `, [influencer_type, content_type, agency_name || null, params.id])
+    `, updateValues)
 
     if (updateResult.length === 0) {
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })

@@ -256,6 +256,15 @@ export async function DELETE(request: NextRequest) {
     } catch (error) {
       console.error('❌ Error getting brand ID:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('❌ Full error details:', error)
+      
+      // If brand not found, it means onboarding not completed
+      if (errorMessage.includes('Brand not found')) {
+        return NextResponse.json({ 
+          error: 'Please complete brand onboarding first. Go to /brand/onboarding to set up your profile.' 
+        }, { status: 400 })
+      }
+      
       return NextResponse.json({ error: `Brand profile error: ${errorMessage}` }, { status: 404 })
     }
 
