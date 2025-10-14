@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       'system@stridesocial.com'
 
     // Create Clerk invitation with custom redirect URL
-    const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invitation/accept`
+    const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/invitation/accept`
     
     // Create invitation using Clerk REST API
     const response = await fetch('https://api.clerk.dev/v1/invitations', {
