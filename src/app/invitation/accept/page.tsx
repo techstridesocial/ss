@@ -45,25 +45,85 @@ function AcceptInvitationContent() {
   })
 
   useEffect(() => {
-    // Get invitation data from URL parameters (set by Clerk)
-    const invitationId = searchParams.get('invitation_id')
-    const email = searchParams.get('email')
-    const role = searchParams.get('role')
-    
-    if (invitationId && email && role) {
-      setInvitation({
-        id: invitationId,
-        email: email,
-        role: role,
-        status: 'PENDING',
-        invitedBy: 'StrideSocial Team',
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
-      })
-      setLoading(false)
-    } else {
-      setError('Invalid invitation link')
-      setLoading(false)
+    const handleInvitation = async () => {
+      try {
+        // Check for Clerk invitation parameters
+        const clerkStatus = searchParams.get('__clerk_status')
+        const clerkTicket = searchParams.get('__clerk_ticket')
+        
+        // Check for direct invitation parameters
+        const invitationId = searchParams.get('invitation_id')
+        const email = searchParams.get('email')
+        const role = searchParams.get('role')
+        
+        if (clerkStatus && clerkTicket) {
+          // Handle Clerk invitation flow
+          console.log('Processing Clerk invitation with ticket:', clerkTicket.substring(0, 50) + '...')
+          
+          // For Clerk invitations, redirect immediately to sign-up
+          // The invitation will be processed via webhook after user signs up
+          setLoading(false)
+          
+          // Show a message and redirect
+          setInvitation({
+            id: 'clerk-invitation',
+            email: 'Loading...',
+            role: 'Loading...',
+            status: 'PENDING',
+            invitedBy: 'StrideSocial Team',
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          
+          // Redirect to Clerk sign-up with the ticket
+          setTimeout(() => {
+            window.location.href = `/sign-up?__clerk_status=${clerkStatus}&__clerk_ticket=${clerkTicket}`
+          }, 1500)
+          
+        } else if (invitationId && email && role) {
+          // Handle direct invitation parameters
+          setInvitation({
+            id: invitationId,
+            email: email,
+            role: role,
+            status: 'PENDING',
+            invitedBy: 'StrideSocial Team',
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+          })
+          setLoading(false)
+        } else {
+          // Try to extract invitation info from Clerk ticket if possible
+          if (clerkTicket) {
+            try {
+              // Decode the JWT token to get invitation info (basic decode, not verification)
+              const payload = JSON.parse(atob(clerkTicket.split('.')[1]))
+              console.log('Clerk ticket payload:', payload)
+              
+              // Check if we can find the invitation in our database
+              if (payload.sid) {
+                const response = await fetch(`/api/invitations/clerk/${payload.sid}`)
+                if (response.ok) {
+                  const invitationData = await response.json()
+                  setInvitation(invitationData.invitation)
+                  setLoading(false)
+                  return
+                }
+              }
+            } catch (decodeError) {
+              console.error('Error decoding Clerk ticket:', decodeError)
+            }
+          }
+          
+          setError('Invalid invitation link. Please check the link or contact support.')
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error processing invitation:', error)
+        setError('Error processing invitation. Please try again.')
+        setLoading(false)
+      }
     }
+
+    handleInvitation()
   }, [searchParams])
 
   const handleAcceptInvitation = async (e: React.FormEvent) => {
@@ -141,6 +201,42 @@ function AcceptInvitationContent() {
               className="w-full"
             >
               Go to Homepage
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Special handling for Clerk invitations
+  if (invitation?.id === 'clerk-invitation') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+            </div>
+            <CardTitle className="text-blue-600">Processing Invitation</CardTitle>
+            <CardDescription>
+              Redirecting you to complete your account setup...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-gray-600 mb-4">
+              You will be redirected to complete the sign-up process in a moment.
+            </p>
+            <Button 
+              onClick={() => {
+                const clerkStatus = new URLSearchParams(window.location.search).get('__clerk_status')
+                const clerkTicket = new URLSearchParams(window.location.search).get('__clerk_ticket')
+                if (clerkStatus && clerkTicket) {
+                  window.location.href = `/sign-up?__clerk_status=${clerkStatus}&__clerk_ticket=${clerkTicket}`
+                }
+              }}
+              className="w-full"
+            >
+              Continue to Sign Up
             </Button>
           </CardContent>
         </Card>
