@@ -577,6 +577,56 @@ export async function batchUpdateInfluencerAnalytics(
 }
 
 /**
+ * Update analytics for all influencers
+ * Fetches all influencers and their content links, then updates their analytics
+ */
+export async function updateAllInfluencerAnalytics(): Promise<{
+  success: number
+  failed: number
+  errors: string[]
+}> {
+  console.log('🔄 Starting analytics update for all influencers...')
+  
+  try {
+    // Get all influencers with their content links
+    const influencers = await query(`
+      SELECT 
+        i.id,
+        i.username,
+        COALESCE(
+          json_agg(DISTINCT cl.url) FILTER (WHERE cl.url IS NOT NULL),
+          '[]'::json
+        ) as content_links
+      FROM influencers i
+      LEFT JOIN campaign_content_links ccl ON ccl.influencer_id = i.id
+      LEFT JOIN content_links cl ON cl.id = ccl.content_link_id
+      GROUP BY i.id, i.username
+    `)
+
+    console.log(`📊 Found ${influencers.length} influencers to process`)
+
+    const updates = influencers.map(inf => ({
+      influencerId: inf.id,
+      contentLinks: inf.content_links || []
+    }))
+
+    // Use batch update function
+    const result = await batchUpdateInfluencerAnalytics(updates)
+    
+    console.log(`✅ Completed analytics update for all influencers`)
+    return result
+
+  } catch (error) {
+    console.error('❌ Error updating analytics for all influencers:', error)
+    return {
+      success: 0,
+      failed: 0,
+      errors: [error instanceof Error ? error.message : 'Unknown error']
+    }
+  }
+}
+
+/**
  * Get analytics summary for an influencer
  */
 export async function getInfluencerAnalyticsSummary(influencerId: string): Promise<{
