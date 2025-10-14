@@ -2,20 +2,48 @@
 
 // Client-side authentication hooks for React components
 
+import React from 'react'
 import { useUser } from '@clerk/nextjs'
 import { UserRole, ROLE_HIERARCHY, ROLE_DISPLAY_NAMES, getRoleDisplayName, getRoleRedirectPath } from './types'
 
 // Get current user's role on client side
 export function useUserRole(): UserRole | null {
   const { user } = useUser()
-  
-  if (!user) {
-    return null
-  }
+  const [role, setRole] = React.useState<UserRole | null>(null)
+  const [loading, setLoading] = React.useState(true)
 
-  // Role stored in public metadata
-  const role = user.publicMetadata?.role as UserRole
-  return role || null
+  React.useEffect(() => {
+    async function fetchRole() {
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        // Try to get role from database instead of publicMetadata
+        const response = await fetch('/api/auth/current-user')
+        if (response.ok) {
+          const data = await response.json()
+          setRole(data.role)
+        } else {
+          // Fallback to publicMetadata
+          const metadataRole = user.publicMetadata?.role as UserRole
+          setRole(metadataRole || null)
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error)
+        // Fallback to publicMetadata
+        const metadataRole = user.publicMetadata?.role as UserRole
+        setRole(metadataRole || null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRole()
+  }, [user])
+
+  return role
 }
 
 // Check if user has specific role on client side
