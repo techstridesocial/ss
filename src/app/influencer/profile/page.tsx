@@ -290,9 +290,43 @@ export default function InfluencerProfile() {
                       <User className="h-8 w-8 text-gray-400" />
                     )}
                   </div>
-                  <button className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
+                  <button 
+                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
+                    onClick={() => document.getElementById('profile-photo-upload')?.click()}
+                  >
                     <Camera className="h-3 w-3 text-white" />
                   </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="profile-photo-upload"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        try {
+                          // Upload to Clerk user profile
+                          const formData = new FormData()
+                          formData.append('file', file)
+                          
+                          const response = await fetch('/api/upload-profile-image', {
+                            method: 'POST',
+                            body: formData
+                          })
+                          
+                          if (response.ok) {
+                            console.log('✅ Profile image updated in Clerk')
+                            // Force a page refresh to show the new image
+                            window.location.reload()
+                          } else {
+                            console.error('Failed to update profile image')
+                          }
+                        } catch (error) {
+                          console.error('Error updating profile image:', error)
+                        }
+                      }
+                    }}
+                  />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">

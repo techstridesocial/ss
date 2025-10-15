@@ -88,14 +88,16 @@ export default function EnhancedInfluencerStats() {
     setSelectedPlatform(platform)
     
     try {
+      // Use the same API as discovery page for full Modash data
       const requestBody = {
-        username: query.replace('@', ''),
-        platform: platform
+        query: query.replace('@', ''),
+        platform: platform,
+        limit: 5
       }
       
-      console.log('📤 Sending request:', requestBody)
+      console.log('📤 Sending request to discovery API:', requestBody)
       
-      const response = await fetch('/api/influencer/search-simple', {
+      const response = await fetch('/api/discovery/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
@@ -104,8 +106,21 @@ export default function EnhancedInfluencerStats() {
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Search successful:', data)
-        if (data.success && data.results) {
-          setSearchResults(data.results)
+        if (data.success && data.data) {
+          // Format results to match expected structure
+          const formattedResults = data.data.map((profile: any) => ({
+            id: profile.userId || profile.id,
+            username: profile.username,
+            platform: platform,
+            followers: profile.followers || 0,
+            engagement_rate: profile.engagementRate || profile.engagement_rate || 0,
+            avg_views: profile.avgViews || profile.avg_views || 0,
+            profile_picture: profile.profilePicture || profile.profile_picture || null,
+            bio: profile.bio || null,
+            verified: profile.verified || false,
+            is_private: profile.isPrivate || profile.is_private || false
+          }))
+          setSearchResults(formattedResults)
         }
       } else {
         const errorText = await response.text()
@@ -238,8 +253,17 @@ export default function EnhancedInfluencerStats() {
 
       // Find the platform data to get the influencer platform ID
       const platformData = statsData?.platforms?.find(p => p.platform === platform)
+      console.log('🔍 Platform data for disconnect:', platformData)
+      console.log('🔍 All platforms data:', statsData?.platforms)
+      
       if (!platformData || !platformData.is_connected) {
         setSuccessMessage(`❌ Platform ${platform} is not connected`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+        return
+      }
+      
+      if (!platformData.id) {
+        setSuccessMessage(`❌ Platform ID not found for ${platform}`)
         setTimeout(() => setSuccessMessage(''), 5000)
         return
       }
