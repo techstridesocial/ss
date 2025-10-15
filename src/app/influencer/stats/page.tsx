@@ -107,7 +107,7 @@ export default function EnhancedInfluencerStats() {
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Search successful:', data)
-        if (data.success && data.data) {
+        if (data.success && data.data && Array.isArray(data.data)) {
           // Format results to match expected structure
           const formattedResults = data.data.map((profile: any) => ({
             id: profile.userId || profile.id,
@@ -122,6 +122,9 @@ export default function EnhancedInfluencerStats() {
             is_private: profile.isPrivate || profile.is_private || false
           }))
           setSearchResults(formattedResults)
+        } else {
+          console.error('❌ Invalid data format from discovery API:', data)
+          setSearchResults([])
         }
       } else {
         const errorText = await response.text()
