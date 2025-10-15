@@ -54,9 +54,13 @@ export async function cacheModashProfile(
     console.log(`🔄 Caching Modash profile for ${platform} user ${modashUserId}`)
     
     // Fetch full profile data from Modash
+    console.log(`📡 Calling getProfileReport with:`, { modashUserId, platform })
     const modashData = await getProfileReport(modashUserId, platform)
+    console.log(`📊 Modash API response:`, modashData ? 'Data received' : 'No data')
     
     if (!modashData?.profile) {
+      console.error(`❌ No profile data returned from Modash for ${modashUserId} on ${platform}`)
+      console.error(`❌ Full Modash response:`, modashData)
       throw new Error('No profile data returned from Modash')
     }
     

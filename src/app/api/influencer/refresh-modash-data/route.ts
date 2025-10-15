@@ -44,26 +44,36 @@ export async function POST(request: NextRequest) {
     for (const platform of platformsResult) {
       try {
         console.log(`🔄 Refreshing Modash data for ${platform.platform}...`)
+        console.log(`🔍 Platform details:`, {
+          id: platform.id,
+          username: platform.username,
+          platform: platform.platform,
+          is_connected: platform.is_connected
+        })
         
         const cacheResult = await cacheModashProfile(
           platform.id,
-          platform.username,
+          platform.username, // This is now the Modash user ID
           platform.platform
         )
+        
+        console.log(`📊 Cache result for ${platform.platform}:`, cacheResult)
         
         if (cacheResult.success) {
           successCount++
           console.log(`✅ Successfully cached ${platform.platform}`)
         } else {
           errorCount++
-          errors.push(`Failed to cache ${platform.platform}: ${cacheResult.error}`)
-          console.error(`❌ Failed to cache ${platform.platform}:`, cacheResult.error)
+          const errorDetail = `Failed to cache ${platform.platform}: ${cacheResult.error}`
+          errors.push(errorDetail)
+          console.error(`❌ ${errorDetail}`)
         }
       } catch (error) {
         errorCount++
         const errorMsg = `Error caching ${platform.platform}: ${error instanceof Error ? error.message : 'Unknown error'}`
         errors.push(errorMsg)
         console.error(`❌ ${errorMsg}`)
+        console.error(`❌ Full error:`, error)
       }
     }
 

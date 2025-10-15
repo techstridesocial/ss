@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
       influencerId: influencerResult.id,
       platform: normalizedPlatform,
       handle,
+      modashUserId: profileData?.userId,
       profileData
     })
 
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
       `, [
         influencerResult.id,
         normalizedPlatform,
-        handle,
+        profileData?.userId || handle, // Use Modash user ID if available, fallback to handle
         profileData?.profileUrl || null,
         profileData?.followers || 0,
         profileData?.engagementRate || 0,
@@ -209,7 +210,7 @@ export async function POST(request: NextRequest) {
       console.log('🔄 Caching Modash data for new connection...')
       const cacheResult = await cacheModashProfile(
         newAccount.id,
-        handle, // Use the handle as modash user ID
+        profileData?.userId || handle, // Use Modash user ID if available, fallback to handle
         normalizedPlatform
       )
       
