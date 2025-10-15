@@ -164,10 +164,17 @@ export default function LoginSelection() {
                       : 'bg-purple-600 hover:bg-purple-700 text-sm normal-case'
                   }
                 }}
+                signUpUrl={`/sign-up?role=${mode}`}
                 afterSignInUrl={
                   mode === 'staff' ? '/staff/roster' : 
                   mode === 'brand' ? '/brand/influencers' : 
                   mode === 'influencer' ? '/influencer/campaigns' : 
+                  '/'
+                }
+                afterSignUpUrl={
+                  mode === 'staff' ? '/staff/roster' : 
+                  mode === 'brand' ? '/brand/onboarding' : 
+                  mode === 'influencer' ? '/influencer/onboarding' : 
                   '/'
                 }
               />

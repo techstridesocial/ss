@@ -1,6 +1,39 @@
 import { SignUp } from '@clerk/nextjs'
 
-export default function Page() {
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { role?: string }
+}) {
+  // Determine redirect URLs based on role
+  const getAfterSignUpUrl = () => {
+    const role = searchParams.role
+    switch (role) {
+      case 'brand':
+        return '/brand/onboarding'
+      case 'influencer':
+        return '/influencer/onboarding'
+      case 'staff':
+        return '/staff/roster'
+      default:
+        return '/'
+    }
+  }
+
+  const getAfterSignInUrl = () => {
+    const role = searchParams.role
+    switch (role) {
+      case 'brand':
+        return '/brand/influencers'
+      case 'influencer':
+        return '/influencer/campaigns'
+      case 'staff':
+        return '/staff/roster'
+      default:
+        return '/'
+    }
+  }
+
   // Custom Clerk appearance for professional look
   const appearance = {
     variables: {
@@ -36,7 +69,11 @@ export default function Page() {
           </p>
         </div>
         <div className="w-full flex justify-center">
-          <SignUp appearance={appearance} afterSignInUrl="/" afterSignUpUrl="/" />
+          <SignUp 
+            appearance={appearance} 
+            afterSignInUrl={getAfterSignInUrl()}
+            afterSignUpUrl={getAfterSignUpUrl()}
+          />
         </div>
       </div>
     </div>
