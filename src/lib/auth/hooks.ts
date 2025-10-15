@@ -25,8 +25,12 @@ export function useUserRole(): UserRole | null {
         if (response.ok) {
           const data = await response.json()
           setRole(data.role)
+        } else if (response.status === 404) {
+          // User doesn't exist in database yet (new signup) - use publicMetadata or null
+          const metadataRole = user.publicMetadata?.role as UserRole
+          setRole(metadataRole || null)
         } else {
-          // Fallback to publicMetadata
+          // Other errors - fallback to publicMetadata
           const metadataRole = user.publicMetadata?.role as UserRole
           setRole(metadataRole || null)
         }
