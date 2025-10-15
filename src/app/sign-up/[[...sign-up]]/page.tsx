@@ -103,19 +103,19 @@ export default function Page({
   // Custom Clerk appearance for professional look
   const appearance = {
     variables: {
-      colorPrimary: '#1F2937',  // Tailwind slate-800
-      colorText: '#111827',
+      colorPrimary: '#ffffff',  // White for better contrast
+      colorText: '#ffffff',     // White text for colored backgrounds
       fontSize: '16px',
       borderRadius: '10px',
     },
     elements: {
-      card: 'shadow-xl px-6 py-8 border border-gray-200',
+      card: 'bg-transparent shadow-none border-none px-6 py-8',
       headerTitle: 'text-xl font-semibold text-center',
-      headerSubtitle: 'text-sm text-gray-500 text-center mb-4',
-      formFieldLabel: 'text-sm font-medium text-gray-700',
+      headerSubtitle: 'text-sm text-center mb-4',
+      formFieldLabel: 'text-sm font-medium',
       formFieldInput: 'h-10 px-4 border-gray-300 focus:ring-2 focus:ring-slate-500 rounded-md text-sm',
-      footerAction: 'text-sm text-gray-400',
-      button: 'bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm h-10 rounded-md',
+      footerAction: 'text-sm',
+      button: 'bg-white hover:bg-gray-100 text-gray-900 font-medium text-sm h-10 rounded-md',
       logoBox: 'mb-2',
     },
   }
