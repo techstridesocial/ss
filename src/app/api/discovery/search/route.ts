@@ -275,12 +275,11 @@ export async function POST(request: NextRequest) {
           
           return NextResponse.json({
             success: true,
-            data: {
-              results: transformedResults,
-              total: transformedResults.length,
-              creditsUsed: 0,
-              searchMode: 'list_users_api'
-            }
+            data: transformedResults,
+            results: transformedResults,
+            total: transformedResults.length,
+            creditsUsed: 0,
+            searchMode: 'list_users_api'
           })
         }
       } catch (error) {
