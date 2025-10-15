@@ -155,12 +155,18 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
     `
 
     const dbPlatforms = await query(platformsQuery, [influencer.influencer_id])
+    console.log('🔍 Database platforms found:', dbPlatforms)
 
     // Create platform stats with cached data for connected platforms
     const allPlatforms = ['instagram', 'tiktok', 'youtube']
     const platformStats: PlatformStats[] = await Promise.all(
       allPlatforms.map(async platform => {
-        const dbPlatform = dbPlatforms.find(p => p.platform.toLowerCase() === platform)
+        console.log(`🔍 Looking for platform: ${platform}`)
+        const dbPlatform = dbPlatforms.find(p => {
+          console.log(`🔍 Comparing: ${p.platform.toLowerCase()} === ${platform}`)
+          return p.platform.toLowerCase() === platform
+        })
+        console.log(`🔍 Found dbPlatform for ${platform}:`, dbPlatform)
         
         if (dbPlatform && dbPlatform.is_connected) {
           // Check for cached Modash data first
