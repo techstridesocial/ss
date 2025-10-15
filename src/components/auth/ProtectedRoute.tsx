@@ -31,17 +31,18 @@ export function ProtectedRoute({
         return
       }
       
-      // For staff/admin users, check public metadata immediately
+      // For ALL users, check public metadata immediately to avoid access denied flash
       const userRoleFromMetadata = user?.publicMetadata?.role
-      if (userRoleFromMetadata === 'STAFF' || userRoleFromMetadata === 'ADMIN') {
+      if (userRoleFromMetadata) {
+        console.log('🔑 User role detected from metadata:', userRoleFromMetadata)
         setRoleLoading(false)
         return
       }
       
-      // Give a very small delay only for brand/influencer users
+      // Only wait if no role in metadata (very rare case)
       const timer = setTimeout(() => {
         setRoleLoading(false)
-      }, 100) // Reduced to 100ms
+      }, 50) // Minimal delay
       
       return () => clearTimeout(timer)
     } else {

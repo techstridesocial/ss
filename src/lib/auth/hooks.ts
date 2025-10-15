@@ -19,10 +19,10 @@ export function useUserRole(): UserRole | null {
         return
       }
 
-      // For staff/admin users, check publicMetadata first since they might not be in database yet
+      // For ALL users, check publicMetadata first to avoid delays
       const metadataRole = user.publicMetadata?.role as UserRole
-      if (metadataRole === 'STAFF' || metadataRole === 'ADMIN') {
-        console.log('🔑 Staff/Admin user detected, using publicMetadata role:', metadataRole)
+      if (metadataRole) {
+        console.log('🔑 User role detected from publicMetadata:', metadataRole)
         setRole(metadataRole)
         setLoading(false)
         return
