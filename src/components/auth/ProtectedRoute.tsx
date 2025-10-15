@@ -16,8 +16,7 @@ export function ProtectedRoute({
   requiredRole, 
   requiredPortal
 }: ProtectedRouteProps) {
-  const user = useUser()
-  const { isLoaded, isSignedIn } = user || { isLoaded: false, isSignedIn: false }
+  const { user, isLoaded, isSignedIn } = useUser()
   const userRole = useUserRole()
   const router = useRouter()
   const canAccessPortal = useCanAccessPortal(requiredPortal || 'brand')
@@ -26,22 +25,29 @@ export function ProtectedRoute({
   // Check if role is still loading
   React.useEffect(() => {
     if (isLoaded && isSignedIn) {
-      // If we already have a role (from public metadata), don't wait
+      // If we already have a role (from public metadata), don't wait at all
       if (userRole) {
         setRoleLoading(false)
         return
       }
       
-      // Give a small delay to allow role to load from database
+      // For staff/admin users, check public metadata immediately
+      const userRoleFromMetadata = user?.publicMetadata?.role
+      if (userRoleFromMetadata === 'STAFF' || userRoleFromMetadata === 'ADMIN') {
+        setRoleLoading(false)
+        return
+      }
+      
+      // Give a very small delay only for brand/influencer users
       const timer = setTimeout(() => {
         setRoleLoading(false)
-      }, 300) // Reduced to 300ms for faster loading
+      }, 100) // Reduced to 100ms
       
       return () => clearTimeout(timer)
     } else {
       setRoleLoading(false)
     }
-  }, [isLoaded, isSignedIn, userRole])
+  }, [isLoaded, isSignedIn, userRole, user])
 
   useEffect(() => {
     if (!isLoaded || roleLoading) return // Wait for Clerk and role to load
