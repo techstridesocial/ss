@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     if (userResult.length === 0 || !userResult[0]) {
       // User doesn't exist, create one automatically
-      console.log('User not found, creating new record for clerk_id:', userId)
+      console.log('🔍 User not found, creating new record for clerk_id:', userId)
       
       try {
         // Get user details from Clerk
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
         const userRole = clerkUser.publicMetadata?.role as string || 'INFLUENCER_SIGNED'
         
-        console.log('Creating user with email:', userEmail, 'role:', userRole)
+        console.log('📝 Creating user with email:', userEmail, 'role:', userRole)
         
         const newUserResult = await query<{ id: string }>(
           `INSERT INTO users (clerk_id, email, status, role) 
@@ -140,6 +140,8 @@ export async function POST(request: NextRequest) {
            RETURNING id`,
           [userId, userEmail, 'ACTIVE', userRole]
         )
+        
+        console.log('📊 User creation result:', newUserResult)
         
         if (newUserResult.length === 0 || !newUserResult[0]) {
           throw new Error('INSERT returned no results')
@@ -149,7 +151,12 @@ export async function POST(request: NextRequest) {
         console.log('✅ Created new user with ID:', user_id)
         
       } catch (createUserError: any) {
-        console.error('Error creating user:', createUserError)
+        console.error('❌ Error creating user:', createUserError)
+        console.error('❌ Full error details:', {
+          message: createUserError?.message,
+          stack: createUserError?.stack,
+          code: createUserError?.code
+        })
         // Return a more specific error
         return NextResponse.json(
           { error: 'Database error: ' + (createUserError?.message || 'Could not create user record') }, 
@@ -158,6 +165,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       user_id = userResult[0].id
+      console.log('👤 Using existing user ID:', user_id)
     }
 
     // Start transaction to create/update influencer and profile records
@@ -311,9 +319,17 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Influencer onboarding error:', error)
+    console.error('❌ Influencer onboarding error:', error)
+    console.error('❌ Full error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, 
       { status: 500 }
     )
   }
