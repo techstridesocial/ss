@@ -211,7 +211,7 @@ export async function listUsers(
   platform: 'instagram' | 'tiktok' | 'youtube',
   params: { query: string; limit?: number }
 ) {
-  return modashApiRequest(`/${platform}/search`, params)
+  return modashApiRequest(`/${platform}/users`, params)
 }
 
 // Platform-aware complex discovery search (POST)

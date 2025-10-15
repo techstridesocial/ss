@@ -107,9 +107,11 @@ export default function EnhancedInfluencerStats() {
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Search successful:', data)
-        if (data.success && data.data && Array.isArray(data.data)) {
+        // Handle different API response formats
+        const results = data.data || data.results || data.users || []
+        if (data.success && Array.isArray(results) && results.length > 0) {
           // Format results to match expected structure
-          const formattedResults = data.data.map((profile: any) => ({
+          const formattedResults = results.map((profile: any) => ({
             id: profile.userId || profile.id,
             username: profile.username,
             platform: platform,
