@@ -86,10 +86,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check user's role in Clerk
+    const { user } = await auth()
+    const clerkRole = user?.publicMetadata?.role
+    console.log('🔑 User role in Clerk publicMetadata:', clerkRole)
+
     // Get influencer ID from user
+    console.log('🔍 Looking for user in database with clerk_id:', userId)
     const userResult = await queryOne(`
-      SELECT id FROM users WHERE clerk_id = $1
+      SELECT id, email, role FROM users WHERE clerk_id = $1
     `, [userId])
+    
+    console.log('👤 User query result:', userResult)
 
     if (!userResult) {
       console.error('❌ User not found in database for clerk_id:', userId)
@@ -100,9 +108,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    console.log('🔍 Looking for influencer with user_id:', userResult.id)
     const influencerResult = await queryOne(`
       SELECT id FROM influencers WHERE user_id = $1
     `, [userResult.id])
+    
+    console.log('👤 Influencer query result:', influencerResult)
 
     if (!influencerResult) {
       console.error('❌ Influencer not found for user_id:', userResult.id)
