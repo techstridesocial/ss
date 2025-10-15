@@ -384,7 +384,7 @@ export default function EnhancedInfluencerStats() {
                                 <p className="text-sm text-slate-500">@{platformData.username}</p>
                                 <button
                                   onClick={() => setEditingPlatform(platform)}
-                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium bg-blue-50 px-2 py-1 rounded"
                                 >
                                   Edit
                                 </button>
