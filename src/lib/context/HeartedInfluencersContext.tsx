@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth, useUser } from '@clerk/nextjs'
 
 interface HeartedInfluencer {
   id: string
@@ -51,6 +51,7 @@ const HeartedInfluencersContext = createContext<HeartedInfluencersContextType | 
 
 export function HeartedInfluencersProvider({ children }: { children: ReactNode }) {
   const { isLoaded, userId } = useAuth()
+  const { user } = useUser()
   const [heartedInfluencers, setHeartedInfluencers] = useState<HeartedInfluencer[]>([])
   const [shortlists, setShortlists] = useState<Shortlist[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -58,6 +59,15 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
   // Load shortlists from database when user is authenticated
   const loadShortlists = async () => {
     if (!userId) {
+      setShortlists([])
+      setIsLoading(false)
+      return
+    }
+
+    // Only load shortlists for brand users
+    const userRole = user?.publicMetadata?.role as string
+    if (userRole !== 'BRAND') {
+      console.log('👤 Non-brand user detected, skipping shortlists load')
       setShortlists([])
       setIsLoading(false)
       return
