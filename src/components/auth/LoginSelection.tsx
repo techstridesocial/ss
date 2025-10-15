@@ -14,6 +14,11 @@ export default function LoginSelection() {
     setMode('staff')
   }
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔍 LoginSelection mode changed:', mode)
+  }, [mode])
+
   // Removed plaintext staff access code. Clicking the button reveals a staff-themed sign-in.
 
   // Custom Clerk appearance for staff login
@@ -149,22 +154,24 @@ export default function LoginSelection() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="w-full flex justify-center"
           >
-            <SignIn 
-              routing="hash"
-              appearance={mode === 'staff' ? staffAppearance : {
-                elements: {
-                  formButtonPrimary: mode === 'brand' 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-sm normal-case'
-                    : 'bg-purple-600 hover:bg-purple-700 text-sm normal-case'
+            <div className="w-full max-w-md">
+              <SignIn 
+                routing="hash"
+                appearance={mode === 'staff' ? staffAppearance : {
+                  elements: {
+                    formButtonPrimary: mode === 'brand' 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-sm normal-case'
+                      : 'bg-purple-600 hover:bg-purple-700 text-sm normal-case'
+                  }
+                }}
+                afterSignInUrl={
+                  mode === 'staff' ? '/staff/roster' : 
+                  mode === 'brand' ? '/brand/influencers' : 
+                  mode === 'influencer' ? '/influencer/campaigns' : 
+                  '/'
                 }
-              }}
-              afterSignInUrl={
-                mode === 'staff' ? '/staff/roster' : 
-                mode === 'brand' ? '/brand/influencers' : 
-                mode === 'influencer' ? '/influencer/campaigns' : 
-                '/'
-              }
-            />
+              />
+            </div>
           </motion.div>
           
           {/* Back Button - Outside card with proper spacing */}
