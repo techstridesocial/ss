@@ -14,12 +14,16 @@ export async function PATCH(
     }
 
     // Check if user is staff or admin
+    console.log('🔍 Checking staff user with Clerk ID:', userId)
     const userResult = await query(`
       SELECT role FROM users WHERE clerk_id = $1
     `, [userId])
 
+    console.log('📊 User lookup result:', userResult)
+
     if (userResult.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      console.log('❌ Staff user not found in database for Clerk ID:', userId)
+      return NextResponse.json({ error: 'Staff user not found' }, { status: 404 })
     }
 
     const userRole = userResult[0].role
