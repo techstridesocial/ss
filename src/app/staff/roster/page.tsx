@@ -191,6 +191,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         const result = await response.json()
         if (result.success && result.data) {
           console.log(`✅ Loaded ${result.data.length} real influencers from database`)
+          console.log('📋 All loaded influencers:', result.data.map(inf => ({
+            id: inf.id,
+            name: inf.display_name,
+            influencer_type: inf.influencer_type,
+            content_type: inf.content_type,
+            email: inf.email
+          })))
           setInfluencers(result.data)
           setIsInitialLoading(false)
           return result.data
@@ -419,7 +426,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   // Check if influencer needs assignment
   const needsAssignment = (influencer: any) => {
     // Pending if content_type is null OR influencer_type is null
-    return !influencer.content_type || !influencer.influencer_type
+    const needs = !influencer.content_type || !influencer.influencer_type
+    if (needs) {
+      console.log('🔍 Pending assignment user found:', {
+        id: influencer.id,
+        name: influencer.display_name,
+        influencer_type: influencer.influencer_type,
+        content_type: influencer.content_type
+      })
+    }
+    return needs
   }
 
   // Separate function for tab counts that doesn't depend on activeTab
