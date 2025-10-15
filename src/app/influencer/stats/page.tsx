@@ -45,7 +45,12 @@ export default function EnhancedInfluencerStats() {
   const [statsData, setStatsData] = useState<StatsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showConnectionModal, setShowConnectionModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [showPlatformModal, setShowPlatformModal] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
@@ -72,10 +77,47 @@ export default function EnhancedInfluencerStats() {
     }
   }
 
-  // Search functionality removed - profiles can only be connected through support
+  const searchProfiles = async (query: string, platform: string) => {
+    if (!query.trim()) return
+    
+    console.log('🔍 Searching with:', { query, platform })
+    
+    setIsSearching(true)
+    setSearchQuery(query)
+    setSelectedPlatform(platform)
+    
+    try {
+      const requestBody = {
+        username: query.replace('@', ''),
+        platform: platform
+      }
+      
+      console.log('📤 Sending request:', requestBody)
+      
+      const response = await fetch('/api/influencer/search-simple', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Search successful:', data)
+        if (data.success && data.results) {
+          setSearchResults(data.results)
+        }
+      } else {
+        const errorText = await response.text()
+        console.error('❌ Search failed:', response.status, errorText)
+      }
+    } catch (error) {
+      console.error('❌ Error searching profiles:', error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
-  // Profile connection functionality removed - profiles can only be connected through support
-  const removedConnectProfile = async (profile: any) => {
+  const connectProfile = async (profile: any) => {
     try {
       console.log('🔗 Connecting profile:', profile)
       
@@ -282,7 +324,7 @@ export default function EnhancedInfluencerStats() {
                 You've connected {getConnectedCount()} of {getTotalPlatforms()} platforms.
               </p>
               <p className="text-sm text-slate-500">
-                Your connected social media platforms and performance metrics are displayed below.
+                Click on any platform card below to connect that specific social media account.
               </p>
             </div>
           )}
@@ -374,7 +416,15 @@ export default function EnhancedInfluencerStats() {
                             {getPlatformIcon(platform)}
                           </div>
                           <p className="text-slate-600 mb-4">Not connected</p>
-                          <p className="text-sm text-slate-500">Contact support to connect this platform</p>
+                          <button
+                            onClick={() => {
+                              setSelectedPlatform(platform)
+                              setShowPlatformModal(platform)
+                            }}
+                            className="w-full bg-slate-900 text-white py-3 px-4 rounded-xl hover:bg-slate-800 transition-colors font-medium"
+                          >
+                            Connect {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                          </button>
                         </div>
                       )}
                     </div>
@@ -385,7 +435,92 @@ export default function EnhancedInfluencerStats() {
           </div>
 
 
-          {/* Connection modal removed - profiles can only be connected through support */}
+          {/* Platform-Specific Connection Modals */}
+          {showPlatformModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPlatformModal(null)} />
+              <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      {getPlatformIcon(showPlatformModal)}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">
+                        Connect Your {showPlatformModal.charAt(0).toUpperCase() + showPlatformModal.slice(1)} Account
+                      </h3>
+                      <p className="text-slate-300 text-sm">Find and connect your social media profile</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Modal Content */}
+                <div className="p-8">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-900 mb-3">
+                        Enter your {showPlatformModal} handle:
+                      </label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder={`@username`}
+                          className="flex-1 px-4 py-3 border border-slate-300 rounded-l-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+                        />
+                        <button
+                          onClick={() => searchProfiles(searchQuery, showPlatformModal)}
+                          disabled={isSearching || !searchQuery.trim()}
+                          className="px-6 py-3 bg-slate-900 text-white rounded-r-2xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {searchResults.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-900">Select your profile:</p>
+                        <div className="space-y-2">
+                          {searchResults.map((profile, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-4 border border-slate-200 rounded-2xl hover:bg-slate-50 cursor-pointer transition-colors group"
+                              onClick={() => connectProfile(profile)}
+                            >
+                              <div className="flex items-center space-x-4">
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-200">
+                                  {getPlatformIcon(profile.platform)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">@{profile.username}</p>
+                                  <p className="text-sm text-slate-600">
+                                    {formatNumber(profile.followers)} followers
+                                  </p>
+                                </div>
+                              </div>
+                              <CheckCircle className="h-5 w-5 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-end pt-6 border-t border-slate-100">
+                    <button
+                      onClick={() => setShowPlatformModal(null)}
+                      className="px-6 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Toast Notifications */}
           {toastMessage && (
