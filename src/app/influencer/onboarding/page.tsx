@@ -352,14 +352,33 @@ function InfluencerOnboardingPageContent() {
                    accept="image/*"
                    className="hidden"
                    id="profile-upload"
-                   onChange={(e) => {
-                     const file = e.target.files?.[0]
-                     if (file) {
-                       // In a real app, you'd upload to Vercel Blob here
-                       // For now, just store the filename
-                       updateFormData('profile_picture', file.name)
-                     }
-                   }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      try {
+                        // Upload to Clerk user profile
+                        const formData = new FormData()
+                        formData.append('file', file)
+                        
+                        const response = await fetch('/api/upload-profile-image', {
+                          method: 'POST',
+                          body: formData
+                        })
+                        
+                        if (response.ok) {
+                          const result = await response.json()
+                          updateFormData('profile_picture', result.imageUrl)
+                          console.log('✅ Profile image uploaded to Clerk')
+                        } else {
+                          console.error('Failed to upload profile image')
+                          updateFormData('profile_picture', file.name) // Fallback
+                        }
+                      } catch (error) {
+                        console.error('Error uploading profile image:', error)
+                        updateFormData('profile_picture', file.name) // Fallback
+                      }
+                    }
+                  }}
                  />
                  <label htmlFor="profile-upload">
                    <div className="inline-block px-6 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 cursor-pointer transition-all duration-300 backdrop-blur-sm border border-white/20">

@@ -582,13 +582,6 @@ export default function InfluencerProfile() {
                       
                       <div className="flex items-center space-x-3">
                         {getStatusIcon(account.isConnected)}
-                        <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          account.isConnected 
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}>
-                          {account.isConnected ? 'Reconnect' : 'Connect'}
-                        </button>
                       </div>
                     </div>
                   ))}

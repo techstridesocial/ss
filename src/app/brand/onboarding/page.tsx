@@ -482,11 +482,31 @@ function BrandOnboardingPageContent() {
                 accept="image/*"
                 className="hidden"
                 id="logo-upload"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0]
                   if (file) {
-                    // In a real app, you'd upload to Vercel Blob here
-                    updateFormData('logo_url', URL.createObjectURL(file))
+                    try {
+                      // Upload to Clerk user profile
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      
+                      const response = await fetch('/api/upload-profile-image', {
+                        method: 'POST',
+                        body: formData
+                      })
+                      
+                      if (response.ok) {
+                        const result = await response.json()
+                        updateFormData('logo_url', result.imageUrl)
+                        console.log('✅ Logo uploaded to Clerk')
+                      } else {
+                        console.error('Failed to upload logo')
+                        updateFormData('logo_url', URL.createObjectURL(file)) // Fallback
+                      }
+                    } catch (error) {
+                      console.error('Error uploading logo:', error)
+                      updateFormData('logo_url', URL.createObjectURL(file)) // Fallback
+                    }
                   }
                 }}
               />
