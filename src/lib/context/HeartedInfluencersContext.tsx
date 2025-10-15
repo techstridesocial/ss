@@ -93,14 +93,15 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             createdAt: new Date(shortlist.created_at),
             updatedAt: new Date(shortlist.updated_at)
           }))
-          console.log(`✅ Loaded ${dbShortlists.length} shortlists from database:`, dbShortlists.map(s => ({ id: s.id, name: s.name })))
+          console.log(`✅ Loaded ${dbShortlists.length} shortlists from database:`, dbShortlists.map((s: any) => ({ id: s.id, name: s.name })))
           setShortlists(dbShortlists)
         }
       } else {
         // Handle authentication/authorization errors gracefully
-        if (response.status === 401 || response.status === 403) {
-          // User not authenticated or not authorized - silently fall back to localStorage
-          loadFromLocalStorage()
+        if (response.status === 401 || response.status === 403 || response.status === 404) {
+          // User not authenticated, not authorized, or doesn't exist yet (new signup)
+          console.log('👤 User not found or no permission - setting empty shortlists')
+          setShortlists([])
         } else {
           // Handle server errors gracefully - could be brand not onboarded
           console.log('Loading shortlists from localStorage due to server response:', response.status)
@@ -113,8 +114,9 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       if (error instanceof Error && !error.message.includes('fetch')) {
         console.error('Unexpected error loading shortlists:', error)
       }
-      // Fallback to localStorage for backward compatibility
-      loadFromLocalStorage()
+      // For new users, just set empty state instead of loading from localStorage
+      console.log('👤 Setting empty shortlists due to error (likely new user)')
+      setShortlists([])
     } finally {
       setIsLoading(false)
     }
