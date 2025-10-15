@@ -93,11 +93,19 @@ export async function POST(request: NextRequest) {
 
     // Get influencer ID from user
     console.log('🔍 Looking for user in database with clerk_id:', userId)
-    const userResult = await queryOne(`
-      SELECT id, email, role FROM users WHERE clerk_id = $1
-    `, [userId])
-    
-    console.log('👤 User query result:', userResult)
+    let userResult
+    try {
+      userResult = await queryOne(`
+        SELECT id, email, role FROM users WHERE clerk_id = $1
+      `, [userId])
+      console.log('👤 User query result:', userResult)
+    } catch (dbError) {
+      console.error('❌ Database error in user query:', dbError)
+      return NextResponse.json({
+        error: 'Database connection error',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      }, { status: 500 })
+    }
 
     if (!userResult) {
       console.error('❌ User not found in database for clerk_id:', userId)
@@ -109,11 +117,19 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔍 Looking for influencer with user_id:', userResult.id)
-    const influencerResult = await queryOne(`
-      SELECT id FROM influencers WHERE user_id = $1
-    `, [userResult.id])
-    
-    console.log('👤 Influencer query result:', influencerResult)
+    let influencerResult
+    try {
+      influencerResult = await queryOne(`
+        SELECT id FROM influencers WHERE user_id = $1
+      `, [userResult.id])
+      console.log('👤 Influencer query result:', influencerResult)
+    } catch (dbError) {
+      console.error('❌ Database error in influencer query:', dbError)
+      return NextResponse.json({
+        error: 'Database connection error',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      }, { status: 500 })
+    }
 
     if (!influencerResult) {
       console.error('❌ Influencer not found for user_id:', userResult.id)
