@@ -39,6 +39,9 @@ export default function LoginSelection() {
       button: 'bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm h-10 rounded-md',
       logoBox: 'mb-2',
     },
+    layout: {
+      showOptionalFields: false,
+    },
   }
 
   // Get background image and text colors based on mode
@@ -164,7 +167,7 @@ export default function LoginSelection() {
                       : 'bg-purple-600 hover:bg-purple-700 text-sm normal-case'
                   }
                 }}
-                signUpUrl={`/sign-up?role=${mode}`}
+                signUpUrl={mode === 'staff' ? undefined : `/sign-up?role=${mode}`}
                 afterSignInUrl={
                   mode === 'staff' ? '/staff/roster' : 
                   mode === 'brand' ? '/brand/influencers' : 
@@ -178,6 +181,13 @@ export default function LoginSelection() {
                   '/'
                 }
               />
+              {mode === 'staff' && (
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-white/70">
+                    Staff access is by invitation only
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
           
