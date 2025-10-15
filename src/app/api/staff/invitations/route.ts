@@ -124,6 +124,14 @@ export async function POST(request: NextRequest) {
     }
 
     const clerkInvitation = await response.json()
+    console.log('✅ Clerk invitation created successfully:', {
+      id: clerkInvitation.id,
+      email: clerkInvitation.emailAddress,
+      status: clerkInvitation.status,
+      expiresAt: clerkInvitation.expiresAt
+    })
+    console.log('📧 Email should be sent to:', email)
+    console.log('🔗 Invitation URL:', invitationUrl)
 
     // Store invitation in our database for tracking
     const dbResult = await createInvitation(
