@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Create Clerk invitation with custom redirect URL
     const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/invitation/accept`
     
-    // Create invitation using Clerk REST API
+    // Create invitation using Clerk REST API (2025 latest format)
     const response = await fetch('https://api.clerk.dev/v1/invitations', {
       method: 'POST',
       headers: {
@@ -94,9 +94,11 @@ export async function POST(request: NextRequest) {
           })
         },
         redirect_url: invitationUrl,
-        // Add required fields for Clerk
+        // Add required fields for Clerk (2025 format)
         ...(firstName && { first_name: firstName }),
-        ...(lastName && { last_name: lastName })
+        ...(lastName && { last_name: lastName }),
+        // Ensure email is sent by explicitly setting notify flag
+        notify: true
       })
     })
 
@@ -128,10 +130,12 @@ export async function POST(request: NextRequest) {
       id: clerkInvitation.id,
       email: clerkInvitation.emailAddress,
       status: clerkInvitation.status,
-      expiresAt: clerkInvitation.expiresAt
+      expiresAt: clerkInvitation.expiresAt,
+      emailSent: clerkInvitation.emailSent || 'unknown'
     })
     console.log('📧 Email should be sent to:', email)
     console.log('🔗 Invitation URL:', invitationUrl)
+    console.log('📋 Full invitation response:', JSON.stringify(clerkInvitation, null, 2))
 
     // Store invitation in our database for tracking
     const dbResult = await createInvitation(
