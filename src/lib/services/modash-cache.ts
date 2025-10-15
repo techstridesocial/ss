@@ -191,6 +191,8 @@ export async function getCachedProfile(
   platform: string
 ): Promise<CachedProfileData | null> {
   try {
+    console.log(`🔍 Looking for cached profile:`, { influencerPlatformId, platform: platform.toUpperCase() })
+    
     const result = await query(`
       SELECT 
         mpc.*,
@@ -210,6 +212,16 @@ export async function getCachedProfile(
       ORDER BY mpc.last_updated DESC
       LIMIT 1
     `, [influencerPlatformId, platform.toUpperCase()])
+    
+    console.log(`🔍 Cache query result:`, result.length > 0 ? 'Found cached data' : 'No cached data found')
+    if (result.length > 0) {
+      console.log(`✅ Cached profile found:`, {
+        username: result[0].username,
+        followers: result[0].followers,
+        engagement_rate: result[0].engagement_rate,
+        cached_at: result[0].cached_at
+      })
+    }
     
     if (result.length === 0) {
       return null
