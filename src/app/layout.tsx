@@ -32,6 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider
+      domain={process.env.NEXT_PUBLIC_CLERK_DOMAIN}
       appearance={{
         elements: {
           formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-white',
