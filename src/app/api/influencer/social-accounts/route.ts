@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { platform, handle, profileData } = body
 
+    console.log('🔗 Connecting social account:', { platform, handle, userId })
+
     if (!platform || !handle) {
       return NextResponse.json(
         { error: 'Platform and handle are required' },
@@ -90,7 +92,8 @@ export async function POST(request: NextRequest) {
     `, [userId])
 
     if (!userResult) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      console.error('❌ User not found in database for clerk_id:', userId)
+      return NextResponse.json({ error: 'User not found - please complete onboarding first' }, { status: 404 })
     }
 
     const influencerResult = await queryOne(`
@@ -98,7 +101,8 @@ export async function POST(request: NextRequest) {
     `, [userResult.id])
 
     if (!influencerResult) {
-      return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
+      console.error('❌ Influencer not found for user_id:', userResult.id)
+      return NextResponse.json({ error: 'Influencer profile not found - please complete onboarding first' }, { status: 404 })
     }
 
     // Check if account already exists
@@ -115,6 +119,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new social account into influencer_platforms
+    console.log('📝 Inserting social account:', {
+      influencerId: influencerResult.id,
+      platform,
+      handle,
+      profileData
+    })
+
     const newAccount = await queryOne(`
       INSERT INTO influencer_platforms (
         influencer_id,
@@ -138,6 +149,8 @@ export async function POST(request: NextRequest) {
       profileData?.avgViews || 0,
       true
     ])
+
+    console.log('✅ Social account connected successfully:', newAccount)
 
     return NextResponse.json({
       success: true,
