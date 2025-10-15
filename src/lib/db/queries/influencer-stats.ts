@@ -37,6 +37,7 @@ export interface PlatformStats {
   followers: number
   engagement_rate: number
   avg_views: number
+  avg_likes?: number
   is_connected: boolean
   last_synced?: Date
   status: string
@@ -133,6 +134,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
               followers: cachedData.followers || dbPlatform.followers || 0,
               engagement_rate: cachedData.engagement_rate || dbPlatform.engagement_rate || 0,
               avg_views: cachedData.avg_views || dbPlatform.avg_views || 0,
+              avg_likes: cachedData.avg_likes || 0,
               is_connected: true,
               last_synced: cachedData.last_updated,
               status: 'connected',

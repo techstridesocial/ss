@@ -558,10 +558,10 @@ export default function EnhancedInfluencerStats() {
                             <p className="text-2xl font-bold text-slate-900">
                               {formatNumber(
                                 platform === 'instagram' 
-                                  ? (platformData.avg_likes > 0 ? platformData.avg_likes : getDefaultViews(platform))
+                                  ? (platformData.avg_likes || 0)
                                   : platform === 'youtube'
-                                  ? (platformData.avg_views > 0 ? platformData.avg_views : getDefaultViews(platform))
-                                  : (platformData.avg_views > 0 ? platformData.avg_views : getDefaultViews(platform))
+                                  ? (platformData.avg_views || 0)
+                                  : (platformData.avg_views || 0)
                               )}
                             </p>
                             <p className="text-xs text-slate-600 font-medium">
