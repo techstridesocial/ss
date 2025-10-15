@@ -161,31 +161,45 @@ export async function POST(request: NextRequest) {
       profileData
     })
 
-    const newAccount = await queryOne(`
-      INSERT INTO influencer_platforms (
-        influencer_id,
+    let newAccount
+    try {
+      newAccount = await queryOne(`
+        INSERT INTO influencer_platforms (
+          influencer_id,
+          platform,
+          username,
+          profile_url,
+          followers,
+          engagement_rate,
+          avg_views,
+          is_connected,
+          last_synced
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        RETURNING *
+      `, [
+        influencerResult.id,
         platform,
-        username,
-        profile_url,
-        followers,
-        engagement_rate,
-        avg_views,
-        is_connected,
-        last_synced
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-      RETURNING *
-    `, [
-      influencerResult.id,
-      platform,
-      handle,
-      profileData?.profileUrl || null,
-      profileData?.followers || 0,
-      profileData?.engagementRate || 0,
-      profileData?.avgViews || 0,
-      true
-    ])
+        handle,
+        profileData?.profileUrl || null,
+        profileData?.followers || 0,
+        profileData?.engagementRate || 0,
+        profileData?.avgViews || 0,
+        true
+      ])
 
-    console.log('✅ Social account connected successfully:', newAccount)
+      console.log('✅ Social account connected successfully:', newAccount)
+    } catch (insertError) {
+      console.error('❌ Error inserting social account:', insertError)
+      console.error('❌ Insert error details:', {
+        message: insertError instanceof Error ? insertError.message : 'Unknown error',
+        stack: insertError instanceof Error ? insertError.stack : undefined,
+        code: insertError instanceof Error ? (insertError as any).code : undefined
+      })
+      return NextResponse.json({
+        error: 'Failed to save social account to database',
+        details: insertError instanceof Error ? insertError.message : 'Unknown database error'
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
