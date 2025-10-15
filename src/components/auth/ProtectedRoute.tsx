@@ -37,8 +37,8 @@ export function ProtectedRoute({
       return
     }
 
-    // Check portal-based access
-    if (requiredPortal && !canAccessPortal) {
+    // Check portal-based access, but allow onboarding pages for users without roles
+    if (requiredPortal && !canAccessPortal && !window.location.pathname.includes('/onboarding')) {
       router.replace('/unauthorized')
       return
     }
@@ -181,9 +181,9 @@ export function InfluencerProtectedRoute({ children }: { children: ReactNode }) 
         return
       }
 
-      // Only check for influencer users
+      // Only check for influencer users or users without a role (new signups)
       const role = user.publicMetadata?.role as string
-      if (!['INFLUENCER_SIGNED', 'INFLUENCER_PARTNERED'].includes(role)) {
+      if (role && !['INFLUENCER_SIGNED', 'INFLUENCER_PARTNERED'].includes(role)) {
         setOnboardingStatus({ is_onboarded: true, loading: false })
         return
       }
