@@ -155,9 +155,9 @@ export default function LoginSelection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="w-full flex items-center justify-center"
+            className="w-full flex flex-col items-center justify-center"
           >
-            <div className="w-full max-w-md flex items-center justify-center">
+            <div className="w-full max-w-md flex flex-col items-center justify-center">
               <SignIn 
                 routing="hash"
                 appearance={mode === 'staff' ? staffAppearance : {
@@ -182,11 +182,24 @@ export default function LoginSelection() {
                 }
               />
               {mode === 'staff' && (
-                <div className="mt-4 text-center">
-                  <p className="text-xs text-white/70">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-6 flex flex-col items-center justify-center"
+                >
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-cyan-300 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-cyan-300 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-cyan-300 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                  <p className="text-sm text-cyan-200 font-medium">
                     Staff access is by invitation only
                   </p>
-                </div>
+                  <p className="text-xs text-cyan-300/80 mt-1">
+                    Contact your administrator for access
+                  </p>
+                </motion.div>
               )}
             </div>
           </motion.div>
