@@ -34,6 +34,72 @@ export default function Page({
     }
   }
 
+  // Get background style based on role
+  const getBackgroundStyle = () => {
+    const role = searchParams.role
+    switch (role) {
+      case 'brand':
+        return {
+          backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-blue-ciNl7Fdr0aqj6WybhUHWs8TcRx4F7D.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }
+      case 'influencer':
+        return {
+          backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-cyan-DCLBrf9zXPufk7mvNq7d9hASFRCTQt.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }
+      case 'staff':
+        return {
+          backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-cyan-DCLBrf9zXPufk7mvNq7d9hASFRCTQt.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }
+      default:
+        return {
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+        }
+    }
+  }
+
+  // Get text colors based on role
+  const getTextColors = () => {
+    const role = searchParams.role
+    switch (role) {
+      case 'brand':
+        return {
+          title: 'text-white',
+          subtitle: 'text-blue-200',
+          description: 'text-blue-100'
+        }
+      case 'influencer':
+        return {
+          title: 'text-white',
+          subtitle: 'text-cyan-200',
+          description: 'text-cyan-100'
+        }
+      case 'staff':
+        return {
+          title: 'text-white',
+          subtitle: 'text-cyan-200',
+          description: 'text-cyan-100'
+        }
+      default:
+        return {
+          title: 'text-gray-900',
+          subtitle: 'text-gray-500',
+          description: 'text-gray-600'
+        }
+    }
+  }
+
+  const backgroundStyle = getBackgroundStyle()
+  const textColors = getTextColors()
+
   // Custom Clerk appearance for professional look
   const appearance = {
     variables: {
@@ -55,16 +121,22 @@ export default function Page({
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
-      <div className="w-full max-w-md flex flex-col items-center text-center">
+    <div 
+      className="min-h-screen w-full flex items-center justify-center relative"
+      style={backgroundStyle}
+    >
+      {/* Background overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+      
+      <div className="w-full max-w-md flex flex-col items-center text-center relative z-10">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className={`text-2xl font-bold mb-2 ${textColors.title}`}>
             Stride Social
           </h1>
-          <div className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
+          <div className={`text-xs uppercase tracking-wider font-medium mb-3 ${textColors.subtitle}`}>
             Dashboard
           </div>
-          <p className="text-sm text-gray-600">
+          <p className={`text-sm ${textColors.description}`}>
             Create your account
           </p>
         </div>
