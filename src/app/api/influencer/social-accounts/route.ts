@@ -93,7 +93,11 @@ export async function POST(request: NextRequest) {
 
     if (!userResult) {
       console.error('❌ User not found in database for clerk_id:', userId)
-      return NextResponse.json({ error: 'User not found - please complete onboarding first' }, { status: 404 })
+      return NextResponse.json({ 
+        error: 'Please complete your onboarding first',
+        redirectTo: '/influencer/onboarding',
+        message: 'You need to complete your profile setup before connecting social media accounts'
+      }, { status: 400 })
     }
 
     const influencerResult = await queryOne(`
@@ -102,7 +106,11 @@ export async function POST(request: NextRequest) {
 
     if (!influencerResult) {
       console.error('❌ Influencer not found for user_id:', userResult.id)
-      return NextResponse.json({ error: 'Influencer profile not found - please complete onboarding first' }, { status: 404 })
+      return NextResponse.json({ 
+        error: 'Please complete your onboarding first',
+        redirectTo: '/influencer/onboarding',
+        message: 'You need to complete your influencer profile setup before connecting social media accounts'
+      }, { status: 400 })
     }
 
     // Check if account already exists

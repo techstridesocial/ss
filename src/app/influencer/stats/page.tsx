@@ -185,8 +185,18 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       } else {
-        const errorText = await response.text()
-        console.error('❌ Connection failed:', response.status, errorText)
+        const errorData = await response.json()
+        console.error('❌ Connection failed:', response.status, errorData)
+        
+        // If user needs to complete onboarding, redirect them
+        if (errorData.redirectTo) {
+          window.location.href = errorData.redirectTo
+          return
+        }
+        
+        // Show error message to user
+        setSuccessMessage(`❌ ${errorData.message || 'Failed to connect profile'}`)
+        setTimeout(() => setSuccessMessage(''), 5000)
       }
     } catch (error) {
       console.error('❌ Error connecting profile:', error)
