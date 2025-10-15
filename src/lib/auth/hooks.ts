@@ -75,8 +75,28 @@ export function useHasExactRole(role: UserRole): boolean {
 
 // Check if user can access specific portal on client side
 export function useCanAccessPortal(portal: 'brand' | 'influencer' | 'staff' | 'admin'): boolean {
+  const { user } = useUser()
   const currentRole = useUserRole()
   
+  // First check Clerk metadata directly (fastest)
+  const metadataRole = user?.publicMetadata?.role as string
+  if (metadataRole) {
+    console.log('🔑 Checking portal access with Clerk metadata role:', metadataRole)
+    switch (portal) {
+      case 'brand':
+        return metadataRole === 'BRAND'
+      case 'influencer':
+        return metadataRole === 'INFLUENCER_SIGNED' || metadataRole === 'INFLUENCER_PARTNERED'
+      case 'staff':
+        return metadataRole === 'STAFF' || metadataRole === 'ADMIN'
+      case 'admin':
+        return metadataRole === 'ADMIN'
+      default:
+        return false
+    }
+  }
+  
+  // Fallback to useUserRole if no metadata
   if (!currentRole) {
     return false
   }
