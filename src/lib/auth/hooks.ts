@@ -19,6 +19,15 @@ export function useUserRole(): UserRole | null {
         return
       }
 
+      // For staff/admin users, check publicMetadata first since they might not be in database yet
+      const metadataRole = user.publicMetadata?.role as UserRole
+      if (metadataRole === 'STAFF' || metadataRole === 'ADMIN') {
+        console.log('🔑 Staff/Admin user detected, using publicMetadata role:', metadataRole)
+        setRole(metadataRole)
+        setLoading(false)
+        return
+      }
+
       try {
         // Try to get role from database instead of publicMetadata
         const response = await fetch('/api/auth/current-user')
@@ -27,17 +36,14 @@ export function useUserRole(): UserRole | null {
           setRole(data.role)
         } else if (response.status === 404) {
           // User doesn't exist in database yet (new signup) - use publicMetadata or null
-          const metadataRole = user.publicMetadata?.role as UserRole
           setRole(metadataRole || null)
         } else {
           // Other errors - fallback to publicMetadata
-          const metadataRole = user.publicMetadata?.role as UserRole
           setRole(metadataRole || null)
         }
       } catch (error) {
         console.error('Error fetching user role:', error)
         // Fallback to publicMetadata
-        const metadataRole = user.publicMetadata?.role as UserRole
         setRole(metadataRole || null)
       } finally {
         setLoading(false)
