@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, ReactNode, useState } from 'react'
+import React, { useEffect, ReactNode, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { useUserRole, useCanAccessPortal } from '../../lib/auth/hooks'
@@ -21,9 +21,24 @@ export function ProtectedRoute({
   const userRole = useUserRole()
   const router = useRouter()
   const canAccessPortal = useCanAccessPortal(requiredPortal || 'brand')
+  const [roleLoading, setRoleLoading] = React.useState(true)
+
+  // Check if role is still loading
+  React.useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      // Give a small delay to allow role to load
+      const timer = setTimeout(() => {
+        setRoleLoading(false)
+      }, 1000) // 1 second delay to allow role to load
+      
+      return () => clearTimeout(timer)
+    } else {
+      setRoleLoading(false)
+    }
+  }, [isLoaded, isSignedIn])
 
   useEffect(() => {
-    if (!isLoaded) return // Wait for Clerk to load
+    if (!isLoaded || roleLoading) return // Wait for Clerk and role to load
     
     // Redirect to sign-in if not authenticated
     if (!isSignedIn) {
@@ -43,10 +58,10 @@ export function ProtectedRoute({
       return
     }
 
-  }, [isLoaded, isSignedIn, userRole, requiredRole, requiredPortal, canAccessPortal, router])
+  }, [isLoaded, isSignedIn, userRole, requiredRole, requiredPortal, canAccessPortal, router, roleLoading])
 
-  // Show loading state while Clerk is initializing
-  if (!isLoaded) {
+  // Show loading state while Clerk is initializing or role is loading
+  if (!isLoaded || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
