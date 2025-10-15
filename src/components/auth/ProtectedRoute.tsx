@@ -26,16 +26,22 @@ export function ProtectedRoute({
   // Check if role is still loading
   React.useEffect(() => {
     if (isLoaded && isSignedIn) {
-      // Give a small delay to allow role to load
+      // If we already have a role (from public metadata), don't wait
+      if (userRole) {
+        setRoleLoading(false)
+        return
+      }
+      
+      // Give a small delay to allow role to load from database
       const timer = setTimeout(() => {
         setRoleLoading(false)
-      }, 1000) // 1 second delay to allow role to load
+      }, 300) // Reduced to 300ms for faster loading
       
       return () => clearTimeout(timer)
     } else {
       setRoleLoading(false)
     }
-  }, [isLoaded, isSignedIn])
+  }, [isLoaded, isSignedIn, userRole])
 
   useEffect(() => {
     if (!isLoaded || roleLoading) return // Wait for Clerk and role to load
