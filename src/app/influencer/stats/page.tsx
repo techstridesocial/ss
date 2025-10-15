@@ -53,6 +53,7 @@ export default function EnhancedInfluencerStats() {
   const [showPlatformModal, setShowPlatformModal] = useState<string | null>(null)
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     loadStats()
@@ -297,6 +298,42 @@ export default function EnhancedInfluencerStats() {
     }
   }
 
+  const refreshModashData = async () => {
+    try {
+      setIsRefreshing(true)
+      console.log('🔄 Refreshing Modash data for all connected platforms...')
+
+      const response = await fetch('/api/influencer/refresh-modash-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Modash data refresh result:', data)
+        
+        if (data.data.success > 0) {
+          await loadStats() // Reload stats to show updated data
+          setSuccessMessage(`✅ Successfully refreshed ${data.data.success} platform(s) with real Modash data!`)
+          setTimeout(() => setSuccessMessage(''), 5000)
+        } else {
+          setSuccessMessage(`⚠️ ${data.message}`)
+          setTimeout(() => setSuccessMessage(''), 5000)
+        }
+      } else {
+        const errorData = await response.json()
+        setSuccessMessage(`❌ Failed to refresh data: ${errorData.error || 'Unknown error'}`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing Modash data:', error)
+      setSuccessMessage(`❌ Failed to refresh data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   // Refresh functionality removed - no longer needed
 
   const formatNumber = (num: number) => {
@@ -421,6 +458,22 @@ export default function EnhancedInfluencerStats() {
               </p>
               <p className="text-sm text-slate-500">
                 Click on any platform card below to connect that specific social media account.
+              </p>
+            </div>
+          )}
+
+          {/* Refresh Real Data Button */}
+          {getConnectedCount() > 0 && (
+            <div className="mb-8 text-center">
+              <button
+                onClick={refreshModashData}
+                disabled={isRefreshing}
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
+              >
+                {isRefreshing ? '🔄 Refreshing Real Data...' : '🔄 Refresh Real Modash Data'}
+              </button>
+              <p className="text-sm text-slate-500 mt-2">
+                Get the latest analytics from Modash for your connected accounts
               </p>
             </div>
           )}
