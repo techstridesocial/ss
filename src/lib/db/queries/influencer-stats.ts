@@ -44,55 +44,7 @@ export interface PlatformStats {
   cached_at?: Date
 }
 
-/**
- * Generate mock social media metrics for platforms that aren't connected
- */
-function generateMockMetrics(platform: string, isConnected: boolean): PlatformStats {
-  if (isConnected) {
-    // Return actual data from database
-    return {
-      platform,
-      username: '',
-      followers: 0,
-      engagement_rate: 0,
-      avg_views: 0,
-      is_connected: true,
-      status: 'connected'
-    }
-  }
-
-  // Generate realistic mock data based on platform
-  const mockData = {
-    instagram: {
-      followers: Math.floor(Math.random() * 50000) + 1000,
-      engagement_rate: (Math.random() * 0.05) + 0.02, // 2-7%
-      avg_views: Math.floor(Math.random() * 20000) + 500
-    },
-    tiktok: {
-      followers: Math.floor(Math.random() * 100000) + 2000,
-      engagement_rate: (Math.random() * 0.08) + 0.03, // 3-11%
-      avg_views: Math.floor(Math.random() * 50000) + 1000
-    },
-    youtube: {
-      followers: Math.floor(Math.random() * 30000) + 500,
-      engagement_rate: (Math.random() * 0.04) + 0.015, // 1.5-5.5%
-      avg_views: Math.floor(Math.random() * 10000) + 200
-    }
-  }
-
-  const data = mockData[platform as keyof typeof mockData] || mockData.instagram
-
-  return {
-    platform,
-    username: `@mock_${platform}_user`,
-    followers: data.followers,
-    engagement_rate: data.engagement_rate,
-    avg_views: data.avg_views,
-    is_connected: false,
-    last_synced: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
-    status: 'not_connected'
-  }
-}
+// Mock data generation removed - using only real data from database
 
 /**
  * Get influencer statistics with mock social data
@@ -201,11 +153,16 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
             }
           }
         } else {
-          // Generate mock data for platform not connected
-          const mockData = generateMockMetrics(platform, false)
+          // Platform not connected - return empty data instead of mock
           return {
-            ...mockData,
-            data_source: 'mock'
+            platform: platform,
+            username: `@${platform}_user`,
+            followers: 0,
+            engagement_rate: 0,
+            avg_views: 0,
+            is_connected: false,
+            status: 'not_connected',
+            data_source: 'none'
           }
         }
       })
@@ -245,9 +202,9 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
     const totalContentComments = recentContent.reduce((sum, c) => sum + (c.comments || 0), 0)
     const totalContentShares = recentContent.reduce((sum, c) => sum + (c.shares || 0), 0)
 
-    // Generate mock performance trends
-    const followersGrowth = Math.random() * 0.15 - 0.05 // -5% to +10%
-    const engagementTrend = Math.random() * 0.1 - 0.02 // -2% to +8%
+    // Use real performance trends (no mock data)
+    const followersGrowth = 0 // Will be calculated from real data over time
+    const engagementTrend = 0 // Will be calculated from real data over time
     const contentPerformance = recentContent.length > 0 ? 'good' : 'no_data'
 
     const stats: InfluencerStats = {
@@ -311,12 +268,19 @@ export async function getPlatformStats(influencerId: string, platform: string): 
     const result = await query(queryText, [influencerId, platform])
 
     if (result.length === 0) {
-      // Return mock data if no platform data exists
-      const mockData = generateMockMetrics(platform, false)
+      // Return empty data if no platform data exists
       return {
         success: true,
-        data: mockData,
-        message: 'Mock platform stats generated'
+        data: {
+          platform: platform,
+          username: `@${platform}_user`,
+          followers: 0,
+          engagement_rate: 0,
+          avg_views: 0,
+          is_connected: false,
+          status: 'not_connected'
+        },
+        message: 'No platform data found'
       }
     }
 
