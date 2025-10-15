@@ -92,12 +92,14 @@ export default function AssignInfluencerModal({
       return
     }
 
+    console.log('🚀 Submitting assignment with data:', formData)
     setIsLoading(true)
     try {
       await onAssign(formData)
+      console.log('✅ Assignment successful')
       onClose()
     } catch (error) {
-      console.error('Error assigning influencer:', error)
+      console.error('❌ Error assigning influencer:', error)
       setError(error instanceof Error ? error.message : 'Failed to assign influencer')
     } finally {
       setIsLoading(false)

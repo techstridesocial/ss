@@ -873,11 +873,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleSaveAssignment = async (assignmentData: any) => {
-    if (!selectedInfluencer) return
+    if (!selectedInfluencer) {
+      console.error('❌ No selected influencer for assignment')
+      throw new Error('No influencer selected')
+    }
     
     setIsLoading(true)
     try {
-      console.log('Assigning influencer:', selectedInfluencer.display_name, assignmentData)
+      console.log('🚀 Assigning influencer:', selectedInfluencer.display_name, assignmentData)
       
       const response = await fetch(`/api/influencers/${selectedInfluencer.id}`, {
         method: 'PATCH',
@@ -887,9 +890,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         body: JSON.stringify(assignmentData)
       })
 
+      console.log('📡 Assignment API response status:', response.status)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to assign influencer')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ Assignment API error:', response.status, errorData)
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`)
       }
 
       const result = await response.json()
