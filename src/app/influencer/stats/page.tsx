@@ -51,6 +51,7 @@ export default function EnhancedInfluencerStats() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState('')
   const [showPlatformModal, setShowPlatformModal] = useState<string | null>(null)
+  const [editingPlatform, setEditingPlatform] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
@@ -198,6 +199,36 @@ export default function EnhancedInfluencerStats() {
       }
     } catch (error) {
       console.error('❌ Error connecting profile:', error)
+    }
+  }
+
+  const updateUsername = async (platform: string, newUsername: string) => {
+    try {
+      console.log('🔄 Updating username for', platform, 'to', newUsername)
+      
+      const response = await fetch('/api/influencer/social-accounts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: platform,
+          username: newUsername
+        })
+      })
+      
+      if (response.ok) {
+        await loadStats()
+        setEditingPlatform(null)
+        setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} username updated to @${newUsername}!`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+      } else {
+        const errorData = await response.json()
+        setSuccessMessage(`❌ Failed to update username: ${errorData.error || 'Unknown error'}`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+      }
+    } catch (error) {
+      console.error('❌ Error updating username:', error)
+      setSuccessMessage(`❌ Failed to update username: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setTimeout(() => setSuccessMessage(''), 5000)
     }
   }
 
@@ -349,7 +380,15 @@ export default function EnhancedInfluencerStats() {
                           <div>
                             <h3 className="text-lg font-semibold text-slate-900 capitalize">{platform}</h3>
                             {isConnected && platformData.username && (
-                              <p className="text-sm text-slate-500">@{platformData.username}</p>
+                              <div className="flex items-center space-x-2">
+                                <p className="text-sm text-slate-500">@{platformData.username}</p>
+                                <button
+                                  onClick={() => setEditingPlatform(platform)}
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  Edit
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -512,6 +551,93 @@ export default function EnhancedInfluencerStats() {
                   <div className="flex justify-end pt-6 border-t border-slate-100">
                     <button
                       onClick={() => setShowPlatformModal(null)}
+                      className="px-6 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Username Modal */}
+          {editingPlatform && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditingPlatform(null)} />
+              <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      {getPlatformIcon(editingPlatform)}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">
+                        Edit {editingPlatform.charAt(0).toUpperCase() + editingPlatform.slice(1)} Username
+                      </h3>
+                      <p className="text-slate-300 text-sm">Search for and select a new username</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Modal Content */}
+                <div className="p-8">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-900 mb-3">
+                        Enter new {editingPlatform} handle:
+                      </label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder={`@username`}
+                          className="flex-1 px-4 py-3 border border-slate-300 rounded-l-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+                        />
+                        <button
+                          onClick={() => searchProfiles(searchQuery, editingPlatform)}
+                          disabled={isSearching || !searchQuery.trim()}
+                          className="px-6 py-3 bg-slate-900 text-white rounded-r-2xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {searchResults.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-900">Select new profile:</p>
+                        <div className="space-y-2">
+                          {searchResults.map((profile, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-4 border border-slate-200 rounded-2xl hover:bg-slate-50 cursor-pointer transition-colors group"
+                              onClick={() => updateUsername(editingPlatform, profile.username)}
+                            >
+                              <div className="flex items-center space-x-4">
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-200">
+                                  {getPlatformIcon(profile.platform)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">@{profile.username}</p>
+                                  <p className="text-sm text-slate-600">
+                                    {formatNumber(profile.followers)} followers
+                                  </p>
+                                </div>
+                              </div>
+                              <CheckCircle className="h-5 w-5 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-end pt-6 border-t border-slate-100">
+                    <button
+                      onClick={() => setEditingPlatform(null)}
                       className="px-6 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors font-medium"
                     >
                       Cancel

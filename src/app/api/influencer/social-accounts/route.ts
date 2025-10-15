@@ -357,3 +357,71 @@ export async function DELETE(request: NextRequest) {
     )
   }
 }
+
+// PUT - Update username for existing social account
+export async function PUT(request: NextRequest) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { platform, username } = body
+
+    // Convert platform to uppercase to match database enum
+    const normalizedPlatform = platform?.toUpperCase()
+    console.log('🔄 Updating username:', { platform: normalizedPlatform, username, userId })
+
+    if (!platform || !username) {
+      return NextResponse.json(
+        { error: 'Platform and username are required' },
+        { status: 400 }
+      )
+    }
+
+    // Get influencer ID from user
+    const userResult = await queryOne(`
+      SELECT id FROM users WHERE clerk_id = $1
+    `, [userId])
+
+    if (!userResult) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const influencerResult = await queryOne(`
+      SELECT id FROM influencers WHERE user_id = $1
+    `, [userResult.id])
+
+    if (!influencerResult) {
+      return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
+    }
+
+    // Update the username in the database
+    const updatedAccount = await queryOne(`
+      UPDATE influencer_platforms 
+      SET username = $1, updated_at = NOW()
+      WHERE influencer_id = $2 AND platform = $3
+      RETURNING *
+    `, [username, influencerResult.id, normalizedPlatform])
+
+    if (!updatedAccount) {
+      return NextResponse.json({ error: 'Social account not found' }, { status: 404 })
+    }
+
+    console.log('✅ Username updated successfully:', updatedAccount)
+
+    return NextResponse.json({
+      success: true,
+      data: updatedAccount,
+      message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} username updated successfully`
+    })
+
+  } catch (error) {
+    console.error('Error updating username:', error)
+    return NextResponse.json(
+      { error: 'Failed to update username' },
+      { status: 500 }
+    )
+  }
+}
