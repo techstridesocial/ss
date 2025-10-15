@@ -8,6 +8,7 @@ import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import { useAuth } from '@clerk/nextjs'
 import { useCurrentUserId } from '@/lib/auth/current-user'
 import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
+import AssignInfluencerModal from '../../../components/modals/AssignInfluencerModal'
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import DashboardInfoPanel from '../../../components/influencer/DashboardInfoPanel'
@@ -27,6 +28,7 @@ interface InfluencerTableProps {
 function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerTableProps) {
   const currentUserId = useCurrentUserId()
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null)
@@ -865,6 +867,49 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setEditModalOpen(true)
   }
 
+  const handleAssignInfluencer = (influencer: any) => {
+    setSelectedInfluencer(influencer)
+    setAssignModalOpen(true)
+  }
+
+  const handleSaveAssignment = async (assignmentData: any) => {
+    if (!selectedInfluencer) return
+    
+    setIsLoading(true)
+    try {
+      console.log('Assigning influencer:', selectedInfluencer.display_name, assignmentData)
+      
+      const response = await fetch(`/api/influencers/${selectedInfluencer.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assignmentData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to assign influencer')
+      }
+
+      const result = await response.json()
+      console.log('✅ Assignment successful:', result)
+
+      // Refresh the data to show updated influencer
+      await loadInfluencers()
+      
+      // Close the modal
+      setAssignModalOpen(false)
+      setSelectedInfluencer(null)
+
+    } catch (error) {
+      console.error('❌ Assignment failed:', error)
+      throw error // Re-throw to let the modal handle the error display
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSaveInfluencerEdit = async (data: any) => {
     setIsLoading(true)
     console.log('Saving influencer:', data)
@@ -1587,6 +1632,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   {/* Actions */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-1">
+                      {/* Assign Button - Only for pending users */}
+                      {needsAssignment(influencer) && (
+                        <button
+                          onClick={() => handleAssignInfluencer(influencer)}
+                          disabled={isLoading}
+                          className="p-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-600 hover:text-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
+                          title="Assign Influencer Type & Staff Member"
+                        >
+                          <User size={16} />
+                        </button>
+                      )}
+                      
                       {/* Analytics Button */}
                       <button
                         onClick={() => handleViewInfluencer(influencer)}
@@ -1731,6 +1788,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           }}
           influencer={selectedInfluencer}
           onSave={handleSaveInfluencerEdit}
+        />
+      )}
+
+      {assignModalOpen && selectedInfluencer && (
+        <AssignInfluencerModal
+          isOpen={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false)
+            setSelectedInfluencer(null)
+          }}
+          influencer={selectedInfluencer}
+          onAssign={handleSaveAssignment}
         />
       )}
 

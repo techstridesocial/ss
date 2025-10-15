@@ -52,8 +52,6 @@ interface OnboardingData {
   team_member_2_email: string
   // Stride Social Contact Information
   stride_contact_name: string
-  stride_contact_email: string
-  stride_contact_phone: string
 }
 
 const STEPS = [
@@ -62,7 +60,7 @@ const STEPS = [
   { id: 'industry', title: "Which industry are you in?", type: 'select' },
   { id: 'company_size', title: "How big is your team?", type: 'radio' },
   { id: 'description', title: "What does your brand do?", type: 'textarea' },
-  { id: 'logo_url', title: "Upload your logo", type: 'upload' },
+  { id: 'logo_url', title: "Upload your logo", type: 'upload', optional: true },
   { id: 'annual_budget', title: "What's your annual marketing budget?", type: 'radio' },
   { id: 'preferred_niches', title: "What content niches do you want to focus on?", type: 'multiselect' },
   { id: 'target_regions', title: "Where are your target customers located?", type: 'multiselect' },
@@ -78,8 +76,6 @@ const STEPS = [
   { id: 'brand_contact_email', title: "Brand contact email address?", type: 'email' },
   { id: 'brand_contact_phone', title: "Brand contact phone number?", type: 'tel' },
   { id: 'stride_contact_name', title: "Who should be your main contact at Stride Social?", type: 'text', optional: true },
-  { id: 'stride_contact_email', title: "Stride Social contact email?", type: 'email', optional: true },
-  { id: 'stride_contact_phone', title: "Stride Social contact phone?", type: 'tel', optional: true },
   { id: 'review', title: "Final step: review your details", type: 'review' }
 ]
 
@@ -128,7 +124,7 @@ const NICHE_OPTIONS = [
 ]
 
 const REGION_OPTIONS = [
-  'United Kingdom', 'North America', 'Europe', 'Latin America',
+  'United Kingdom', 'United States', 'Canada', 'Europe', 'Latin America',
   'Africa', 'Asia Pacific', 'Middle East', 'Australia', 'Global'
 ]
 
@@ -202,9 +198,7 @@ function BrandOnboardingPageContent() {
     team_member_1_email: '',
     team_member_2_email: '',
     // Stride Social Contact Information
-    stride_contact_name: '',
-    stride_contact_email: '',
-    stride_contact_phone: ''
+    stride_contact_name: ''
   })
 
   // Auto-populate contact email when user loads
@@ -315,7 +309,7 @@ function BrandOnboardingPageContent() {
       case 'description':
         return formData.description.trim().length > 0
       case 'logo_url':
-        return formData.logo_url.length > 0 // Required
+        return true // Optional
       case 'annual_budget':
         return formData.annual_budget.length > 0
       case 'preferred_niches':
@@ -482,7 +476,7 @@ function BrandOnboardingPageContent() {
             <div className="border-2 border-dashed border-white/30 rounded-2xl p-12 text-center bg-white/5">
               <Upload className="w-12 h-12 text-blue-300 mx-auto mb-4" />
               <p className="text-white mb-4">Drop your logo here or click to browse</p>
-              <p className="text-blue-200 text-sm">Required - Please upload your brand logo</p>
+              <p className="text-blue-200 text-sm">Optional - Upload your brand logo</p>
               <input
                 type="file"
                 accept="image/*"
@@ -1034,57 +1028,6 @@ function BrandOnboardingPageContent() {
           </motion.div>
         )
 
-      case 'stride_contact_email':
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
-              <input
-                type="email"
-                value={formData.stride_contact_email}
-                onChange={(e) => updateFormData('stride_contact_email', e.target.value)}
-                placeholder="jane@stridesocial.com"
-                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
-                  text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
-                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
-                autoFocus
-              />
-            </div>
-            <p className="text-blue-200 text-sm text-center">
-              Optional - Stride Social team member's email
-            </p>
-          </motion.div>
-        )
-
-      case 'stride_contact_phone':
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300 w-5 h-5" />
-              <input
-                type="tel"
-                value={formData.stride_contact_phone}
-                onChange={(e) => updateFormData('stride_contact_phone', e.target.value)}
-                placeholder="+44 20 9876 5432"
-                className="w-full pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
-                  text-white placeholder-blue-200 text-lg focus:outline-none focus:border-white/50 
-                  focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
-                autoFocus
-              />
-            </div>
-            <p className="text-blue-200 text-sm text-center">
-              Optional - Stride Social team member's phone
-            </p>
-          </motion.div>
-        )
 
       case 'review':
         return (
@@ -1211,12 +1154,10 @@ function BrandOnboardingPageContent() {
               )}
 
               {/* Stride Social Contact Information */}
-              {(formData.stride_contact_name || formData.stride_contact_email || formData.stride_contact_phone) && (
+              {formData.stride_contact_name && (
                 <div>
                   <p className="text-blue-200 font-medium">Stride Social Contact</p>
-                  {formData.stride_contact_name && <p className="text-white text-sm">{formData.stride_contact_name}</p>}
-                  {formData.stride_contact_email && <p className="text-white text-xs">{formData.stride_contact_email}</p>}
-                  {formData.stride_contact_phone && <p className="text-white text-xs">{formData.stride_contact_phone}</p>}
+                  <p className="text-white text-sm">{formData.stride_contact_name}</p>
                 </div>
               )}
             </div>
