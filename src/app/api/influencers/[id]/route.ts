@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 
 export async function PATCH(
@@ -13,21 +13,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff or admin
+    // Check if user is staff or admin using Clerk metadata
     console.log('🔍 Checking staff user with Clerk ID:', userId)
-    const userResult = await query(`
-      SELECT role FROM users WHERE clerk_id = $1
-    `, [userId])
+    const client = await clerkClient()
+    const clerkUser = await client.users.getUser(userId)
+    const userRole = clerkUser.publicMetadata?.role as string
 
-    console.log('📊 User lookup result:', userResult)
+    console.log('📊 User role from Clerk metadata:', userRole)
 
-    if (userResult.length === 0) {
-      console.log('❌ Staff user not found in database for Clerk ID:', userId)
-      return NextResponse.json({ error: 'Staff user not found' }, { status: 404 })
-    }
-
-    const userRole = userResult[0].role
-    if (userRole !== 'STAFF' && userRole !== 'ADMIN') {
+    if (!userRole || (userRole !== 'STAFF' && userRole !== 'ADMIN')) {
+      console.log('❌ User does not have STAFF or ADMIN role in Clerk metadata')
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
