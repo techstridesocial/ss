@@ -152,9 +152,9 @@ export default function LoginSelection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="w-full flex justify-center"
+            className="w-full flex items-center justify-center"
           >
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md flex items-center justify-center">
               <SignIn 
                 routing="hash"
                 appearance={mode === 'staff' ? staffAppearance : {
