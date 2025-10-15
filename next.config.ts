@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com https://challenges.cloudflare.com",
+              "script-src-elem 'self' 'unsafe-inline' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
