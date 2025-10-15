@@ -115,13 +115,20 @@ export function BrandProtectedRoute({ children }: { children: ReactNode }) {
             // Use replace to avoid history stack issues
             router.replace('/brand/onboarding')
           }
+        } else if (response.status === 404) {
+          // User doesn't exist in database yet (new signup) - allow onboarding
+          setOnboardingStatus({ 
+            is_onboarded: false, 
+            loading: false 
+          })
         } else {
           setOnboardingStatus({ is_onboarded: true, loading: false })
         }
       } catch (error) {
         console.error('Failed to check brand onboarding status:', error)
+        // For new users, assume they need onboarding
         setOnboardingStatus({
-          is_onboarded: true,
+          is_onboarded: false,
           loading: false,
           error: 'Failed to check onboarding status'
         })
@@ -204,13 +211,20 @@ export function InfluencerProtectedRoute({ children }: { children: ReactNode }) 
             // Use replace to avoid history stack issues
             router.replace('/influencer/onboarding')
           }
+        } else if (response.status === 404) {
+          // User doesn't exist in database yet (new signup) - allow onboarding
+          setOnboardingStatus({ 
+            is_onboarded: false, 
+            loading: false 
+          })
         } else {
           setOnboardingStatus({ is_onboarded: true, loading: false })
         }
       } catch (error) {
         console.error('Failed to check influencer onboarding status:', error)
+        // For new users, assume they need onboarding
         setOnboardingStatus({
-          is_onboarded: true,
+          is_onboarded: false,
           loading: false,
           error: 'Failed to check onboarding status'
         })
