@@ -185,8 +185,19 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       } else {
-        const errorData = await response.json()
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch (e) {
+          errorData = { error: 'Server error - no response body' }
+        }
+        
         console.error('❌ Connection failed:', response.status, errorData)
+        console.error('❌ Full error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData
+        })
         
         // If user needs to complete onboarding, redirect them
         if (errorData.redirectTo) {
@@ -195,7 +206,7 @@ export default function EnhancedInfluencerStats() {
         }
         
         // Show error message to user
-        setSuccessMessage(`❌ ${errorData.message || 'Failed to connect profile'}`)
+        setSuccessMessage(`❌ ${errorData.message || errorData.error || 'Failed to connect profile'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
     } catch (error) {
