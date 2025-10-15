@@ -89,9 +89,9 @@ export default function EnhancedInfluencerStats() {
     setSelectedPlatform(platform)
     
     try {
-      // Use the same API as discovery page for full Modash data
+      // Use the EXACT same API call as staff discovery page
       const requestBody = {
-        query: query.replace('@', ''),
+        searchQuery: query.replace('@', ''),
         platform: platform,
         limit: 5
       }
@@ -107,9 +107,14 @@ export default function EnhancedInfluencerStats() {
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Search successful:', data)
-        // Handle different API response formats
-        const results = data.data || data.results || data.users || []
-        if (data.success && Array.isArray(results) && results.length > 0) {
+        
+        // Use EXACT same parsing as staff discovery page
+        let results = []
+        if (data.success && data.data) {
+          results = data.data.results || data.data || []
+        }
+        
+        if (Array.isArray(results) && results.length > 0) {
           // Format results to match expected structure
           const formattedResults = results.map((profile: any) => ({
             id: profile.userId || profile.id,
@@ -125,7 +130,7 @@ export default function EnhancedInfluencerStats() {
           }))
           setSearchResults(formattedResults)
         } else {
-          console.error('❌ Invalid data format from discovery API:', data)
+          console.error('❌ No results found')
           setSearchResults([])
         }
       } else {
