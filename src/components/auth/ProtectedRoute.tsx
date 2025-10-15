@@ -92,9 +92,9 @@ export function BrandProtectedRoute({ children }: { children: ReactNode }) {
         return
       }
 
-      // Only check for brand users
+      // Only check for brand users or users without a role (new signups)
       const role = user.publicMetadata?.role as string
-      if (role !== 'BRAND') {
+      if (role && role !== 'BRAND') {
         setOnboardingStatus({ is_onboarded: true, loading: false })
         return
       }
