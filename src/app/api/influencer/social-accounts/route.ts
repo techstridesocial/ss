@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { platform, handle, profileData } = body
 
-    console.log('🔗 Connecting social account:', { platform, handle, userId })
+    // Convert platform to uppercase to match database enum
+    const normalizedPlatform = platform?.toUpperCase()
+    console.log('🔗 Connecting social account:', { platform, normalizedPlatform, handle, userId })
 
     if (!platform || !handle) {
       return NextResponse.json(
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
     const existingAccount = await queryOne(`
       SELECT id FROM influencer_platforms
       WHERE influencer_id = $1 AND platform = $2
-    `, [influencerResult.id, platform])
+    `, [influencerResult.id, normalizedPlatform])
 
     if (existingAccount) {
       return NextResponse.json(
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
     // Insert new social account into influencer_platforms
     console.log('📝 Inserting social account:', {
       influencerId: influencerResult.id,
-      platform,
+      platform: normalizedPlatform,
       handle,
       profileData
     })
@@ -178,7 +180,7 @@ export async function POST(request: NextRequest) {
         RETURNING *
       `, [
         influencerResult.id,
-        platform,
+        normalizedPlatform,
         handle,
         profileData?.profileUrl || null,
         profileData?.followers || 0,
@@ -204,7 +206,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: newAccount,
-      message: `${platform.charAt(0).toUpperCase() + platform.slice(1)} account connected successfully`
+      message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} account connected successfully`
     })
 
   } catch (error) {
