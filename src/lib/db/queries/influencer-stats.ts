@@ -127,6 +127,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
           if (cachedData) {
             // Use rich cached data from Modash
             return {
+              id: dbPlatform.id, // Add the influencer platform ID
               platform: platform,
               username: cachedData.username || dbPlatform.username || `@${platform}_user`,
               followers: cachedData.followers || dbPlatform.followers || 0,
@@ -141,6 +142,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
           } else {
             // Use basic platform data from database
             return {
+              id: dbPlatform.id, // Add the influencer platform ID
               platform: dbPlatform.platform.toLowerCase(),
               username: dbPlatform.username || `@${platform}_user`,
               followers: dbPlatform.followers || 0,

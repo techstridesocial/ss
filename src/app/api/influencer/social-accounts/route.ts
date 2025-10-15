@@ -247,8 +247,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
+    const body = await request.json()
+    const { accountId } = body
 
     if (!accountId) {
       return NextResponse.json(
@@ -286,6 +286,18 @@ export async function DELETE(request: NextRequest) {
         { error: 'Account not found or not owned by user' },
         { status: 404 }
       )
+    }
+
+    // Also clean up any cached Modash data for this platform
+    try {
+      await query(
+        'DELETE FROM modash_profile_cache WHERE influencer_platform_id = $1',
+        [accountId]
+      )
+      console.log('✅ Cleaned up cached Modash data for disconnected platform')
+    } catch (cacheError) {
+      console.warn('⚠️ Failed to clean up cached data:', cacheError)
+      // Don't fail the disconnect if cache cleanup fails
     }
 
     return NextResponse.json({

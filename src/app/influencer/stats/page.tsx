@@ -53,7 +53,6 @@ export default function EnhancedInfluencerStats() {
   const [showPlatformModal, setShowPlatformModal] = useState<string | null>(null)
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
-  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     loadStats()
@@ -233,10 +232,9 @@ export default function EnhancedInfluencerStats() {
     }
   }
 
-  const refreshPlatformData = async (platform: string) => {
+  const disconnectPlatform = async (platform: string) => {
     try {
-      setIsRefreshing(true)
-      console.log('🔄 Refreshing platform data for', platform)
+      console.log('🗑️ Disconnecting platform:', platform)
 
       // Find the platform data to get the influencer platform ID
       const platformData = statsData?.platforms?.find(p => p.platform === platform)
@@ -246,30 +244,32 @@ export default function EnhancedInfluencerStats() {
         return
       }
 
-      const response = await fetch('/api/modash/refresh-profile', {
-        method: 'POST',
+      // Confirm before disconnecting
+      if (!confirm(`Are you sure you want to disconnect your ${platform} account? This will remove all analytics data.`)) {
+        return
+      }
+
+      const response = await fetch('/api/influencer/social-accounts', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          influencerPlatformId: platformData.id,
-          platform: platform
+          accountId: platformData.id
         })
       })
 
       if (response.ok) {
         await loadStats()
-        setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
+        setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} account disconnected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       } else {
         const errorData = await response.json()
-        setSuccessMessage(`❌ Failed to refresh data: ${errorData.error || 'Unknown error'}`)
+        setSuccessMessage(`❌ Failed to disconnect: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
     } catch (error) {
-      console.error('❌ Error refreshing platform data:', error)
-      setSuccessMessage(`❌ Failed to refresh data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('❌ Error disconnecting platform:', error)
+      setSuccessMessage(`❌ Failed to disconnect: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
-    } finally {
-      setIsRefreshing(false)
     }
   }
 
@@ -488,11 +488,10 @@ export default function EnhancedInfluencerStats() {
                               {platformData.cached_at ? `Last updated: ${new Date(platformData.cached_at).toLocaleDateString()}` : 'Data source: Live'}
                             </span>
                             <button
-                              onClick={() => refreshPlatformData(platform)}
-                              disabled={isRefreshing}
-                              className="text-xs text-blue-600 hover:text-blue-800 font-medium bg-blue-50 px-2 py-1 rounded disabled:opacity-50"
+                              onClick={() => disconnectPlatform(platform)}
+                              className="text-xs text-red-600 hover:text-red-800 font-medium bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition-colors"
                             >
-                              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                              Disconnect
                             </button>
                           </div>
                         </div>
