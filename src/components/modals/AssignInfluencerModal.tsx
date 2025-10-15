@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { X, User, FileText, Users } from 'lucide-react'
+import React, { useState } from 'react'
+import { X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface AssignInfluencerModalProps {
@@ -18,16 +18,9 @@ interface AssignInfluencerModalProps {
 interface AssignmentData {
   influencer_type: 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER'
   content_type: 'STANDARD' | 'UGC' | 'SEEDING'
-  assigned_to: string | null
   agency_name?: string
 }
 
-interface StaffMember {
-  id: string
-  email: string
-  first_name?: string
-  last_name?: string
-}
 
 
 export default function AssignInfluencerModal({ 
@@ -37,45 +30,14 @@ export default function AssignInfluencerModal({
   onAssign
 }: AssignInfluencerModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
-  const [loadingStaff, setLoadingStaff] = useState(false)
   const [error, setError] = useState('')
   
   const [formData, setFormData] = useState<AssignmentData>({
     influencer_type: 'SIGNED',
     content_type: 'STANDARD',
-    assigned_to: null,
     agency_name: ''
   })
 
-  // Load staff members when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadStaffMembers()
-    }
-  }, [isOpen])
-
-  const loadStaffMembers = async () => {
-    setLoadingStaff(true)
-    setError('') // Clear any previous errors
-    try {
-      const response = await fetch('/api/staff/members')
-      if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Staff members loaded:', result.data)
-        setStaffMembers(result.data || [])
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('❌ Failed to load staff members:', response.status, errorData)
-        setError('Failed to load staff members')
-      }
-    } catch (error) {
-      console.error('❌ Error loading staff members:', error)
-      setError('Error loading staff members')
-    } finally {
-      setLoadingStaff(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -234,36 +196,6 @@ export default function AssignInfluencerModal({
                 </div>
               )}
 
-              {/* Assigned To */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assign To Staff Member
-                </label>
-                {loadingStaff ? (
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                    <p className="text-gray-500 text-sm">Loading staff members...</p>
-                  </div>
-                ) : (
-                  <select
-                    value={formData.assigned_to || ''}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      assigned_to: e.target.value || null
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Unassigned</option>
-                    {staffMembers.map((staff) => (
-                      <option key={staff.id} value={staff.id}>
-                        {staff.first_name && staff.last_name 
-                          ? `${staff.first_name} ${staff.last_name} (${staff.email})`
-                          : staff.email
-                        }
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
             </form>
           </div>
 

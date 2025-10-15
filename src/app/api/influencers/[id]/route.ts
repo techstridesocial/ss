@@ -35,17 +35,11 @@ export async function PATCH(
     const { 
       influencer_type, 
       content_type, 
-      agency_name, 
-      assigned_to, 
-      labels, 
-      notes 
+      agency_name
     } = body
 
-    // For management updates, we don't require influencer_type and content_type
-    const isManagementUpdate = assigned_to !== undefined || labels !== undefined || notes !== undefined
-    
-    // Validate required fields only for non-management updates
-    if (!isManagementUpdate && (!influencer_type || !content_type)) {
+    // Validate required fields
+    if (!influencer_type || !content_type) {
       return NextResponse.json({ 
         error: 'influencer_type and content_type are required' 
       }, { status: 400 })
@@ -72,18 +66,6 @@ export async function PATCH(
       }, { status: 400 })
     }
 
-    // Validate assigned_to (should be a valid user ID if provided)
-    if (assigned_to !== undefined && assigned_to !== null && assigned_to !== '') {
-      const staffResult = await query(`
-        SELECT id FROM users WHERE id = $1 AND role IN ('STAFF', 'ADMIN')
-      `, [assigned_to])
-      
-      if (staffResult.length === 0) {
-        return NextResponse.json({ 
-          error: 'Invalid assigned_to. Must be a valid staff or admin user ID' 
-        }, { status: 400 })
-      }
-    }
 
     // Build dynamic update query
     const updateFields = []
@@ -108,23 +90,6 @@ export async function PATCH(
       paramCounter++
     }
 
-    if (assigned_to !== undefined) {
-      updateFields.push(`assigned_to = $${paramCounter}`)
-      updateValues.push(assigned_to || null)
-      paramCounter++
-    }
-
-    if (labels !== undefined) {
-      updateFields.push(`labels = $${paramCounter}`)
-      updateValues.push(JSON.stringify(labels || []))
-      paramCounter++
-    }
-
-    if (notes !== undefined) {
-      updateFields.push(`notes = $${paramCounter}`)
-      updateValues.push(notes || null)
-      paramCounter++
-    }
 
     // Always update the timestamp
     updateFields.push('updated_at = NOW()')
