@@ -53,6 +53,7 @@ export default function EnhancedInfluencerStats() {
   const [showPlatformModal, setShowPlatformModal] = useState<string | null>(null)
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     loadStats()
@@ -205,7 +206,7 @@ export default function EnhancedInfluencerStats() {
   const updateUsername = async (platform: string, newUsername: string) => {
     try {
       console.log('🔄 Updating username for', platform, 'to', newUsername)
-      
+
       const response = await fetch('/api/influencer/social-accounts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -214,7 +215,7 @@ export default function EnhancedInfluencerStats() {
           username: newUsername
         })
       })
-      
+
       if (response.ok) {
         await loadStats()
         setEditingPlatform(null)
@@ -229,6 +230,46 @@ export default function EnhancedInfluencerStats() {
       console.error('❌ Error updating username:', error)
       setSuccessMessage(`❌ Failed to update username: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
+    }
+  }
+
+  const refreshPlatformData = async (platform: string) => {
+    try {
+      setIsRefreshing(true)
+      console.log('🔄 Refreshing platform data for', platform)
+
+      // Find the platform data to get the influencer platform ID
+      const platformData = statsData?.platforms?.find(p => p.platform === platform)
+      if (!platformData || !platformData.is_connected) {
+        setSuccessMessage(`❌ Platform ${platform} is not connected`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+        return
+      }
+
+      const response = await fetch('/api/modash/refresh-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          influencerPlatformId: platformData.id,
+          platform: platform
+        })
+      })
+
+      if (response.ok) {
+        await loadStats()
+        setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+      } else {
+        const errorData = await response.json()
+        setSuccessMessage(`❌ Failed to refresh data: ${errorData.error || 'Unknown error'}`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing platform data:', error)
+      setSuccessMessage(`❌ Failed to refresh data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -446,7 +487,13 @@ export default function EnhancedInfluencerStats() {
                             <span className="text-xs text-slate-500">
                               {platformData.cached_at ? `Last updated: ${new Date(platformData.cached_at).toLocaleDateString()}` : 'Data source: Live'}
                             </span>
-                            {/* Refresh functionality removed */}
+                            <button
+                              onClick={() => refreshPlatformData(platform)}
+                              disabled={isRefreshing}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-medium bg-blue-50 px-2 py-1 rounded disabled:opacity-50"
+                            >
+                              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                            </button>
                           </div>
                         </div>
                       ) : (

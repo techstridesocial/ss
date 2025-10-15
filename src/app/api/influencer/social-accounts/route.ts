@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, queryOne } from '@/lib/db/connection'
+import { cacheModashProfile } from '@/lib/services/modash-cache'
 
 // GET - Get all social accounts for the current influencer
 export async function GET(request: NextRequest) {
@@ -201,6 +202,25 @@ export async function POST(request: NextRequest) {
         error: 'Failed to save social account to database',
         details: insertError instanceof Error ? insertError.message : 'Unknown database error'
       }, { status: 500 })
+    }
+
+    // Cache Modash data for rich analytics
+    try {
+      console.log('🔄 Caching Modash data for new connection...')
+      const cacheResult = await cacheModashProfile(
+        newAccount.id,
+        handle, // Use the handle as modash user ID
+        normalizedPlatform
+      )
+      
+      if (cacheResult.success) {
+        console.log('✅ Modash data cached successfully')
+      } else {
+        console.warn('⚠️ Failed to cache Modash data:', cacheResult.error)
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Error caching Modash data:', cacheError)
+      // Don't fail the connection if caching fails
     }
 
     return NextResponse.json({

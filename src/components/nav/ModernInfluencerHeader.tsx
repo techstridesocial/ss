@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Menu, X, LogOut, Settings, User, Play, BarChart3, CreditCard } from 'lucide-react'
+import { Menu, X, LogOut, User, Play, BarChart3, CreditCard } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useUserRole } from '../../lib/auth/hooks'
 
@@ -222,14 +222,6 @@ export default function ModernInfluencerHeader() {
                           Profile
                         </Link>
                         
-                        <Link
-                          href="/influencer/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          <Settings size={16} className="mr-3" />
-                          Settings
-                        </Link>
                         
                         <button
                           onClick={handleSignOut}
@@ -329,13 +321,6 @@ export default function ModernInfluencerHeader() {
               className="block px-3 py-2 text-base font-medium text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg"
             >
               Profile
-            </Link>
-            <Link
-              href="/influencer/settings"
-              onClick={closeMobileMenu}
-              className="block px-3 py-2 text-base font-medium text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg"
-            >
-              Settings
             </Link>
             <button
               onClick={handleSignOut}
