@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
       `, [
         influencerResult.id,
         normalizedPlatform,
-        profileData?.userId || handle, // Use Modash user ID if available, fallback to handle
+        handle, // Store the actual username (handle), not the user ID
         profileData?.profileUrl || null,
         profileData?.followers || 0,
         profileData?.engagementRate || 0,
