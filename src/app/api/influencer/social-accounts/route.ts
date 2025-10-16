@@ -172,18 +172,20 @@ export async function POST(request: NextRequest) {
           influencer_id,
           platform,
           username,
+          modash_user_id,
           profile_url,
           followers,
           engagement_rate,
           avg_views,
           is_connected,
           last_synced
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         RETURNING *
       `, [
         influencerResult.id,
         normalizedPlatform,
-        handle, // Store the actual username (handle), not the user ID
+        handle, // Store the actual username (handle) for display
+        profileData?.userId || null, // Store Modash user ID for API calls
         profileData?.profileUrl || null,
         profileData?.followers || 0,
         profileData?.engagementRate || 0,

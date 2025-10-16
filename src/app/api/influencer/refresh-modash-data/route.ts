@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Get all connected platforms
     const platformsResult = await query(`
-      SELECT id, platform, username, is_connected
+      SELECT id, platform, username, modash_user_id, is_connected
       FROM influencer_platforms
       WHERE influencer_id = $1 AND is_connected = true
     `, [influencerResult[0].id])
@@ -47,13 +47,14 @@ export async function POST(request: NextRequest) {
         console.log(`🔍 Platform details:`, {
           id: platform.id,
           username: platform.username,
+          modash_user_id: platform.modash_user_id,
           platform: platform.platform,
           is_connected: platform.is_connected
         })
         
         const cacheResult = await cacheModashProfile(
           platform.id,
-          platform.username, // This is now the Modash user ID
+          platform.modash_user_id || platform.username, // Use Modash user ID if available
           platform.platform
         )
         
