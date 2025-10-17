@@ -468,49 +468,50 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     setMounted(true)
   }, [])
 
-  // Fetch Modash API data for roster influencers
-  useEffect(() => {
-    if (isOpen && influencer?.isRosterInfluencer) {
-      const fetchModashData = async () => {
-        setIsLoadingApiData(true)
-        try {
-          // Get the first connected platform
-          const connectedPlatform = influencer.platforms && Object.entries(influencer.platforms).find(([_, data]: [string, any]) => data.username)
-          
-          if (connectedPlatform) {
-            const [platform, platformData] = connectedPlatform
-            console.log('🔄 Fetching fresh Modash data for roster influencer:', {
-              username: platformData.username,
-              platform: platform
-            })
-            
-            const response = await fetch('/api/discovery/profile', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                username: platformData.username,
-                platform: platform
-              })
-            })
-            
-            if (response.ok) {
-              const data = await response.json()
-              if (data.success && data.data) {
-                console.log('✅ Fresh Modash data fetched for roster influencer')
-                setApiData(data.data)
-              }
-            }
-          }
-        } catch (error) {
-          console.error('❌ Failed to fetch Modash data for roster influencer:', error)
-        } finally {
-          setIsLoadingApiData(false)
-        }
-      }
-      
-      fetchModashData()
-    }
-  }, [isOpen, influencer?.isRosterInfluencer, influencer?.rosterId])
+  // DISABLED: Fetch Modash API data for roster influencers (causing infinite re-renders)
+  // TODO: Re-enable when infinite re-render issue is resolved
+  // useEffect(() => {
+  //   if (isOpen && influencer?.isRosterInfluencer) {
+  //     const fetchModashData = async () => {
+  //       setIsLoadingApiData(true)
+  //       try {
+  //         // Get the first connected platform
+  //         const connectedPlatform = influencer.platforms && Object.entries(influencer.platforms).find(([_, data]: [string, any]) => data.username)
+  //         
+  //         if (connectedPlatform) {
+  //           const [platform, platformData] = connectedPlatform
+  //           console.log('🔄 Fetching fresh Modash data for roster influencer:', {
+  //             username: platformData.username,
+  //             platform: platform
+  //           })
+  //           
+  //           const response = await fetch('/api/discovery/profile', {
+  //             method: 'POST',
+  //             headers: { 'Content-Type': 'application/json' },
+  //             body: JSON.stringify({
+  //               username: platformData.username,
+  //               platform: platform
+  //             })
+  //           })
+  //           
+  //           if (response.ok) {
+  //             const data = await response.json()
+  //             if (data.success && data.data) {
+  //               console.log('✅ Fresh Modash data fetched for roster influencer')
+  //               setApiData(data.data)
+  //             }
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error('❌ Failed to fetch Modash data for roster influencer:', error)
+  //       } finally {
+  //         setIsLoadingApiData(false)
+  //       }
+  //     }
+  //     
+  //     fetchModashData()
+  //   }
+  // }, [isOpen, influencer?.isRosterInfluencer, influencer?.rosterId])
 
   // Handle escape key and focus management
   useEffect(() => {
@@ -541,19 +542,10 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 
   if (!mounted || !isOpen || !influencer) return null
 
-  // Merge API data with influencer data for roster influencers
+  // Use influencer data directly (no API merging for now to prevent infinite re-renders)
   const enrichedInfluencer = useMemo(() => {
-    if (apiData && influencer.isRosterInfluencer) {
-      return {
-        ...influencer,
-        ...apiData,
-        // Preserve roster-specific metadata
-        isRosterInfluencer: true,
-        rosterId: influencer.rosterId
-      }
-    }
     return influencer
-  }, [influencer?.id, influencer?.isRosterInfluencer, influencer?.rosterId, apiData])
+  }, [influencer?.id])
 
   // Get platform-specific data if available (guard against missing platforms type)
   const platforms = enrichedInfluencer.platforms

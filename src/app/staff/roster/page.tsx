@@ -1867,18 +1867,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         <InfluencerDetailPanel
           isOpen={detailPanelOpen}
           onClose={handleClosePanels}
-          influencer={useMemo(() => ({
-            // API-First Approach: Always call Modash API for fresh data
-            id: selectedInfluencerDetail.id,
-            username: selectedInfluencerDetail.display_name,
-            displayName: selectedInfluencerDetail.display_name,
-            name: selectedInfluencerDetail.display_name,
-            handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-            picture: selectedInfluencerDetail.avatar_url || undefined,
-            profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-            
-            // Use platform data from connected accounts
-            platforms: selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
+          influencer={useMemo(() => {
+            // Memoize platforms object separately to prevent recreation
+            const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
               if (platform.is_connected) {
                 acc[platform.platform.toLowerCase()] = {
                   followers: platform.followers,
@@ -1888,19 +1879,33 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 }
               }
               return acc
-            }, {}) || {},
-            
-            // Metadata for roster functionality  
-            isRosterInfluencer: true,
-            rosterId: selectedInfluencerDetail.id,
-            hasPreservedAnalytics: false, // Will be populated by API call
-            
-            // Fallback basic data
-            followers: selectedInfluencerDetail.total_followers || 0,
-            engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
-            engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
-            avgViews: selectedInfluencerDetail.total_avg_views || 0,
-          }), [selectedInfluencerDetail])}
+            }, {}) || {}
+
+            return {
+              // API-First Approach: Always call Modash API for fresh data
+              id: selectedInfluencerDetail.id,
+              username: selectedInfluencerDetail.display_name,
+              displayName: selectedInfluencerDetail.display_name,
+              name: selectedInfluencerDetail.display_name,
+              handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+              picture: selectedInfluencerDetail.avatar_url || undefined,
+              profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+              
+              // Use memoized platforms object
+              platforms,
+              
+              // Metadata for roster functionality  
+              isRosterInfluencer: true,
+              rosterId: selectedInfluencerDetail.id,
+              hasPreservedAnalytics: false, // Will be populated by API call
+              
+              // Fallback basic data
+              followers: selectedInfluencerDetail.total_followers || 0,
+              engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
+              engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
+              avgViews: selectedInfluencerDetail.total_avg_views || 0,
+            }
+          }, [selectedInfluencerDetail.id, selectedInfluencerDetail.display_name, selectedInfluencerDetail.avatar_url, selectedInfluencerDetail.platforms, selectedInfluencerDetail.total_followers, selectedInfluencerDetail.total_engagement_rate, selectedInfluencerDetail.total_avg_views])}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)
