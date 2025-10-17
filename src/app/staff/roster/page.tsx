@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react'
+import React, { useState, useEffect, useCallback, Suspense, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
@@ -1865,7 +1865,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         <InfluencerDetailPanel
           isOpen={detailPanelOpen}
           onClose={handleClosePanels}
-          influencer={{
+          influencer={useMemo(() => ({
             // API-First Approach: Always call Modash API for fresh data
             id: selectedInfluencerDetail.id,
             username: selectedInfluencerDetail.display_name,
@@ -1898,7 +1898,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
             engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
             avgViews: selectedInfluencerDetail.total_avg_views || 0,
-          }}
+          }), [selectedInfluencerDetail])}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)

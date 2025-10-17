@@ -507,7 +507,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
       
       fetchModashData()
     }
-  }, [isOpen, influencer?.isRosterInfluencer, influencer?.platforms])
+  }, [isOpen, influencer?.isRosterInfluencer, influencer?.rosterId])
 
   // Handle escape key and focus management
   useEffect(() => {
@@ -550,7 +550,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
       }
     }
     return influencer
-  }, [influencer, apiData])
+  }, [influencer?.id, influencer?.isRosterInfluencer, influencer?.rosterId, apiData])
 
   // Get platform-specific data if available (guard against missing platforms type)
   const platforms = enrichedInfluencer.platforms
