@@ -186,13 +186,15 @@ const PanelHeader = ({
   onClose,
   selectedPlatform,
   onPlatformSwitch,
-  loading = false
+  loading = false,
+  pictureSrc
 }: { 
   influencer: InfluencerData
   onClose: () => void
   selectedPlatform?: 'instagram' | 'tiktok' | 'youtube'
   onPlatformSwitch?: (platform: 'instagram' | 'tiktok' | 'youtube') => void
   loading?: boolean
+  pictureSrc: string
 }) => {
 
   // Get display name with fallbacks
@@ -205,17 +207,7 @@ const PanelHeader = ({
     ? platforms[selectedPlatform]
     : null
 
-  // Get platform-specific profile picture or fallback to general
-  const pictureSrc = useMemo(() => {
-    // Get platform-specific picture directly from platforms object
-    const platformData = selectedPlatform ? influencer.platforms?.[selectedPlatform] : null
-    const platformProfilePicture = platformData?.profile_picture || platformData?.profilePicture
-    
-    return platformProfilePicture ||
-      influencer.picture ||
-      influencer.profilePicture ||
-      influencer.profile_picture || ''
-  }, [selectedPlatform, influencer.id])
+  // pictureSrc is now passed as a prop from the main component
 
 
 
@@ -468,50 +460,49 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     setMounted(true)
   }, [])
 
-  // DISABLED: Fetch Modash API data for roster influencers (causing infinite re-renders)
-  // TODO: Re-enable when infinite re-render issue is resolved
-  // useEffect(() => {
-  //   if (isOpen && influencer?.isRosterInfluencer) {
-  //     const fetchModashData = async () => {
-  //       setIsLoadingApiData(true)
-  //       try {
-  //         // Get the first connected platform
-  //         const connectedPlatform = influencer.platforms && Object.entries(influencer.platforms).find(([_, data]: [string, any]) => data.username)
-  //         
-  //         if (connectedPlatform) {
-  //           const [platform, platformData] = connectedPlatform
-  //           console.log('🔄 Fetching fresh Modash data for roster influencer:', {
-  //             username: platformData.username,
-  //             platform: platform
-  //           })
-  //           
-  //           const response = await fetch('/api/discovery/profile', {
-  //             method: 'POST',
-  //             headers: { 'Content-Type': 'application/json' },
-  //             body: JSON.stringify({
-  //               username: platformData.username,
-  //               platform: platform
-  //             })
-  //           })
-  //           
-  //           if (response.ok) {
-  //             const data = await response.json()
-  //             if (data.success && data.data) {
-  //               console.log('✅ Fresh Modash data fetched for roster influencer')
-  //               setApiData(data.data)
-  //             }
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error('❌ Failed to fetch Modash data for roster influencer:', error)
-  //       } finally {
-  //         setIsLoadingApiData(false)
-  //       }
-  //     }
-  //     
-  //     fetchModashData()
-  //   }
-  // }, [isOpen, influencer?.isRosterInfluencer, influencer?.rosterId])
+  // Fetch Modash API data for roster influencers (FIXED with stable dependencies)
+  useEffect(() => {
+    if (isOpen && influencer?.isRosterInfluencer && influencer?.id) {
+      const fetchModashData = async () => {
+        setIsLoadingApiData(true)
+        try {
+          // Get the first connected platform
+          const connectedPlatform = influencer.platforms && Object.entries(influencer.platforms).find(([_, data]: [string, any]) => data.username)
+          
+          if (connectedPlatform) {
+            const [platform, platformData] = connectedPlatform
+            console.log('🔄 Fetching fresh Modash data for roster influencer:', {
+              username: platformData.username,
+              platform: platform
+            })
+            
+            const response = await fetch('/api/discovery/profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: platformData.username,
+                platform: platform
+              })
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              if (data.success && data.data) {
+                console.log('✅ Fresh Modash data fetched for roster influencer')
+                setApiData(data.data)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to fetch Modash data for roster influencer:', error)
+        } finally {
+          setIsLoadingApiData(false)
+        }
+      }
+      
+      fetchModashData()
+    }
+  }, [isOpen, influencer?.id]) // FIXED: Only depend on isOpen and influencer.id (stable)
 
   // Handle escape key and focus management
   useEffect(() => {
@@ -542,16 +533,43 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 
   if (!mounted || !isOpen || !influencer) return null
 
-  // Use influencer data directly (no API merging for now to prevent infinite re-renders)
+  // Merge API data with influencer data for roster influencers (FIXED with stable dependencies)
   const enrichedInfluencer = useMemo(() => {
+    if (apiData && influencer.isRosterInfluencer) {
+      return {
+        ...influencer,
+        ...apiData,
+        // Preserve roster-specific metadata
+        isRosterInfluencer: true,
+        rosterId: influencer.rosterId
+      }
+    }
     return influencer
-  }, [influencer?.id])
+  }, [influencer?.id, apiData]) // FIXED: Only depend on influencer.id and apiData (stable)
 
   // Get platform-specific data if available (guard against missing platforms type)
   const platforms = enrichedInfluencer.platforms
   const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
     ? platforms[selectedPlatform]
     : null
+
+  // Get platform-specific profile picture or fallback to general (PRIORITIZE apiData)
+  const pictureSrc = useMemo(() => {
+    // PRIORITY 1: Fresh API data picture (from Modash)
+    if (apiData?.picture) {
+      return apiData.picture
+    }
+    
+    // PRIORITY 2: Platform-specific picture from connected accounts
+    const platformData = selectedPlatform ? enrichedInfluencer.platforms?.[selectedPlatform] : null
+    const platformProfilePicture = platformData?.profile_picture || platformData?.profilePicture
+    
+    // PRIORITY 3: General influencer picture fallbacks
+    return platformProfilePicture ||
+      enrichedInfluencer.picture ||
+      enrichedInfluencer.profilePicture ||
+      enrichedInfluencer.profile_picture || ''
+  }, [selectedPlatform, enrichedInfluencer.id, apiData?.picture])
 
   // DEBUG: Log data discrepancy for Charlie
   console.log('🔍 Platform Data Debug:', {
@@ -561,7 +579,8 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     currentPlatformData: currentPlatformData,
     currentPlatformFollowers: currentPlatformData?.followers,
     hasApiData: !!apiData,
-    isRosterInfluencer: enrichedInfluencer.isRosterInfluencer
+    isRosterInfluencer: enrichedInfluencer.isRosterInfluencer,
+    pictureSrc: pictureSrc
   })
 
   const panel = (
@@ -591,6 +610,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
               selectedPlatform={selectedPlatform}
               onPlatformSwitch={onPlatformSwitch}
               loading={loading || isLoadingApiData}
+              pictureSrc={pictureSrc}
             />
 
             <div className="flex-1 overflow-y-auto overscroll-contain">
