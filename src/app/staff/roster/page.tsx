@@ -515,8 +515,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  // Apply all filters
-  const filteredInfluencers = applyFilters(influencers)
+  // Apply all filters (memoized to prevent infinite re-renders)
+  const filteredInfluencers = React.useMemo(() => {
+    return applyFilters(influencers)
+  }, [influencers, activeTab, searchQuery, rosterFilters, currentUserId])
   
   // Apply sorting
   const sortedInfluencers = React.useMemo(() => {
