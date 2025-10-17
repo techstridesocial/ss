@@ -207,12 +207,15 @@ const PanelHeader = ({
 
   // Get platform-specific profile picture or fallback to general
   const pictureSrc = useMemo(() => {
-    const platformProfilePicture = currentPlatformData?.profile_picture || currentPlatformData?.profilePicture
+    // Get platform-specific picture directly from platforms object
+    const platformData = selectedPlatform ? influencer.platforms?.[selectedPlatform] : null
+    const platformProfilePicture = platformData?.profile_picture || platformData?.profilePicture
+    
     return platformProfilePicture ||
       influencer.picture ||
       influencer.profilePicture ||
       influencer.profile_picture || ''
-  }, [currentPlatformData, influencer.picture, influencer.profilePicture, influencer.profile_picture])
+  }, [selectedPlatform, influencer.id])
 
 
 
