@@ -52,6 +52,10 @@ export interface InfluencerData {
   engagement_rate?: number
   engagementRate?: number // API field variation
   isVerified?: boolean // Verification status
+  // Roster-specific properties
+  isRosterInfluencer?: boolean
+  hasPreservedAnalytics?: boolean
+  rosterId?: string
   // 🎯 Platform-specific data storage
   platforms?: PlatformsData
   avgViews?: number

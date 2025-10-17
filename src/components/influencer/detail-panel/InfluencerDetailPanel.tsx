@@ -436,7 +436,7 @@ const PanelHeader = ({
         {onPlatformSwitch && (
           <div>
             <div className="text-xs font-medium text-gray-500 mb-2.5 uppercase tracking-wider">Platform Analytics</div>
-            <PlatformSwitcherTabs
+            <PlatformSwitcherTabs 
               currentPlatform={selectedPlatform}
               onPlatformSwitch={onPlatformSwitch}
               influencer={influencer}
@@ -458,10 +458,56 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   loading = false 
 }: InfluencerDetailPanelProps) {
   const [mounted, setMounted] = useState(false)
+  const [apiData, setApiData] = useState<any>(null)
+  const [isLoadingApiData, setIsLoadingApiData] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Fetch Modash API data for roster influencers
+  useEffect(() => {
+    if (isOpen && influencer?.isRosterInfluencer) {
+      const fetchModashData = async () => {
+        setIsLoadingApiData(true)
+        try {
+          // Get the first connected platform
+          const connectedPlatform = influencer.platforms && Object.entries(influencer.platforms).find(([_, data]: [string, any]) => data.username)
+          
+          if (connectedPlatform) {
+            const [platform, platformData] = connectedPlatform
+            console.log('🔄 Fetching fresh Modash data for roster influencer:', {
+              username: platformData.username,
+              platform: platform
+            })
+            
+            const response = await fetch('/api/discovery/profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: platformData.username,
+                platform: platform
+              })
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              if (data.success && data.data) {
+                console.log('✅ Fresh Modash data fetched for roster influencer')
+                setApiData(data.data)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to fetch Modash data for roster influencer:', error)
+        } finally {
+          setIsLoadingApiData(false)
+        }
+      }
+      
+      fetchModashData()
+    }
+  }, [isOpen, influencer?.isRosterInfluencer, influencer?.platforms])
 
   // Handle escape key and focus management
   useEffect(() => {
@@ -492,8 +538,22 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 
   if (!mounted || !isOpen || !influencer) return null
 
+  // Merge API data with influencer data for roster influencers
+  const enrichedInfluencer = useMemo(() => {
+    if (apiData && influencer.isRosterInfluencer) {
+      return {
+        ...influencer,
+        ...apiData,
+        // Preserve roster-specific metadata
+        isRosterInfluencer: true,
+        rosterId: influencer.rosterId
+      }
+    }
+    return influencer
+  }, [influencer, apiData])
+
   // Get platform-specific data if available (guard against missing platforms type)
-  const platforms = influencer.platforms
+  const platforms = enrichedInfluencer.platforms
   const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
     ? platforms[selectedPlatform]
     : null
@@ -501,10 +561,12 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   // DEBUG: Log data discrepancy for Charlie
   console.log('🔍 Platform Data Debug:', {
     selectedPlatform,
-    influencerFollowers: influencer.followers,
+    influencerFollowers: enrichedInfluencer.followers,
     platformsAvailable: platforms ? Object.keys(platforms) : 'none',
     currentPlatformData: currentPlatformData,
-    currentPlatformFollowers: currentPlatformData?.followers
+    currentPlatformFollowers: currentPlatformData?.followers,
+    hasApiData: !!apiData,
+    isRosterInfluencer: enrichedInfluencer.isRosterInfluencer
   })
 
   const panel = (
@@ -529,22 +591,22 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
             onClick={(e) => e.stopPropagation()}
           >
             <PanelHeader 
-              influencer={influencer} 
+              influencer={enrichedInfluencer} 
               onClose={onClose} 
               selectedPlatform={selectedPlatform}
               onPlatformSwitch={onPlatformSwitch}
-              loading={loading}
+              loading={loading || isLoadingApiData}
             />
 
             <div className="flex-1 overflow-y-auto overscroll-contain">
-              {loading ? (
+              {(loading || isLoadingApiData) ? (
                 <LoadingSpinner />
               ) : (
                 <div className="min-h-full">
                   {/* Core Profile Section - Always visible */}
                   <div className="bg-gradient-to-b from-gray-50 to-white">
                     <PremiumOverviewSection 
-                      influencer={influencer} 
+                      influencer={enrichedInfluencer} 
                       currentPlatformData={currentPlatformData}
                       selectedPlatform={selectedPlatform}
                     />
@@ -552,29 +614,29 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   
                   {/* Creator Profile Information */}
                   <PremiumProfileSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Content Performance Sections */}
                   <div>
                     <PremiumContentSection
-                      influencer={influencer}
+                      influencer={enrichedInfluencer}
                       selectedPlatform={selectedPlatform}
                       contentType="popular"
                     />
                     {/* Platform-specific paid/organic analysis */}
                     {selectedPlatform === 'tiktok' ? (
                       <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
-                        <TikTokPaidOrganicSection influencer={influencer} />
+                        <TikTokPaidOrganicSection influencer={enrichedInfluencer} />
                       </PremiumSectionWrapper>
                     ) : selectedPlatform === 'youtube' ? (
                       <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
-                        <YouTubePaidOrganicSection influencer={influencer} />
+                        <YouTubePaidOrganicSection influencer={enrichedInfluencer} />
                       </PremiumSectionWrapper>
                     ) : (
                       <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
-                        <PaidOrganicSection influencer={influencer} />
+                        <PaidOrganicSection influencer={enrichedInfluencer} />
                       </PremiumSectionWrapper>
                     )}
                     
@@ -584,12 +646,12 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       <>
                         {/* TikTok Premium Content Sections */}
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="videos"
                         />
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="recent"
                         />
@@ -598,17 +660,17 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       <>
                         {/* YouTube Premium Content Sections */}
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="videos"
                         />
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="popular"
                         />
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="recent"
                         />
@@ -617,12 +679,12 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       <>
                         {/* Instagram Premium Content Sections */}
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="recent"
                         />
                         <PremiumContentSection
-                          influencer={influencer}
+                          influencer={enrichedInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="popular"
                         />
@@ -632,80 +694,80 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   
                   {/* Instagram-Specific Performance Metrics */}
                   <PremiumInstagramMetricsSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Creator Profile Insights - New Enhanced Section */}
                   <CreatorProfileInsightsSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Audience Intelligence Section */}
-                  <PremiumAudienceSection influencer={influencer} />
+                  <PremiumAudienceSection influencer={enrichedInfluencer} />
                   
                   {/* Advanced Audience Intelligence */}
-                  <PremiumAdvancedAudienceSection influencer={influencer} />
+                  <PremiumAdvancedAudienceSection influencer={enrichedInfluencer} />
                   
                   {/* Advanced Audience Matrix - New Enhanced Section */}
                   <AdvancedAudienceMatrixSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Follower Quality Score - New Enhanced Section */}
                   <FollowerQualityScoreSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Audience Reachability - CRITICAL Missing Data */}
                   <AudienceReachabilitySection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Geographic Reach - CRITICAL Missing Data */}
                   <GeographicReachSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Brand Partnerships & Strategy Sections */}
-                  <PremiumBrandPartnershipsSection influencer={influencer} />
+                  <PremiumBrandPartnershipsSection influencer={enrichedInfluencer} />
                   
                   {/* Brand Affinity - CRITICAL Missing Data */}
                   <BrandAffinitySection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Content Strategy Optimizer - Replaces old Content Strategy */}
                   <ContentStrategyOptimizerSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Keep existing hashtag and topics sections */}
                   <PremiumSectionWrapper title="Hashtag Strategy" defaultOpen={false}>
-                    <HashtagStrategySection influencer={influencer} />
+                    <HashtagStrategySection influencer={enrichedInfluencer} />
                   </PremiumSectionWrapper>
                   <PremiumSectionWrapper title="Content Topics" defaultOpen={false}>
-                    <ContentTopicsSection influencer={influencer} />
+                    <ContentTopicsSection influencer={enrichedInfluencer} />
                   </PremiumSectionWrapper>
                   
                   {/* Competitive Benchmarking - New Enhanced Section */}
                   <CompetitiveBenchmarkingSection 
-                    influencer={influencer}
+                    influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Analytics & Growth Sections */}
-                  <PremiumAnalyticsSection influencer={influencer} sectionType="performance" />
-                  <PremiumAnalyticsSection influencer={influencer} sectionType="analytics" />
-                  <PremiumAnalyticsSection influencer={influencer} sectionType="growth" />
-                  <PremiumAnalyticsSection influencer={influencer} sectionType="insights" />
+                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="performance" />
+                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="analytics" />
+                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="growth" />
+                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="insights" />
                   
                   
 

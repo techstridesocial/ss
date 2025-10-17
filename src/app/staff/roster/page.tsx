@@ -1865,118 +1865,40 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         <InfluencerDetailPanel
           isOpen={detailPanelOpen}
           onClose={handleClosePanels}
-          influencer={(() => {
-            // Restore COMPLETE Modash analytics from notes field (same format as discovery)
-            const savedAnalytics = selectedInfluencerDetail.notes ? 
-              JSON.parse(selectedInfluencerDetail.notes || '{}') : {}
+          influencer={{
+            // API-First Approach: Always call Modash API for fresh data
+            id: selectedInfluencerDetail.id,
+            username: selectedInfluencerDetail.display_name,
+            displayName: selectedInfluencerDetail.display_name,
+            name: selectedInfluencerDetail.display_name,
+            handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+            picture: selectedInfluencerDetail.avatar_url || undefined,
+            profilePicture: selectedInfluencerDetail.avatar_url || undefined,
             
-            console.log('🔍 Roster popup data restoration:', {
-              hasNotes: !!selectedInfluencerDetail.notes,
-              hasModashData: !!savedAnalytics.modash_data,
-              modashDataKeys: savedAnalytics.modash_data ? Object.keys(savedAnalytics.modash_data) : 'none',
-              selectedPlatform,
-              influencerName: selectedInfluencerDetail.display_name,
-              fullNotes: selectedInfluencerDetail.notes,
-              modashDataSample: savedAnalytics.modash_data ? {
-                hasAudience: !!savedAnalytics.modash_data.audience,
-                hasPlatforms: !!savedAnalytics.modash_data.platforms,
-                hasHashtags: !!savedAnalytics.modash_data.hashtags,
-                hasBrandPartnerships: !!savedAnalytics.modash_data.brand_partnerships
-              } : 'none'
-            })
-            
-            // If we have complete Modash data, use it directly (same as discovery popup)
-            if (savedAnalytics.modash_data && Object.keys(savedAnalytics.modash_data).length > 10) {
-              const completeData = {
-                // Use complete Modash analytics (EXACTLY like discovery popup)
-                ...savedAnalytics.modash_data,
-                
-                // Override with current roster metadata
-                id: selectedInfluencerDetail.id,
-                username: selectedInfluencerDetail.display_name,
-                displayName: selectedInfluencerDetail.display_name,
-                name: selectedInfluencerDetail.display_name,
-                handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-                picture: selectedInfluencerDetail.avatar_url || savedAnalytics.modash_data.picture,
-                profilePicture: selectedInfluencerDetail.avatar_url || savedAnalytics.modash_data.profilePicture,
-                
-                // Metadata for roster functionality  
-                isRosterInfluencer: true,
-                rosterId: selectedInfluencerDetail.id,
-                hasPreservedAnalytics: true,
-                
-                // Platform data structure for platform switching
-                platforms: savedAnalytics.modash_data.platforms || {
-                  [selectedPlatform]: {
-                    followers: selectedInfluencerDetail.total_followers,
-                    engagement_rate: selectedInfluencerDetail.total_engagement_rate,
-                    avgViews: selectedInfluencerDetail.total_avg_views
-                  }
+            // Use platform data from connected accounts
+            platforms: selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
+              if (platform.is_connected) {
+                acc[platform.platform.toLowerCase()] = {
+                  followers: platform.followers,
+                  engagement_rate: platform.engagement_rate,
+                  avgViews: platform.avg_views,
+                  username: platform.username
                 }
               }
-              
-              console.log('🚀 Roster popup using COMPLETE modash data:', {
-                hasAudience: !!completeData.audience,
-                audienceLocations: completeData.audience?.locations?.length || 0,
-                audienceLanguages: completeData.audience?.languages?.length || 0,
-                hasHashtags: !!completeData.hashtags,
-                hashtagCount: completeData.hashtags?.length || 0,
-                hasBrandPartnerships: !!completeData.brand_partnerships,
-                partnershipCount: completeData.brand_partnerships?.length || 0,
-                platformKeys: Object.keys(completeData.platforms || {}),
-                selectedPlatform
-              })
-              
-              console.log('✅ Using complete Modash analytics for roster popup:', {
-                hasAudience: !!completeData.audience,
-                hasAudienceTypes: !!completeData.audience_types,
-                hasPaidPerformance: !!completeData.paidPostPerformance,
-                hasRecentPosts: !!completeData.recentPosts,
-                audienceKeys: completeData.audience ? Object.keys(completeData.audience) : 'none'
-              })
-              
-              return completeData
-            }
+              return acc
+            }, {}) || {},
             
-            // Fallback to basic data if no complete analytics (should rarely happen)
-            console.warn('⚠️ No complete Modash analytics found, using basic roster data')
-            return {
-              // Basic discovery format fallback
-              id: selectedInfluencerDetail.id,
-              username: selectedInfluencerDetail.display_name,
-              displayName: selectedInfluencerDetail.display_name,
-              name: selectedInfluencerDetail.display_name,
-              handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-              profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-              picture: selectedInfluencerDetail.avatar_url || undefined,
-              followers: selectedInfluencerDetail.total_followers || 0,
-              engagement_rate: selectedInfluencerDetail.total_engagement_rate,
-              engagementRate: selectedInfluencerDetail.total_engagement_rate,
-              avgViews: selectedInfluencerDetail.total_avg_views,
-              
-              // Basic audience fallback
-              audience: {
-                locations: selectedInfluencerDetail.audience_locations?.map((loc: any) => ({
-                  country: loc.country_name,
-                  percentage: loc.percentage
-                })) || [],
-                languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
-                  language: (lang as any).language_name || (lang as any).name || String(lang),
-                  percentage: (lang as any).percentage
-                })) || []
-              },
-              audience_interests: [],
-              audience_languages: (selectedInfluencerDetail.audience_languages || []).map((lang: any) => ({
-                name: (lang as any).language_name || (lang as any).name || String(lang),
-                percentage: (lang as any).percentage
-              })) || [],
-              
-              // Metadata
-              isRosterInfluencer: true,
-              rosterId: selectedInfluencerDetail.id,
-              hasPreservedAnalytics: false
-            }
-          })()}
+            // Metadata for roster functionality  
+            isRosterInfluencer: true,
+            rosterId: selectedInfluencerDetail.id,
+            hasPreservedAnalytics: false, // Will be populated by API call
+            
+            // Fallback basic data
+            followers: selectedInfluencerDetail.total_followers || 0,
+            engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
+            engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
+            avgViews: selectedInfluencerDetail.total_avg_views || 0,
+          }}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)

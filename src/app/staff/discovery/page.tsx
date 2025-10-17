@@ -105,21 +105,29 @@ import SavedInfluencersTable from '../../../components/staff/SavedInfluencersTab
 import { useToast } from '../../../components/ui/use-toast'
 import { Toaster } from '../../../components/ui/toaster'
 
-// Add to roster functionality
-const addToRoster = async (discoveredId: string) => {
+// Add to roster functionality with COMPLETE Modash data caching
+const addToRoster = async (discoveredId: string, modashUserId?: string, platform?: string) => {
   try {
     const response = await fetch('/api/discovery/add-to-roster', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ discoveredId }),
+      body: JSON.stringify({ 
+        discoveredId, 
+        modashUserId, 
+        platform 
+      }),
     })
     
     const data = await response.json()
     
     if (data.success) {
-      return { success: true, newInfluencerId: data.data.newInfluencerId }
+      return { 
+        success: true, 
+        newInfluencerId: data.data.newInfluencerId,
+        hasCompleteData: data.data.hasCompleteData
+      }
     } else {
       throw new Error(data.error || 'Failed to add to roster')
     }
@@ -1693,7 +1701,7 @@ function DiscoveredInfluencersTable({
 
 
 
-  // Add to roster functionality
+  // Add to roster functionality with COMPLETE Modash data caching
   const handleAddToRoster = async (influencer: any) => {
     if (!influencer.discoveredId) {
       console.error('No discovered ID for influencer:', influencer)
@@ -1703,25 +1711,39 @@ function DiscoveredInfluencersTable({
     setAddingToRoster(influencer.discoveredId)
     
     try {
-      const result = await addToRoster(influencer.discoveredId)
+      // Extract Modash user ID and platform for complete data caching
+      const modashUserId = influencer.userId || influencer.id
+      const platform = influencer.platform || selectedPlatform
+      
+      console.log('🔄 Adding to roster with complete data:', {
+        discoveredId: influencer.discoveredId,
+        modashUserId,
+        platform
+      })
+      
+      const result = await addToRoster(influencer.discoveredId, modashUserId, platform)
       
       if (result.success) {
+        const message = result.hasCompleteData 
+          ? 'Successfully added to roster with complete analytics! 🎉'
+          : 'Successfully added to roster!'
+          
         setRosterMessages(prev => ({
           ...prev,
           [influencer.discoveredId]: {
             type: 'success',
-            message: 'Successfully added to roster!'
+            message: message
           }
         }))
         
-        // Clear message after 3 seconds
+        // Clear message after 4 seconds (longer for complete data message)
         setTimeout(() => {
           setRosterMessages(prev => {
             const newMessages = { ...prev }
             delete newMessages[influencer.discoveredId]
             return newMessages
           })
-        }, 3000)
+        }, 4000)
       } else {
         setRosterMessages(prev => ({
           ...prev,
