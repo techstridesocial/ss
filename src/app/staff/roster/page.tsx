@@ -231,7 +231,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         onPanelStateChange?.(true)
       }
     }
-  }, [urlSearchParams, influencers, onPanelStateChange])
+  }, [urlSearchParams, influencers]) // Removed onPanelStateChange from dependencies
 
   // Define the influencer type for consistency
   type InfluencerType = typeof influencers[0]
@@ -1050,13 +1050,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   // Memoize the panel state change handler to prevent dependency array issues
   const handlePanelStateChange = useCallback((isOpen: boolean) => {
     onPanelStateChange?.(isOpen)
-  }, [onPanelStateChange])
+  }, []) // Removed onPanelStateChange from dependencies to prevent infinite loops
 
   // Track panel state changes for the parent component
   useEffect(() => {
     const isAnyPanelOpen = detailPanelOpen || addModalOpen
     onPanelStateChange?.(isAnyPanelOpen)
-  }, [detailPanelOpen, addModalOpen, onPanelStateChange])
+  }, [detailPanelOpen, addModalOpen]) // Removed onPanelStateChange from dependencies
 
   // Platform Icon Component with SVG logos (Only Instagram, YouTube, TikTok)
   const PlatformIcon = ({ platform, size = 20 }: { platform: string, size?: number }) => {
