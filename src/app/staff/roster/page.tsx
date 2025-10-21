@@ -52,7 +52,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // 🔧 FIX: Move useMemo to top level to avoid Rules of Hooks violation
   const memoizedInfluencer = useMemo(() => {
-    if (!selectedInfluencerDetail) return null
+    if (!selectedInfluencerDetail) {
+      console.log('🔍 [DEBUG] useMemo: selectedInfluencerDetail is null')
+      return null
+    }
     
     console.log('🔍 [DEBUG] useMemo called with selectedInfluencerDetail:', selectedInfluencerDetail)
     try {
@@ -113,6 +116,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       }
     }
   }, [selectedInfluencerDetail])
+
+  // 🔍 [DEBUG] Log memoized influencer changes
+  useEffect(() => {
+    console.log('🔍 [DEBUG] memoizedInfluencer changed:', {
+      hasMemoizedInfluencer: !!memoizedInfluencer,
+      influencerId: memoizedInfluencer?.id,
+      influencerName: memoizedInfluencer?.displayName,
+      timestamp: new Date().toISOString()
+    })
+  }, [memoizedInfluencer])
+
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
@@ -1972,13 +1986,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       )}
 
       {/* Side Panels */}
-      {selectedInfluencerDetail && (
+      {selectedInfluencerDetail && memoizedInfluencer && (
         <div>
           {(() => {
             console.log('🔍 [DEBUG] Rendering InfluencerDetailPanel with:', {
               detailPanelOpen,
               hasSelectedInfluencerDetail: !!selectedInfluencerDetail,
               selectedInfluencerDetailId: selectedInfluencerDetail?.id,
+              hasMemoizedInfluencer: !!memoizedInfluencer,
               timestamp: new Date().toISOString()
             })
             return null
