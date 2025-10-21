@@ -49,6 +49,70 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       timestamp: new Date().toISOString()
     })
   }, [detailPanelOpen, selectedInfluencerDetail, dashboardPanelOpen, selectedDashboardInfluencer])
+
+  // 🔧 FIX: Move useMemo to top level to avoid Rules of Hooks violation
+  const memoizedInfluencer = useMemo(() => {
+    if (!selectedInfluencerDetail) return null
+    
+    console.log('🔍 [DEBUG] useMemo called with selectedInfluencerDetail:', selectedInfluencerDetail)
+    try {
+      // Memoize platforms object separately to prevent recreation
+      const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
+        if (platform.is_connected) {
+          acc[platform.platform.toLowerCase()] = {
+            followers: platform.followers,
+            engagement_rate: platform.engagement_rate,
+            avgViews: platform.avg_views,
+            username: platform.username
+          }
+        }
+        return acc
+      }, {}) || {}
+
+      return {
+        // API-First Approach: Always call Modash API for fresh data
+        id: selectedInfluencerDetail.id,
+        username: selectedInfluencerDetail.display_name,
+        displayName: selectedInfluencerDetail.display_name,
+        name: selectedInfluencerDetail.display_name,
+        handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+        picture: selectedInfluencerDetail.avatar_url || undefined,
+        profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+        
+        // Use memoized platforms object
+        platforms,
+        
+        // Metadata for roster functionality  
+        isRosterInfluencer: true,
+        rosterId: selectedInfluencerDetail.id,
+        hasPreservedAnalytics: false, // Will be populated by API call
+        
+        // Fallback basic data
+        followers: selectedInfluencerDetail.total_followers || 0,
+        engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
+        engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
+        avgViews: selectedInfluencerDetail.total_avg_views || 0,
+      }
+    } catch (error) {
+      console.error('🔍 [DEBUG] Error in useMemo:', error)
+      return {
+        id: selectedInfluencerDetail.id,
+        displayName: selectedInfluencerDetail.display_name,
+        name: selectedInfluencerDetail.display_name,
+        handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+        picture: selectedInfluencerDetail.avatar_url || undefined,
+        profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+        platforms: {},
+        isRosterInfluencer: true,
+        rosterId: selectedInfluencerDetail.id,
+        hasPreservedAnalytics: false,
+        followers: 0,
+        engagement_rate: 0,
+        engagementRate: 0,
+        avgViews: 0,
+      }
+    }
+  }, [selectedInfluencerDetail])
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
@@ -1923,66 +1987,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
               onClose={handleClosePanels}
-          influencer={useMemo(() => {
-            console.log('🔍 [DEBUG] useMemo called with selectedInfluencerDetail:', selectedInfluencerDetail)
-            try {
-              // Memoize platforms object separately to prevent recreation
-              const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
-              if (platform.is_connected) {
-                acc[platform.platform.toLowerCase()] = {
-                  followers: platform.followers,
-                  engagement_rate: platform.engagement_rate,
-                  avgViews: platform.avg_views,
-                  username: platform.username
-                }
-              }
-              return acc
-            }, {}) || {}
-
-            return {
-              // API-First Approach: Always call Modash API for fresh data
-              id: selectedInfluencerDetail.id,
-              username: selectedInfluencerDetail.display_name,
-              displayName: selectedInfluencerDetail.display_name,
-              name: selectedInfluencerDetail.display_name,
-              handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-              picture: selectedInfluencerDetail.avatar_url || undefined,
-              profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-              
-              // Use memoized platforms object
-              platforms,
-              
-              // Metadata for roster functionality  
-              isRosterInfluencer: true,
-              rosterId: selectedInfluencerDetail.id,
-              hasPreservedAnalytics: false, // Will be populated by API call
-              
-              // Fallback basic data
-              followers: selectedInfluencerDetail.total_followers || 0,
-              engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
-              engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
-              avgViews: selectedInfluencerDetail.total_avg_views || 0,
-            }
-            } catch (error) {
-              console.error('🔍 [DEBUG] Error in useMemo:', error)
-              return {
-                id: selectedInfluencerDetail.id,
-                displayName: selectedInfluencerDetail.display_name,
-                name: selectedInfluencerDetail.display_name,
-                handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-                picture: selectedInfluencerDetail.avatar_url || undefined,
-                profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-                platforms: {},
-                isRosterInfluencer: true,
-                rosterId: selectedInfluencerDetail.id,
-                hasPreservedAnalytics: false,
-                followers: 0,
-                engagement_rate: 0,
-                engagementRate: 0,
-                avgViews: 0,
-              }
-            }
-          }, [selectedInfluencerDetail])}
+              influencer={memoizedInfluencer}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)
