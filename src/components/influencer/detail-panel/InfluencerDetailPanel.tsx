@@ -826,6 +826,31 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     </AnimatePresence>
   )
 
+  // 🔍 [DEBUG] Portal rendering debug
+  console.log('🔍 [DEBUG] Creating portal with:', {
+    isOpen,
+    mounted,
+    hasInfluencer: !!influencer,
+    documentBody: !!document.body,
+    timestamp: new Date().toISOString()
+  })
+
+  if (!mounted) {
+    console.log('🔍 [DEBUG] Not mounted yet, returning null')
+    return null
+  }
+
+  if (!isOpen) {
+    console.log('🔍 [DEBUG] Panel not open, returning null')
+    return null
+  }
+
+  if (!influencer) {
+    console.log('🔍 [DEBUG] No influencer data, returning null')
+    return null
+  }
+
+  console.log('🔍 [DEBUG] Creating portal successfully')
   return createPortal(panel, document.body)
 })
 

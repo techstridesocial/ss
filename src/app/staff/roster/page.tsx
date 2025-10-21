@@ -1998,6 +1998,23 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             })
             return null
           })()}
+          
+          {/* 🔍 [DEBUG] Visual indicator that panel should render */}
+          {detailPanelOpen && (
+            <div style={{
+              position: 'fixed',
+              top: '10px',
+              right: '10px',
+              background: 'red',
+              color: 'white',
+              padding: '10px',
+              zIndex: 9999,
+              borderRadius: '5px'
+            }}>
+              🔍 PANEL SHOULD BE OPENING
+            </div>
+          )}
+          
           <ErrorBoundary>
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
