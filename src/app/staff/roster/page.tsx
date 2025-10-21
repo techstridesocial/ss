@@ -1924,8 +1924,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               isOpen={detailPanelOpen}
               onClose={handleClosePanels}
           influencer={useMemo(() => {
-            // Memoize platforms object separately to prevent recreation
-            const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
+            console.log('🔍 [DEBUG] useMemo called with selectedInfluencerDetail:', selectedInfluencerDetail)
+            try {
+              // Memoize platforms object separately to prevent recreation
+              const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
               if (platform.is_connected) {
                 acc[platform.platform.toLowerCase()] = {
                   followers: platform.followers,
@@ -1961,7 +1963,26 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
               avgViews: selectedInfluencerDetail.total_avg_views || 0,
             }
-          }, [selectedInfluencerDetail.id, selectedInfluencerDetail.display_name, selectedInfluencerDetail.avatar_url, selectedInfluencerDetail.platforms, selectedInfluencerDetail.total_followers, selectedInfluencerDetail.total_engagement_rate, selectedInfluencerDetail.total_avg_views])}
+            } catch (error) {
+              console.error('🔍 [DEBUG] Error in useMemo:', error)
+              return {
+                id: selectedInfluencerDetail.id,
+                displayName: selectedInfluencerDetail.display_name,
+                name: selectedInfluencerDetail.display_name,
+                handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+                picture: selectedInfluencerDetail.avatar_url || undefined,
+                profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+                platforms: {},
+                isRosterInfluencer: true,
+                rosterId: selectedInfluencerDetail.id,
+                hasPreservedAnalytics: false,
+                followers: 0,
+                engagement_rate: 0,
+                engagementRate: 0,
+                avgViews: 0,
+              }
+            }
+          }, [selectedInfluencerDetail])}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)
