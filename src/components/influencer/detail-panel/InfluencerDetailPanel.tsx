@@ -456,8 +456,23 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   const [apiData, setApiData] = useState<any>(null)
   const [isLoadingApiData, setIsLoadingApiData] = useState(false)
 
+  // 🔍 [DEBUG] Comprehensive logging for panel state
   useEffect(() => {
+    console.log('🔍 [DEBUG] InfluencerDetailPanel props changed:', {
+      isOpen,
+      hasInfluencer: !!influencer,
+      influencerId: influencer?.id,
+      influencerName: influencer?.display_name,
+      selectedPlatform,
+      loading,
+      timestamp: new Date().toISOString()
+    })
+  }, [isOpen, influencer, selectedPlatform, loading])
+
+  useEffect(() => {
+    console.log('🔍 [DEBUG] InfluencerDetailPanel mounting...')
     setMounted(true)
+    console.log('🔍 [DEBUG] InfluencerDetailPanel mounted successfully')
   }, [])
 
   // Fetch Modash API data for roster influencers (FIXED with stable dependencies)
@@ -583,6 +598,15 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     pictureSrc: pictureSrc
   })
 
+  // 🔍 [DEBUG] Panel rendering debug
+  console.log('🔍 [DEBUG] InfluencerDetailPanel rendering:', {
+    isOpen,
+    mounted,
+    hasInfluencer: !!influencer,
+    willRender: isOpen && mounted,
+    timestamp: new Date().toISOString()
+  })
+
   const panel = (
     <AnimatePresence>
       {isOpen && (
@@ -591,7 +615,10 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-stretch justify-end"
-          onClick={onClose}
+          onClick={(e) => {
+            console.log('🔍 [DEBUG] Panel backdrop clicked, calling onClose')
+            onClose()
+          }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="influencer-panel-title"

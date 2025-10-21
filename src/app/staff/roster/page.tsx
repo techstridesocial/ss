@@ -12,6 +12,7 @@ import AssignInfluencerModal from '../../../components/modals/AssignInfluencerMo
 import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
 import DashboardInfoPanel from '../../../components/influencer/DashboardInfoPanel'
+import ErrorBoundary from '../../../components/debug/ErrorBoundary'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { Search, FilterIcon, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp, BarChart3, User, AlertTriangle } from 'lucide-react'
 
@@ -36,6 +37,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<any>(null)
+
+  // 🔍 [DEBUG] Panel state debugging
+  useEffect(() => {
+    console.log('🔍 [DEBUG] Panel state changed:', {
+      detailPanelOpen,
+      hasSelectedInfluencerDetail: !!selectedInfluencerDetail,
+      selectedInfluencerDetailId: selectedInfluencerDetail?.id,
+      dashboardPanelOpen,
+      hasSelectedDashboardInfluencer: !!selectedDashboardInfluencer,
+      timestamp: new Date().toISOString()
+    })
+  }, [detailPanelOpen, selectedInfluencerDetail, dashboardPanelOpen, selectedDashboardInfluencer])
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
@@ -759,11 +772,32 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleViewInfluencer = (influencer: any) => {
-    console.log('👤 Viewing influencer analytics:', influencer.display_name)
-    // Open analytics panel (no URL change)
-    setSelectedInfluencerDetail(influencer)
-    setDetailPanelOpen(true)
-    onPanelStateChange?.(true)
+    console.log('🔍 [DEBUG] handleViewInfluencer called with:', {
+      influencer: influencer,
+      displayName: influencer?.display_name,
+      id: influencer?.id,
+      hasInfluencer: !!influencer,
+      timestamp: new Date().toISOString()
+    })
+    
+    try {
+      console.log('🔍 [DEBUG] Setting selectedInfluencerDetail...')
+      setSelectedInfluencerDetail(influencer)
+      console.log('🔍 [DEBUG] selectedInfluencerDetail set successfully')
+      
+      console.log('🔍 [DEBUG] Setting detailPanelOpen to true...')
+      setDetailPanelOpen(true)
+      console.log('🔍 [DEBUG] detailPanelOpen set successfully')
+      
+      console.log('🔍 [DEBUG] Calling onPanelStateChange with true...')
+      onPanelStateChange?.(true)
+      console.log('🔍 [DEBUG] onPanelStateChange called successfully')
+      
+      console.log('✅ [DEBUG] handleViewInfluencer completed successfully')
+    } catch (error) {
+      console.error('❌ [DEBUG] Error in handleViewInfluencer:', error)
+      console.error('❌ [DEBUG] Error stack:', error instanceof Error ? error.stack : 'No stack trace available')
+    }
   }
 
   const handleViewDashboardInfo = (influencer: any) => {
@@ -1654,7 +1688,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                       
                       {/* Analytics Button */}
                       <button
-                        onClick={() => handleViewInfluencer(influencer)}
+                        onClick={(e) => {
+                          console.log('🔍 [DEBUG] Analytics button clicked:', {
+                            influencer: influencer,
+                            displayName: influencer?.display_name,
+                            id: influencer?.id,
+                            event: e,
+                            timestamp: new Date().toISOString()
+                          })
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleViewInfluencer(influencer)
+                        }}
                         disabled={isLoading}
                         className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
                         title="View Analytics & Performance"
@@ -1864,9 +1909,20 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
       {/* Side Panels */}
       {selectedInfluencerDetail && (
-        <InfluencerDetailPanel
-          isOpen={detailPanelOpen}
-          onClose={handleClosePanels}
+        <div>
+          {(() => {
+            console.log('🔍 [DEBUG] Rendering InfluencerDetailPanel with:', {
+              detailPanelOpen,
+              hasSelectedInfluencerDetail: !!selectedInfluencerDetail,
+              selectedInfluencerDetailId: selectedInfluencerDetail?.id,
+              timestamp: new Date().toISOString()
+            })
+            return null
+          })()}
+          <ErrorBoundary>
+            <InfluencerDetailPanel
+              isOpen={detailPanelOpen}
+              onClose={handleClosePanels}
           influencer={useMemo(() => {
             // Memoize platforms object separately to prevent recreation
             const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
@@ -1912,6 +1968,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             console.log('🔄 Roster platform switched to:', platform)
           }}
         />
+          </ErrorBoundary>
+        </div>
       )}
 
       {/* Dashboard Info Panel */}
