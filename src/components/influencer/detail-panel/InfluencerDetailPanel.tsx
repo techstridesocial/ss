@@ -452,6 +452,16 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   onPlatformSwitch,
   loading = false 
 }: InfluencerDetailPanelProps) {
+  console.log('🔍 [DEBUG] InfluencerDetailPanel component called with:', {
+    isOpen,
+    hasInfluencer: !!influencer,
+    influencerId: influencer?.id,
+    influencerName: influencer?.displayName,
+    selectedPlatform,
+    loading,
+    timestamp: new Date().toISOString()
+  })
+
   const [mounted, setMounted] = useState(false)
   const [apiData, setApiData] = useState<any>(null)
   const [isLoadingApiData, setIsLoadingApiData] = useState(false)
