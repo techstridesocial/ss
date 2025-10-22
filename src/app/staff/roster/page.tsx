@@ -2016,6 +2016,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           )}
           
           <ErrorBoundary>
+            {(() => {
+              console.log('🔍 [DEBUG] About to render InfluencerDetailPanel with:', {
+                isOpen: detailPanelOpen,
+                hasInfluencer: !!memoizedInfluencer,
+                influencerKeys: memoizedInfluencer ? Object.keys(memoizedInfluencer) : 'null',
+                influencerId: memoizedInfluencer?.id,
+                influencerName: memoizedInfluencer?.displayName,
+                selectedPlatform,
+                timestamp: new Date().toISOString()
+              })
+              return null
+            })()}
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
               onClose={handleClosePanels}
