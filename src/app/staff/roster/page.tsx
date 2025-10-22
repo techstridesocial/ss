@@ -2031,7 +2031,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
               onClose={handleClosePanels}
-              influencer={memoizedInfluencer}
+              influencer={selectedInfluencerDetail}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)
