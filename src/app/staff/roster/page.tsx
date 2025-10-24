@@ -2030,8 +2030,23 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             })()}
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
-              onClose={handleClosePanels}
-              influencer={selectedInfluencerDetail}
+              onClose={() => setDetailPanelOpen(false)}
+              influencer={{
+                id: selectedInfluencerDetail.id,
+                displayName: selectedInfluencerDetail.display_name,
+                name: selectedInfluencerDetail.display_name,
+                handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
+                picture: selectedInfluencerDetail.avatar_url,
+                profilePicture: selectedInfluencerDetail.avatar_url,
+                followers: selectedInfluencerDetail.total_followers || 0,
+                engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
+                engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
+                avgViews: selectedInfluencerDetail.total_avg_views || 0,
+                bio: selectedInfluencerDetail.bio,
+                isRosterInfluencer: true,
+                rosterId: selectedInfluencerDetail.id,
+                hasPreservedAnalytics: false
+              }}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)
