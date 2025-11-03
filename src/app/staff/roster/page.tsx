@@ -163,16 +163,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
   
-  // Helper function to generate random 6-character alphanumeric ID
-  const generateRandomId = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    let result = ''
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result
-  }
-  
   // Add pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -311,9 +301,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Define the influencer type for consistency
   type InfluencerType = typeof influencers[0]
-
-  // Mock data for now - in real app this would come from props
-  const MOCK_INFLUENCERS = influencers
 
   const page = parseInt(searchParams.page || '1')
   const search = searchParams.search || searchQuery
@@ -705,128 +692,37 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setSortConfig({ key: null, direction: 'asc' })
   }
 
-  // Mock function to generate detailed influencer data
+  // Generate detailed influencer data - use real data from database
   const generateDetailedInfluencerData = (basicInfluencer: any): InfluencerDetailView => {
-    // Add some mock management data to a few influencers for demonstration
-    const mockManagementData = {
-      'SC9K2L': {
-        assigned_to: 'sarah.manager@stridesocial.com',
-        labels: ['High Priority', 'Top Performer'],
-        notes: 'Excellent performance on recent campaigns. Very responsive and professional.'
-      },
-      'MT7B9X': {
-        assigned_to: 'mike.lead@stridesocial.com',
-        labels: ['Active Campaign', 'Follow Up'],
-        notes: 'Currently working on tech product launch. Need to follow up on content delivery timeline.'
-      },
-      'inf_9': {
-        assigned_to: '',
-        labels: ['New Contact'],
-        notes: 'Recently partnered. Great potential for UGC campaigns.'
-      }
-    }
-
-    const managementInfo = mockManagementData[basicInfluencer.id as keyof typeof mockManagementData] || {
-      assigned_to: '',
-      labels: [],
-      notes: ''
-    }
-
     return {
       ...basicInfluencer,
       price_per_post: Math.floor(basicInfluencer.total_followers * 0.01),
       last_synced_at: new Date(),
       
-      // Add management fields
-      assigned_to: managementInfo.assigned_to,
-      labels: managementInfo.labels,
-      notes: managementInfo.notes,
+      // Use existing management fields from database
+      assigned_to: basicInfluencer.assigned_to || null,
+      labels: basicInfluencer.labels || [],
+      notes: basicInfluencer.notes || null,
       
-      // Add missing profile properties
-      bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${(basicInfluencer.niches || ['lifestyle']).join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,
-      website_url: basicInfluencer.website_url,
-      email: `contact@${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
+      // Use existing profile properties
+      bio: basicInfluencer.bio || null,
+      website_url: basicInfluencer.website_url || null,
+      email: basicInfluencer.email || null,
       
-      // Generate platform details
-      platform_details: (basicInfluencer.platforms || []).map((platformObj: any, index: number) => {
-        // Handle both string and object platform formats
-        const platformName = typeof platformObj === 'string' ? platformObj : (platformObj.platform || 'INSTAGRAM')
-        const platformLower = platformName.toLowerCase()
-        
-        return {
-          id: `platform_${basicInfluencer.id}_${index}`,
-          influencer_id: basicInfluencer.id,
-          platform: platformName,
-          username: platformObj.username || `${basicInfluencer.display_name.toLowerCase().replace(' ', '')}${index > 0 ? index + 1 : ''}`,
-          followers: platformObj.followers || Math.floor(basicInfluencer.total_followers / basicInfluencer.platform_count),
-          following: Math.floor(Math.random() * 2000) + 500,
-          engagement_rate: platformObj.engagement_rate || (basicInfluencer.total_engagement_rate + (Math.random() - 0.5)),
-          avg_views: platformObj.avg_views || Math.floor(basicInfluencer.total_avg_views / basicInfluencer.platform_count),
-          avg_likes: Math.floor((platformObj.avg_views || basicInfluencer.total_avg_views) * 0.1),
-          avg_comments: Math.floor((platformObj.avg_views || basicInfluencer.total_avg_views) * 0.02),
-          last_post_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-          profile_url: platformObj.profile_url || `https://${platformLower}.com/${basicInfluencer.display_name.toLowerCase().replace(' ', '')}`,
-          is_verified: platformObj.is_verified || Math.random() > 0.7,
-          is_connected: platformObj.is_connected || true,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      }),
+      // Use platform details from database (will be fetched by InfluencerDetailPanel)
+      platform_details: [],
       
-      // Generate recent content
-      recent_content: Array.from({ length: 6 }, (_, i) => ({
-        id: `content_${basicInfluencer.id}_${i}`,
-        influencer_platform_id: `platform_${basicInfluencer.id}_0`,
-        post_url: `https://example.com/post/${i}`,
-        thumbnail_url: `https://images.unsplash.com/photo-${1500000000000 + i}?w=300&h=300&fit=crop`,
-        caption: [
-          'Amazing sunset today! 🌅 #lifestyle #beautiful',
-          'New tutorial is live! Check it out 📸',
-          'Feeling grateful for this journey ✨',
-          'Behind the scenes of today\'s shoot 🎬',
-          'Can\'t believe how far we\'ve come! 🚀',
-          'Exciting collaboration coming soon... 👀'
-        ][i],
-        views: Math.floor(Math.random() * 50000) + 10000,
-        likes: Math.floor(Math.random() * 5000) + 500,
-        comments: Math.floor(Math.random() * 200) + 20,
-        shares: Math.floor(Math.random() * 100) + 5,
-        posted_at: new Date(Date.now() - i * 2 * 24 * 60 * 60 * 1000),
-        created_at: new Date()
-      })),
+      // Use real content from database (will be fetched by InfluencerDetailPanel)
+      recent_content: [],
       
-      // Generate demographics
-      demographics: {
-        id: `demo_${basicInfluencer.id}`,
-        influencer_platform_id: `platform_${basicInfluencer.id}_0`,
-        age_13_17: Math.random() * 10,
-        age_18_24: 20 + Math.random() * 20,
-        age_25_34: 25 + Math.random() * 20,
-        age_35_44: 15 + Math.random() * 15,
-        age_45_54: 8 + Math.random() * 10,
-        age_55_plus: 2 + Math.random() * 5,
-        gender_male: 20 + Math.random() * 40,
-        gender_female: 50 + Math.random() * 30,
-        gender_other: 1 + Math.random() * 5,
-        updated_at: new Date()
-      },
+      // Use real demographics from database (will be fetched by InfluencerDetailPanel)
+      demographics: null,
       
-      // Generate audience locations
-      audience_locations: [
-        { id: `loc_${basicInfluencer.id}_1`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, country_name: basicInfluencer.location_country || 'United States', country_code: 'US', percentage: 40 + Math.random() * 30 },
-        { id: `loc_${basicInfluencer.id}_2`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, country_name: 'United Kingdom', country_code: 'GB', percentage: 15 + Math.random() * 15 },
-        { id: `loc_${basicInfluencer.id}_3`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, country_name: 'Canada', country_code: 'CA', percentage: 10 + Math.random() * 10 },
-        { id: `loc_${basicInfluencer.id}_4`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, country_name: 'Australia', country_code: 'AU', percentage: 5 + Math.random() * 8 }
-      ],
+      // Use real audience data from database (will be fetched by InfluencerDetailPanel)
+      audience_locations: [],
+      audience_languages: [],
       
-      // Generate audience languages
-      audience_languages: [
-        { id: `lang_${basicInfluencer.id}_1`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, language_name: 'English', language_code: 'en', percentage: 75 + Math.random() * 20 },
-        { id: `lang_${basicInfluencer.id}_2`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, language_name: 'Spanish', language_code: 'es', percentage: 5 + Math.random() * 10 },
-        { id: `lang_${basicInfluencer.id}_3`, influencer_platform_id: `platform_${basicInfluencer.id}_0`, language_name: 'French', language_code: 'fr', percentage: 3 + Math.random() * 7 }
-      ],
-      
-      // Empty campaign participation for now
+      // Campaign participation (will be fetched if needed)
       campaign_participation: []
     }
   }
@@ -1000,27 +896,39 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setIsLoading(true)
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call real API to update influencer
+      const response = await fetch(`/api/influencers/${data.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: data.display_name,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          niches: data.niches,
+          bio: data.bio,
+          location_country: data.location_country,
+          location_city: data.location_city,
+          website_url: data.website_url,
+          influencer_type: data.influencer_type,
+          is_active: data.is_active,
+          total_followers: data.estimated_followers,
+          total_avg_views: data.average_views,
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update influencer')
+      }
+
+      const result = await response.json()
       
-      // Update the influencer in state - simplified approach to avoid type issues
+      // Update the influencer in state with the returned data
       setInfluencers(prev => prev.map(inf => {
         if (inf.id === data.id) {
-          // Create a safe update that maintains the original type structure
           return {
             ...inf,
-            display_name: data.display_name || inf.display_name,
-            first_name: data.first_name || inf.first_name,
-            last_name: data.last_name || inf.last_name,
-            niches: data.niches || inf.niches,
-            bio: data.bio || inf.bio || '',
-            location_country: data.location_country || inf.location_country,
-            location_city: data.location_city || inf.location_city,
-            website_url: data.website_url || inf.website_url || '',
-            influencer_type: data.influencer_type || inf.influencer_type,
-            is_active: data.is_active !== undefined ? data.is_active : inf.is_active,
-            total_followers: data.estimated_followers || inf.total_followers,
-            total_avg_views: data.average_views || inf.total_avg_views,
+            ...result.data
           }
         }
         return inf
@@ -1046,8 +954,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         alert(`✅ Influencer ${data.display_name} updated successfully!`)
       }
       
-    } catch {
-      alert('❌ Error updating influencer. Please try again.')
+      // Close modal
+      setEditModalOpen(false)
+      setSelectedInfluencer(null)
+      
+    } catch (error) {
+      alert(`❌ Error updating influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
@@ -1079,23 +991,27 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleDeleteInfluencer = async (influencer: any) => {
-    if (!window.confirm(`Are you sure you want to delete ${influencer.display_name}?\n\nThis action cannot be undone.`)) {
-      return
-    }
-    
     setIsLoading(true)
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Call real API to delete influencer
+      const response = await fetch(`/api/influencers/${influencer.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete influencer')
+      }
       
       // Remove from state
       setInfluencers(prev => prev.filter(inf => inf.id !== influencer.id))
       
       alert(`✅ ${influencer.display_name} has been deleted successfully.`)
       
-    } catch {
-      alert('❌ Error deleting influencer. Please try again.')
+    } catch (error) {
+      alert(`❌ Error deleting influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
       setDeleteModalOpen(false)
@@ -1106,8 +1022,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handleRefreshData = async () => {
     setIsLoading(true)
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Reload influencers from the API
+      await loadInfluencers()
       alert('✅ Influencer data refreshed successfully!')
     } catch {
       alert('❌ Error refreshing data. Please try again.')
