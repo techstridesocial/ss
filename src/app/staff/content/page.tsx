@@ -186,9 +186,14 @@ export default function StaffContentManagement() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
+      <StaffProtectedRoute>
+        <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+          <ModernStaffHeader />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          </div>
+        </div>
+      </StaffProtectedRoute>
     )
   }
 

@@ -49,6 +49,12 @@ import {
 import InfluencerDetailPanel from '@/components/influencer/InfluencerDetailPanel'
 import { CreditCard as CreditCardComponent } from '@/components/credits/CreditDisplay'
 import { getBrandLogo, getBrandColor } from '@/components/icons/BrandLogos'
+import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
+import { useStaffSavedInfluencers } from '../../../lib/hooks/useStaffSavedInfluencers'
+import SavedInfluencersTable from '../../../components/staff/SavedInfluencersTable'
+import { useToast } from '../../../components/ui/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
+
 // URL validation and platform icon helpers for social media contacts
 const validateAndSanitizeUrl = (contact: any): string | null => {
   if (!contact?.value || typeof contact.value !== 'string') return null
@@ -99,11 +105,6 @@ const getPlatformIconJSX = (platformType: string) => {
 const getPlatformColor = (platformType: string) => {
   return getBrandColor(platformType)
 }
-import { useHeartedInfluencers } from '../../../lib/context/HeartedInfluencersContext'
-import { useStaffSavedInfluencers } from '../../../lib/hooks/useStaffSavedInfluencers'
-import SavedInfluencersTable from '../../../components/staff/SavedInfluencersTable'
-import { useToast } from '../../../components/ui/use-toast'
-import { Toaster } from '../../../components/ui/toaster'
 
 // Add to roster functionality with COMPLETE Modash data caching
 const addToRoster = async (discoveredId: string, modashUserId?: string, platform?: string) => {
@@ -2195,6 +2196,7 @@ function DiscoveryPageClient() {
     if ((searchResults.length > 0 || searchQuery.trim()) && !isSearching) {
       handleSearch()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlatform])
   
   // Enhanced search function with full API integration

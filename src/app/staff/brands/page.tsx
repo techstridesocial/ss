@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUserId } from '@/lib/auth/current-user'
 import dynamic from 'next/dynamic'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
-import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, FilterIcon, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
+import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, FilterIcon, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp, RefreshCw, AlertTriangle } from 'lucide-react'
 
 // Lazy load heavy modal and panel components
 const AddBrandPanel = dynamic(() => import('@/components/brands/AddBrandPanel'), {
@@ -36,63 +36,30 @@ const CreateCampaignFromQuotationModal = dynamic(() => import('@/components/camp
   </div>
 })
 
-// Mock data for brands and their shortlists
-const MOCK_BRANDS = [
-  {
-    id: 'brand_1',
-    company_name: 'Luxe Beauty Co',
-    contact_name: 'Sarah Johnson',
-    email: 'sarah@luxebeauty.com',
-    industry: 'Beauty & Cosmetics',
-    logo_url: null,
-    shortlists_count: 3,
-    active_campaigns: 2,
-    total_spend: 15420,
-    last_activity: '2024-01-15',
-    status: 'active',
-    assigned_staff_id: 'staff_1' as string | null,
-    assigned_staff_name: 'Alex Thompson' as string | null
-  },
-  {
-    id: 'brand_2',
-    company_name: 'FitGear Pro',
-    contact_name: 'Mike Chen',
-    email: 'mike@fitgearpro.com',
-    industry: 'Fitness & Sports',
-    logo_url: null,
-    shortlists_count: 2,
-    active_campaigns: 1,
-    total_spend: 8750,
-    last_activity: '2024-01-14',
-    status: 'active',
-    assigned_staff_id: null,
-    assigned_staff_name: null
-  },
-  {
-    id: 'brand_3',
-    company_name: 'TechStart Solutions',
-    contact_name: 'Emily Rodriguez',
-    email: 'emily@techstart.io',
-    industry: 'Technology',
-    logo_url: null,
-    shortlists_count: 1,
-    active_campaigns: 0,
-    total_spend: 3200,
-    last_activity: '2024-01-10',
-    status: 'inactive',
-    assigned_staff_id: 'staff_2' as string | null,
-    assigned_staff_name: 'Sarah Wilson' as string | null
-  }
-]
+// Interfaces
+interface Brand {
+  id: string
+  company_name: string
+  contact_name: string
+  email: string
+  industry: string
+  logo_url: string | null
+  shortlists_count: number
+  active_campaigns: number
+  total_spend: number
+  last_activity: string
+  status: string
+  assigned_staff_id: string | null
+  assigned_staff_name: string | null
+}
 
-// Mock staff members for assignment dropdowns
-const MOCK_STAFF = [
-  { id: 'staff_1', name: 'Alex Thompson', email: 'alex@stridesocial.com' },
-  { id: 'staff_2', name: 'Sarah Wilson', email: 'sarah@stridesocial.com' },
-  { id: 'staff_3', name: 'Mike Johnson', email: 'mike@stridesocial.com' },
-  { id: 'staff_4', name: 'Emma Davis', email: 'emma@stridesocial.com' }
-]
+interface StaffMember {
+  id: string
+  fullName: string
+  email: string
+}
 
+// NOTE: Shortlist and quotation data structures kept for backwards compatibility with UI components
 const MOCK_SHORTLISTS = [
   {
     id: 'shortlist_1',
@@ -129,112 +96,7 @@ const MOCK_SHORTLISTS = [
   }
 ]
 
-const MOCK_QUOTATION_REQUESTS = [
-  {
-    id: 'quote_1',
-    brand_id: 'brand_1',
-    brand_name: 'Luxe Beauty Co',
-    campaign_name: 'Summer Beauty Collection Launch',
-    description: 'Micro-influencer campaign for new summer makeup line',
-    influencer_count: 8,
-    status: 'pending_review',
-    requested_at: '2024-01-15T10:30:00Z',
-    budget_range: '$5,000 - $8,000',
-    campaign_duration: '2 weeks',
-    deliverables: ['Instagram Posts', 'Stories', 'Reels'],
-    target_demographics: 'Women 18-35, Beauty enthusiasts',
-    notes: 'Focus on authentic, lifestyle content showcasing summer looks',
-    influencers: [
-      { name: '@beautybyjenna', platform: 'Instagram', followers: '45.2K', engagement: '4.8%' },
-      { name: '@makeupguru_sarah', platform: 'Instagram', followers: '38.7K', engagement: '5.2%' },
-      { name: '@glowwithgrace', platform: 'Instagram', followers: '52.1K', engagement: '4.1%' },
-      { name: '@skincarequeen', platform: 'Instagram', followers: '41.3K', engagement: '4.9%' },
-      { name: '@beautyvibes_official', platform: 'Instagram', followers: '47.8K', engagement: '4.6%' },
-      { name: '@naturalglow_amy', platform: 'Instagram', followers: '39.4K', engagement: '5.1%' },
-      { name: '@makeup_maven', platform: 'Instagram', followers: '44.9K', engagement: '4.7%' },
-      { name: '@radiant_rachel', platform: 'Instagram', followers: '43.2K', engagement: '4.8%' }
-    ]
-  },
-  {
-    id: 'quote_2',
-    brand_id: 'brand_1',
-    brand_name: 'Luxe Beauty Co',
-    campaign_name: 'Holiday Glam Campaign',
-    description: 'Premium influencers for holiday makeup collection',
-    influencer_count: 5,
-    status: 'sent',
-    requested_at: '2024-01-12T14:20:00Z',
-    quoted_at: '2024-01-13T09:15:00Z',
-    total_quote: '$12,500',
-    budget_range: '$10,000 - $15,000',
-    campaign_duration: '3 weeks',
-    deliverables: ['Instagram Posts', 'Stories', 'YouTube Tutorials'],
-    target_demographics: 'Women 25-45, Premium beauty market',
-    notes: 'Holiday-themed content with elegant styling',
-    influencers: [
-      { name: '@luxe_lifestyle', platform: 'Instagram', followers: '78.4K', engagement: '3.9%' },
-      { name: '@elegant_emma', platform: 'Instagram', followers: '82.1K', engagement: '4.2%' },
-      { name: '@premium_beauty', platform: 'YouTube', followers: '156K', engagement: '3.7%' },
-      { name: '@sophisticated_sarah', platform: 'Instagram', followers: '69.3K', engagement: '4.5%' },
-      { name: '@chic_cosmetics', platform: 'Instagram', followers: '71.8K', engagement: '4.1%' }
-    ]
-  },
-  {
-    id: 'quote_3',
-    brand_id: 'brand_2',
-    brand_name: 'FitGear Pro',
-    campaign_name: 'New Year Fitness Challenge',
-    description: 'Fitness influencers for equipment launch',
-    influencer_count: 12,
-    status: 'approved',
-    requested_at: '2024-01-10T11:45:00Z',
-    quoted_at: '2024-01-11T16:30:00Z',
-    approved_at: '2024-01-12T10:00:00Z',
-    total_quote: '$18,750',
-    budget_range: '$15,000 - $20,000',
-    campaign_duration: '4 weeks',
-    deliverables: ['Instagram Posts', 'Stories', 'TikTok Videos', 'Blog Reviews'],
-    target_demographics: 'Fitness enthusiasts 20-40, Active lifestyle',
-    notes: 'Equipment demonstrations and workout integration required',
-    influencers: [
-      { name: '@fitnessmotivation', platform: 'Instagram', followers: '125K', engagement: '5.8%' },
-      { name: '@strongandsculpted', platform: 'TikTok', followers: '89.2K', engagement: '7.2%' },
-      { name: '@gymlife_guru', platform: 'Instagram', followers: '94.7K', engagement: '6.1%' },
-      { name: '@activelifestyle', platform: 'Instagram', followers: '78.3K', engagement: '5.9%' },
-      { name: '@workoutwith_me', platform: 'TikTok', followers: '112K', engagement: '6.8%' },
-      { name: '@fitness_fanatic', platform: 'Instagram', followers: '103K', engagement: '5.4%' },
-      { name: '@getstrong_daily', platform: 'Instagram', followers: '87.9K', engagement: '6.3%' },
-      { name: '@flexandfitness', platform: 'TikTok', followers: '76.5K', engagement: '7.1%' },
-      { name: '@powerlift_pro', platform: 'Instagram', followers: '91.2K', engagement: '5.7%' },
-      { name: '@cardio_queen', platform: 'Instagram', followers: '85.6K', engagement: '6.0%' },
-      { name: '@musclebuilding', platform: 'Instagram', followers: '98.4K', engagement: '5.5%' },
-      { name: '@hiit_with_hannah', platform: 'TikTok', followers: '82.7K', engagement: '6.9%' }
-    ]
-  },
-  {
-    id: 'quote_4',
-    brand_id: 'brand_3',
-    brand_name: 'TechStart Solutions',
-    campaign_name: 'SaaS Product Launch',
-    description: 'Tech influencers for software platform launch',
-    influencer_count: 6,
-    status: 'pending_review',
-    requested_at: '2024-01-14T16:15:00Z',
-    budget_range: '$8,000 - $12,000',
-    campaign_duration: '3 weeks',
-    deliverables: ['LinkedIn Posts', 'YouTube Reviews', 'Twitter Threads'],
-    target_demographics: 'Business professionals 25-50, Tech industry',
-    notes: 'B2B focused content highlighting productivity benefits',
-    influencers: [
-      { name: '@tech_entrepreneur', platform: 'LinkedIn', followers: '45.8K', engagement: '3.2%' },
-      { name: '@startup_advisor', platform: 'LinkedIn', followers: '52.3K', engagement: '3.8%' },
-      { name: '@business_growth', platform: 'YouTube', followers: '187K', engagement: '2.9%' },
-      { name: '@productivity_pro', platform: 'LinkedIn', followers: '38.7K', engagement: '4.1%' },
-      { name: '@saas_specialist', platform: 'Twitter', followers: '29.4K', engagement: '4.5%' },
-      { name: '@digital_nomad_ceo', platform: 'LinkedIn', followers: '41.2K', engagement: '3.6%' }
-    ]
-  }
-]
+// Quotation data loaded from API via loadQuotations()
 
 interface StatCardProps {
   title: string
@@ -270,12 +132,14 @@ function BrandsPageClient() {
   const router = useRouter()
   const currentUserId = useCurrentUserId()
   const [activeTab, setActiveTab] = useState<'clients' | 'quotations'>('clients')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   
-  // Assignment state
-  const [brands, setBrands] = useState(MOCK_BRANDS)
-  const [staffMembers, setStaffMembers] = useState(MOCK_STAFF)
+  // Real data state
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [assignmentLoading, setAssignmentLoading] = useState<string | null>(null)
+  const [quotations, setQuotations] = useState<any[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
   
   // Panel states
   const [addBrandPanelOpen, setAddBrandPanelOpen] = useState(false)
@@ -323,6 +187,80 @@ function BrandsPageClient() {
     duration: '',
     brand: ''
     })
+
+  // Load brands data from API
+  useEffect(() => {
+    loadBrands()
+    loadStaffMembers()
+    loadQuotations()
+  }, [])
+
+  const loadBrands = async () => {
+    try {
+      setIsLoading(true)
+      setLoadError(null)
+      const response = await fetch('/api/brands')
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          // Transform API data to match UI expectations
+          const transformedBrands = result.data.map((brand: any) => ({
+            id: brand.id,
+            company_name: brand.company_name || 'Unknown Company',
+            contact_name: brand.user?.profile ? 
+              `${brand.user.profile.first_name || ''} ${brand.user.profile.last_name || ''}`.trim() : 
+              'Unknown Contact',
+            email: brand.user?.email || 'no-email@example.com',
+            industry: brand.industry || 'Unknown',
+            logo_url: brand.logo_url || null,
+            shortlists_count: 0, // TODO: Add to API response
+            active_campaigns: 0, // TODO: Add to API response
+            total_spend: 0, // TODO: Add to API response
+            last_activity: brand.updated_at || brand.created_at || new Date().toISOString(),
+            status: 'active',
+            assigned_staff_id: null, // TODO: Add to brands table
+            assigned_staff_name: null
+          }))
+          setBrands(transformedBrands)
+        } else {
+          setLoadError('Failed to load brands')
+        }
+      } else {
+        setLoadError(`Error ${response.status}: Failed to fetch brands`)
+      }
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Network error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadStaffMembers = async () => {
+    try {
+      const response = await fetch('/api/staff/members')
+      if (response.ok) {
+        const result = await response.json()
+        setStaffMembers(result.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading staff members:', error)
+    }
+  }
+
+  const loadQuotations = async () => {
+    try {
+      const response = await fetch('/api/quotations')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.quotations) {
+          setQuotations(result.quotations)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading quotations:', error)
+    }
+  }
 
   // Filter options
   const brandFilterOptions = {
@@ -398,7 +336,7 @@ function BrandsPageClient() {
     ],
     brand: [
       { value: '', label: 'All Brands' },
-      ...MOCK_BRANDS.map(brand => ({
+      ...brands.map(brand => ({
         value: brand.id,
         label: brand.company_name
       }))
@@ -540,7 +478,7 @@ function BrandsPageClient() {
 
   // Apply filters - always calculate both for correct tab counts
   const filteredBrands = applyBrandFilters(brands)
-  const filteredQuotations = applyQuotationFilters(MOCK_QUOTATION_REQUESTS)
+  const filteredQuotations = applyQuotationFilters(quotations)
   
   // Apply sorting
   const sortedData = React.useMemo(() => {
@@ -690,31 +628,38 @@ function BrandsPageClient() {
   }
 
   const handleViewBrand = (brandId: string) => {
-    const brand = MOCK_BRANDS.find(b => b.id === brandId)
-    setSelectedBrand(brand)
+    const brand = brands.find(b => b.id === brandId)
+    setSelectedBrand(brand || null)
     setViewBrandPanelOpen(true)
   }
 
   const handleViewQuotation = (quotationId: string) => {
-    const quotation = MOCK_QUOTATION_REQUESTS.find(q => q.id === quotationId)
-    setSelectedQuotation(quotation)
+    const quotation = quotations.find(q => q.id === quotationId)
+    setSelectedQuotation(quotation || null)
     setQuotationDetailPanelOpen(true)
   }
 
   const handleSaveBrand = async (brandData: any) => {
-    // Mock save operation
-    const newBrand = {
-      ...brandData,
-      id: `brand_${Date.now()}`,
-      shortlists_count: 0,
-      active_campaigns: 0,
-      total_spend: 0,
-      last_activity: new Date().toISOString().split('T')[0],
-      status: 'active'
+    try {
+      const response = await fetch('/api/brands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(brandData)
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        alert(`✅ Brand "${brandData.company_name}" created successfully!`)
+        setAddBrandPanelOpen(false)
+        // Reload brands list
+        loadBrands()
+      } else {
+        const error = await response.json()
+        alert(`❌ Error: ${error.error || 'Failed to create brand'}`)
+      }
+    } catch (error) {
+      alert(`❌ Error creating brand: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-    // In real app, this would call an API
-    alert(`Brand "${brandData.company_name}" saved successfully!`)
-    setAddBrandPanelOpen(false)
   }
 
   const handleCreateCampaign = async (campaignData: any) => {
@@ -802,33 +747,43 @@ function BrandsPageClient() {
     setAssignmentLoading(brandId)
     
     try {
-      // Mock API call - in real app, this would call /api/brands/[id]/assign
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const response = await fetch(`/api/brands/${brandId}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_staff_id: staffId || null })
+      })
       
-      // Update local state
-      setBrands(prev => prev.map(brand => {
-        if (brand.id === brandId) {
-          const staff = staffMembers.find(s => s.id === staffId)
-          return {
-            ...brand,
-            assigned_staff_id: staffId || null,
-            assigned_staff_name: staff?.name || null
+      if (response.ok) {
+        const result = await response.json()
+        
+        // Update local state
+        setBrands(prev => prev.map(brand => {
+          if (brand.id === brandId) {
+            const staff = staffMembers.find(s => s.id === staffId)
+            return {
+              ...brand,
+              assigned_staff_id: staffId || null,
+              assigned_staff_name: staff?.fullName || null
+            }
           }
+          return brand
+        }))
+        
+        const staff = staffMembers.find(s => s.id === staffId)
+        const brand = brands.find(b => b.id === brandId)
+        
+        if (staffId) {
+          alert(`✅ ${brand?.company_name} assigned to ${staff?.fullName}`)
+        } else {
+          alert(`✅ Assignment removed from ${brand?.company_name}`)
         }
-        return brand
-      }))
-      
-      const staff = staffMembers.find(s => s.id === staffId)
-      const brand = brands.find(b => b.id === brandId)
-      
-      if (staffId) {
-        alert(`✅ ${brand?.company_name} assigned to ${staff?.name}`)
       } else {
-        alert(`✅ Assignment removed from ${brand?.company_name}`)
+        const error = await response.json()
+        alert(`❌ Error: ${error.error || 'Failed to update assignment'}`)
       }
       
-    } catch {
-      alert('❌ Error updating assignment. Please try again.')
+    } catch (error) {
+      alert(`❌ Error updating assignment: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setAssignmentLoading(null)
     }
@@ -918,6 +873,48 @@ function BrandsPageClient() {
                     </div>
         </div>
       </th>
+    )
+  }
+
+  // Loading state
+  if (isLoading && brands.length === 0) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+        <ModernStaffHeader />
+        <main className="px-4 lg:px-8 pb-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <RefreshCw size={32} className="animate-spin mx-auto mb-4 text-blue-600" />
+              <p className="text-gray-600">Loading brands...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+        <ModernStaffHeader />
+        <main className="px-4 lg:px-8 pb-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertTriangle size={32} className="mx-auto mb-4 text-red-600" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Brands</h3>
+              <p className="text-gray-600 mb-4">{loadError}</p>
+              <button
+                onClick={loadBrands}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <RefreshCw size={16} className="mr-2" />
+                Retry
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
     )
   }
 
