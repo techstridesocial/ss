@@ -22,6 +22,7 @@ import {
   RosterFilterPanel,
   useRosterData,
   useRosterActions,
+  transformInfluencerForDetailPanel,
   formatNumber,
   getInfluencerTier,
   checkFollowerRange,
@@ -441,20 +442,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Panel handlers
   const handleViewInfluencer = (influencer: StaffInfluencer) => {
-    const detailedData: any = {
-      ...influencer,
-      price_per_post: Math.floor(influencer.total_followers * 0.01),
-      user_id: influencer.id,
-      estimated_promotion_views: influencer.total_avg_views || 0,
-      relationship_status: 'ACTIVE',
-      email: null,
-      platform_details: [],
-      recent_content: [],
-      demographics: null,
-      audience_locations: [],
-      audience_languages: [],
-      campaign_participation: []
-    }
+    // Use centralized helper to transform data
+    const detailedData: any = transformInfluencerForDetailPanel(influencer)
     setSelectedInfluencerDetail(detailedData)
     setDetailPanelOpen(true)
     onPanelStateChange?.(true)
@@ -1033,22 +1022,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
               onClose={() => setDetailPanelOpen(false)}
-              influencer={{
-                id: selectedInfluencerDetail.id,
-                displayName: selectedInfluencerDetail.display_name,
-                name: selectedInfluencerDetail.display_name,
-                handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-                picture: selectedInfluencerDetail.avatar_url || undefined,
-                profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-                followers: selectedInfluencerDetail.total_followers || 0,
-                engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
-                engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
-                avgViews: selectedInfluencerDetail.total_avg_views || 0,
-                bio: selectedInfluencerDetail.bio || undefined,
-                isRosterInfluencer: true,
-                rosterId: selectedInfluencerDetail.id,
-                hasPreservedAnalytics: false
-              }}
+              influencer={memoizedInfluencer}
               selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
               onPlatformSwitch={handlePlatformSwitch}
             />

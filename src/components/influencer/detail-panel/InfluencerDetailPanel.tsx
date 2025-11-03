@@ -452,15 +452,6 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   onPlatformSwitch,
   loading = false 
 }: InfluencerDetailPanelProps) {
-  console.log('🔍 [DEBUG] InfluencerDetailPanel component called with:', {
-    isOpen,
-    hasInfluencer: !!influencer,
-    influencerId: influencer?.id,
-    influencerName: influencer?.displayName,
-    selectedPlatform,
-    loading,
-    timestamp: new Date().toISOString()
-  })
 
   const [mounted, setMounted] = useState(false)
   const [apiData, setApiData] = useState<any>(null)
@@ -468,21 +459,10 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 
   // 🔍 [DEBUG] Comprehensive logging for panel state
   useEffect(() => {
-    console.log('🔍 [DEBUG] InfluencerDetailPanel props changed:', {
-      isOpen,
-      hasInfluencer: !!influencer,
-      influencerId: influencer?.id,
-      influencerName: influencer?.display_name,
-      selectedPlatform,
-      loading,
-      timestamp: new Date().toISOString()
-    })
   }, [isOpen, influencer, selectedPlatform, loading])
 
   useEffect(() => {
-    console.log('🔍 [DEBUG] InfluencerDetailPanel mounting...')
     setMounted(true)
-    console.log('🔍 [DEBUG] InfluencerDetailPanel mounted successfully')
   }, [])
 
   // Fetch Modash API data for roster influencers (FIXED with stable dependencies)
@@ -496,10 +476,6 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
           
           if (connectedPlatform) {
             const [platform, platformData] = connectedPlatform
-            console.log('🔄 Fetching fresh Modash data for roster influencer:', {
-              username: platformData.username,
-              platform: platform
-            })
             
             const response = await fetch('/api/discovery/profile', {
               method: 'POST',
@@ -513,13 +489,11 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
             if (response.ok) {
               const data = await response.json()
               if (data.success && data.data) {
-                console.log('✅ Fresh Modash data fetched for roster influencer')
                 setApiData(data.data)
               }
             }
           }
         } catch (error) {
-          console.error('❌ Failed to fetch Modash data for roster influencer:', error)
         } finally {
           setIsLoadingApiData(false)
         }
@@ -597,25 +571,8 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   }, [selectedPlatform, enrichedInfluencer.id, apiData?.picture])
 
   // DEBUG: Log data discrepancy for Charlie
-  console.log('🔍 Platform Data Debug:', {
-    selectedPlatform,
-    influencerFollowers: enrichedInfluencer.followers,
-    platformsAvailable: platforms ? Object.keys(platforms) : 'none',
-    currentPlatformData: currentPlatformData,
-    currentPlatformFollowers: currentPlatformData?.followers,
-    hasApiData: !!apiData,
-    isRosterInfluencer: enrichedInfluencer.isRosterInfluencer,
-    pictureSrc: pictureSrc
-  })
 
   // 🔍 [DEBUG] Panel rendering debug
-  console.log('🔍 [DEBUG] InfluencerDetailPanel rendering:', {
-    isOpen,
-    mounted,
-    hasInfluencer: !!influencer,
-    willRender: isOpen && mounted,
-    timestamp: new Date().toISOString()
-  })
 
   const panel = (
     <AnimatePresence>
@@ -626,7 +583,6 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-stretch justify-end"
           onClick={(e) => {
-            console.log('🔍 [DEBUG] Panel backdrop clicked, calling onClose')
             onClose()
           }}
           role="dialog"
@@ -837,30 +793,19 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   )
 
   // 🔍 [DEBUG] Portal rendering debug
-  console.log('🔍 [DEBUG] Creating portal with:', {
-    isOpen,
-    mounted,
-    hasInfluencer: !!influencer,
-    documentBody: !!document.body,
-    timestamp: new Date().toISOString()
-  })
 
   if (!mounted) {
-    console.log('🔍 [DEBUG] Not mounted yet, returning null')
     return null
   }
 
   if (!isOpen) {
-    console.log('🔍 [DEBUG] Panel not open, returning null')
     return null
   }
 
   if (!influencer) {
-    console.log('🔍 [DEBUG] No influencer data, returning null')
     return null
   }
 
-  console.log('🔍 [DEBUG] Creating portal successfully')
   return createPortal(panel, document.body)
 })
 

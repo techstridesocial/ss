@@ -59,43 +59,6 @@ interface StaffMember {
   email: string
 }
 
-// NOTE: Shortlist and quotation data structures kept for backwards compatibility with UI components
-const MOCK_SHORTLISTS = [
-  {
-    id: 'shortlist_1',
-    brand_id: 'brand_1',
-    brand_name: 'Luxe Beauty Co',
-    name: 'Summer Campaign Influencers',
-    description: 'Beauty influencers for summer product launch',
-    influencer_count: 8,
-    status: 'pending_review',
-    created_at: '2024-01-15',
-    notes: 'Focus on micro-influencers with high engagement'
-  },
-  {
-    id: 'shortlist_2',
-    brand_id: 'brand_1',
-    name: 'Holiday Season Campaign',
-    brand_name: 'Luxe Beauty Co',
-    description: 'Holiday makeup collection promotion',
-    influencer_count: 12,
-    status: 'approved',
-    created_at: '2024-01-12',
-    notes: 'Approved with pricing adjustments'
-  },
-  {
-    id: 'shortlist_3',
-    brand_id: 'brand_2',
-    brand_name: 'FitGear Pro',
-    name: 'Fitness Equipment Launch',
-    description: 'New product line introduction',
-    influencer_count: 6,
-    status: 'pending_review',
-    created_at: '2024-01-14',
-    notes: 'Waiting for budget confirmation'
-  }
-]
-
 // Quotation data loaded from API via loadQuotations()
 
 interface StatCardProps {

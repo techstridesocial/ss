@@ -38,21 +38,8 @@ export default function BrandProfilePage() {
   const [successMessage, setSuccessMessage] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
-  // Mock brand profile data - in real app this would come from API
-  const [brandProfile, setBrandProfile] = useState<BrandProfile>({
-    id: 'brand_1',
-    company_name: 'Luxe Beauty Co.',
-    industry: 'Beauty & Cosmetics',
-    website_url: 'https://luxebeauty.com',
-    description: 'Premium beauty brand focused on sustainable, cruelty-free cosmetics for the modern consumer. We create products that enhance natural beauty while being environmentally conscious.',
-    logo_url: '',
-    company_size: 'Medium (50-200 employees)',
-    annual_budget_range: '$50K - $100K',
-    preferred_niches: ['Beauty', 'Skincare', 'Lifestyle', 'Sustainability'],
-    preferred_regions: ['United Kingdom', 'Europe', 'North America'],
-    created_at: new Date('2024-01-15')
-  })
-
+  // Brand profile data loaded from API
+  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null)
   const [brandContact, setBrandContact] = useState<BrandContact>({
     id: 'contact_1',
     name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Brand Manager',
@@ -61,10 +48,72 @@ export default function BrandProfilePage() {
     phone: '+44 20 1234 5678',
     is_primary: true
   })
+  const [profileError, setProfileError] = useState<string | null>(null)
+
+  // Fetch brand profile on mount
+  useEffect(() => {
+    const loadBrandProfile = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/brand/profile')
+        
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success && result.data) {
+            const brand = result.data
+            setBrandProfile({
+              id: brand.id,
+              company_name: brand.company_name || '',
+              industry: brand.industry || '',
+              website_url: brand.website_url || '',
+              description: brand.description || '',
+              logo_url: brand.logo_url || '',
+              company_size: '', // Not in API response - will need to add
+              annual_budget_range: '', // Not in API response - will need to add
+              preferred_niches: [], // Not in API response - will need to add
+              preferred_regions: [], // Not in API response - will need to add
+              created_at: brand.created_at ? new Date(brand.created_at) : new Date()
+            })
+            
+            // Set contact from user data
+            if (brand.user?.profile) {
+              setBrandContact({
+                id: brand.user.id,
+                name: brand.user.profile.first_name && brand.user.profile.last_name
+                  ? `${brand.user.profile.first_name} ${brand.user.profile.last_name}`
+                  : 'Brand Manager',
+                email: brand.user.email || '',
+                role: 'Marketing Manager',
+                phone: brand.user.profile.phone || '',
+                is_primary: true
+              })
+            }
+          }
+        } else {
+          const error = await response.json()
+          setProfileError(error.error || 'Failed to load brand profile')
+        }
+      } catch (error) {
+        console.error('Error loading brand profile:', error)
+        setProfileError('Failed to load brand profile')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadBrandProfile()
+  }, [])
 
   // Form state for editing
-  const [editForm, setEditForm] = useState(brandProfile)
+  const [editForm, setEditForm] = useState<BrandProfile | null>(null)
   const [editContact, setEditContact] = useState(brandContact)
+
+  // Update edit form when brand profile loads
+  useEffect(() => {
+    if (brandProfile) {
+      setEditForm(brandProfile)
+    }
+  }, [brandProfile])
 
   // Industry options
   const industryOptions = [
@@ -118,17 +167,36 @@ export default function BrandProfilePage() {
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      // In real app, this would make API calls to update brand profile
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      const response = await fetch('/api/brand/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: editForm?.company_name || '',
+          industry: editForm?.industry || '',
+          website_url: editForm?.website_url || '',
+          description: editForm?.description || '',
+          logo_url: editForm?.logo_url || ''
+        })
+      })
       
-      setBrandProfile(editForm)
-      setBrandContact(editContact)
-      setIsEditing(false)
-      setSuccessMessage('Profile updated successfully!')
-      
-      setTimeout(() => setSuccessMessage(''), 3000)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setBrandProfile(editForm)
+          setBrandContact(editContact)
+          setIsEditing(false)
+          setSuccessMessage('Profile updated successfully!')
+          setTimeout(() => setSuccessMessage(''), 3000)
+        } else {
+          setSuccessMessage('Failed to update profile')
+        }
+      } else {
+        const error = await response.json()
+        setSuccessMessage(error.error || 'Failed to update profile')
+      }
     } catch (error) {
       console.error('Failed to update profile:', error)
+      setSuccessMessage('Failed to update profile')
     } finally {
       setIsLoading(false)
     }

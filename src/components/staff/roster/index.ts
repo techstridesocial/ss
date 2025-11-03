@@ -12,6 +12,7 @@ export { RosterErrorBanner } from './RosterErrorBanner'
 export { RosterFilterPanel } from './RosterFilterPanel'
 export { useRosterData } from './useRosterData'
 export { useRosterActions } from './useRosterActions'
+export { transformInfluencerForDetailPanel } from './transformInfluencerData'
 export * from './RosterHelpers'
 export { rosterFilterOptions } from './RosterFilterOptions'
 

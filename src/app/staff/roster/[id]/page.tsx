@@ -2,6 +2,7 @@ import React from 'react'
 import { requireStaffAccess } from '../../../../lib/auth/roles'
 import ModernStaffHeader from '../../../../components/nav/ModernStaffHeader'
 import { notFound } from 'next/navigation'
+import { getInfluencerById } from '../../../../lib/db/queries/influencers'
 import { 
   ArrowLeft, 
   Users, 
@@ -23,127 +24,80 @@ import {
   User2
 } from 'lucide-react'
 
-// Mock detailed influencer data
-const MOCK_INFLUENCER_DETAIL = {
-  id: 'inf_1',
-  display_name: 'Sarah Creator',
-  first_name: 'Sarah',
-  last_name: 'Johnson',
-  avatar_url: null,
-  bio: 'Lifestyle content creator passionate about sustainable living, wellness, and authentic storytelling. Partnering with brands that align with my values. 🌱✨',
-  location_country: 'United Kingdom',
-  location_city: 'Birmingham',
-  website_url: 'https://sarahcreator.com',
-  niches: ['Lifestyle', 'Fashion', 'Wellness'],
-  total_followers: 125000,
-  total_engagement_rate: 3.8,
-  total_avg_views: 45000,
-  estimated_promotion_views: 38250,
-  price_per_post: 850,
-  is_active: true,
-  last_synced_at: '2024-01-20T10:30:00Z',
-  
-  // Platform-specific data
-  platforms: [
-    {
-      id: 'platform_1',
-      platform: 'INSTAGRAM',
-      username: '@sarahcreator',
-      followers: 89000,
-      following: 1250,
-      engagement_rate: 4.2,
-      avg_views: 32000,
-      avg_likes: 3750,
-      avg_comments: 185,
-      last_post_date: '2024-01-19',
-      profile_url: 'https://instagram.com/sarahcreator',
-      is_verified: true,
-      is_connected: true
-    },
-    {
-      id: 'platform_2',
-      platform: 'TIKTOK',
-      username: '@sarahcreates',
-      followers: 36000,
-      following: 890,
-      engagement_rate: 3.1,
-      avg_views: 13000,
-      avg_likes: 1840,
-      avg_comments: 95,
-      last_post_date: '2024-01-18',
-      profile_url: 'https://tiktok.com/@sarahcreates',
-      is_verified: false,
-      is_connected: true
-    }
-  ],
-  
-  // Recent content
-  recent_content: [
-    {
-      id: 'content_1',
-      platform: 'INSTAGRAM',
-      post_url: 'https://instagram.com/p/example1',
-      thumbnail_url: null,
-      caption: 'Morning skincare routine with my favorite sustainable products! 🌿',
-      views: 45000,
-      likes: 4200,
-      comments: 230,
-      shares: 85,
-      posted_at: '2024-01-19T08:00:00Z'
-    },
-    {
-      id: 'content_2',
-      platform: 'TIKTOK',
-      post_url: 'https://tiktok.com/@sarahcreates/video/example2',
-      thumbnail_url: null,
-      caption: 'Outfit transition using thrift finds! ♻️ #SustainableFashion',
-      views: 18500,
-      likes: 2100,
-      comments: 95,
-      shares: 45,
-      posted_at: '2024-01-18T14:30:00Z'
-    }
-  ],
-  
-  // Demographics (aggregated)
+// Type definition for influencer detail page
+type InfluencerDetailPageData = {
+  id: string
+  display_name: string
+  first_name: string
+  last_name: string
+  avatar_url: string | null
+  bio: string
+  location_country: string
+  location_city: string
+  website_url: string
+  niches: string[]
+  total_followers: number
+  total_engagement_rate: number
+  total_avg_views: number
+  estimated_promotion_views: number
+  price_per_post: number
+  is_active: boolean
+  last_synced_at: string
+  platforms: Array<{
+    id: string
+    platform: string
+    username: string
+    followers: number
+    following: number
+    engagement_rate: number
+    avg_views: number
+    avg_likes: number
+    avg_comments: number
+    last_post_date: string
+    profile_url: string
+    is_verified: boolean
+    is_connected: boolean
+  }>
+  recent_content: Array<{
+    id: string
+    platform: string
+    post_url: string
+    thumbnail_url: string | null
+    caption: string
+    views: number
+    likes: number
+    comments: number
+    shares: number
+    posted_at: string
+  }>
   demographics: {
-    age_13_17: 8.5,
-    age_18_24: 32.8,
-    age_25_34: 41.2,
-    age_35_44: 12.1,
-    age_45_54: 4.2,
-    age_55_plus: 1.2,
-    gender_male: 15.3,
-    gender_female: 82.1,
-    gender_other: 2.6
-  },
-  
-  // Audience locations
-  audience_locations: [
-    { country_name: 'United Kingdom', country_code: 'GB', percentage: 42.5 },
-    { country_name: 'United States', country_code: 'US', percentage: 28.3 },
-    { country_name: 'Canada', country_code: 'CA', percentage: 12.1 },
-    { country_name: 'Australia', country_code: 'AU', percentage: 8.7 },
-    { country_name: 'Ireland', country_code: 'IE', percentage: 4.2 },
-    { country_name: 'New Zealand', country_code: 'NZ', percentage: 2.8 },
-    { country_name: 'South Africa', country_code: 'ZA', percentage: 1.4 }
-  ],
-  
-  // Audience languages
-  audience_languages: [
-    { language_name: 'English', language_code: 'en', percentage: 89.2 },
-    { language_name: 'Spanish', language_code: 'es', percentage: 4.3 },
-    { language_name: 'French', language_code: 'fr', percentage: 3.1 },
-    { language_name: 'German', language_code: 'de', percentage: 2.1 },
-    { language_name: 'Portuguese', language_code: 'pt', percentage: 1.3 }
-  ]
+    age_13_17: number
+    age_18_24: number
+    age_25_34: number
+    age_35_44: number
+    age_45_54: number
+    age_55_plus: number
+    gender_male: number
+    gender_female: number
+    gender_other: number
+  }
+  audience_locations: Array<{
+    country_name: string
+    country_code: string
+    percentage: number
+  }>
+  audience_languages: Array<{
+    language_name: string
+    language_code: string
+    percentage: number
+  }>
 }
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-function InfluencerHeader({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAIL }) {
+function InfluencerHeader({ influencer }: { influencer: InfluencerDetailPageData }) {
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
@@ -260,7 +214,7 @@ function InfluencerHeader({ influencer }: { influencer: typeof MOCK_INFLUENCER_D
   )
 }
 
-function PlatformTabs({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAIL }) {
+function PlatformTabs({ influencer }: { influencer: InfluencerDetailPageData }) {
   const [activeTab, setActiveTab] = React.useState<'all' | 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE'>('all')
 
   const formatNumber = (num: number) => {
@@ -279,14 +233,14 @@ function PlatformTabs({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAI
       }
     }
     
-    const platform = influencer.platforms.find(p => p.platform === activeTab)
+    const platform = influencer.platforms.find((p: InfluencerDetailPageData['platforms'][0]) => p.platform === activeTab)
     if (!platform) return null
     
     return {
       followers: platform.followers,
       engagement_rate: platform.engagement_rate,
       avg_views: platform.avg_views,
-      content: influencer.recent_content.filter(c => c.platform === activeTab)
+      content: influencer.recent_content.filter((c: InfluencerDetailPageData['recent_content'][0]) => c.platform === activeTab)
     }
   }
 
@@ -307,7 +261,7 @@ function PlatformTabs({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAI
           >
             All Platforms
           </button>
-          {influencer.platforms.map((platform) => (
+          {influencer.platforms.map((platform: InfluencerDetailPageData['platforms'][0]) => (
             <button
               key={platform.platform}
               onClick={() => setActiveTab(platform.platform as any)}
@@ -357,7 +311,7 @@ function PlatformTabs({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAI
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Platform Details</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {influencer.platforms.filter(p => p.platform === activeTab).map((platform) => (
+                {influencer.platforms.filter((p: InfluencerDetailPageData['platforms'][0]) => p.platform === activeTab).map((platform: InfluencerDetailPageData['platforms'][0]) => (
                   <React.Fragment key={platform.id}>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <div className="text-lg font-bold text-gray-900">{formatNumber(platform.following)}</div>
@@ -387,7 +341,7 @@ function PlatformTabs({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAI
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Content</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {platformData.content.map((content) => (
+              {platformData.content.map((content: InfluencerDetailPageData['recent_content'][0]) => (
                 <div key={content.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800">
@@ -430,7 +384,7 @@ function PlatformTabs({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAI
   )
 }
 
-function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAIL }) {
+function DemographicsSection({ influencer }: { influencer: InfluencerDetailPageData }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Age & Gender Demographics */}
@@ -499,7 +453,7 @@ function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCE
             Top Locations
           </h3>
           <div className="space-y-3">
-            {influencer.audience_locations.slice(0, 5).map((location) => (
+            {influencer.audience_locations.slice(0, 5).map((location: InfluencerDetailPageData['audience_locations'][0]) => (
               <div key={location.country_code} className="flex items-center">
                 <div className="w-20 text-sm text-gray-600">{location.country_name}</div>
                 <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
@@ -521,7 +475,7 @@ function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCE
             Top Languages
           </h3>
           <div className="space-y-3">
-            {influencer.audience_languages.slice(0, 4).map((language) => (
+            {influencer.audience_languages.slice(0, 4).map((language: InfluencerDetailPageData['audience_languages'][0]) => (
               <div key={language.language_code} className="flex items-center">
                 <div className="w-20 text-sm text-gray-600">{language.language_name}</div>
                 <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
@@ -540,7 +494,7 @@ function DemographicsSection({ influencer }: { influencer: typeof MOCK_INFLUENCE
   )
 }
 
-function EstimatedReach({ influencer }: { influencer: typeof MOCK_INFLUENCER_DETAIL }) {
+function EstimatedReach({ influencer }: { influencer: InfluencerDetailPageData }) {
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
@@ -587,13 +541,95 @@ export default async function InfluencerDetailPage({ params }: PageProps) {
   
   const { id } = await params
   
-  // In a real app, you would fetch the influencer data here
-  // For now, we'll use mock data and validate the ID format
-  if (!id || !id.startsWith('inf_')) {
+  if (!id) {
     notFound()
   }
 
-  const influencer = MOCK_INFLUENCER_DETAIL
+  // Fetch influencer data from database
+  const influencerDetail = await getInfluencerById(id)
+
+  if (!influencerDetail) {
+    notFound()
+  }
+
+  // Transform InfluencerDetailView to match expected structure
+  const influencer: InfluencerDetailPageData = {
+    id: influencerDetail.id,
+    display_name: influencerDetail.display_name || '',
+    first_name: influencerDetail.first_name || '',
+    last_name: influencerDetail.last_name || '',
+    avatar_url: influencerDetail.avatar_url,
+    bio: influencerDetail.bio || '',
+    location_country: influencerDetail.location_country || '',
+    location_city: influencerDetail.location_city || '',
+    website_url: influencerDetail.website_url || '',
+    niches: influencerDetail.niches || [],
+    total_followers: influencerDetail.total_followers || 0,
+    total_engagement_rate: influencerDetail.total_engagement_rate || 0,
+    total_avg_views: influencerDetail.total_avg_views || 0,
+    estimated_promotion_views: influencerDetail.estimated_promotion_views || 0,
+    price_per_post: influencerDetail.price_per_post || 0,
+    is_active: influencerDetail.is_active || false,
+    last_synced_at: (influencerDetail as any).updated_at ? new Date((influencerDetail as any).updated_at).toISOString() : new Date().toISOString(),
+    platforms: (influencerDetail.platform_details || []).map((p: any, idx: number) => ({
+      id: p.id || `platform_${idx}`,
+      platform: p.platform || 'INSTAGRAM',
+      username: p.username || '',
+      followers: p.followers || 0,
+      following: p.following || 0,
+      engagement_rate: p.engagement_rate || 0,
+      avg_views: p.avg_views || 0,
+      avg_likes: p.avg_likes || 0,
+      avg_comments: p.avg_comments || 0,
+      last_post_date: p.last_post_date?.toISOString() || new Date().toISOString(),
+      profile_url: p.profile_url || '',
+      is_verified: p.is_verified || false,
+      is_connected: p.is_connected || false
+    })),
+    recent_content: (influencerDetail.recent_content || []).map((c: any) => ({
+      id: c.id,
+      platform: c.platform || 'INSTAGRAM',
+      post_url: c.post_url || '',
+      thumbnail_url: c.thumbnail_url,
+      caption: c.caption || '',
+      views: c.views || 0,
+      likes: c.likes || 0,
+      comments: c.comments || 0,
+      shares: c.shares || 0,
+      posted_at: c.posted_at?.toISOString() || new Date().toISOString()
+    })),
+    demographics: influencerDetail.demographics ? {
+      age_13_17: influencerDetail.demographics.age_13_17 || 0,
+      age_18_24: influencerDetail.demographics.age_18_24 || 0,
+      age_25_34: influencerDetail.demographics.age_25_34 || 0,
+      age_35_44: influencerDetail.demographics.age_35_44 || 0,
+      age_45_54: influencerDetail.demographics.age_45_54 || 0,
+      age_55_plus: influencerDetail.demographics.age_55_plus || 0,
+      gender_male: influencerDetail.demographics.gender_male || 0,
+      gender_female: influencerDetail.demographics.gender_female || 0,
+      gender_other: influencerDetail.demographics.gender_other || 0
+    } : {
+      age_13_17: 0,
+      age_18_24: 0,
+      age_25_34: 0,
+      age_35_44: 0,
+      age_45_54: 0,
+      age_55_plus: 0,
+      gender_male: 0,
+      gender_female: 0,
+      gender_other: 0
+    },
+    audience_locations: (influencerDetail.audience_locations || []).map((l: any) => ({
+      country_name: l.country_name || '',
+      country_code: l.country_code || '',
+      percentage: l.percentage || 0
+    })),
+    audience_languages: (influencerDetail.audience_languages || []).map((l: any) => ({
+      language_name: l.language_name || '',
+      language_code: l.language_code || '',
+      percentage: l.percentage || 0
+    }))
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

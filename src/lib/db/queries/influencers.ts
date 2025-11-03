@@ -10,108 +10,6 @@ import {
 } from '../../../types/database'
 
 // =============================================
-// TEMPORARY MOCK DATA (Remove when DB is ready)
-// =============================================
-
-const MOCK_INFLUENCERS: any[] = [
-  {
-    id: 'inf_1',
-    user_id: 'user_3',
-    display_name: 'Sarah Creator',
-    niches: ['Lifestyle', 'Fashion'],
-    total_followers: 125000,
-    total_engagement_rate: 3.8,
-    total_avg_views: 45000,
-    estimated_promotion_views: 38250,
-    price_per_post: 850,
-    is_active: true,
-    first_name: 'Sarah',
-    last_name: 'Creator',
-    avatar_url: null,
-    location_country: 'United Kingdom',
-    location_city: 'Birmingham',
-    platforms: ['INSTAGRAM', 'TIKTOK'],
-    platform_count: 2
-  },
-  {
-    id: 'inf_2',
-    user_id: 'user_4',
-    display_name: 'Mike Tech',
-    niches: ['Tech', 'Gaming'],
-    total_followers: 89000,
-    total_engagement_rate: 4.2,
-    total_avg_views: 32000,
-    estimated_promotion_views: 27200,
-    price_per_post: 650,
-    is_active: true,
-    first_name: 'Mike',
-    last_name: 'Content',
-    avatar_url: null,
-    location_country: 'United States',
-    location_city: 'New York',
-    platforms: ['YOUTUBE', 'TWITCH'],
-    platform_count: 2
-  },
-  {
-    id: 'inf_3',
-    user_id: 'user_6',
-    display_name: 'FitnessFiona',
-    niches: ['Fitness', 'Health'],
-    total_followers: 156000,
-    total_engagement_rate: 5.1,
-    total_avg_views: 62000,
-    estimated_promotion_views: 52700,
-    price_per_post: 920,
-    is_active: true,
-    first_name: 'Fiona',
-    last_name: 'Fit',
-    avatar_url: null,
-    location_country: 'Australia',
-    location_city: 'Sydney',
-    platforms: ['INSTAGRAM', 'YOUTUBE'],
-    platform_count: 2
-  },
-  {
-    id: 'inf_4',
-    user_id: 'user_7',
-    display_name: 'BeautyByBella',
-    niches: ['Beauty', 'Skincare'],
-    total_followers: 234000,
-    total_engagement_rate: 3.6,
-    total_avg_views: 78000,
-    estimated_promotion_views: 66300,
-    price_per_post: 1200,
-    is_active: true,
-    first_name: 'Bella',
-    last_name: 'Beauty',
-    avatar_url: null,
-    location_country: 'United Kingdom',
-    location_city: 'London',
-    platforms: ['INSTAGRAM', 'TIKTOK', 'YOUTUBE'],
-    platform_count: 3
-  },
-  {
-    id: 'inf_5',
-    user_id: 'user_8',
-    display_name: 'TravelWithTom',
-    niches: ['Travel', 'Lifestyle'],
-    total_followers: 67000,
-    total_engagement_rate: 2.9,
-    total_avg_views: 25000,
-    estimated_promotion_views: 21250,
-    price_per_post: 450,
-    is_active: false,
-    first_name: 'Tom',
-    last_name: 'Explorer',
-    avatar_url: null,
-    location_country: 'Canada',
-    location_city: 'Toronto',
-    platforms: ['INSTAGRAM'],
-    platform_count: 1
-  }
-]
-
-// =============================================
 // Influencer Query Functions
 // =============================================
 
@@ -124,60 +22,174 @@ export async function getInfluencers(
   limit: number = 20
 ): Promise<PaginatedResponse<InfluencerWithProfile>> {
   
-  // TEMPORARY: Use mock data instead of database
-  console.log('getInfluencers: Using mock data (database not yet set up)')
-  
-  let filteredInfluencers = [...MOCK_INFLUENCERS]
-  
-  // Apply filters
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase()
-    // @ts-ignore - Temporary mock data type bypass
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.display_name.toLowerCase().includes(searchLower) ||
-      inf.first_name?.toLowerCase().includes(searchLower) ||
-      inf.last_name?.toLowerCase().includes(searchLower) ||
-      inf.niches.some((niche: any) => niche.toLowerCase().includes(searchLower))
-    )
-  }
-  
-  if (filters.niches && filters.niches.length > 0) {
-    // @ts-ignore - Temporary mock data type bypass
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.niches.some((niche: any) => filters.niches!.includes(niche))
-    )
-  }
-  
-  if (filters.platforms && filters.platforms.length > 0) {
-    // @ts-ignore - Temporary mock data type bypass
-    filteredInfluencers = filteredInfluencers.filter(inf => 
-      inf.platforms.some((platform: any) => filters.platforms!.includes(platform as Platform))
-    )
-  }
-  
-  if (filters.follower_min !== undefined) {
-    filteredInfluencers = filteredInfluencers.filter(inf => inf.total_followers >= filters.follower_min!)
-  }
-  
-  if (filters.follower_max !== undefined) {
-    filteredInfluencers = filteredInfluencers.filter(inf => inf.total_followers <= filters.follower_max!)
-  }
-  
-  if (filters.is_active !== undefined) {
-    filteredInfluencers = filteredInfluencers.filter(inf => inf.is_active === filters.is_active)
-  }
-  
-  // Apply pagination
-  const total = filteredInfluencers.length
-  const offset = (page - 1) * limit
-  const paginatedInfluencers = filteredInfluencers.slice(offset, offset + limit)
-  
-  return {
-    data: paginatedInfluencers,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit)
+  try {
+    const whereConditions: string[] = []
+    const params: any[] = []
+    let paramIndex = 1
+
+    // Build WHERE conditions based on filters
+    if (filters.search) {
+      whereConditions.push(`(
+        i.display_name ILIKE $${paramIndex} OR
+        up.first_name ILIKE $${paramIndex} OR
+        up.last_name ILIKE $${paramIndex} OR
+        EXISTS (
+          SELECT 1 FROM unnest(i.niches) AS niche
+          WHERE niche ILIKE $${paramIndex}
+        )
+      )`)
+      params.push(`%${filters.search}%`)
+      paramIndex++
+    }
+
+    if (filters.niches && filters.niches.length > 0) {
+      const nichePlaceholders = filters.niches.map((_, i) => `$${paramIndex + i}`).join(',')
+      whereConditions.push(`EXISTS (
+        SELECT 1 FROM unnest(i.niches) AS niche
+        WHERE niche IN (${nichePlaceholders})
+      )`)
+      params.push(...filters.niches)
+      paramIndex += filters.niches.length
+    }
+
+    if (filters.platforms && filters.platforms.length > 0) {
+      const platformPlaceholders = filters.platforms.map((_, i) => `$${paramIndex + i}`).join(',')
+      whereConditions.push(`EXISTS (
+        SELECT 1 FROM influencer_platforms ip
+        WHERE ip.influencer_id = i.id
+        AND ip.platform IN (${platformPlaceholders})
+      )`)
+      params.push(...filters.platforms)
+      paramIndex += filters.platforms.length
+    }
+
+    if (filters.follower_min !== undefined) {
+      whereConditions.push(`i.total_followers >= $${paramIndex}`)
+      params.push(filters.follower_min)
+      paramIndex++
+    }
+
+    if (filters.follower_max !== undefined) {
+      whereConditions.push(`i.total_followers <= $${paramIndex}`)
+      params.push(filters.follower_max)
+      paramIndex++
+    }
+
+    if (filters.is_active !== undefined) {
+      whereConditions.push(`u.status = $${paramIndex}`)
+      params.push(filters.is_active ? 'ACTIVE' : 'INACTIVE')
+      paramIndex++
+    }
+
+    const whereClause = whereConditions.length > 0 
+      ? `WHERE ${whereConditions.join(' AND ')}` 
+      : ''
+
+    // Count total matching records
+    const countResult = await queryOne<{ count: number }>(`
+      SELECT COUNT(*)::int as count
+      FROM influencers i
+      LEFT JOIN users u ON i.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      ${whereClause}
+    `, params)
+    const total = countResult?.count || 0
+
+    // Calculate pagination
+    const offset = (page - 1) * limit
+    const totalPages = Math.ceil(total / limit)
+
+    // Fetch paginated results
+    params.push(limit, offset)
+    const influencers = await query<any>(`
+      SELECT 
+        i.id,
+        i.user_id,
+        i.display_name,
+        i.influencer_type,
+        i.content_type,
+        i.agency_name,
+        i.tier,
+        i.total_followers,
+        i.total_engagement_rate,
+        i.total_avg_views,
+        i.estimated_promotion_views,
+        i.assigned_to,
+        i.niches,
+        i.created_at,
+        i.updated_at,
+        up.first_name,
+        up.last_name,
+        up.bio,
+        up.location_country,
+        up.location_city,
+        up.avatar_url,
+        up.phone,
+        up.is_onboarded,
+        u.email,
+        u.status as user_status,
+        -- Get platform count
+        (
+          SELECT COUNT(*)::int 
+          FROM influencer_platforms ip_count 
+          WHERE ip_count.influencer_id = i.id
+        ) as platform_count,
+        -- Get platforms as array
+        (
+          SELECT array_agg(DISTINCT ip_plat.platform ORDER BY ip_plat.platform)
+          FROM influencer_platforms ip_plat
+          WHERE ip_plat.influencer_id = i.id
+        ) as platforms
+      FROM influencers i
+      LEFT JOIN users u ON i.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      ${whereClause}
+      ORDER BY i.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `, params)
+
+    // Transform to match expected type
+    const transformedInfluencers: InfluencerWithProfile[] = influencers.map((inf: any) => ({
+      id: inf.id,
+      user_id: inf.user_id,
+      display_name: inf.display_name,
+      influencer_type: inf.influencer_type,
+      content_type: inf.content_type,
+      tier: inf.tier,
+      total_followers: inf.total_followers || 0,
+      total_engagement_rate: inf.total_engagement_rate || 0,
+      total_avg_views: inf.total_avg_views || 0,
+      estimated_promotion_views: inf.estimated_promotion_views || Math.floor((inf.total_avg_views || 0) * 0.85),
+      price_per_post: null,
+      is_active: inf.user_status === 'ACTIVE',
+      relationship_status: null,
+      assigned_to: inf.assigned_to,
+      labels: [],
+      notes: inf.notes || null,
+      first_name: inf.first_name,
+      last_name: inf.last_name,
+      avatar_url: inf.avatar_url,
+      location_country: inf.location_country,
+      location_city: inf.location_city,
+      bio: inf.bio,
+      website_url: null,
+      email: inf.email,
+      niches: inf.niches || [],
+      platforms: inf.platforms || [],
+      platform_count: inf.platform_count || 0
+    }))
+
+    return {
+      data: transformedInfluencers,
+      total,
+      page,
+      limit,
+      totalPages
+    }
+
+  } catch (error) {
+    console.error('Error in getInfluencers:', error)
+    throw error
   }
 }
 
@@ -185,292 +197,173 @@ export async function getInfluencers(
  * Get detailed influencer information by ID
  */
 export async function getInfluencerById(influencerId: string): Promise<InfluencerDetailView | null> {
-  // TEMPORARY: Use mock data instead of database
-  console.log('getInfluencerById: Using mock data (database not yet set up)')
-  
-  // Find the basic influencer data
-  const basicInfluencer = MOCK_INFLUENCERS.find(inf => inf.id === influencerId)
-  if (!basicInfluencer) return null
-  
-  // Generate detailed mock data
-  const mockDetailedInfluencer: InfluencerDetailView = {
-    ...basicInfluencer,
-    price_per_post: basicInfluencer.price_per_post || Math.floor(basicInfluencer.total_followers * 0.01),
-    
-    // Add missing profile properties
-    bio: basicInfluencer.bio || `${basicInfluencer.display_name} is a passionate content creator specializing in ${basicInfluencer.niches.join(', ').toLowerCase()}. Creating authentic content and building meaningful connections with followers.`,
-    website_url: basicInfluencer.website_url || `https://${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
-    email: `contact@${basicInfluencer.display_name.toLowerCase().replace(' ', '')}.com`,
-    
-    // CRM fields
-    relationship_status: 'ACTIVE',
-    assigned_to: null,
-    labels: [],
-    notes: null,
-    priority_score: 7.5,
-    last_contacted: null,
-    
-    // Generate platform details
-    platform_details: basicInfluencer.platforms.map((platform: any, index: number) => ({
-      id: `platform_${basicInfluencer.id}_${index}`,
-      influencer_id: basicInfluencer.id,
-      platform,
-      username: `${basicInfluencer.display_name.toLowerCase().replace(' ', '')}${index > 0 ? index + 1 : ''}`,
-      followers: Math.floor(basicInfluencer.total_followers / basicInfluencer.platform_count),
-      following: Math.floor(Math.random() * 2000) + 500,
-      engagement_rate: basicInfluencer.total_engagement_rate + (Math.random() - 0.5),
-      avg_views: Math.floor(basicInfluencer.total_avg_views / basicInfluencer.platform_count),
-      avg_likes: Math.floor(basicInfluencer.total_avg_views * 0.1),
-      avg_comments: Math.floor(basicInfluencer.total_avg_views * 0.02),
-      last_post_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-      profile_url: `https://${platform.toLowerCase()}.com/${basicInfluencer.display_name.toLowerCase().replace(' ', '')}`,
-      is_verified: Math.random() > 0.7,
-      is_connected: true,
-      created_at: new Date(),
-      updated_at: new Date()
-    })),
-    
-    // Mock recent content
-    recent_content: [
-      {
-        id: 'content_1',
-        influencer_platform_id: 'plat_1',
-        post_url: 'https://instagram.com/p/abc123',
-        thumbnail_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=300&fit=crop',
-        caption: 'Beautiful sunset at the beach! 🌅 #lifestyle #travel',
-        views: 45000,
-        likes: 4200,
-        comments: 156,
-        shares: 23,
-        posted_at: new Date('2024-01-15'),
-        created_at: new Date()
-      },
-      {
-        id: 'content_2',
-        influencer_platform_id: 'plat_1',
-        post_url: 'https://instagram.com/p/def456',
-        thumbnail_url: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=300&h=300&fit=crop',
-        caption: 'New outfit inspiration for spring! 🌸 #fashion #ootd',
-        views: 38000,
-        likes: 3800,
-        comments: 142,
-        shares: 31,
-        posted_at: new Date('2024-01-12'),
-        created_at: new Date()
-      }
-    ],
-    
-    // Mock demographics
-    demographics: {
-      id: 'demo_1',
-      influencer_platform_id: 'plat_1',
-      age_13_17: 5.2,
-      age_18_24: 32.1,
-      age_25_34: 28.7,
-      age_35_44: 18.4,
-      age_45_54: 12.1,
-      age_55_plus: 3.5,
-      gender_male: 45.3,
-      gender_female: 52.2,
-      gender_other: 2.5,
-      updated_at: new Date()
-    },
-    
-    // Mock audience locations
-    audience_locations: [
-      {
-        id: 'loc_1',
-        influencer_platform_id: 'plat_1',
-        country_name: 'United Kingdom',
-        country_code: 'GB',
-        percentage: 65.2
-      },
-      {
-        id: 'loc_2',
-        influencer_platform_id: 'plat_1',
-        country_name: 'United States',
-        country_code: 'US',
-        percentage: 18.7
-      },
-      {
-        id: 'loc_3',
-        influencer_platform_id: 'plat_1',
-        country_name: 'Canada',
-        country_code: 'CA',
-        percentage: 8.1
-      }
-    ],
-    
-    // Mock audience languages
-    audience_languages: [
-      {
-        id: 'lang_1',
-        influencer_platform_id: 'plat_1',
-        language_name: 'English',
-        language_code: 'en',
-        percentage: 85.4
-      },
-      {
-        id: 'lang_2',
-        influencer_platform_id: 'plat_1',
-        language_name: 'Spanish',
-        language_code: 'es',
-        percentage: 8.2
-      },
-      {
-        id: 'lang_3',
-        influencer_platform_id: 'plat_1',
-        language_name: 'French',
-        language_code: 'fr',
-        percentage: 6.4
-      }
-    ],
-    
-    // Mock campaign participation
-    campaign_participation: []
+  try {
+    // Fetch influencer details from database
+    const result = await query<any>(`
+      SELECT 
+        i.id,
+        i.user_id,
+        i.display_name,
+        i.influencer_type,
+        i.content_type,
+        i.agency_name,
+        i.tier,
+        i.total_followers,
+        i.total_engagement_rate,
+        i.total_avg_views,
+        i.estimated_promotion_views,
+        i.assigned_to,
+        i.notes,
+        i.niches,
+        i.created_at,
+        i.updated_at,
+        up.first_name,
+        up.last_name,
+        up.bio,
+        up.location_country,
+        up.location_city,
+        up.avatar_url,
+        up.phone,
+        up.is_onboarded,
+        up.website_url,
+        u.email,
+        u.status as user_status,
+        u.last_login,
+        -- Get platform data as JSON array
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', ip.id,
+              'platform', ip.platform,
+              'username', ip.username,
+              'followers', ip.followers,
+              'following', ip.following,
+              'engagement_rate', ip.engagement_rate,
+              'avg_views', ip.avg_views,
+              'avg_likes', ip.avg_likes,
+              'avg_comments', ip.avg_comments,
+              'last_post_date', ip.last_post_date,
+              'profile_url', ip.profile_url,
+              'is_verified', ip.is_verified,
+              'is_connected', ip.is_connected,
+              'created_at', ip.created_at,
+              'updated_at', ip.updated_at
+            )
+          ) FILTER (WHERE ip.id IS NOT NULL),
+          '[]'::json
+        ) as platform_details
+      FROM influencers i
+      LEFT JOIN users u ON i.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      LEFT JOIN influencer_platforms ip ON i.id = ip.influencer_id
+      WHERE i.id = $1
+      GROUP BY i.id, u.id, up.id
+    `, [influencerId])
+
+    if (result.length === 0) {
+      return null
+    }
+
+    const influencer = result[0]
+
+    // Get demographics for each platform
+    const platformIds = influencer.platform_details?.map((p: any) => p.id).filter(Boolean) || []
+    let demographics = null
+    let audienceLocations: any[] = []
+    let audienceLanguages: any[] = []
+    let recentContent: any[] = []
+
+    if (platformIds.length > 0) {
+      // Get demographics for the first platform (primary platform)
+      const primaryPlatformId = platformIds[0]
+      
+      demographics = await queryOne<any>(`
+        SELECT * FROM audience_demographics 
+        WHERE influencer_platform_id = $1
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `, [primaryPlatformId])
+
+      // Get audience locations for all platforms
+      const locationsResult = await query<any>(`
+        SELECT * FROM audience_locations 
+        WHERE influencer_platform_id = ANY($1)
+        ORDER BY percentage DESC
+        LIMIT 10
+      `, [platformIds])
+
+      audienceLocations = locationsResult || []
+
+      // Get audience languages for all platforms
+      const languagesResult = await query<any>(`
+        SELECT * FROM audience_languages 
+        WHERE influencer_platform_id = ANY($1)
+        ORDER BY percentage DESC
+        LIMIT 10
+      `, [platformIds])
+
+      audienceLanguages = languagesResult || []
+
+      // Get recent content for all platforms
+      const contentResult = await query<any>(`
+        SELECT * FROM influencer_content 
+        WHERE influencer_platform_id = ANY($1)
+        ORDER BY posted_at DESC
+        LIMIT 10
+      `, [platformIds])
+
+      recentContent = contentResult || []
+    }
+
+    // Transform to match InfluencerDetailView type
+    const transformedInfluencer: InfluencerDetailView = {
+      id: influencer.id,
+      user_id: influencer.user_id,
+      display_name: influencer.display_name,
+      influencer_type: influencer.influencer_type,
+      content_type: influencer.content_type,
+      tier: influencer.tier,
+      total_followers: influencer.total_followers || 0,
+      total_engagement_rate: influencer.total_engagement_rate || 0,
+      total_avg_views: influencer.total_avg_views || 0,
+      estimated_promotion_views: influencer.estimated_promotion_views || Math.floor((influencer.total_avg_views || 0) * 0.85),
+      price_per_post: influencer.price_per_post || Math.floor((influencer.total_followers || 0) * 0.01),
+      assigned_to: influencer.assigned_to,
+      notes: influencer.notes,
+      niches: influencer.niches || [],
+      first_name: influencer.first_name,
+      last_name: influencer.last_name,
+      bio: influencer.bio,
+      website_url: influencer.website_url,
+      email: influencer.email,
+      location_country: influencer.location_country,
+      location_city: influencer.location_city,
+      avatar_url: influencer.avatar_url,
+      is_active: influencer.user_status === 'ACTIVE',
+      relationship_status: 'ACTIVE' as const,
+      labels: [],
+      platform_details: Array.isArray(influencer.platform_details) 
+        ? influencer.platform_details.filter((p: any) => p.id) 
+        : [],
+      platforms: Array.isArray(influencer.platform_details) 
+        ? influencer.platform_details.map((p: any) => p.platform).filter(Boolean)
+        : [],
+      platform_count: Array.isArray(influencer.platform_details) 
+        ? influencer.platform_details.filter((p: any) => p.id).length
+        : 0,
+      recent_content: recentContent,
+      demographics: demographics,
+      audience_locations: audienceLocations,
+      audience_languages: audienceLanguages,
+      campaign_participation: []
+    }
+
+    return transformedInfluencer
+
+  } catch (error) {
+    console.error('Error in getInfluencerById:', error)
+    throw error
   }
-  
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  
-  return mockDetailedInfluencer
-
-  /* 
-  // Real database implementation (use when DB is set up):
-  const sql = `
-    SELECT 
-      i.*,
-      up.first_name,
-      up.last_name,
-      up.avatar_url,
-      up.location_country,
-      up.location_city,
-      -- Get platforms as array
-      COALESCE(
-        (SELECT array_agg(DISTINCT ip.platform) 
-         FROM influencer_platforms ip 
-         WHERE ip.influencer_id = i.id), 
-        ARRAY[]::text[]
-      ) as platforms,
-      -- Get platform count
-      COALESCE(
-        (SELECT COUNT(DISTINCT ip.platform) 
-         FROM influencer_platforms ip 
-         WHERE ip.influencer_id = i.id), 
-        0
-      ) as platform_count
-    FROM influencers i
-    JOIN users u ON i.user_id = u.id
-    LEFT JOIN user_profiles up ON u.id = up.user_id
-    WHERE i.id = $1
-  `
-  
-  const row = await queryOne<any>(sql, [influencerId])
-  
-  if (!row) return null
-
-  // Get platform details
-  const platformDetails = await query<any>(
-    'SELECT * FROM influencer_platforms WHERE influencer_id = $1 ORDER BY followers DESC',
-    [influencerId]
-  )
-
-  // Get recent content (from all platforms)
-  const recentContent = await query<any>(
-    `SELECT ic.*, ip.platform, ip.username
-     FROM influencer_content ic
-     JOIN influencer_platforms ip ON ic.influencer_platform_id = ip.id
-     WHERE ip.influencer_id = $1
-     ORDER BY ic.posted_at DESC
-     LIMIT 10`,
-    [influencerId]
-  )
-
-  // Get demographics (aggregated from all platforms)
-  const demographics = await queryOne<any>(
-    `SELECT 
-       AVG(age_13_17) as age_13_17,
-       AVG(age_18_24) as age_18_24,
-       AVG(age_25_34) as age_25_34,
-       AVG(age_35_44) as age_35_44,
-       AVG(age_45_54) as age_45_54,
-       AVG(age_55_plus) as age_55_plus,
-       AVG(gender_male) as gender_male,
-       AVG(gender_female) as gender_female,
-       AVG(gender_other) as gender_other,
-       MAX(updated_at) as updated_at
-     FROM audience_demographics ad
-     JOIN influencer_platforms ip ON ad.influencer_platform_id = ip.id
-     WHERE ip.influencer_id = $1`,
-    [influencerId]
-  )
-
-  // Get audience locations (top countries)
-  const audienceLocations = await query<any>(
-    `SELECT 
-       country_name,
-       country_code,
-       AVG(percentage) as percentage
-     FROM audience_locations al
-     JOIN influencer_platforms ip ON al.influencer_platform_id = ip.id
-     WHERE ip.influencer_id = $1
-     GROUP BY country_name, country_code
-     ORDER BY percentage DESC
-     LIMIT 10`,
-    [influencerId]
-  )
-
-  // Get audience languages
-  const audienceLanguages = await query<any>(
-    `SELECT 
-       language_name,
-       language_code,
-       AVG(percentage) as percentage
-     FROM audience_languages al
-     JOIN influencer_platforms ip ON al.influencer_platform_id = ip.id
-     WHERE ip.influencer_id = $1
-     GROUP BY language_name, language_code
-     ORDER BY percentage DESC
-     LIMIT 10`,
-    [influencerId]
-  )
-
-  // Get campaign participation history
-  const campaignParticipation = await query<any>(
-    `SELECT ci.*, c.name as campaign_name, c.status as campaign_status
-     FROM campaign_influencers ci
-     JOIN campaigns c ON ci.campaign_id = c.id
-     WHERE ci.influencer_id = $1
-     ORDER BY ci.created_at DESC`,
-    [influencerId]
-  )
-
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    display_name: row.display_name,
-    niches: row.niches,
-    total_followers: row.total_followers,
-    total_engagement_rate: row.total_engagement_rate,
-    total_avg_views: row.total_avg_views,
-    estimated_promotion_views: row.estimated_promotion_views,
-    price_per_post: row.price_per_post,
-    is_active: row.is_active,
-    first_name: row.first_name,
-    last_name: row.last_name,
-    avatar_url: row.avatar_url,
-    location_country: row.location_country,
-    location_city: row.location_city,
-    platforms: row.platforms,
-    platform_count: row.platform_count,
-    platform_details: platformDetails,
-    recent_content: recentContent,
-    demographics: demographics,
-    audience_locations: audienceLocations,
-    audience_languages: audienceLanguages,
-    campaign_participation: campaignParticipation
-  }
-  */
 }
 
 /**
@@ -561,34 +454,99 @@ export async function getInfluencerStats(): Promise<{
   averageEngagement: number;
 }> {
   
-  // TEMPORARY: Use mock data instead of database
-  console.log('getInfluencerStats: Using mock data (database not yet set up)')
+  try {
+    // Get total and active influencer counts
+    const countsResult = await queryOne<{ total: number; active: number }>(`
+      SELECT 
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE EXISTS (
+          SELECT 1 FROM users u WHERE u.id = i.user_id AND u.status = 'ACTIVE'
+        ))::int as active
+      FROM influencers i
+    `)
 
-  const influencersByNiche: Record<string, number> = {
-    'Lifestyle': 45,
-    'Fashion': 38,
-    'Beauty': 32,
-    'Fitness': 28,
-    'Tech': 15,
-    'Gaming': 12
-  }
+    const totalInfluencers = countsResult?.total || 0
+    const activeInfluencers = countsResult?.active || 0
 
-  const influencersByPlatform: Record<Platform, number> = {
-    INSTAGRAM: 89,
-    TIKTOK: 67,
-    YOUTUBE: 43,
-    TWITCH: 8,
-    TWITTER: 23,
-    LINKEDIN: 5
-  }
+    // Get influencers by niche (unnest niches array and count)
+    const nicheResult = await query<any>(`
+      SELECT 
+        niche,
+        COUNT(DISTINCT influencer_id)::int as count
+      FROM influencers i,
+      LATERAL unnest(i.niches) AS niche
+      GROUP BY niche
+      ORDER BY count DESC
+    `)
 
-  return {
-    totalInfluencers: 189,
-    activeInfluencers: 145,
-    influencersByNiche,
-    influencersByPlatform,
-    averageFollowers: 125000,
-    averageEngagement: 3.2
+    const influencersByNiche: Record<string, number> = {}
+    nicheResult.forEach((row: any) => {
+      influencersByNiche[row.niche] = row.count
+    })
+
+    // Get influencers by platform
+    const platformResult = await query<any>(`
+      SELECT 
+        ip.platform,
+        COUNT(DISTINCT ip.influencer_id)::int as count
+      FROM influencer_platforms ip
+      GROUP BY ip.platform
+      ORDER BY count DESC
+    `)
+
+    const influencersByPlatform: Record<Platform, number> = {
+      INSTAGRAM: 0,
+      TIKTOK: 0,
+      YOUTUBE: 0,
+      TWITCH: 0,
+      TWITTER: 0,
+      LINKEDIN: 0
+    }
+    
+    platformResult.forEach((row: any) => {
+      if (row.platform in influencersByPlatform) {
+        influencersByPlatform[row.platform as Platform] = row.count
+      }
+    })
+
+    // Get average followers and engagement
+    const avgResult = await queryOne<{ avg_followers: number; avg_engagement: number }>(`
+      SELECT 
+        COALESCE(AVG(i.total_followers), 0)::float as avg_followers,
+        COALESCE(AVG(i.total_engagement_rate), 0)::float as avg_engagement
+      FROM influencers i
+      WHERE EXISTS (
+        SELECT 1 FROM users u WHERE u.id = i.user_id AND u.status = 'ACTIVE'
+      )
+    `)
+
+    return {
+      totalInfluencers,
+      activeInfluencers,
+      influencersByNiche,
+      influencersByPlatform,
+      averageFollowers: Math.round(avgResult?.avg_followers || 0),
+      averageEngagement: parseFloat((avgResult?.avg_engagement || 0).toFixed(2))
+    }
+
+  } catch (error) {
+    console.error('Error in getInfluencerStats:', error)
+    // Return empty stats on error
+    return {
+      totalInfluencers: 0,
+      activeInfluencers: 0,
+      influencersByNiche: {},
+      influencersByPlatform: {
+        INSTAGRAM: 0,
+        TIKTOK: 0,
+        YOUTUBE: 0,
+        TWITCH: 0,
+        TWITTER: 0,
+        LINKEDIN: 0
+      },
+      averageFollowers: 0,
+      averageEngagement: 0
+    }
   }
 }
 
@@ -644,57 +602,40 @@ export async function getInfluencerPlatformMetrics(
  * Returns array of platform usernames that should be excluded from discovery
  */
 export async function getRosterInfluencerUsernames(): Promise<string[]> {
-  // TEMPORARY: Use mock data instead of database
-  console.log('getRosterInfluencerUsernames: Using mock data (database not yet set up)')
-  
-  // Extract platform usernames from mock data
-  const rosterUsernames: string[] = []
-  
-  MOCK_INFLUENCERS.forEach(influencer => {
-    // For mock data, generate platform usernames based on display name
-    const baseUsername = influencer.display_name.toLowerCase().replace(/\s+/g, '_')
+  try {
+    // Fetch all platform usernames from active influencers in roster
+    const platforms = await query<{username: string, platform: string}>(`
+      SELECT DISTINCT ip.username, ip.platform
+      FROM influencer_platforms ip
+      JOIN influencers i ON ip.influencer_id = i.id
+      JOIN users u ON i.user_id = u.id
+      WHERE u.status = 'ACTIVE'
+        AND ip.username IS NOT NULL
+        AND ip.username != ''
+    `)
     
-    // Add different username variations for different platforms
-    if (influencer.platforms.includes('INSTAGRAM')) {
-      rosterUsernames.push(`@${baseUsername}`)
-      rosterUsernames.push(baseUsername)
-    }
-    if (influencer.platforms.includes('TIKTOK')) {
-      rosterUsernames.push(`@${baseUsername}_tiktok`)
-      rosterUsernames.push(`${baseUsername}_tiktok`)
-    }
-    if (influencer.platforms.includes('YOUTUBE')) {
-      rosterUsernames.push(`@${baseUsername}_yt`)
-      rosterUsernames.push(`${baseUsername}_yt`)
-    }
-  })
-  
-  console.log(`Found ${rosterUsernames.length} roster usernames to exclude from discovery`)
-  return rosterUsernames
+    // Return array of usernames with @ prefix variations
+    // Discovery API may search with or without @ prefix
+    const usernames: string[] = []
+    platforms.forEach(p => {
+      const username = p.username.trim()
+      if (username) {
+        // Add both with and without @ prefix
+        usernames.push(username)
+        if (!username.startsWith('@')) {
+          usernames.push(`@${username}`)
+        }
+      }
+    })
+    
+    console.log(`Found ${usernames.length} roster usernames to exclude from discovery`)
+    return usernames
 
-  /*
-  // Real database implementation (use when DB is set up):
-  const sql = `
-    SELECT DISTINCT ip.username, ip.platform
-    FROM influencer_platforms ip
-    JOIN influencers i ON ip.influencer_id = i.id
-    JOIN users u ON i.user_id = u.id
-    WHERE u.role IN ('INFLUENCER_SIGNED', 'INFLUENCER_PARTNERED')
-    AND ip.username IS NOT NULL
-    AND i.is_active = true
-  `
-  
-  const platforms = await query<{username: string, platform: string}>(sql)
-  
-  // Return array of usernames with @ prefix variations
-  const usernames: string[] = []
-  platforms.forEach(p => {
-    usernames.push(p.username)
-    usernames.push(`@${p.username}`)
-  })
-  
-  return usernames
-  */
+  } catch (error) {
+    console.error('Error in getRosterInfluencerUsernames:', error)
+    // Return empty array on error to avoid blocking discovery
+    return []
+  }
 }
 
 /**
