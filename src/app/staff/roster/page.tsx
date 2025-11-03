@@ -484,7 +484,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
       // Advanced filters
       const matchesNiche = !rosterFilters.niche || (influencer.niches || []).includes(rosterFilters.niche)
-      const matchesPlatform = !rosterFilters.platform || influencer.platforms.includes(rosterFilters.platform as Platform)
+      const matchesPlatform = !rosterFilters.platform || (Array.isArray(influencer.platforms) && influencer.platforms.includes(rosterFilters.platform as Platform))
       const matchesFollowerRange = !rosterFilters.followerRange || checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
       const matchesEngagementRange = !rosterFilters.engagementRange || checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
       const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
@@ -533,7 +533,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         matchesFilters = (influencer.niches || []).includes(rosterFilters.niche)
       }
       if (matchesFilters && rosterFilters.platform) {
-        matchesFilters = influencer.platforms.includes(rosterFilters.platform as Platform)
+        matchesFilters = Array.isArray(influencer.platforms) && influencer.platforms.includes(rosterFilters.platform as Platform)
       }
       if (matchesFilters && rosterFilters.followerRange) {
         matchesFilters = checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
@@ -1630,7 +1630,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   {/* Platforms */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-2">
-                      {(influencer.platforms || []).filter(Boolean).map((platform: Platform, index: number) => (
+                      {(Array.isArray(influencer.platforms) ? influencer.platforms : []).filter(Boolean).map((platform: Platform, index: number) => (
                         <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
                           <PlatformIcon platform={platform} size={24} />
                         </div>
