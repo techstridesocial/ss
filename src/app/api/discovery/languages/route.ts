@@ -9,7 +9,7 @@ export async function GET(_request: Request) {
     
     console.log('🔍 Languages API request:', { query, limit })
     
-    const _result = await listLanguages(query || 'english', limit)
+    const result = await listLanguages(query || 'english', limit)
     
     return NextResponse.json(result)
   } catch (error) {

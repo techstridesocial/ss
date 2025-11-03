@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get brands from database
-    const _result = await getBrands(filters, page, limit)
+    const result = await getBrands(filters, page, limit)
 
     return NextResponse.json({
       success: true,

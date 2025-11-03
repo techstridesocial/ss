@@ -9,7 +9,7 @@ export async function GET(_request: Request) {
     
     console.log('🔍 Interests API request:', { query, limit })
     
-    const _result = await listInterests(query || '', limit)
+    const result = await listInterests(query || '', limit)
     
     return NextResponse.json(result)
   } catch (error) {

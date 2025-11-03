@@ -10,7 +10,7 @@ export async function GET(_request: Request) {
     
     console.log('🔍 Hashtags API request:', { query, limit, platform })
     
-    const _result = await listHashtags(platform as 'instagram' | 'tiktok' | 'youtube', query || 'fitness', limit)
+    const result = await listHashtags(platform as 'instagram' | 'tiktok' | 'youtube', query || 'fitness', limit)
     
     return NextResponse.json(result)
   } catch (error) {

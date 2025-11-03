@@ -218,7 +218,7 @@ export default function AddInfluencerPanel({
     }
 
     const cleanHandle = discoveryHandle.replace('@', '').trim()
-    const _result = await searchModashProfile(cleanHandle, selectedPlatform)
+    const result = await searchModashProfile(cleanHandle, selectedPlatform)
     setDiscoveryData(result)
     
     if (result.found && result.profile) {
@@ -292,7 +292,7 @@ export default function AddInfluencerPanel({
         body: JSON.stringify(formData)
       })
 
-      const _result = await response.json()
+      const result = await response.json()
 
       if (result.success) {
         alert(`✅ ${formData.display_name} added to roster successfully!`)
@@ -459,7 +459,7 @@ export default function AddInfluencerPanel({
                                   body: JSON.stringify(influencerData)
                                 })
 
-                                const _result = await response.json()
+                                const result = await response.json()
 
                                 if (result.success) {
                                   alert(`✅ ${influencer.displayName} added to roster successfully!`)

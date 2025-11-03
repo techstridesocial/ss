@@ -136,7 +136,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     try {
       const response = await fetch('/api/influencers')
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         if (result.success) {
           setInfluencers(result.data)
           return result.data

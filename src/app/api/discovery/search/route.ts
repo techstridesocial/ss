@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
             : mapToModashFilters({ ...body, platform })
           
           console.log(`🔍 Searching ${platform} with filters:`, filters)
-          const _result = await searchDiscovery(platform, filters)
+          const result = await searchDiscovery(platform, filters)
           // Handle platform-specific response structures
           let resultData = []
           let totalCount = 0

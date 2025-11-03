@@ -63,7 +63,7 @@ export interface ContentQualityMetrics {
  */
 export async function getCampaignContentSubmissions(campaignId: string): Promise<ContentSubmissionWithDetails[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         ccs.*,
         i.id as influencer_id,
@@ -138,7 +138,7 @@ export async function getInfluencerContentSubmissions(
   influencerId: string
 ): Promise<ContentSubmission[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT ccs.*
       FROM campaign_content_submissions ccs
       JOIN campaign_influencers ci ON ccs.campaign_influencer_id = ci.id
@@ -187,7 +187,7 @@ export async function updateContentSubmissionStatus(
   reviewNotes?: string
 ): Promise<ContentSubmission> {
   try {
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_content_submissions 
       SET 
         status = $2,
@@ -435,7 +435,7 @@ export async function addContentScreenshot(
   screenshotUrl: string
 ): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_content_submissions 
       SET screenshot_url = $2, updated_at = NOW()
       WHERE id = $1
@@ -454,7 +454,7 @@ export async function addContentScreenshot(
  */
 export async function getPendingContentReviews(): Promise<ContentSubmissionWithDetails[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         ccs.*,
         i.id as influencer_id,

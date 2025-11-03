@@ -143,7 +143,7 @@ function CampaignsPageClient() {
     try {
       const response = await fetch('/api/brand/campaigns')
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         if (result.success) {
           setCampaigns(result.data)
         }

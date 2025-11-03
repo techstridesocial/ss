@@ -56,7 +56,7 @@ export interface QuotationInfluencer {
 // Quotation CRUD operations
 export async function getAllQuotations(): Promise<Quotation[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         q.*,
         COUNT(qi.id) as influencer_count
@@ -143,7 +143,7 @@ export async function getAllQuotations(): Promise<Quotation[]> {
 }
 
 export async function getQuotationById(id: string): Promise<Quotation | null> {
-  const _result = await query(`
+  const result = await query(`
     SELECT * FROM quotations WHERE id = $1
   `, [id]);
   
@@ -175,7 +175,7 @@ export async function getQuotationById(id: string): Promise<Quotation | null> {
 }
 
 export async function createQuotation(quotation: Omit<Quotation, 'id' | 'createdAt' | 'updatedAt' | 'influencers'>): Promise<Quotation> {
-  const _result = await query(`
+  const result = await query(`
     INSERT INTO quotations (
       brand_name, campaign_name, description, target_demographics,
       total_quote, campaign_duration, deliverables, status, requested_at,
@@ -273,7 +273,7 @@ export async function updateQuotation(id: string, updates: Partial<Quotation>): 
   setClauses.push(`updated_at = NOW()`);
   values.push(id);
 
-  const _result = await query(`
+  const result = await query(`
     UPDATE quotations 
     SET ${setClauses.join(', ')}
     WHERE id = $${paramCount}
@@ -287,7 +287,7 @@ export async function updateQuotation(id: string, updates: Partial<Quotation>): 
 
 // Get all quotations for a specific brand
 export async function getBrandQuotations(brandId: string): Promise<Quotation[]> {
-  const _result = await query(`
+  const result = await query(`
     SELECT 
       q.*,
       COUNT(qi.id) as influencer_count
@@ -349,7 +349,7 @@ export async function createQuotationRequest(data: {
   selected_influencers?: string[];
   assigned_staff_id?: string;
 }): Promise<Quotation> {
-  const _result = await query(`
+  const result = await query(`
     INSERT INTO quotations (
       brand_id, brand_name, campaign_name, description, 
       influencer_count, budget_range, campaign_duration, 
@@ -413,7 +413,7 @@ export async function deleteQuotation(id: string): Promise<boolean> {
   await query('DELETE FROM quotation_influencers WHERE quotation_id = $1', [id]);
   
   // Then delete the quotation
-  const _result = await query('DELETE FROM quotations WHERE id = $1', [id]);
+  const result = await query('DELETE FROM quotations WHERE id = $1', [id]);
   return result.length > 0;
 }
 
@@ -444,7 +444,7 @@ export async function addInfluencerToQuotation(
   proposedRate: number,
   notes?: string
 ): Promise<QuotationInfluencer> {
-  const _result = await query(`
+  const result = await query(`
     INSERT INTO quotation_influencers (quotation_id, influencer_id, proposed_rate, notes)
     VALUES ($1, $2, $3, $4)
     RETURNING *
@@ -484,7 +484,7 @@ export async function updateQuotationInfluencer(
   setClauses.push(`updated_at = NOW()`);
   values.push(id);
 
-  const _result = await query(`
+  const result = await query(`
     UPDATE quotation_influencers 
     SET ${setClauses.join(', ')}
     WHERE id = $${paramCount}
@@ -506,7 +506,7 @@ export async function updateQuotationInfluencer(
 }
 
 export async function removeInfluencerFromQuotation(quotationId: string, influencerId: string): Promise<boolean> {
-  const _result = await query(`
+  const result = await query(`
     DELETE FROM quotation_influencers 
     WHERE quotation_id = $1 AND influencer_id = $2
   `, [quotationId, influencerId]);

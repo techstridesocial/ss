@@ -38,7 +38,7 @@ function QuotationsPageClient() {
     try {
       const response = await fetch('/api/brand/quotations')
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         if (result.success) {
           setQuotations(result.data)
         }

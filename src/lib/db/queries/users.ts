@@ -318,7 +318,7 @@ export async function createUser(
   profileData?: Partial<UserProfile>
 ): Promise<DatabaseResponse<UserWithProfile>> {
   try {
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Create user
       const userResult = await client.query(
         `INSERT INTO users (email, role) 
@@ -478,7 +478,7 @@ export async function updateUserProfile(
  */
 export async function deleteUser(userId: string): Promise<DatabaseResponse<void>> {
   try {
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Check if user exists
       const user = await client.query('SELECT id FROM users WHERE id = $1', [userId])
       
@@ -530,7 +530,7 @@ export async function getUserStats(): Promise<{
       LEFT JOIN user_profiles up ON u.id = up.user_id
     `
     
-    const _result = await query(statsQuery)
+    const result = await query(statsQuery)
     const stats = result[0]
 
     const usersByRole: Record<UserRole, number> = {

@@ -182,7 +182,7 @@ class CreditsService {
     this.updateGlobalState({ activePromise: promise })
 
     try {
-      const _result = await promise
+      const result = await promise
       
       if (result.success && result.data) {
         const detailedUsage = this.transformToDetailedUsage(result.data)
@@ -229,7 +229,7 @@ class CreditsService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       
       return {
         success: true,

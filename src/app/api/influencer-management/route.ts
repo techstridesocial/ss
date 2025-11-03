@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest) {
       influencerId
     ]
 
-    const _result = await pool.query(query, values)
+    const result = await pool.query(query, values)
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })

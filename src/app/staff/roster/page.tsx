@@ -7,12 +7,36 @@ import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import { useAuth } from '@clerk/nextjs'
 import { useCurrentUserId } from '@/lib/auth/current-user'
-import EditInfluencerModal from '../../../components/modals/EditInfluencerModal'
-import AssignInfluencerModal from '../../../components/modals/AssignInfluencerModal'
-import AddInfluencerPanel from '../../../components/influencer/AddInfluencerPanel'
-import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
-import DashboardInfoPanel from '../../../components/influencer/DashboardInfoPanel'
+import dynamic from 'next/dynamic'
 import ErrorBoundary from '../../../components/debug/ErrorBoundary'
+
+// Lazy load heavy modal components - only load when needed
+const EditInfluencerModal = dynamic(() => import('../../../components/modals/EditInfluencerModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+const AssignInfluencerModal = dynamic(() => import('../../../components/modals/AssignInfluencerModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+const AddInfluencerPanel = dynamic(() => import('../../../components/influencer/AddInfluencerPanel'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+const InfluencerDetailPanel = dynamic(() => import('../../../components/influencer/InfluencerDetailPanel'), {
+  ssr: false,
+  loading: () => <div>Loading analytics...</div>
+})
+const DashboardInfoPanel = dynamic(() => import('../../../components/influencer/DashboardInfoPanel'), {
+  ssr: false,
+  loading: () => <div>Loading dashboard...</div>
+})
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { Search, FilterIcon, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp, BarChart3, User, AlertTriangle } from 'lucide-react'
 
@@ -151,7 +175,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       })
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('✅ Bulk refresh completed:', result)
         
         // Reload the page to show updated data
@@ -272,8 +296,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         return
       }
 
-      console.log('📋 Loading influencers from API...')
-      const response = await fetch('/api/influencers', {
+      console.log('📋 Loading influencers from OPTIMIZED API...')
+      const response = await fetch('/api/influencers/light', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -281,7 +305,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       })
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         if (result.success && result.data) {
           console.log(`✅ Loaded ${result.data.length} real influencers from database`)
           setInfluencers(result.data)
@@ -520,68 +544,85 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     return !influencer.content_type || !influencer.influencer_type
   }
 
-  // Separate function for tab counts that doesn't depend on activeTab
-  const applyFiltersForTab = (influencers: any[], tabType: string) => {
-    return influencers.filter(influencer => {
-      // Tab-specific filter
-      if (tabType === 'ALL') {
-        if (!(influencer.influencer_type === 'SIGNED' || 
-              influencer.influencer_type === 'PARTNERED' ||
-              influencer.influencer_type === 'AGENCY_PARTNER')) {
-          return false
-        }
-      } else if (tabType === 'SIGNED') {
-        if (!(influencer.influencer_type === 'SIGNED' && !needsAssignment(influencer))) {
-          return false
-        }
-      } else if (tabType === 'PARTNERED') {
-        if (influencer.influencer_type !== 'PARTNERED') {
-          return false
-        }
-      } else if (tabType === 'AGENCY_PARTNER') {
-        if (!(influencer.influencer_type === 'AGENCY_PARTNER' && !needsAssignment(influencer))) {
-          return false
-        }
-      } else if (tabType === 'PENDING_ASSIGNMENT') {
-        if (!needsAssignment(influencer)) {
-          return false
-        }
-      } else if (tabType === 'MY_CREATORS') {
-        // Filter for creators assigned to current user
-        if (!influencer.assigned_to || !currentUserId || influencer.assigned_to !== currentUserId) {
-          return false
-        }
-      } else {
-        if (influencer.influencer_type !== tabType) {
-          return false
-        }
-      }
+  // OPTIMIZED: Memoize tab counts to avoid recalculating on every render
+  const tabCounts = React.useMemo(() => {
+    // Calculate all tab counts in one pass through the data
+    const counts = {
+      ALL: 0,
+      SIGNED: 0,
+      PARTNERED: 0,
+      AGENCY_PARTNER: 0,
+      PENDING_ASSIGNMENT: 0,
+      MY_CREATORS: 0
+    }
 
-      // Apply same search and advanced filters as main filter
+    influencers.forEach(influencer => {
+      // Check if matches current search/filters first
+      let matchesFilters = true
+      
       if (searchQuery) {
         const searchLower = searchQuery.toLowerCase()
-        const matchesSearch = influencer.display_name.toLowerCase().includes(searchLower) ||
-                             influencer.first_name?.toLowerCase().includes(searchLower) ||
-                             influencer.last_name?.toLowerCase().includes(searchLower) ||
-                             (influencer.niches || []).some((niche: string) => niche.toLowerCase().includes(searchLower))
-        if (!matchesSearch) return false
+        matchesFilters = influencer.display_name.toLowerCase().includes(searchLower) ||
+                        influencer.first_name?.toLowerCase().includes(searchLower) ||
+                        influencer.last_name?.toLowerCase().includes(searchLower) ||
+                        (influencer.niches || []).some((niche: string) => niche.toLowerCase().includes(searchLower))
       }
 
-      const matchesNiche = !rosterFilters.niche || (influencer.niches || []).includes(rosterFilters.niche)
-      const matchesPlatform = !rosterFilters.platform || influencer.platforms.includes(rosterFilters.platform as Platform)
-      const matchesFollowerRange = !rosterFilters.followerRange || checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
-      const matchesEngagementRange = !rosterFilters.engagementRange || checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
-      const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
-      const matchesInfluencerType = !rosterFilters.influencerType || influencer.influencer_type === rosterFilters.influencerType
-      const matchesContentType = !rosterFilters.contentType || influencer.content_type === rosterFilters.contentType
-      const matchesTier = !rosterFilters.tier || getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === rosterFilters.tier
-      const matchesStatus = !rosterFilters.status || influencer.is_active.toString() === rosterFilters.status
+      if (matchesFilters && rosterFilters.niche) {
+        matchesFilters = (influencer.niches || []).includes(rosterFilters.niche)
+      }
+      if (matchesFilters && rosterFilters.platform) {
+        matchesFilters = influencer.platforms.includes(rosterFilters.platform as Platform)
+      }
+      if (matchesFilters && rosterFilters.followerRange) {
+        matchesFilters = checkFollowerRange(influencer.total_followers, rosterFilters.followerRange)
+      }
+      if (matchesFilters && rosterFilters.engagementRange) {
+        matchesFilters = checkEngagementRange(influencer.total_engagement_rate, rosterFilters.engagementRange)
+      }
+      if (matchesFilters && rosterFilters.location) {
+        matchesFilters = influencer.location_country === rosterFilters.location
+      }
+      if (matchesFilters && rosterFilters.influencerType) {
+        matchesFilters = influencer.influencer_type === rosterFilters.influencerType
+      }
+      if (matchesFilters && rosterFilters.contentType) {
+        matchesFilters = influencer.content_type === rosterFilters.contentType
+      }
+      if (matchesFilters && rosterFilters.tier) {
+        matchesFilters = getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === rosterFilters.tier
+      }
+      if (matchesFilters && rosterFilters.status) {
+        matchesFilters = influencer.is_active.toString() === rosterFilters.status
+      }
 
-      return matchesNiche && matchesPlatform && matchesFollowerRange && 
-             matchesEngagementRange && matchesLocation && matchesInfluencerType && 
-             matchesContentType && matchesTier && matchesStatus
+      if (!matchesFilters) return
+
+      // Count for each tab
+      const isPending = needsAssignment(influencer)
+      
+      if (influencer.influencer_type === 'SIGNED' || influencer.influencer_type === 'PARTNERED' || influencer.influencer_type === 'AGENCY_PARTNER') {
+        counts.ALL++
+      }
+      if (influencer.influencer_type === 'SIGNED' && !isPending) {
+        counts.SIGNED++
+      }
+      if (influencer.influencer_type === 'PARTNERED') {
+        counts.PARTNERED++
+      }
+      if (influencer.influencer_type === 'AGENCY_PARTNER' && !isPending) {
+        counts.AGENCY_PARTNER++
+      }
+      if (isPending) {
+        counts.PENDING_ASSIGNMENT++
+      }
+      if (influencer.assigned_to && currentUserId && influencer.assigned_to === currentUserId) {
+        counts.MY_CREATORS++
+      }
     })
-  }
+
+    return counts
+  }, [influencers, searchQuery, rosterFilters, currentUserId])
 
   // Helper functions for range checking (matching brand page pattern)
   function checkFollowerRange(followers: number, range: string) {
@@ -909,7 +950,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     onPanelStateChange?.(false)
   }
 
-  const handlePlatformSwitch = (_platform: string) => {
+  const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
     // Update URL with new platform if an influencer is selected
     if (selectedInfluencerDetail?.id) {
@@ -940,7 +981,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         throw new Error(errorData.error || 'Failed to save management data')
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       console.log('✅ API response:', result)
       
       // Update the influencer in state with the returned data
@@ -1012,7 +1053,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`)
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       console.log('✅ Assignment successful:', result)
 
       // Refresh the data to show updated influencer
@@ -1499,12 +1540,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       <div className="mb-8">
         <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
           {[
-            { key: 'ALL', label: 'All Influencers', count: applyFiltersForTab(influencers, 'ALL').length },
-            { key: 'MY_CREATORS', label: 'My Creators', count: applyFiltersForTab(influencers, 'MY_CREATORS').length, highlight: true },
-            { key: 'PENDING_ASSIGNMENT', label: 'Pending Assignment', count: applyFiltersForTab(influencers, 'PENDING_ASSIGNMENT').length, urgent: true },
-            { key: 'SIGNED', label: 'Signed', count: applyFiltersForTab(influencers, 'SIGNED').length },
-            { key: 'PARTNERED', label: 'Partnered', count: applyFiltersForTab(influencers, 'PARTNERED').length },
-            { key: 'AGENCY_PARTNER', label: 'Agency Partners', count: applyFiltersForTab(influencers, 'AGENCY_PARTNER').length }
+            { key: 'ALL', label: 'All Influencers', count: tabCounts.ALL },
+            { key: 'MY_CREATORS', label: 'My Creators', count: tabCounts.MY_CREATORS, highlight: true },
+            { key: 'PENDING_ASSIGNMENT', label: 'Pending Assignment', count: tabCounts.PENDING_ASSIGNMENT, urgent: true },
+            { key: 'SIGNED', label: 'Signed', count: tabCounts.SIGNED },
+            { key: 'PARTNERED', label: 'Partnered', count: tabCounts.PARTNERED },
+            { key: 'AGENCY_PARTNER', label: 'Agency Partners', count: tabCounts.AGENCY_PARTNER }
           ].map(tab => (
             <button
               key={tab.key}
@@ -2036,13 +2077,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 displayName: selectedInfluencerDetail.display_name,
                 name: selectedInfluencerDetail.display_name,
                 handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-                picture: selectedInfluencerDetail.avatar_url,
-                profilePicture: selectedInfluencerDetail.avatar_url,
-                followers: selectedInfluencerDetail.total_followers || 0,
-                engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
-                engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
-                avgViews: selectedInfluencerDetail.total_avg_views || 0,
-                bio: selectedInfluencerDetail.bio,
+              picture: selectedInfluencerDetail.avatar_url || undefined,
+              profilePicture: selectedInfluencerDetail.avatar_url || undefined,
+              followers: selectedInfluencerDetail.total_followers || 0,
+              engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
+              engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
+              avgViews: selectedInfluencerDetail.total_avg_views || 0,
+              bio: selectedInfluencerDetail.bio || undefined,
                 isRosterInfluencer: true,
                 rosterId: selectedInfluencerDetail.id,
                 hasPreservedAnalytics: false

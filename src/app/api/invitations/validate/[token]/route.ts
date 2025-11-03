@@ -9,7 +9,7 @@ export async function GET(
     const { token } = await params
     
     // Get invitation by token (we'll use the clerk_invitation_id as token)
-    const _result = await query(
+    const result = await query(
       `SELECT 
         ui.id,
         ui.email,

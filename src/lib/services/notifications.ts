@@ -114,7 +114,7 @@ export async function notifyBrandAssigned(
  */
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT COUNT(*) as count FROM notifications 
       WHERE recipient_id = $1 AND is_read = FALSE
     `, [userId])

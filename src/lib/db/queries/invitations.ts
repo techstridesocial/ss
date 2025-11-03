@@ -43,7 +43,7 @@ export async function createInvitation(
   expiresAt?: Date
 ): Promise<DatabaseResponse<UserInvitation>> {
   try {
-    const _result = await query<UserInvitation>(
+    const result = await query<UserInvitation>(
       `INSERT INTO user_invitations (
         clerk_invitation_id, email, role, first_name, last_name,
         invited_by, invited_by_email, expires_at
@@ -102,7 +102,7 @@ export async function getInvitations(filters: InvitationFilters = {}): Promise<U
     const offsetParam = `$${paramCount}`
     queryParams.push(limit, offset)
 
-    const _result = await query<UserInvitation>(
+    const result = await query<UserInvitation>(
       `SELECT * FROM user_invitations 
        ${whereClause}
        ORDER BY invited_at DESC
@@ -122,7 +122,7 @@ export async function getInvitations(filters: InvitationFilters = {}): Promise<U
  */
 export async function getInvitationByClerkId(clerkInvitationId: string): Promise<UserInvitation | null> {
   try {
-    const _result = await query<UserInvitation>(
+    const result = await query<UserInvitation>(
       'SELECT * FROM user_invitations WHERE clerk_invitation_id = $1',
       [clerkInvitationId]
     )
@@ -166,7 +166,7 @@ export async function updateInvitationStatus(
       updateFields.push(`revoked_at = NOW()`)
     }
 
-    const _result = await query<UserInvitation>(
+    const result = await query<UserInvitation>(
       `UPDATE user_invitations 
        SET ${updateFields.join(', ')}
        WHERE clerk_invitation_id = $1
@@ -206,7 +206,7 @@ export async function getInvitationStats(): Promise<{
   expired: number
 }> {
   try {
-    const _result = await query<{
+    const result = await query<{
       status: string
       count: number
     }>(
@@ -250,7 +250,7 @@ export async function getInvitationStats(): Promise<{
  */
 export async function cleanupExpiredInvitations(): Promise<number> {
   try {
-    const _result = await query<{ count: number }>(
+    const result = await query<{ count: number }>(
       `UPDATE user_invitations 
        SET status = 'EXPIRED', updated_at = NOW()
        WHERE status = 'INVITED' 

@@ -49,7 +49,7 @@ export interface CampaignInvitationData {
  */
 export async function getCampaignInfluencersWithDetails(campaignId: string): Promise<CampaignInfluencerWithDetails[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         ci.*,
         ci.content_links,
@@ -216,7 +216,7 @@ export async function assignInfluencerToCampaign(
   notes?: string
 ): Promise<CampaignInfluencer> {
   try {
-    const _result = await query(`
+    const result = await query(`
       INSERT INTO campaign_influencers (
         campaign_id, influencer_id, status, compensation_amount, 
         deadline, notes, created_at, updated_at
@@ -307,7 +307,7 @@ export async function updateCampaignInfluencerStatus(
       values.push(additionalData.paymentReleased)
     }
 
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_influencers 
       SET ${updateFields.join(', ')}
       WHERE campaign_id = $1 AND influencer_id = $2
@@ -355,7 +355,7 @@ export async function updateProductShipmentStatus(
   shippedAt?: Date
 ): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_influencers 
       SET 
         product_shipped = $3,
@@ -386,7 +386,7 @@ export async function updateContentPostingStatus(
   postedAt?: Date
 ): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_influencers 
       SET 
         content_posted = $3,
@@ -416,7 +416,7 @@ export async function updatePaymentReleaseStatus(
   releasedAt?: Date
 ): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_influencers 
       SET 
         payment_released = $3,
@@ -522,7 +522,7 @@ export async function getCampaignStatistics(campaignId: string): Promise<{
   paymentReleasedCount: number
 }> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         COUNT(*) as total_influencers,
         COUNT(CASE WHEN status = 'INVITED' THEN 1 END) as invited_count,

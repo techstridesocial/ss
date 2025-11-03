@@ -50,7 +50,7 @@ export function useStaffSavedInfluencers(platform?: string) {
         throw new Error('Failed to fetch saved influencers')
       }
       
-      const _result = await response.json()
+      const result = await response.json()
       
       if (result.success) {
         setSavedInfluencers(result.data)
@@ -98,7 +98,7 @@ export function useStaffSavedInfluencers(platform?: string) {
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to save influencer`)
       }
       
-      const _result = await response.json()
+      const result = await response.json()
       console.log('✅ API Success response:', result)
       
       if (result.success) {
@@ -166,7 +166,7 @@ export function useStaffSavedInfluencers(platform?: string) {
         throw new Error(errorData.error || 'Failed to add to roster')
       }
       
-      const _result = await response.json()
+      const result = await response.json()
       
       if (result.success) {
         // Update local state to mark as added to roster

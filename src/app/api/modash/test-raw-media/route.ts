@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Testing Modash RAW API media info:', { url, platform })
 
     // Call the appropriate RAW API endpoint based on platform
-    const _result = await getMediaInfo(url)
+    const result = await getMediaInfo(url)
     
     console.log('📊 RAW API Response:', {
       hasItems: !!result?.items,

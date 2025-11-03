@@ -67,7 +67,7 @@ export async function getPaymentInfo(influencerId: string): Promise<DatabaseResp
       LIMIT 1
     `
 
-    const _result = await query(queryText, [influencerId])
+    const result = await query(queryText, [influencerId])
 
     if (result.length === 0) {
       return {
@@ -162,7 +162,7 @@ export async function updatePaymentInfo(
       RETURNING id
     `
 
-    const _result = await query(queryText, [influencerId, paymentMethod, encryptedDetails])
+    const result = await query(queryText, [influencerId, paymentMethod, encryptedDetails])
 
     if (result.length === 0) {
       return {

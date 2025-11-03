@@ -269,7 +269,7 @@ export async function getPlatformStats(influencerId: string, platform: string): 
       WHERE influencer_id = $1 AND platform = $2
     `
 
-    const _result = await query(queryText, [influencerId, platform])
+    const result = await query(queryText, [influencerId, platform])
 
     if (result.length === 0) {
       // Return empty data if no platform data exists

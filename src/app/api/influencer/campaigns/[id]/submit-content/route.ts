@@ -104,7 +104,7 @@ export async function POST(
       RETURNING id
     `
 
-    const _result = await query(insertQuery, [
+    const result = await query(insertQuery, [
       assignment.campaign_influencer_id,
       data.content_url,
       data.content_type,

@@ -38,7 +38,7 @@ export async function getCampaignTemplates(includeInactive: boolean = false): Pr
   try {
     const whereClause = includeInactive ? '' : 'WHERE is_active = true'
     
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM campaign_templates 
       ${whereClause}
       ORDER BY created_at DESC
@@ -85,7 +85,7 @@ export async function getCampaignTemplates(includeInactive: boolean = false): Pr
  */
 export async function getCampaignTemplateById(id: string): Promise<CampaignTemplate | null> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM campaign_templates 
       WHERE id = $1
     `, [id])
@@ -136,7 +136,7 @@ export async function getCampaignTemplateById(id: string): Promise<CampaignTempl
  */
 export async function createCampaignTemplate(template: Omit<CampaignTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<CampaignTemplate> {
   try {
-    const _result = await query(`
+    const result = await query(`
       INSERT INTO campaign_templates (
         name, description, brand, goals, start_date, end_date, 
         application_deadline, content_deadline, total_budget, per_influencer_budget,
@@ -292,7 +292,7 @@ export async function updateCampaignTemplate(id: string, updates: Partial<Campai
     setClauses.push(`updated_at = NOW()`)
     values.push(id)
 
-    const _result = await query(`
+    const result = await query(`
       UPDATE campaign_templates 
       SET ${setClauses.join(', ')}
       WHERE id = $${paramCount}
@@ -345,7 +345,7 @@ export async function updateCampaignTemplate(id: string, updates: Partial<Campai
  */
 export async function deleteCampaignTemplate(id: string): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       DELETE FROM campaign_templates 
       WHERE id = $1
       RETURNING id

@@ -18,7 +18,7 @@ export async function GET(
     }
 
     // Fetch influencer details with the same structure as the main influencers API
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         i.id,
         i.display_name,

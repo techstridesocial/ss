@@ -9,7 +9,7 @@ export async function GET(_request: Request) {
     
     console.log('🔍 Partnerships API request:', { query, limit })
     
-    const _result = await listPartnerships(query || '', limit)
+    const result = await listPartnerships(query || '', limit)
     
     return NextResponse.json(result)
   } catch (error) {

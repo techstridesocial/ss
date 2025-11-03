@@ -69,7 +69,7 @@ export default function CreateCampaignModal({
       try {
         const response = await fetch('/api/brands?limit=100')
         if (response.ok) {
-          const _result = await response.json()
+          const result = await response.json()
           setBrands(result.data || [])
           setFilteredBrands(result.data || [])
         }
@@ -104,7 +104,7 @@ export default function CreateCampaignModal({
       try {
         const response = await fetch('/api/influencers')
         if (response.ok) {
-          const _result = await response.json()
+          const result = await response.json()
           setInfluencers(result.data || [])
           setFilteredInfluencers(result.data || [])
         }

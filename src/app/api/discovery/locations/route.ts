@@ -11,7 +11,7 @@ export async function GET(_request: Request) {
     console.log('🔍 Locations API request:', { query, platform, limit })
     
     // Fix: listLocations expects (platform, query, limit)
-    const _result = await listLocations(
+    const result = await listLocations(
       platform as 'instagram' | 'tiktok' | 'youtube',
       query || 'united states', 
       limit

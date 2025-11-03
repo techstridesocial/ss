@@ -31,7 +31,7 @@ export interface ContactRecord {
 // Contact Record CRUD operations
 export async function getAllContactRecords(): Promise<ContactRecord[]> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     SELECT 
       cr.*,
       u.first_name,
@@ -78,7 +78,7 @@ export async function getAllContactRecords(): Promise<ContactRecord[]> {
 
 export async function getContactRecordsByInfluencer(influencerId: string): Promise<ContactRecord[]> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     SELECT 
       cr.*,
       u.first_name,
@@ -126,7 +126,7 @@ export async function getContactRecordsByInfluencer(influencerId: string): Promi
 
 export async function getContactRecordById(id: string): Promise<ContactRecord | null> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     SELECT 
       cr.*,
       u.first_name,
@@ -176,7 +176,7 @@ export async function getContactRecordById(id: string): Promise<ContactRecord | 
 
 export async function createContactRecord(contact: Omit<ContactRecord, 'id' | 'createdAt' | 'updatedAt' | 'influencer'>): Promise<ContactRecord> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     INSERT INTO contact_records (
       influencer_id, contact_type, subject, message, status, sent_at,
       responded_at, next_follow_up, campaign_id, quotation_id, sent_by,
@@ -251,7 +251,7 @@ export async function updateContactRecord(id: string, updates: Partial<ContactRe
   setClauses.push(`updated_at = NOW()`);
   values.push(id);
 
-  const _result = await db.query(`
+  const result = await db.query(`
     UPDATE contact_records 
     SET ${setClauses.join(', ')}
     WHERE id = $${paramCount}
@@ -265,7 +265,7 @@ export async function updateContactRecord(id: string, updates: Partial<ContactRe
 
 export async function deleteContactRecord(id: string): Promise<boolean> {
   const db = getDatabase();
-  const _result = await db.query('DELETE FROM contact_records WHERE id = $1', [id]);
+  const result = await db.query('DELETE FROM contact_records WHERE id = $1', [id]);
   return result.rowCount !== null && result.rowCount > 0;
 }
 
@@ -287,7 +287,7 @@ export async function scheduleFollowUp(id: string, followUpDate: Date, notes?: s
 // Analytics and reporting functions
 export async function getContactRecordsByDateRange(startDate: Date, endDate: Date): Promise<ContactRecord[]> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     SELECT 
       cr.*,
       u.first_name,
@@ -339,7 +339,7 @@ export async function getContactResponseRates(): Promise<{
   avgResponseTime: number;
 }> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     SELECT 
       COUNT(*) as total_contacts,
       COUNT(CASE WHEN status = 'replied' THEN 1 END) as replied_count,
@@ -363,7 +363,7 @@ export async function getContactResponseRates(): Promise<{
 
 export async function getUpcomingFollowUps(): Promise<ContactRecord[]> {
   const db = getDatabase();
-  const _result = await db.query(`
+  const result = await db.query(`
     SELECT 
       cr.*,
       u.first_name,

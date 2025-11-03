@@ -76,7 +76,7 @@ export default function RequestQuoteModal({
     try {
       const response = await fetch('/api/staff/members')
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         setStaffMembers(result.data || [])
       } else {
         console.error('Failed to load staff members')
@@ -171,7 +171,7 @@ export default function RequestQuoteModal({
           assigned_staff_id: '',
         })
       } else {
-        const _result = await response.json()
+        const result = await response.json()
         setError(result.error || 'Failed to submit quotation request')
       }
     } catch (error) {

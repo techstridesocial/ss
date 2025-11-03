@@ -174,7 +174,7 @@ export async function POST(_request: NextRequest) {
       )
     }
 
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // 1. Create user account
       const userRole = mapInfluencerTypeToRole(data.influencer_type)
       const insertUserQuery = `

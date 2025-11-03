@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get users from database
-    const _result = await getUsers(filters, page, limit)
+    const result = await getUsers(filters, page, limit)
 
     return NextResponse.json({
       success: true,

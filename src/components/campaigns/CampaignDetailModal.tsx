@@ -68,7 +68,7 @@ export default function CampaignDetailModal({ campaign, isOpen, onClose }: Campa
     try {
       const response = await fetch(`/api/brand/campaigns/${campaign.id}`)
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         setCampaignDetail(result.data)
       }
     } catch (error) {
@@ -84,7 +84,7 @@ export default function CampaignDetailModal({ campaign, isOpen, onClose }: Campa
     try {
       const response = await fetch(`/api/brand/campaigns/${campaign.id}?include=analytics`)
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         setAnalytics(result.data)
       }
     } catch (error) {

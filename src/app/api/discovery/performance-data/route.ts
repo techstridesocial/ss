@@ -17,7 +17,7 @@ export async function GET(_request: Request) {
     console.log('📊 Performance Data API called:', { url, platform })
 
     // Call the platform-aware Performance Data API
-    const _result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
+    const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
     console.log('📊 Raw result from getPerformanceData:', { 
       result: typeof result,
       hasResult: !!result,
@@ -71,7 +71,7 @@ export async function POST(_request: Request) {
 
     console.log('📊 Performance Data API (POST) called:', { url, platform })
 
-    const _result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
+    const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
 
     // Modash API returns { error, posts, reels } directly
     if (result?.error) {

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Testing TikTok RAW API media info:', { url })
 
     // Call the TikTok RAW API media info endpoint
-    const _result = await getTikTokMediaInfo(url)
+    const result = await getTikTokMediaInfo(url)
     
     console.log('📊 TikTok RAW API Response:', {
       hasData: !!result,

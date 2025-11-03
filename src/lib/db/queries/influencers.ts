@@ -713,7 +713,7 @@ export async function createInfluencerProfile(
   }
 ): Promise<DatabaseResponse<Influencer>> {
   try {
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Update or insert user profile
       await client.query(`
         INSERT INTO user_profiles (

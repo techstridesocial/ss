@@ -48,7 +48,7 @@ export default function NotificationBell() {
     try {
       const response = await fetch('/api/notifications')
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         setNotifications(result.data || [])
         setUnreadCount(result.unreadCount || 0)
       }

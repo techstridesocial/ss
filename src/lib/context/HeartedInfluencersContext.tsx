@@ -79,7 +79,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       console.log('📡 API response status:', response.status)
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('📦 API result:', result)
         
         if (result.success) {
@@ -317,7 +317,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       console.log('📥 Response status:', response.status, response.ok)
 
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('✅ API response:', result)
         if (result.success) {
           // Add to local state
@@ -372,7 +372,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       })
 
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         if (result.success) {
           // Update local state
           setShortlists(prev => prev.map(shortlist => 
@@ -431,7 +431,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       console.log('📥 API response:', response.status, response.ok)
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('✅ Delete successful, updating local state')
         // Remove from local state
         setShortlists(prev => {
@@ -489,7 +489,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       })
 
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('Duplicate API response:', result)
         if (result.success) {
           // Add to local state

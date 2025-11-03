@@ -9,7 +9,7 @@ export async function GET(_request: Request) {
     
     console.log('🔍 Topics API request:', { query, limit })
     
-    const _result = await listTopics(query || 'lifestyle', limit)
+    const result = await listTopics(query || 'lifestyle', limit)
     
     return NextResponse.json(result)
   } catch (error) {

@@ -269,7 +269,7 @@ function BrandOnboardingPageContent() {
         throw new Error(errorMessage)
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       console.log('Onboarding successful:', result)
       
       setIsCompleted(true)
@@ -496,7 +496,7 @@ function BrandOnboardingPageContent() {
                       })
                       
                       if (response.ok) {
-                        const _result = await response.json()
+                        const result = await response.json()
                         updateFormData('logo_url', result.imageUrl)
                         console.log('✅ Logo uploaded to Clerk')
                       } else {

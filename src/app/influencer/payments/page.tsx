@@ -143,7 +143,7 @@ export default function InfluencerPayments() {
         throw new Error('Failed to fetch payment data')
       }
       
-      const _result = await response.json()
+      const result = await response.json()
       
       if (result.success) {
         setPaymentInfo(result.data.payment_info)
@@ -195,7 +195,7 @@ export default function InfluencerPayments() {
         throw new Error(errorData.error || 'Failed to save PayPal details')
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       
       if (result.success) {
         // Save details locally
@@ -250,7 +250,7 @@ export default function InfluencerPayments() {
         throw new Error(errorData.error || 'Failed to save bank details')
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       
       if (result.success) {
         // Save details locally

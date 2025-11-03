@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     queryText += ` ORDER BY ssi.saved_at DESC LIMIT $${queryParams.length + 1}`
     queryParams.push(parseInt(limit))
 
-    const _result = await query<SavedInfluencer & { saved_by_email: string; added_to_roster_by_email?: string }>(
+    const result = await query<SavedInfluencer & { saved_by_email: string; added_to_roster_by_email?: string }>(
       queryText, 
       queryParams
     )
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       hasModashData: !!modash_data
     })
 
-    const _result = await query<{ id: string }>(
+    const result = await query<{ id: string }>(
       `INSERT INTO staff_saved_influencers (
         username, display_name, platform, followers, engagement_rate,
         avg_likes, avg_views, avg_comments, profile_picture, bio, location,

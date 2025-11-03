@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Get user data first for audit logging
     const userData = await transaction(async (client) => {
-      const _result = await client.query(`
+      const result = await client.query(`
         SELECT u.*, up.*
         FROM users u
         LEFT JOIN user_profiles up ON u.id = up.user_id

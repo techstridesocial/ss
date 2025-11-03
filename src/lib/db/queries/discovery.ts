@@ -35,7 +35,7 @@ export async function storeDiscoveredInfluencer(
   modash_data: any
 ): Promise<string> {
   try {
-    const _result = await query(`
+    const result = await query(`
       INSERT INTO discovered_influencers (
         username, platform, followers, engagement_rate, 
         demographics, discovery_date, modash_data
@@ -62,7 +62,7 @@ export async function storeDiscoveredInfluencer(
  */
 export async function getDiscoveryHistory(limit: number = 50): Promise<DiscoveryHistory[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM discovery_history 
       ORDER BY search_date DESC 
       LIMIT $1
@@ -86,7 +86,7 @@ export async function storeDiscoverySearch(
   userId: string
 ): Promise<string> {
   try {
-    const _result = await query(`
+    const result = await query(`
       INSERT INTO discovery_history (
         search_query, filters_used, results_count, credits_used, search_date, user_id
       ) VALUES ($1, $2, $3, $4, NOW(), $5)
@@ -105,7 +105,7 @@ export async function storeDiscoverySearch(
  */
 export async function checkInfluencerInRoster(username: string, platform: string): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT COUNT(*) as count 
       FROM influencers i
       JOIN influencer_platforms ip ON i.id = ip.influencer_id
@@ -124,7 +124,7 @@ export async function checkInfluencerInRoster(username: string, platform: string
  */
 export async function getDiscoveredInfluencers(limit: number = 100): Promise<DiscoveredInfluencer[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM discovered_influencers 
       ORDER BY discovery_date DESC 
       LIMIT $1
@@ -399,7 +399,7 @@ export async function getDiscoveryStats(): Promise<{
   averageEngagement: number
 }> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         COUNT(*) as total_discovered,
         COUNT(CASE WHEN added_to_roster = true THEN 1 END) as total_added,

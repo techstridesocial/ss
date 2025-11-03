@@ -1721,7 +1721,7 @@ function DiscoveredInfluencersTable({
         platform
       })
       
-      const _result = await addToRoster(influencer.discoveredId, modashUserId, platform)
+      const result = await addToRoster(influencer.discoveredId, modashUserId, platform)
       
       if (result.success) {
         const message = result.hasCompleteData 
@@ -1837,7 +1837,7 @@ function DiscoveredInfluencersTable({
           const numA = typeof aValue === 'number' ? aValue : Number(aValue) || 0
           const numB = typeof bValue === 'number' ? bValue : Number(bValue) || 0
           
-          const _result = sortConfig.direction === 'asc' ? numA - numB : numB - numA
+          const result = sortConfig.direction === 'asc' ? numA - numB : numB - numA
           return result
         }
         
@@ -2489,7 +2489,7 @@ function DiscoveryPageClient() {
         throw new Error(errorMessage)
       }
       
-      const _result = await response.json()
+      const result = await response.json()
       
       // Handle different response formats
       let searchResults = []
@@ -2993,7 +2993,7 @@ function DiscoveryPageClient() {
         const response = coreResponse
         
         if (response.ok) {
-          const _result = await response.json()
+          const result = await response.json()
           if (result.success && result.data) {
             // Merge the comprehensive data with the existing influencer data
             const enhancedInfluencer = {

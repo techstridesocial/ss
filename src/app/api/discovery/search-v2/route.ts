@@ -33,7 +33,7 @@ export async function POST(_request: Request) {
     const platform = body.platform || 'instagram'
     
     // Call the platform-aware discovery API
-    const _result = await searchDiscovery(platform, {
+    const result = await searchDiscovery(platform, {
       page,
       limit: 15,
       sort,

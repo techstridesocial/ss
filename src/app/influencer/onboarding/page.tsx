@@ -169,7 +169,7 @@ function InfluencerOnboardingPageContent() {
         throw new Error(errorMessage)
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       console.log('Onboarding successful:', result)
       
       setIsCompleted(true)
@@ -366,7 +366,7 @@ function InfluencerOnboardingPageContent() {
                         })
                         
                         if (response.ok) {
-                          const _result = await response.json()
+                          const result = await response.json()
                           updateFormData('profile_picture', result.imageUrl)
                           console.log('✅ Profile image uploaded to Clerk')
                         } else {

@@ -138,7 +138,7 @@ export default function EditCampaignModal({
       })
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         setCampaignInfluencers(prev => [...prev, result.data])
       }
     } catch (error) {

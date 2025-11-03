@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start transaction to create/update influencer and profile records
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Check if user profile exists
       const existingProfile = await client.query(
         'SELECT id FROM user_profiles WHERE user_id = $1',

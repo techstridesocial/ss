@@ -238,7 +238,7 @@ export default function AddInfluencerModal({
     if (!discoveryHandle.trim()) return
     
     const cleanHandle = discoveryHandle.replace('@', '').trim()
-    const _result = await searchModashProfile(cleanHandle, selectedPlatform)
+    const result = await searchModashProfile(cleanHandle, selectedPlatform)
     setDiscoveryData(result)
     
     if (result.found && result.profile) {

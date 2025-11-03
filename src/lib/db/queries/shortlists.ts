@@ -38,7 +38,7 @@ export async function createShortlist(
   name: string,
   description?: string
 ): Promise<Shortlist> {
-  const _result = await query(`
+  const result = await query(`
     INSERT INTO shortlists (brand_id, name, description)
     VALUES ($1, $2, $3)
     RETURNING *
@@ -49,7 +49,7 @@ export async function createShortlist(
 
 // Get all shortlists for a brand
 export async function getShortlistsByBrand(brandId: string): Promise<ShortlistWithInfluencers[]> {
-  const _result = await query(`
+  const result = await query(`
     SELECT 
       s.*,
       COALESCE(
@@ -86,7 +86,7 @@ export async function getShortlistsByBrand(brandId: string): Promise<ShortlistWi
 
 // Get a specific shortlist with influencers
 export async function getShortlistById(shortlistId: string): Promise<ShortlistWithInfluencers | null> {
-  const _result = await query(`
+  const result = await query(`
     SELECT 
       s.*,
       COALESCE(
@@ -150,7 +150,7 @@ export async function updateShortlist(
   setClauses.push(`updated_at = NOW()`)
   values.push(shortlistId)
 
-  const _result = await query(`
+  const result = await query(`
     UPDATE shortlists 
     SET ${setClauses.join(', ')}
     WHERE id = $${paramCounter}
@@ -164,7 +164,7 @@ export async function updateShortlist(
 export async function deleteShortlist(shortlistId: string): Promise<boolean> {
   try {
     console.log('🗑️ Executing DELETE query for shortlist:', shortlistId)
-    const _result = await query(`
+    const result = await query(`
       DELETE FROM shortlists WHERE id = $1 RETURNING id
     `, [shortlistId])
     
@@ -264,7 +264,7 @@ export async function removeInfluencerFromShortlist(
   influencerId: string
 ): Promise<boolean> {
   try {
-    const _result = await query(`
+    const result = await query(`
       DELETE FROM shortlist_influencers 
       WHERE shortlist_id = $1 AND influencer_id = $2
     `, [shortlistId, influencerId])
@@ -286,7 +286,7 @@ export async function isInfluencerInShortlist(
   shortlistId: string,
   influencerId: string
 ): Promise<boolean> {
-  const _result = await query(`
+  const result = await query(`
     SELECT 1 FROM shortlist_influencers 
     WHERE shortlist_id = $1 AND influencer_id = $2
   `, [shortlistId, influencerId])
@@ -299,7 +299,7 @@ export async function getInfluencerShortlists(
   brandId: string,
   influencerId: string
 ): Promise<Shortlist[]> {
-  const _result = await query(`
+  const result = await query(`
     SELECT s.* 
     FROM shortlists s
     INNER JOIN shortlist_influencers si ON s.id = si.shortlist_id
@@ -312,7 +312,7 @@ export async function getInfluencerShortlists(
 
 // Get shortlist statistics
 export async function getShortlistStats(brandId: string) {
-  const _result = await query(`
+  const result = await query(`
     SELECT 
       COUNT(DISTINCT s.id) as total_shortlists,
       COUNT(DISTINCT si.influencer_id) as total_unique_influencers,

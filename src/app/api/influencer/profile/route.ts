@@ -145,7 +145,7 @@ export async function PUT(_request: NextRequest) {
     const user_id = userResult[0]?.id
 
     // Update profile in transaction
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Update user profile
       await client.query(`
         UPDATE user_profiles SET
@@ -245,7 +245,7 @@ export async function POST(_request: NextRequest) {
     const influencer_id = influencerResult[0]?.id
 
     // Update or insert platform data
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Check if platform record exists
       const existing = await client.query(
         'SELECT id FROM influencer_platforms WHERE influencer_id = $1 AND platform = $2',

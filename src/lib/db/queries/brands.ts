@@ -170,7 +170,7 @@ export async function getBrandById(id: string): Promise<BrandWithUser | null> {
       WHERE b.id = $1
     `
     
-    const _result = await query(brandQuery, [id])
+    const result = await query(brandQuery, [id])
     
     if (result.length === 0) {
       return null
@@ -228,7 +228,7 @@ export async function createBrand(brandData: Partial<Brand>): Promise<Brand> {
       RETURNING *
     `
     
-    const _result = await query(createQuery, [
+    const result = await query(createQuery, [
       brandData.user_id,
       brandData.company_name,
       brandData.industry,
@@ -259,7 +259,7 @@ export async function updateBrand(id: string, brandData: Partial<Brand>): Promis
       RETURNING *
     `
     
-    const _result = await query(updateQuery, [
+    const result = await query(updateQuery, [
       id,
       brandData.company_name,
       brandData.industry,
@@ -284,7 +284,7 @@ export async function updateBrand(id: string, brandData: Partial<Brand>): Promis
 export async function deleteBrand(id: string): Promise<boolean> {
   try {
     const deleteQuery = `DELETE FROM brands WHERE id = $1`
-    const _result = await query(deleteQuery, [id])
+    const result = await query(deleteQuery, [id])
     
     return result.length > 0
 
@@ -313,7 +313,7 @@ export async function getBrandStats(): Promise<{
       FROM brands
     `
     
-    const _result = await query(statsQuery)
+    const result = await query(statsQuery)
     const stats = result[0]
 
     return {
@@ -347,7 +347,7 @@ export async function createBrandProfile(
   }
 ): Promise<DatabaseResponse<Brand>> {
   try {
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Insert brand record
       const brandResult = await client.query(`
         INSERT INTO brands (

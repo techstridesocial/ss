@@ -302,7 +302,7 @@ function CampaignsPageClient() {
     try {
       const response = await fetch('/api/staff/members')
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         setStaffMembers(result.data || [])
       }
     } catch (error) {
@@ -326,7 +326,7 @@ function CampaignsPageClient() {
         throw new Error(errorData.error || 'Failed to assign campaign')
       }
 
-      const _result = await response.json()
+      const result = await response.json()
       
       // Update local state
       setCampaigns(prev => prev.map(campaign => {

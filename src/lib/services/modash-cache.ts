@@ -193,7 +193,7 @@ export async function getCachedProfile(
   try {
     console.log(`🔍 Looking for cached profile:`, { influencerPlatformId, platform: platform.toUpperCase() })
     
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         mpc.*,
         mac.notable_percentage,
@@ -240,7 +240,7 @@ export async function getCachedProfile(
  */
 export async function getProfilesNeedingUpdate(limit: number = 10): Promise<any[]> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         mpc.id,
         mpc.influencer_platform_id,
@@ -285,7 +285,7 @@ export async function updateExpiredProfiles(): Promise<{
     try {
       console.log(`🔄 Updating expired cache for ${profile.platform} user ${profile.modash_user_id}`)
       
-      const _result = await cacheModashProfile(
+      const result = await cacheModashProfile(
         profile.influencer_platform_id,
         profile.modash_user_id,
         profile.platform

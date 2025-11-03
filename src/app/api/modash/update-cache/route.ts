@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Starting scheduled Modash cache update...')
     
-    const _result = await updateExpiredProfiles()
+    const result = await updateExpiredProfiles()
     
     return NextResponse.json({
       success: true,

@@ -58,7 +58,7 @@ export async function GET(
 
     // Get campaigns assigned to the influencer
     const db = getDatabase()
-    const _result = await db.query(`
+    const result = await db.query(`
       SELECT 
         c.id,
         c.name as campaign_name,

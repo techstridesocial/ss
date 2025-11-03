@@ -572,7 +572,7 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('✅ Successfully added influencer:', result)
         
         // Refresh the campaign influencers list with a small delay to ensure database consistency
@@ -660,7 +660,7 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('✅ Successfully updated content links:', result)
         
         // Update the local state
@@ -1136,7 +1136,7 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        const _result = await response.json()
+        const result = await response.json()
         console.log('✅ Successfully updated discount code:', result)
         
         // Update the local state

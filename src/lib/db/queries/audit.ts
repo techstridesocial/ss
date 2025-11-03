@@ -36,7 +36,7 @@ export interface DatabaseResponse<T> {
  */
 export async function logAuditEvent(event: AuditEvent): Promise<DatabaseResponse<AuditLog>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       INSERT INTO audit_logs (
         user_id, action, table_name, record_id, 
         old_values, new_values, ip_address, metadata
@@ -77,7 +77,7 @@ export async function getAuditTrailForUser(
   offset: number = 0
 ): Promise<DatabaseResponse<AuditLog[]>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM audit_logs 
       WHERE user_id = $1 
       ORDER BY created_at DESC
@@ -109,7 +109,7 @@ export async function getAuditTrailForRecord(
   offset: number = 0
 ): Promise<DatabaseResponse<AuditLog[]>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM audit_logs 
       WHERE table_name = $1 AND record_id = $2
       ORDER BY created_at DESC
@@ -140,7 +140,7 @@ export async function getAuditTrailForAction(
   offset: number = 0
 ): Promise<DatabaseResponse<AuditLog[]>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM audit_logs 
       WHERE action = $1
       ORDER BY created_at DESC
@@ -170,7 +170,7 @@ export async function getRecentAuditLogs(
   offset: number = 0
 ): Promise<DatabaseResponse<AuditLog[]>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT al.*, u.email as user_email, up.first_name, up.last_name
       FROM audit_logs al
       LEFT JOIN users u ON al.user_id = u.id
@@ -201,7 +201,7 @@ export async function cleanupOldAuditLogs(
   daysToKeep: number = 365
 ): Promise<DatabaseResponse<{ deletedCount: number }>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       DELETE FROM audit_logs 
       WHERE created_at < NOW() - INTERVAL '${daysToKeep} days'
     `)
@@ -228,7 +228,7 @@ export async function exportAuditDataForUser(
   userId: string
 ): Promise<DatabaseResponse<AuditLog[]>> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT * FROM audit_logs 
       WHERE user_id = $1 
       ORDER BY created_at ASC

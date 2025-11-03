@@ -276,7 +276,7 @@ export class SocialAccountsCache {
    */
   async disconnectAccount(accountId: string): Promise<boolean> {
     try {
-      const _result = await queryOne(`
+      const result = await queryOne(`
         UPDATE influencer_platforms
         SET is_connected = false, updated_at = NOW()
         WHERE id = $1
@@ -295,7 +295,7 @@ export class SocialAccountsCache {
    */
   async reconnectAccount(accountId: string): Promise<boolean> {
     try {
-      const _result = await queryOne(`
+      const result = await queryOne(`
         UPDATE influencer_platforms
         SET is_connected = true, updated_at = NOW()
         WHERE id = $1
