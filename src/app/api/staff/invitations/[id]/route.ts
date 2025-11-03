@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { clerkClient } from '@clerk/nextjs/server'
+import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
 import { updateInvitationStatus, getInvitationByClerkId } from '@/lib/db/queries/invitations'
 
 export async function DELETE(
@@ -44,7 +44,7 @@ export async function DELETE(
       message: 'Invitation cancelled successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error cancelling invitation:', error)
     return NextResponse.json(
       { error: 'Failed to cancel invitation' },
@@ -139,7 +139,7 @@ export async function POST(
       message: 'Invitation resent successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error resending invitation:', error)
     return NextResponse.json(
       { error: 'Failed to resend invitation' },

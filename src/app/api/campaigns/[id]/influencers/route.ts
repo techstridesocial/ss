@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { query } from '@/lib/db/connection'
 import { addInfluencerToCampaign, updateCampaignInfluencerStatus } from '@/lib/db/queries/campaigns'
 import { 
   getCampaignInfluencersWithDetails, 
@@ -83,7 +82,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaign influencers:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaign influencers' },
@@ -157,7 +156,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       campaignInfluencer: campaignInfluencer
     }, { status: 201 })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error adding influencer to campaign:', error)
     console.error('❌ Error type:', typeof error)
     console.error('❌ Error message:', error instanceof Error ? error.message : 'No message')
@@ -265,7 +264,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       campaignInfluencer: updatedCampaignInfluencer
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating campaign influencer status:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update influencer status' },
@@ -345,7 +344,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       message
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating campaign influencer tracking:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update tracking status' },

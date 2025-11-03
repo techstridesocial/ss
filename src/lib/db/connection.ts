@@ -36,9 +36,9 @@ export async function query<T = any>(
   const pool = getDatabase()
   
   try {
-    const result = await pool.query(text, params)
+    const _result = await pool.query(text, params)
     return result.rows
-  } catch (error) {
+  } catch (_error) {
     console.error('Database query error:', error)
     throw new Error(`Database query failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
@@ -61,10 +61,10 @@ export async function transaction<T>(
   
   try {
     await client.query('BEGIN')
-    const result = await callback(client)
+    const _result = await callback(client)
     await client.query('COMMIT')
     return result
-  } catch (error) {
+  } catch (_error) {
     await client.query('ROLLBACK')
     throw error
   } finally {

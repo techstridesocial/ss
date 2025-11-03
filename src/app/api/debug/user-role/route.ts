@@ -25,7 +25,7 @@ export async function GET() {
       allEmails: user?.emailAddresses?.map(email => email.emailAddress)
     })
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Debug user role error:', error)
     return NextResponse.json({
       error: 'Failed to get user info',

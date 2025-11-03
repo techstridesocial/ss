@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { ContentLinkDeletionService } from '@/lib/services/content-link-deletion'
@@ -75,7 +75,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error in content link deletion API:', error)
     return NextResponse.json(
       { 
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
       stats
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error getting content link stats:', error)
     return NextResponse.json(
       { 

@@ -56,7 +56,7 @@ export function useBrandOnboardingCheck() {
         } else {
           setStatus({ is_onboarded: true, loading: false })
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to check brand onboarding status:', error)
         setStatus({
           is_onboarded: true,

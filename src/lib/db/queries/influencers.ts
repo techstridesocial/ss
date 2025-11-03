@@ -502,7 +502,7 @@ export async function updateInfluencerStatus(
       data: influencer,
       message: `Influencer ${isActive ? 'activated' : 'deactivated'} successfully`
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating influencer status:', error)
     return {
       success: false,
@@ -540,7 +540,7 @@ export async function updateInfluencerNiches(
       data: influencer,
       message: 'Influencer niches updated successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating influencer niches:', error)
     return {
       success: false,
@@ -713,7 +713,7 @@ export async function createInfluencerProfile(
   }
 ): Promise<DatabaseResponse<Influencer>> {
   try {
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Update or insert user profile
       await client.query(`
         INSERT INTO user_profiles (
@@ -771,7 +771,7 @@ export async function createInfluencerProfile(
       data: result
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in createInfluencerProfile:', error)
     return {
       success: false,

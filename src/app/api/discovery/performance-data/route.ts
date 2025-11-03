@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPerformanceData } from '../../../../lib/services/modash'
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const url = searchParams.get('url')
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     console.log('📊 Performance Data API called:', { url, platform })
 
     // Call the platform-aware Performance Data API
-    const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
+    const _result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
     console.log('📊 Raw result from getPerformanceData:', { 
       result: typeof result,
       hasResult: !!result,
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Performance Data API error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     const { url, platform = 'instagram' } = await request.json()
 
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
 
     console.log('📊 Performance Data API (POST) called:', { url, platform })
 
-    const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
+    const _result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
 
     // Modash API returns { error, posts, reels } directly
     if (result?.error) {
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Performance Data API (POST) error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

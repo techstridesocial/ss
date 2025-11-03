@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
 
 export async function POST(req: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Tracking links table created successfully' })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Migration error:', error)
     return NextResponse.json({ error: 'Migration failed' }, { status: 500 })
   }

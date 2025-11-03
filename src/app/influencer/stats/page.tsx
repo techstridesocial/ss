@@ -72,7 +72,7 @@ export default function EnhancedInfluencerStats() {
           
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading stats:', error)
     } finally {
       setIsLoading(false)
@@ -137,7 +137,7 @@ export default function EnhancedInfluencerStats() {
         const errorText = await response.text()
         console.error('❌ Search failed:', response.status, errorText)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error searching profiles:', error)
     } finally {
       setIsSearching(false)
@@ -223,7 +223,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ ${errorData.message || errorData.error || 'Failed to connect profile'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error connecting profile:', error)
     }
   }
@@ -251,14 +251,14 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ Failed to update username: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error updating username:', error)
       setSuccessMessage(`❌ Failed to update username: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
     }
   }
 
-  const disconnectPlatform = async (platform: string) => {
+  const disconnectPlatform = async (_platform: string) => {
     try {
       console.log('🗑️ Disconnecting platform:', platform)
 
@@ -301,7 +301,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ Failed to disconnect: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error disconnecting platform:', error)
       setSuccessMessage(`❌ Failed to disconnect: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
@@ -335,7 +335,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ Failed to refresh data: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error refreshing Modash data:', error)
       setSuccessMessage(`❌ Failed to refresh data: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
@@ -359,7 +359,7 @@ export default function EnhancedInfluencerStats() {
     return (num * 100).toFixed(2) + '%'
   }
 
-  const getDefaultEngagement = (platform: string) => {
+  const getDefaultEngagement = (_platform: string) => {
     switch (platform) {
       case 'instagram': return 0.045 // 4.5%
       case 'tiktok': return 0.082 // 8.2%
@@ -368,7 +368,7 @@ export default function EnhancedInfluencerStats() {
     }
   }
 
-  const getDefaultViews = (platform: string) => {
+  const getDefaultViews = (_platform: string) => {
     switch (platform) {
       case 'instagram': return 2500000 // 2.5M avg likes (from Modash API)
       case 'tiktok': return 45000000 // 45M avg views
@@ -382,7 +382,7 @@ export default function EnhancedInfluencerStats() {
     setTimeout(() => setToastMessage(''), 5000)
   }
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = (_platform: string) => {
     switch (platform) {
       case 'instagram':
         return (

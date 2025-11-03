@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { query } from '@/lib/db/connection'
 import { 
   getPaymentInfo, 
   getPaymentSummary, 
@@ -11,7 +10,7 @@ import {
 } from '@/lib/db/queries/payments'
 
 // GET - Fetch payment information and summary
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -108,7 +107,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching payment data:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     console.error('Full error stack:', error)
@@ -124,7 +123,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Update payment information
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -230,7 +229,7 @@ export async function POST(request: NextRequest) {
       message: 'Payment information saved successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating payment information:', error)
     return NextResponse.json(
       { error: 'Failed to update payment information' },

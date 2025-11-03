@@ -135,7 +135,7 @@ export async function getUsers(
 ): Promise<PaginatedResponse<UserWithProfile>> {
   
   try {
-    let whereConditions = ['1=1']
+    const whereConditions = ['1=1']
     const params: any[] = []
     let paramIndex = 1
 
@@ -235,7 +235,7 @@ export async function getUsers(
       totalPages: Math.ceil(total / limit)
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in getUsers:', error)
     throw new Error('Failed to fetch users')
   }
@@ -318,7 +318,7 @@ export async function createUser(
   profileData?: Partial<UserProfile>
 ): Promise<DatabaseResponse<UserWithProfile>> {
   try {
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Create user
       const userResult = await client.query(
         `INSERT INTO users (email, role) 
@@ -360,7 +360,7 @@ export async function createUser(
       data: result,
       message: 'User created successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating user:', error)
     return {
       success: false,
@@ -398,7 +398,7 @@ export async function updateUserRole(
       data: user,
       message: 'User role updated successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating user role:', error)
     return {
       success: false,
@@ -450,7 +450,7 @@ export async function updateUserProfile(
       RETURNING *
     `
 
-    const profile = await queryOne<UserProfile>(sql, values)
+    const _profile = await queryOne<UserProfile>(sql, values)
 
     if (!profile) {
       return {
@@ -464,7 +464,7 @@ export async function updateUserProfile(
       data: profile,
       message: 'Profile updated successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating user profile:', error)
     return {
       success: false,
@@ -478,7 +478,7 @@ export async function updateUserProfile(
  */
 export async function deleteUser(userId: string): Promise<DatabaseResponse<void>> {
   try {
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Check if user exists
       const user = await client.query('SELECT id FROM users WHERE id = $1', [userId])
       
@@ -496,7 +496,7 @@ export async function deleteUser(userId: string): Promise<DatabaseResponse<void>
       success: true,
       message: 'User deleted successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error deleting user:', error)
     return {
       success: false,
@@ -530,7 +530,7 @@ export async function getUserStats(): Promise<{
       LEFT JOIN user_profiles up ON u.id = up.user_id
     `
     
-    const result = await query(statsQuery)
+    const _result = await query(statsQuery)
     const stats = result[0]
 
     const usersByRole: Record<UserRole, number> = {
@@ -548,7 +548,7 @@ export async function getUserStats(): Promise<{
       onboardedUsers: parseInt(stats.onboarded || '0')
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in getUserStats:', error)
     throw new Error('Failed to fetch user statistics')
   }

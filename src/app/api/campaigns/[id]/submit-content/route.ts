@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, queryOne } from '@/lib/db/connection'
@@ -36,7 +36,7 @@ export async function POST(
       )
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
     const submissionData: ContentSubmission = await request.json()
 
     // Validate required fields
@@ -146,7 +146,7 @@ export async function POST(
       submission_id: submissionResult[0]?.id
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error submitting campaign content:', error)
     return NextResponse.json(
       { error: 'Failed to submit content' },
@@ -167,7 +167,7 @@ export async function GET(
     }
 
     const userRole = await getCurrentUserRole()
-    const campaignId = params.id
+    const _campaignId = params.id
 
     // Staff/Admin can see all submissions for the campaign
     if (userRole && ['STAFF', 'ADMIN'].includes(userRole)) {
@@ -228,7 +228,7 @@ export async function GET(
       { status: 403 }
     )
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaign content submissions:', error)
     return NextResponse.json(
       { error: 'Failed to fetch submissions' },

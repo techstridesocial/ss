@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
 
 // Database connection
@@ -7,7 +7,7 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 })
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('Starting migration to add management fields...')
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       fieldsAdded: alterQueries
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Migration error:', error)
     return NextResponse.json({ 
       error: 'Migration failed',

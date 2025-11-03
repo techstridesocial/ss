@@ -123,7 +123,7 @@ async function checkSchemaHealth() {
       console.log(`⚠️  Found ${totalIssues} potential issues that may need attention`)
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Database health check failed:', error)
     process.exit(1)
   }

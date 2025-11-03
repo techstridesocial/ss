@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     const mappedBudget = budgetMapping[data.annual_budget] || data.annual_budget
 
     // Get user_id from users table using clerk_id, create if doesn't exist
-    let userResult = await query<{ id: string }>(
+    const userResult = await query<{ id: string }>(
       'SELECT id FROM users WHERE clerk_id = $1',
       [userId]
     )
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start transaction to create brand and contact records
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Insert brand record with new optional fields
       const brandResult = await client.query(`
         INSERT INTO brands (
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
       brand_id: result.brandId
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Brand onboarding error:', error)
     return NextResponse.json(
       { error: 'Internal server error' }, 

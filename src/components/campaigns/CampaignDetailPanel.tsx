@@ -45,7 +45,7 @@ const CampaignIdField = ({ campaignId, campaignUuid, onUpdate }: CampaignIdField
     try {
       await onUpdate(inputValue.trim())
       setIsEditing(false)
-    } catch (error) {
+    } catch (_error) {
       console.error('Error updating campaign ID:', error)
     } finally {
       setIsLoading(false)
@@ -379,7 +379,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to update campaign ID')
         alert('Failed to update campaign ID. Please try again.')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error updating campaign ID:', error)
       alert('Error updating campaign ID. Please try again.')
     } finally {
@@ -398,7 +398,7 @@ export default function CampaignDetailPanel({
     return 'unknown'
   }
 
-  const getPlatformIcon = (platform: string): React.JSX.Element => {
+  const getPlatformIcon = (_platform: string): React.JSX.Element => {
     const iconProps = { className: "w-5 h-5" }
     
     switch(platform) {
@@ -456,7 +456,7 @@ export default function CampaignDetailPanel({
     }
   }
 
-  const getPlatformName = (platform: string): string => {
+  const getPlatformName = (_platform: string): string => {
     const names = {
       instagram: 'Instagram',
       tiktok: 'TikTok',
@@ -538,7 +538,7 @@ export default function CampaignDetailPanel({
           const influencersResult = await influencersResponse.json()
           setAvailableInfluencers(influencersResult.data || [])
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error fetching influencers:', error)
       } finally {
         setInfluencersLoading(false)
@@ -572,7 +572,7 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('✅ Successfully added influencer:', result)
         
         // Refresh the campaign influencers list with a small delay to ensure database consistency
@@ -625,7 +625,7 @@ export default function CampaignDetailPanel({
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error adding influencer to campaign:', error)
       alert(`Error adding influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -660,7 +660,7 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('✅ Successfully updated content links:', result)
         
         // Update the local state
@@ -708,7 +708,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (error) {
+          } catch (_error) {
             console.error('❌ Error refreshing analytics:', error)
           }
         }, 2000) // Wait 2 seconds for analytics processing
@@ -721,7 +721,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to update content links:', errorData)
         alert(`Failed to update content links: ${errorData.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error updating content links:', error)
       alert(`Error updating content links: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -826,7 +826,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (error) {
+          } catch (_error) {
             console.error('❌ Error refreshing analytics:', error)
           }
         }, 2000) // Wait 2 seconds for analytics processing
@@ -839,7 +839,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to add link:', errorData)
         alert(`Failed to add link: ${errorData.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error adding single link:', error)
       alert(`Error adding link: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -927,7 +927,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (error) {
+          } catch (_error) {
             console.error('❌ Error refreshing analytics after clearing all links:', error)
           }
         }, 1000) // Wait 1 second for backend processing
@@ -979,7 +979,7 @@ export default function CampaignDetailPanel({
         }
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error clearing all content links:', error)
       alert(`Error clearing content links: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -1076,7 +1076,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (error) {
+          } catch (_error) {
             console.error('❌ Error refreshing analytics after deletion:', error)
           }
         }, 1000) // Wait 1 second for backend processing
@@ -1099,7 +1099,7 @@ export default function CampaignDetailPanel({
       // Also update the campaign_influencers table for consistency
       // This function is deprecated - using the comprehensive deletion service above instead
       console.log('⚠️ This old removal method should not be called - using comprehensive deletion service instead')
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error removing link:', error)
       alert(`Error removing link: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -1136,7 +1136,7 @@ export default function CampaignDetailPanel({
       })
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('✅ Successfully updated discount code:', result)
         
         // Update the local state
@@ -1156,7 +1156,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to update discount code:', errorData)
         alert(`Failed to update discount code: ${(errorData as any)?.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error updating discount code:', error)
       alert(`Error updating discount code: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -1269,7 +1269,7 @@ export default function CampaignDetailPanel({
         const errorData = await response.json()
         console.error('❌ [FRONTEND DEBUG] Error response:', errorData)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error updating influencer:', error)
     } finally {
       setIsLoading(false)
@@ -1651,7 +1651,7 @@ export default function CampaignDetailPanel({
                               Target Platforms
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                              {campaign.target_platforms?.map((platform: string) => (
+                              {campaign.target_platforms?.map((_platform: string) => (
                                 <span key={platform} className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
                                   {platform}
                                 </span>

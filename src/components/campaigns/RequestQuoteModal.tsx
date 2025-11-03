@@ -76,12 +76,12 @@ export default function RequestQuoteModal({
     try {
       const response = await fetch('/api/staff/members')
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         setStaffMembers(result.data || [])
       } else {
         console.error('Failed to load staff members')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading staff members:', error)
     } finally {
       setLoadingStaff(false)
@@ -97,7 +97,7 @@ export default function RequestQuoteModal({
     }))
   }
 
-  const handlePlatformToggle = (platform: string) => {
+  const handlePlatformToggle = (_platform: string) => {
     setFormData(prev => ({
       ...prev,
       target_platforms: prev.target_platforms.includes(platform)
@@ -171,10 +171,10 @@ export default function RequestQuoteModal({
           assigned_staff_id: '',
         })
       } else {
-        const result = await response.json()
+        const _result = await response.json()
         setError(result.error || 'Failed to submit quotation request')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error submitting quotation:', error)
       setError('Network error. Please try again.')
     } finally {

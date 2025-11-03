@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { 
   createShortlist, 
@@ -56,7 +56,7 @@ export async function GET() {
     let brand_id: string
     try {
       brand_id = await getBrandIdFromUserId(userId)
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage === 'User not found') {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -77,7 +77,7 @@ export async function GET() {
       success: true,
       data: shortlists
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching shortlists:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch shortlists' },
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         if (!shortlist) {
           return NextResponse.json({ error: 'Source shortlist not found' }, { status: 404 })
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error in duplicateShortlist:', error)
         return NextResponse.json({ error: 'Failed to duplicate shortlist' }, { status: 500 })
       }
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       let brand_id: string
       try {
         brand_id = await getBrandIdFromUserId(userId)
-      } catch (error) {
+      } catch (_error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         if (errorMessage === 'User not found') {
           return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: shortlist
     }, { status: 201 })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating shortlist:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create shortlist' },
@@ -206,7 +206,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       data: shortlist
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating shortlist:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update shortlist' },
@@ -253,7 +253,7 @@ export async function DELETE(request: NextRequest) {
       console.log('🔍 Getting brand ID for user:', userId)
       brand_id = await getBrandIdFromUserId(userId)
       console.log('🏢 Brand ID:', brand_id)
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error getting brand ID:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('❌ Full error details:', error)
@@ -295,7 +295,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Shortlist deleted successfully'
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('💥 Unexpected error deleting shortlist:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     const errorStack = error instanceof Error ? error.stack : ''

@@ -127,7 +127,7 @@ export function useCampaigns(options: UseCampaignsOptions = {}) {
         throw new Error(`Failed to create campaign: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       addToast({
         type: 'success',
@@ -163,7 +163,7 @@ export function useCampaigns(options: UseCampaignsOptions = {}) {
         throw new Error(`Failed to update campaign: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       addToast({
         type: 'success',
@@ -240,7 +240,7 @@ export function useCampaigns(options: UseCampaignsOptions = {}) {
         throw new Error(`Failed to duplicate campaign: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       addToast({
         type: 'success',
@@ -276,7 +276,7 @@ export function useCampaigns(options: UseCampaignsOptions = {}) {
         throw new Error(`Failed to update campaigns: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       addToast({
         type: 'success',
@@ -310,7 +310,7 @@ export function useCampaigns(options: UseCampaignsOptions = {}) {
         throw new Error(`Failed to delete campaigns: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       addToast({
         type: 'success',

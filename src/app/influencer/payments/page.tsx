@@ -143,7 +143,7 @@ export default function InfluencerPayments() {
         throw new Error('Failed to fetch payment data')
       }
       
-      const result = await response.json()
+      const _result = await response.json()
       
       if (result.success) {
         setPaymentInfo(result.data.payment_info)
@@ -155,7 +155,7 @@ export default function InfluencerPayments() {
           setPaymentMethod(result.data.payment_info.payment_method.toLowerCase())
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error fetching payment data:', error)
     } finally {
       setIsLoading(false)
@@ -195,7 +195,7 @@ export default function InfluencerPayments() {
         throw new Error(errorData.error || 'Failed to save PayPal details')
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       if (result.success) {
         // Save details locally
@@ -214,7 +214,7 @@ export default function InfluencerPayments() {
       } else {
         throw new Error(result.error || 'Failed to save PayPal details')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving PayPal details:', error)
       alert(error instanceof Error ? error.message : 'Failed to save PayPal details')
     } finally {
@@ -250,7 +250,7 @@ export default function InfluencerPayments() {
         throw new Error(errorData.error || 'Failed to save bank details')
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       if (result.success) {
         // Save details locally
@@ -280,7 +280,7 @@ export default function InfluencerPayments() {
       } else {
         throw new Error(result.error || 'Failed to save bank details')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving bank details:', error)
       alert(error instanceof Error ? error.message : 'Failed to save bank details')
     } finally {
@@ -326,7 +326,7 @@ export default function InfluencerPayments() {
         const data = await response.json()
         setInvoices(data.invoices || [])
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error fetching invoices:', error)
     }
   }

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getInfluencerStats } from '@/lib/db/queries/influencer-stats'
 
 // GET - Fetch influencer statistics and platform metrics
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       data: statsResult.data
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching influencer stats:', error)
     return NextResponse.json(
       { error: 'Failed to fetch statistics' },

@@ -26,7 +26,7 @@ export default function InfluencerStats() {
             setStatsData(data.data)
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error loading stats:', error)
       } finally {
         setIsLoading(false)
@@ -59,7 +59,7 @@ export default function InfluencerStats() {
           setShowResults(true)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error searching profiles:', error)
     } finally {
       setIsSearching(false)
@@ -92,12 +92,12 @@ export default function InfluencerStats() {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error selecting profile:', error)
     }
   }
 
-  const refreshPlatform = async (platform: string) => {
+  const refreshPlatform = async (_platform: string) => {
     setRefreshingPlatform(platform)
     
     try {
@@ -125,7 +125,7 @@ export default function InfluencerStats() {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error refreshing platform:', error)
     } finally {
       setRefreshingPlatform('')

@@ -66,7 +66,7 @@ export default function EnhancedInfluencerStats() {
           setStatsData(data.data)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading stats:', error)
     } finally {
       setIsLoading(false)
@@ -96,7 +96,7 @@ export default function EnhancedInfluencerStats() {
           setSearchResults(data.results)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error searching profiles:', error)
     } finally {
       setIsSearching(false)
@@ -121,12 +121,12 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error connecting profile:', error)
     }
   }
 
-  const refreshPlatform = async (platform: string) => {
+  const refreshPlatform = async (_platform: string) => {
     setRefreshingPlatform(platform)
     
     try {
@@ -146,7 +146,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error refreshing platform:', error)
     } finally {
       setRefreshingPlatform('')
@@ -166,7 +166,7 @@ export default function EnhancedInfluencerStats() {
     return (num * 100).toFixed(2) + '%'
   }
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = (_platform: string) => {
     switch (platform) {
       case 'instagram':
         return <Instagram className="h-5 w-5 text-pink-600" />

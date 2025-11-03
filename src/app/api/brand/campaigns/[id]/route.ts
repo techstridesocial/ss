@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getBrandIdFromUserId, getBrandCampaignDetail, getBrandCampaignAnalytics } from '@/lib/db/queries/brand-campaigns'
@@ -20,13 +20,13 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden - Brand access required' }, { status: 403 })
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
     
     // Get brand ID for this user
     let brandId: string
     try {
       brandId = await getBrandIdFromUserId(userId)
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage.includes('Brand not found')) {
         // Brand hasn't completed onboarding - return not found for specific campaign
@@ -55,7 +55,7 @@ export async function GET(
       })
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaign detail:', error)
     
     if (error instanceof Error && error.message === 'Campaign not found or access denied') {

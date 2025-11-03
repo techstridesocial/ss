@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, queryOne } from '@/lib/db/connection'
 
 // GET - Get all invoices for the current influencer
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     `, [influencer_id])
 
     return NextResponse.json({ invoices })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invoices:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invoices' },
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Create a new invoice
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       message: 'Invoice created successfully',
       invoice: invoiceResult 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating invoice:', error)
     return NextResponse.json(
       { error: 'Failed to create invoice' },

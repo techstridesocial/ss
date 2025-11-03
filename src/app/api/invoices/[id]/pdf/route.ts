@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { queryOne } from '@/lib/db/connection'
+import { queryOne as _queryOne } from '@/lib/db/connection'
 import { pdf } from '@react-pdf/renderer'
 import { InvoicePDF } from '@/lib/pdf/InvoicePDF'
 import React from 'react'
@@ -83,7 +83,7 @@ export async function GET(
         'Cache-Control': 'no-cache',
       },
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error generating PDF:', error)
     return NextResponse.json(
       { error: 'Failed to generate PDF' },

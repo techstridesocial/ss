@@ -96,7 +96,7 @@ export default function InfluencerProfile() {
           if (response.ok) {
             const data = await response.json()
             if (data.success && data.data) {
-              const profile = data.data
+              const _profile = data.data
               
               // Update profile form data
               setProfileData({
@@ -138,7 +138,7 @@ export default function InfluencerProfile() {
               niches: []
             })
           }
-        } catch (error) {
+        } catch (_error) {
           console.error('Error loading profile:', error)
           // Fallback to Clerk user data
           setProfileData({
@@ -189,7 +189,7 @@ export default function InfluencerProfile() {
         if (loadResponse.ok) {
           const data = await loadResponse.json()
           if (data.success && data.data) {
-            const profile = data.data
+            const _profile = data.data
             setProfileData(prev => ({
               ...prev,
               firstName: profile.first_name || prev.firstName,
@@ -207,7 +207,7 @@ export default function InfluencerProfile() {
         console.error('Failed to save profile')
         // Show error message
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving profile:', error)
       // Show error message
     } finally {
@@ -242,7 +242,7 @@ export default function InfluencerProfile() {
     }))
   }
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = (_platform: string) => {
     switch (platform) {
       case 'instagram': return <Instagram className="h-5 w-5" />
       case 'tiktok': return <Music className="h-5 w-5" />
@@ -321,7 +321,7 @@ export default function InfluencerProfile() {
                           } else {
                             console.error('Failed to update profile image')
                           }
-                        } catch (error) {
+                        } catch (_error) {
                           console.error('Error updating profile image:', error)
                         }
                       }

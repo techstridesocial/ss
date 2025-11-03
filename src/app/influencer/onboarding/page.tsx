@@ -169,7 +169,7 @@ function InfluencerOnboardingPageContent() {
         throw new Error(errorMessage)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       console.log('Onboarding successful:', result)
       
       setIsCompleted(true)
@@ -178,7 +178,7 @@ function InfluencerOnboardingPageContent() {
       setTimeout(() => {
         router.push('/influencer/campaigns')
       }, 3000)
-    } catch (error) {
+    } catch (_error) {
       console.error('Onboarding submission failed:', error)
       alert('Failed to complete onboarding. Please try again.')
     } finally {
@@ -366,14 +366,14 @@ function InfluencerOnboardingPageContent() {
                         })
                         
                         if (response.ok) {
-                          const result = await response.json()
+                          const _result = await response.json()
                           updateFormData('profile_picture', result.imageUrl)
                           console.log('✅ Profile image uploaded to Clerk')
                         } else {
                           console.error('Failed to upload profile image')
                           updateFormData('profile_picture', file.name) // Fallback
                         }
-                      } catch (error) {
+                      } catch (_error) {
                         console.error('Error uploading profile image:', error)
                         updateFormData('profile_picture', file.name) // Fallback
                       }

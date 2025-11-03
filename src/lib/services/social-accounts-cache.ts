@@ -42,7 +42,7 @@ export class SocialAccountsCache {
       `, [influencerId])
 
       return accounts
-    } catch (error) {
+    } catch (_error) {
       console.error('Error fetching influencer accounts:', error)
       throw error
     }
@@ -62,7 +62,7 @@ export class SocialAccountsCache {
       `, [limit])
 
       return accounts
-    } catch (error) {
+    } catch (_error) {
       console.error('Error fetching accounts needing update:', error)
       throw error
     }
@@ -112,7 +112,7 @@ export class SocialAccountsCache {
       console.log(`✅ Updated ${account.username} on ${account.platform}`)
       return updatedAccount
 
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error updating account ${accountId}:`, error)
       throw error
     }
@@ -140,7 +140,7 @@ export class SocialAccountsCache {
         // Add delay between requests to respect rate limits
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-      } catch (error) {
+      } catch (_error) {
         results.failed++
         results.errors.push(`Account ${accountId}: ${error instanceof Error ? error.message : 'Unknown error'}`)
         console.error(`Failed to update account ${accountId}:`, error)
@@ -170,7 +170,7 @@ export class SocialAccountsCache {
         accountsNeedingUpdate: parseInt(stats.accounts_needing_update) || 0,
         lastSyncTime: stats.last_sync_time ? new Date(stats.last_sync_time) : undefined
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error fetching cache stats:', error)
       throw error
     }
@@ -209,7 +209,7 @@ export class SocialAccountsCache {
         creditsUsed: results.updated // Each update uses 1 credit
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error('Error in monthly sync:', error)
       throw error
     }
@@ -235,7 +235,7 @@ export class SocialAccountsCache {
         profileUrl: profileData.url || null
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error fetching fresh data for ${handle} on ${platform}:`, error)
       return null
     }
@@ -256,7 +256,7 @@ export class SocialAccountsCache {
   /**
    * Get accounts by platform
    */
-  async getAccountsByPlatform(platform: string): Promise<SocialAccount[]> {
+  async getAccountsByPlatform(_platform: string): Promise<SocialAccount[]> {
     try {
       const accounts = await query(`
         SELECT * FROM influencer_platforms
@@ -265,7 +265,7 @@ export class SocialAccountsCache {
       `, [platform])
 
       return accounts
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error fetching ${platform} accounts:`, error)
       throw error
     }
@@ -276,7 +276,7 @@ export class SocialAccountsCache {
    */
   async disconnectAccount(accountId: string): Promise<boolean> {
     try {
-      const result = await queryOne(`
+      const _result = await queryOne(`
         UPDATE influencer_platforms
         SET is_connected = false, updated_at = NOW()
         WHERE id = $1
@@ -284,7 +284,7 @@ export class SocialAccountsCache {
       `, [accountId])
 
       return !!result
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error disconnecting account ${accountId}:`, error)
       throw error
     }
@@ -295,7 +295,7 @@ export class SocialAccountsCache {
    */
   async reconnectAccount(accountId: string): Promise<boolean> {
     try {
-      const result = await queryOne(`
+      const _result = await queryOne(`
         UPDATE influencer_platforms
         SET is_connected = true, updated_at = NOW()
         WHERE id = $1
@@ -303,7 +303,7 @@ export class SocialAccountsCache {
       `, [accountId])
 
       return !!result
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error reconnecting account ${accountId}:`, error)
       throw error
     }

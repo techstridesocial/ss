@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 import { cacheModashProfile } from '@/lib/services/modash-cache'
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           errors.push(errorDetail)
           console.error(`❌ ${errorDetail}`)
         }
-      } catch (error) {
+      } catch (_error) {
         errorCount++
         const errorMsg = `Error caching ${platform.platform}: ${error instanceof Error ? error.message : 'Unknown error'}`
         errors.push(errorMsg)
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error refreshing Modash data:', error)
     return NextResponse.json(
       { error: 'Failed to refresh Modash data' },

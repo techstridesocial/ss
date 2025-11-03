@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { updateCampaignInvitationResponse, addInfluencerToCampaign } from '@/lib/db/queries/campaigns'
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       message: `Campaign invitation ${response} successfully`
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error responding to campaign invitation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to respond to invitation' },

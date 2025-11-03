@@ -81,7 +81,7 @@ export default function EditCampaignModal({
           const campaignInfluencersResult = await campaignInfluencersResponse.json()
           setCampaignInfluencers(campaignInfluencersResult.data || [])
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error fetching data:', error)
       } finally {
         setInfluencersLoading(false)
@@ -138,10 +138,10 @@ export default function EditCampaignModal({
       })
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         setCampaignInfluencers(prev => [...prev, result.data])
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error adding influencer to campaign:', error)
     }
   }
@@ -165,7 +165,7 @@ export default function EditCampaignModal({
       if (response.ok) {
         setCampaignInfluencers(prev => prev.filter(ci => ci.id !== campaignInfluencer.id))
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error removing influencer from campaign:', error)
     }
   }
@@ -185,7 +185,7 @@ export default function EditCampaignModal({
     handleInputChange('target_niches', newNiches)
   }
 
-  const handlePlatformToggle = (platform: string) => {
+  const handlePlatformToggle = (_platform: string) => {
     const newPlatforms = formData.target_platforms.includes(platform)
       ? formData.target_platforms.filter(p => p !== platform)
       : [...formData.target_platforms, platform]
@@ -246,7 +246,7 @@ export default function EditCampaignModal({
       
       await onSave(updatedCampaign)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving campaign:', error)
     } finally {
       setIsLoading(false)

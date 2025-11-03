@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { duplicateCampaign } from '@/lib/db/queries/campaigns'
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: 'Campaign duplicated successfully',
       campaign: duplicatedCampaign 
     }, { status: 201 })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error duplicating campaign:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to duplicate campaign' },

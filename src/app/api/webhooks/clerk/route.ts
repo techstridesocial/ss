@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { Webhook } from 'svix'
 import { query } from '@/lib/db/connection'
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Webhook processing error:', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
@@ -100,7 +100,7 @@ async function handleUserCreated(data: any) {
     // Since we're using custom invitations, we don't need to handle invitation status here
     // The invitation acceptance is handled in our custom API endpoint
     console.log(`User created: ${data.id}`)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error handling user.created:', error)
   }
 }
@@ -112,7 +112,7 @@ async function handleUserUpdated(data: any) {
   try {
     console.log('Processing user.updated webhook:', data.id)
     // Add any user update logic here if needed
-  } catch (error) {
+  } catch (_error) {
     console.error('Error handling user.updated:', error)
   }
 }
@@ -144,7 +144,7 @@ async function handleInvitationCreated(data: any) {
       
       console.log(`Added external invitation ${data.id} to tracking`)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error handling invitation.created:', error)
   }
 }
@@ -160,7 +160,7 @@ async function handleInvitationAccepted(data: any) {
     await updateInvitationStatus(data.id, 'ACCEPTED', data.user_id, data.user_id)
     
     console.log(`Updated invitation ${data.id} to ACCEPTED`)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error handling invitation.accepted:', error)
   }
 }
@@ -176,7 +176,7 @@ async function handleInvitationRevoked(data: any) {
     await updateInvitationStatus(data.id, 'DECLINED')
     
     console.log(`Updated invitation ${data.id} to REVOKED`)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error handling invitation.revoked:', error)
   }
 }

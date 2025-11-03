@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
-import { clerkClient } from '@clerk/nextjs/server'
+import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error accepting invitation:', error)
     return NextResponse.json({
       success: false,

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '../../../../lib/db/connection'
 
@@ -18,7 +18,7 @@ export async function GET(
     }
 
     // Fetch influencer details with the same structure as the main influencers API
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         i.id,
         i.display_name,
@@ -92,7 +92,7 @@ export async function GET(
       data: transformedInfluencer
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching influencer:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 import { getCurrentUserRole } from '@/lib/auth/roles'
@@ -31,7 +31,7 @@ interface CreateInfluencerRequest {
 // Mock data removed - using real database queries only
 
 // GET - Fetch influencers (for roster page)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       count: transformedInfluencers.length
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error fetching influencers:', error)
     
     // Provide more specific error messages
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Create new influencer
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // 1. Create user account
       const userRole = mapInfluencerTypeToRole(data.influencer_type)
       const insertUserQuery = `
@@ -292,7 +292,7 @@ export async function POST(request: NextRequest) {
       }
     }, { status: 201 })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating influencer:', error)
     return NextResponse.json(
       { error: 'Failed to create influencer' },

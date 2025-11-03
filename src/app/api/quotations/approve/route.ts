@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { approveQuotation } from '@/lib/db/queries/quotations'
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       message: 'Quotation approved successfully - ready for manual influencer contact',
       quotation: approvedQuotation
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error approving quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to approve quotation' },

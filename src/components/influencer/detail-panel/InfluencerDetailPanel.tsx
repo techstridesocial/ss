@@ -518,7 +518,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
               }
             }
           }
-        } catch (error) {
+        } catch (_error) {
           console.error('❌ Failed to fetch Modash data for roster influencer:', error)
         } finally {
           setIsLoadingApiData(false)

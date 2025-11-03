@@ -152,7 +152,7 @@ export function BrandProtectedRoute({ children }: { children: ReactNode }) {
         } else {
           setOnboardingStatus({ is_onboarded: true, loading: false })
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to check brand onboarding status:', error)
         // For new users, assume they need onboarding
         setOnboardingStatus({
@@ -248,7 +248,7 @@ export function InfluencerProtectedRoute({ children }: { children: ReactNode }) 
         } else {
           setOnboardingStatus({ is_onboarded: true, loading: false })
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to check influencer onboarding status:', error)
         // For new users, assume they need onboarding
         setOnboardingStatus({

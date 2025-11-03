@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listLanguages } from '../../../../lib/services/modash'
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('query') || undefined
@@ -9,10 +9,10 @@ export async function GET(request: Request) {
     
     console.log('🔍 Languages API request:', { query, limit })
     
-    const result = await listLanguages(query || 'english', limit)
+    const _result = await listLanguages(query || 'english', limit)
     
     return NextResponse.json(result)
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Languages API error:', error)
     return NextResponse.json(
       { 

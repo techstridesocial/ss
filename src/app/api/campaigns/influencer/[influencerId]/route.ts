@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getDatabase } from '@/lib/db/connection'
@@ -58,7 +58,7 @@ export async function GET(
 
     // Get campaigns assigned to the influencer
     const db = getDatabase()
-    const result = await db.query(`
+    const _result = await db.query(`
       SELECT 
         c.id,
         c.name as campaign_name,
@@ -131,7 +131,7 @@ export async function GET(
       count: campaigns.length
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching influencer campaigns:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaigns' },

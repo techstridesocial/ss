@@ -99,7 +99,7 @@ export default function CreateCampaignFromShortlistsModal({
     handleInputChange('selectedShortlists', selectedShortlists)
   }
 
-  const handlePlatformToggle = (platform: string) => {
+  const handlePlatformToggle = (_platform: string) => {
     const platforms = formData.requirements.platforms.includes(platform)
       ? formData.requirements.platforms.filter(p => p !== platform)
       : [...formData.requirements.platforms, platform]
@@ -249,7 +249,7 @@ export default function CreateCampaignFromShortlistsModal({
       })
       setActiveSection('basic')
       onClose()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating campaign:', error)
     } finally {
       setIsLoading(false)

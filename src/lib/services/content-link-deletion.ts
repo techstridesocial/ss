@@ -50,7 +50,7 @@ export class ContentLinkDeletionService {
       console.log(`✅ Content link deletion completed:`, result)
       return result
       
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error deleting content link:`, error)
       result.success = false
       result.errors.push(error instanceof Error ? error.message : 'Unknown error')
@@ -69,7 +69,7 @@ export class ContentLinkDeletionService {
   ): Promise<void> {
     try {
       let whereClause = 'ci.influencer_id = $1'
-      let params: any[] = [influencerId]
+      const params: any[] = [influencerId]
       
       if (campaignId) {
         whereClause += ' AND ci.campaign_id = $2'
@@ -99,7 +99,7 @@ export class ContentLinkDeletionService {
           result.deletedFrom.push('campaign_influencers')
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error removing from campaign_influencers:`, error)
       result.errors.push(`campaign_influencers: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -116,7 +116,7 @@ export class ContentLinkDeletionService {
   ): Promise<void> {
     try {
       let whereClause = 'ci.influencer_id = $1 AND ccs.content_url = $2'
-      let params: any[] = [influencerId, contentLink]
+      const params: any[] = [influencerId, contentLink]
       
       if (campaignId) {
         whereClause += ' AND ci.campaign_id = $3'
@@ -137,7 +137,7 @@ export class ContentLinkDeletionService {
         console.log(`✅ Removed from campaign_content_submissions`)
         result.deletedFrom.push('campaign_content_submissions')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error removing from campaign_content_submissions:`, error)
       result.errors.push(`campaign_content_submissions: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -167,7 +167,7 @@ export class ContentLinkDeletionService {
         console.log(`✅ Removed from influencer_content`)
         result.deletedFrom.push('influencer_content')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error removing from influencer_content:`, error)
       result.errors.push(`influencer_content: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -229,7 +229,7 @@ export class ContentLinkDeletionService {
       } else {
         console.log(`ℹ️ Influencer ${influencerId} still has ${totalRemaining} content links - analytics not reset`)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error checking/resetting analytics:`, error)
       result.errors.push(`analytics: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -267,7 +267,7 @@ export class ContentLinkDeletionService {
       console.log(`✅ All content links deletion completed:`, result)
       return result
       
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error deleting all content links:`, error)
       result.success = false
       result.errors.push(error instanceof Error ? error.message : 'Unknown error')
@@ -285,7 +285,7 @@ export class ContentLinkDeletionService {
   ): Promise<void> {
     try {
       let whereClause = 'influencer_id = $1'
-      let params: any[] = [influencerId]
+      const params: any[] = [influencerId]
       
       if (campaignId) {
         whereClause += ' AND campaign_id = $2'
@@ -303,7 +303,7 @@ export class ContentLinkDeletionService {
       
       console.log(`✅ Cleared campaign_influencers content links`)
       result.deletedFrom.push('campaign_influencers')
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error clearing campaign_influencers:`, error)
       result.errors.push(`campaign_influencers: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -319,7 +319,7 @@ export class ContentLinkDeletionService {
   ): Promise<void> {
     try {
       let whereClause = 'ci.influencer_id = $1'
-      let params: any[] = [influencerId]
+      const params: any[] = [influencerId]
       
       if (campaignId) {
         whereClause += ' AND ci.campaign_id = $2'
@@ -338,7 +338,7 @@ export class ContentLinkDeletionService {
       
       console.log(`✅ Cleared campaign_content_submissions content URLs`)
       result.deletedFrom.push('campaign_content_submissions')
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error clearing campaign_content_submissions:`, error)
       result.errors.push(`campaign_content_submissions: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -364,7 +364,7 @@ export class ContentLinkDeletionService {
       
       console.log(`✅ Cleared influencer_content post URLs`)
       result.deletedFrom.push('influencer_content')
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error clearing influencer_content:`, error)
       result.errors.push(`influencer_content: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -394,7 +394,7 @@ export class ContentLinkDeletionService {
       
       result.analyticsReset = true
       console.log(`✅ Reset analytics for influencer ${influencerId}`)
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error resetting analytics:`, error)
       result.errors.push(`analytics: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -446,7 +446,7 @@ export class ContentLinkDeletionService {
         influencerContent,
         total
       }
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error getting content link stats:`, error)
       return {
         campaignInfluencers: 0,

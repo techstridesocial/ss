@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
-import { clerkClient } from '@clerk/nextjs/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(staffMembers)
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching staff members:', error)
     return NextResponse.json(
       { error: 'Failed to fetch staff members' }, 

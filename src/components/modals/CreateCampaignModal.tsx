@@ -97,7 +97,7 @@ export default function CreateCampaignModal({
       })
       setErrors({})
       onClose()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating campaign:', error)
     } finally {
       setIsLoading(false)
@@ -113,7 +113,7 @@ export default function CreateCampaignModal({
     }))
   }
 
-  const togglePlatform = (platform: string) => {
+  const togglePlatform = (_platform: string) => {
     setFormData(prev => ({
       ...prev,
       target_platforms: prev.target_platforms.includes(platform)

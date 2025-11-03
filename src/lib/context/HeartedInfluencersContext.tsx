@@ -79,7 +79,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       console.log('📡 API response status:', response.status)
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('📦 API result:', result)
         
         if (result.success) {
@@ -119,7 +119,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           loadFromLocalStorage()
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Only log actual errors, not expected authentication failures
       if (error instanceof Error && !error.message.includes('fetch')) {
         console.error('Unexpected error loading shortlists:', error)
@@ -162,7 +162,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         }
         setShortlists([defaultShortlist])
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load data from localStorage:', error)
     }
   }
@@ -192,7 +192,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           }
 
           console.log(`✅ Migrated shortlist: ${localShortlist.name}`)
-        } catch (error) {
+        } catch (_error) {
           console.error(`❌ Failed to migrate shortlist: ${localShortlist.name}`, error)
         }
       }
@@ -203,7 +203,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
 
       // Reload shortlists from database
       await loadShortlists()
-    } catch (error) {
+    } catch (_error) {
       console.error('Migration error:', error)
     }
   }
@@ -317,7 +317,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       console.log('📥 Response status:', response.status, response.ok)
 
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('✅ API response:', result)
         if (result.success) {
           // Add to local state
@@ -344,7 +344,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         throw new Error(`API Error: ${errorData.error || 'Unknown error'}`)
       }
       throw new Error('Failed to create shortlist')
-    } catch (error) {
+    } catch (_error) {
       console.error('🚨 CRITICAL ERROR creating shortlist:', error)
       console.error('🚨 API failed for authenticated user - NO FALLBACK TO LOCALSTORAGE!')
       
@@ -372,7 +372,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       })
 
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         if (result.success) {
           // Update local state
           setShortlists(prev => prev.map(shortlist => 
@@ -387,7 +387,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           ))
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error updating shortlist:', error)
       // Fallback to local update
       setShortlists(prev => prev.map(shortlist => 
@@ -431,7 +431,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       console.log('📥 API response:', response.status, response.ok)
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('✅ Delete successful, updating local state')
         // Remove from local state
         setShortlists(prev => {
@@ -451,7 +451,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         }
         throw new Error(errorMessage)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('💥 Error deleting shortlist:', error)
       // Don't fallback to local deletion on API error - let user know something went wrong
       throw error
@@ -489,7 +489,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       })
 
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('Duplicate API response:', result)
         if (result.success) {
           // Add to local state
@@ -512,7 +512,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         console.error('API error response:', response.status, errorData)
         throw new Error(errorData.error || 'Failed to duplicate shortlist')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error duplicating shortlist:', error)
       // Fallback to local duplication
       const newId = `shortlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -570,7 +570,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             : shortlist
         ))
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error adding influencer to shortlist:', error)
       // Fallback to local addition
       setShortlists(prev => prev.map(shortlist => 
@@ -619,7 +619,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             : shortlist
         ))
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error removing influencer from shortlist:', error)
       // Fallback to local removal
       setShortlists(prev => prev.map(shortlist => 

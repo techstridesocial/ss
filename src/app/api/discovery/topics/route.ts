@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listTopics } from '../../../../lib/services/modash'
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('query') || undefined
@@ -9,10 +9,10 @@ export async function GET(request: Request) {
     
     console.log('🔍 Topics API request:', { query, limit })
     
-    const result = await listTopics(query || 'lifestyle', limit)
+    const _result = await listTopics(query || 'lifestyle', limit)
     
     return NextResponse.json(result)
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Topics API error:', error)
     return NextResponse.json(
       { 

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { clerkClient } from '@clerk/nextjs/server'
+import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
 
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         message: 'Influencer successfully added to roster'
       }
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error adding influencer to roster:', error)
     return NextResponse.json(
       { error: 'Failed to add influencer to roster' },

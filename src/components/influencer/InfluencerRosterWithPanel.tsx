@@ -46,7 +46,7 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
       const detailedInfluencer = await fetchInfluencerDetails(influencerId)
       setSelectedInfluencer(detailedInfluencer)
       setIsPanelOpen(true)
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to fetch influencer details:', error)
       // Remove invalid influencer from URL
       updateUrl(null)
@@ -88,7 +88,7 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
       const detailedInfluencer = await fetchInfluencerDetails(influencer.id)
       setSelectedInfluencer(detailedInfluencer)
       setIsPanelOpen(true)
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to fetch influencer details:', error)
       // Revert URL on error
       updateUrl(null)
@@ -104,7 +104,7 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
     updateUrl(null)
   }
 
-  const handlePlatformSwitch = (platform: string) => {
+  const handlePlatformSwitch = (_platform: string) => {
     setSelectedPlatform(platform)
     // Update URL with new platform
     if (selectedInfluencer) {

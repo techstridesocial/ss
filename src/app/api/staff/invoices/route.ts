@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, queryOne } from '@/lib/db/connection'
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const influencerId = searchParams.get('influencer_id')
-    const campaignId = searchParams.get('campaign_id')
+    const _campaignId = searchParams.get('campaign_id')
 
     // Build query with filters
     let whereClause = 'WHERE 1=1'
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       invoices,
       summary 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invoices:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invoices' },

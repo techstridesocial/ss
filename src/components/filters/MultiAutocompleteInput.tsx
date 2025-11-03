@@ -92,7 +92,7 @@ const MultiAutocompleteInput: React.FC<MultiAutocompleteInputProps> = ({
           setOptions(filteredSuggestions)
           setIsOpen(filteredSuggestions.length > 0)
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Multi-autocomplete fetch error:', error)
         setOptions([])
         setIsOpen(false)

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 
 // GET - Get campaigns for the current influencer
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     `, [influencer_id])
 
     return NextResponse.json({ campaigns })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaigns:', error)
     return NextResponse.json(
       { error: 'Failed to fetch campaigns' },

@@ -31,7 +31,7 @@ export default function InfluencerDetailPage() {
         const response = await fetch(`/api/roster/${influencerId}`)
         
         if (response.ok) {
-          const result = await response.json()
+          const _result = await response.json()
           if (result.success) {
             setInfluencer(result.data)
           } else {
@@ -42,7 +42,7 @@ export default function InfluencerDetailPage() {
         } else {
           setError('Failed to load influencer')
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error loading influencer:', error)
         setError('Failed to load influencer')
       } finally {

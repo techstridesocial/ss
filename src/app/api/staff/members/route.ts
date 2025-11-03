@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
 
 // GET - Fetch all staff members for assignment dropdowns
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       data: formattedStaff
     })
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching staff members:', error)
     return NextResponse.json(
       { error: 'Failed to fetch staff members' },

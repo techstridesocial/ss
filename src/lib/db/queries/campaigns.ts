@@ -27,7 +27,7 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
     console.log('Available campaign columns:', availableColumns);
     
     // Use a more flexible query that works with the actual schema
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         c.*,
         b.company_name as brand_name,
@@ -104,7 +104,7 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }));
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in getAllCampaigns:', error);
     
     // Re-throw the error instead of returning mock data
@@ -113,7 +113,7 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
 }
 
 export async function getCampaignById(id: string): Promise<Campaign | null> {
-  const result = await query(`
+  const _result = await query(`
     SELECT 
       c.*,
       COUNT(ci.id) as total_influencers,
@@ -164,7 +164,7 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
 }
 
 export async function createCampaign(campaign: Omit<Campaign, 'id' | 'createdAt' | 'updatedAt' | 'totalInfluencers' | 'acceptedCount' | 'pendingCount'>): Promise<Campaign> {
-  const result = await query(`
+  const _result = await query(`
     INSERT INTO campaigns (
       name, brand, status, description, goals, start_date, end_date, 
       application_deadline, content_deadline, total_budget, per_influencer_budget,
@@ -318,7 +318,7 @@ export async function updateCampaign(id: string, updates: Partial<Campaign>): Pr
   setClauses.push(`updated_at = NOW()`);
   values.push(id);
 
-  const result = await query(`
+  const _result = await query(`
     UPDATE campaigns 
     SET ${setClauses.join(', ')}
     WHERE id = $${paramCount}
@@ -335,7 +335,7 @@ export async function deleteCampaign(id: string): Promise<boolean> {
   await query('DELETE FROM campaign_influencers WHERE campaign_id = $1', [id]);
   
   // Then delete the campaign
-  const result = await query('DELETE FROM campaigns WHERE id = $1', [id]);
+  const _result = await query('DELETE FROM campaigns WHERE id = $1', [id]);
   return result.length > 0;
 }
 
@@ -362,7 +362,7 @@ export async function duplicateCampaign(id: string, newName: string): Promise<Ca
 
 // Campaign Influencer operations
 export async function getCampaignInfluencers(campaignId: string): Promise<CampaignInfluencer[]> {
-  const result = await query(`
+  const _result = await query(`
     SELECT 
       ci.*,
       u.first_name,
@@ -412,7 +412,7 @@ export async function getCampaignInfluencers(campaignId: string): Promise<Campai
 
 export async function addInfluencerToCampaign(campaignId: string, influencerId: string, rate?: number): Promise<CampaignInfluencer> {
   try {
-    const result = await query(`
+    const _result = await query(`
       INSERT INTO campaign_influencers (campaign_id, influencer_id, status, compensation_amount)
       VALUES ($1, $2, 'ACCEPTED', $3)
       RETURNING *
@@ -434,7 +434,7 @@ export async function addInfluencerToCampaign(campaignId: string, influencerId: 
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Database error in addInfluencerToCampaign:', error);
     
     // Check for unique constraint violation
@@ -497,7 +497,7 @@ export async function updateCampaignInfluencerStatus(
     values.push(discountCode);
   }
 
-  const result = await query(`
+  const _result = await query(`
     UPDATE campaign_influencers 
     SET ${updateFields.join(', ')}
     WHERE campaign_id = $1 AND influencer_id = $2
@@ -525,7 +525,7 @@ export async function updateCampaignInfluencerStatus(
 }
 
 export async function removeInfluencerFromCampaign(campaignId: string, influencerId: string): Promise<boolean> {
-  const result = await query(`
+  const _result = await query(`
     DELETE FROM campaign_influencers 
     WHERE campaign_id = $1 AND influencer_id = $2
   `, [campaignId, influencerId]);
@@ -560,7 +560,7 @@ export async function getCampaignInvitations(campaignId?: string): Promise<Campa
   
   queryString += ' ORDER BY ci.created_at DESC';
 
-  const result = await query(queryString, values);
+  const _result = await query(queryString, values);
 
   return result.map((row: any) => ({
     id: row.id,
@@ -593,7 +593,7 @@ export async function createCampaignInvitation(
   influencerId: string, 
   email: string
 ): Promise<CampaignInvitation> {
-  const result = await query(`
+  const _result = await query(`
     INSERT INTO campaign_invitations (campaign_id, influencer_id, email, status, sent_at)
     VALUES ($1, $2, $3, 'sent', NOW())
     RETURNING *
@@ -619,7 +619,7 @@ export async function updateCampaignInvitationResponse(
   response: 'accepted' | 'declined',
   message?: string
 ): Promise<CampaignInvitation | null> {
-  const result = await query(`
+  const _result = await query(`
     UPDATE campaign_invitations 
     SET status = $2, response = $3, responded_at = NOW(), updated_at = NOW()
     WHERE id = $1
@@ -705,7 +705,7 @@ export async function getInfluencerCampaigns(influencerId: string): Promise<any>
 
     // Group content submissions by campaign
     const contentByCampaign = contentSubmissions.reduce((acc: any, content: any) => {
-      const campaignId = content.campaign_influencer_id
+      const _campaignId = content.campaign_influencer_id
       if (!acc[campaignId]) {
         acc[campaignId] = []
       }
@@ -768,7 +768,7 @@ export async function getInfluencerCampaigns(influencerId: string): Promise<any>
       message: 'Influencer campaigns retrieved successfully'
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting influencer campaigns:', error)
     return {
       success: false,

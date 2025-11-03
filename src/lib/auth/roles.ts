@@ -17,7 +17,7 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
     const role = user.publicMetadata?.role as UserRole
     
     return role || null
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting user role:', error)
     return null
   }

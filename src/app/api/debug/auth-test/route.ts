@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
 // GET /api/debug/auth-test - Test authentication and database connection
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     console.log('🔍 [DEBUG] Auth test endpoint called')
     
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('🔍 [DEBUG] Auth test error:', error)
     return NextResponse.json({ 
       error: 'Auth test failed',

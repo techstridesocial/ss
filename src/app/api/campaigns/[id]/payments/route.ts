@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, queryOne } from '@/lib/db/connection'
@@ -22,7 +22,7 @@ export async function GET(
       )
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
 
     // Get payment status for all influencers in the campaign
     const payments = await query(`
@@ -70,7 +70,7 @@ export async function GET(
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaign payments:', error)
     return NextResponse.json(
       { error: 'Failed to fetch payment information' },
@@ -98,7 +98,7 @@ export async function POST(
       )
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
     const { influencerId, status } = await request.json()
 
     if (!influencerId || !status) {
@@ -179,7 +179,7 @@ export async function POST(
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating payment status:', error)
     return NextResponse.json(
       { error: 'Failed to update payment status' },

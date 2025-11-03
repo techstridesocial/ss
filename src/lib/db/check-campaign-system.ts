@@ -203,7 +203,7 @@ async function checkCampaignSystem() {
       console.log('⚠️  NEEDS: Database schema migration required')
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error checking campaign system:', error)
   }
 }

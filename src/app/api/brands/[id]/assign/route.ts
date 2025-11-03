@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
@@ -96,7 +96,7 @@ export async function PATCH(
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating brand assignment:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

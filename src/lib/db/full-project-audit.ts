@@ -34,7 +34,7 @@ async function fullProjectAudit() {
         const count = await query(`SELECT COUNT(*) as count FROM ${tableName}`)
         const rowCount = count[0]?.count || 0
         console.log(`   ${tableName}: ${rowCount} records ${rowCount > 0 ? '✅' : '🆕'}`)
-      } catch (error) {
+      } catch (_error) {
         console.log(`   ${tableName}: ❌ Error accessing table`)
       }
     }
@@ -232,7 +232,7 @@ async function fullProjectAudit() {
     console.log('⚠️  MAIN GAPS: Campaign and Quotation systems need database connection')
     console.log('🚀 NEXT STEPS: Connect high-priority APIs to database')
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error during project audit:', error)
   }
 }

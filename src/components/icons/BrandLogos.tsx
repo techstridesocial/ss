@@ -87,7 +87,7 @@ export const getBrandLogo = (platform: string, className?: string) => {
 }
 
 // Helper function to get brand color
-export const getBrandColor = (platform: string): string => {
+export const getBrandColor = (_platform: string): string => {
   const platformType = platform.toLowerCase() as keyof typeof brandColors
   return brandColors[platformType] || 'text-gray-500 hover:text-gray-600'
 }

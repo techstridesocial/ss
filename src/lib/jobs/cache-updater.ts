@@ -66,7 +66,7 @@ export async function runCacheUpdateJob(): Promise<UpdateJobResult> {
     
     return result
     
-  } catch (error) {
+  } catch (_error) {
     const endTime = new Date()
     const duration = endTime.getTime() - startTime.getTime()
     

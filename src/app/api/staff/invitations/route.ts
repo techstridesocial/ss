@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { UserRole } from '@/types/database'
 import { createInvitation, getInvitations } from '@/lib/db/queries/invitations'
 import { query } from '@/lib/db/connection'
-import { randomBytes } from 'crypto'
+import { randomBytes as _randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       message: `Invitation sent to ${email} with ${role} role via Clerk email system`
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating invitation:', error)
     return NextResponse.json(
       { error: 'Failed to create invitation' },
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
       total: invitations.length
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invitations:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invitations' },

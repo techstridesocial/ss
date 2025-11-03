@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getProfileReport, getPerformanceData } from '../../../../lib/services/modash'
+import { getProfileReport, getPerformanceData as _getPerformanceData } from '../../../../lib/services/modash'
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     const { userId, platform, includePerformanceData } = await request.json()
     
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
     
     // Extract the profile data directly from Modash
-    const profile = modashResponse.profile?.profile || {}
+    const _profile = modashResponse.profile?.profile || {}
     const audience = modashResponse.profile?.audience || {}
     
     console.log('✅ Raw Modash profile data:', {

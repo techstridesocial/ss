@@ -69,11 +69,11 @@ export default function CreateCampaignModal({
       try {
         const response = await fetch('/api/brands?limit=100')
         if (response.ok) {
-          const result = await response.json()
+          const _result = await response.json()
           setBrands(result.data || [])
           setFilteredBrands(result.data || [])
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error fetching brands:', error)
       }
     }
@@ -104,11 +104,11 @@ export default function CreateCampaignModal({
       try {
         const response = await fetch('/api/influencers')
         if (response.ok) {
-          const result = await response.json()
+          const _result = await response.json()
           setInfluencers(result.data || [])
           setFilteredInfluencers(result.data || [])
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error fetching influencers:', error)
       } finally {
         setInfluencersLoading(false)
@@ -157,7 +157,7 @@ export default function CreateCampaignModal({
     }
   }
 
-  const handlePlatformToggle = (platform: string) => {
+  const handlePlatformToggle = (_platform: string) => {
     const platforms = formData.requirements.platforms.includes(platform)
       ? formData.requirements.platforms.filter(p => p !== platform)
       : [...formData.requirements.platforms, platform]
@@ -317,7 +317,7 @@ export default function CreateCampaignModal({
       setActiveSection('basic')
       setSelectedInfluencers([])
         onCloseAction()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating campaign:', error)
     } finally {
       setIsLoading(false)

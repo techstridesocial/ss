@@ -302,10 +302,10 @@ function CampaignsPageClient() {
     try {
       const response = await fetch('/api/staff/members')
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         setStaffMembers(result.data || [])
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading staff members:', error)
     }
   }
@@ -326,7 +326,7 @@ function CampaignsPageClient() {
         throw new Error(errorData.error || 'Failed to assign campaign')
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       // Update local state
       setCampaigns(prev => prev.map(campaign => {
@@ -345,7 +345,7 @@ function CampaignsPageClient() {
         'success'
       )
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error assigning campaign:', error)
       showNotificationModal(
         'Assignment Failed',
@@ -401,7 +401,7 @@ function CampaignsPageClient() {
         const error = await response.json()
         showNotificationModal('Error', error.error || 'Failed to create campaign', 'error')
       }
-    } catch (error) {
+    } catch (_error) {
       showNotificationModal('Error', 'Failed to create campaign', 'error')
     }
   }
@@ -433,7 +433,7 @@ function CampaignsPageClient() {
       } else {
         showNotificationModal('Error', 'Failed to pause campaign', 'error')
       }
-    } catch (error) {
+    } catch (_error) {
       showNotificationModal('Error', 'Failed to pause campaign', 'error')
     }
   }
@@ -452,7 +452,7 @@ function CampaignsPageClient() {
       } else {
         showNotificationModal('Error', 'Failed to resume campaign', 'error')
       }
-    } catch (error) {
+    } catch (_error) {
       showNotificationModal('Error', 'Failed to resume campaign', 'error')
     }
   }
@@ -475,7 +475,7 @@ function CampaignsPageClient() {
       } else {
         showNotificationModal('Error', 'Failed to update campaign', 'error')
       }
-    } catch (error) {
+    } catch (_error) {
       showNotificationModal('Error', 'Failed to update campaign', 'error')
     }
   }

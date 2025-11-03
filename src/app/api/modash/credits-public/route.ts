@@ -86,7 +86,7 @@ export async function GET() {
 
     return NextResponse.json(response)
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Credit check error:', error)
     return NextResponse.json(
       { 

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 import { cacheModashProfile } from '@/lib/services/modash-cache'
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       refreshedAt: new Date().toISOString()
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error refreshing profile cache:', error)
     return NextResponse.json(
       { 

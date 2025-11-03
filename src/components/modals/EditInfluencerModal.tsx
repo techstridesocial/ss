@@ -68,7 +68,7 @@ export default function EditInfluencerModal({
     try {
       await onSave({ ...formData, niches: selectedNiches })
       onClose()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving influencer:', error)
     } finally {
       setIsLoading(false)

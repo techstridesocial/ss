@@ -43,7 +43,7 @@ export async function createInvitation(
   expiresAt?: Date
 ): Promise<DatabaseResponse<UserInvitation>> {
   try {
-    const result = await query<UserInvitation>(
+    const _result = await query<UserInvitation>(
       `INSERT INTO user_invitations (
         clerk_invitation_id, email, role, first_name, last_name,
         invited_by, invited_by_email, expires_at
@@ -57,7 +57,7 @@ export async function createInvitation(
       data: result[0],
       message: 'Invitation created successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating invitation:', error)
     return {
       success: false,
@@ -102,7 +102,7 @@ export async function getInvitations(filters: InvitationFilters = {}): Promise<U
     const offsetParam = `$${paramCount}`
     queryParams.push(limit, offset)
 
-    const result = await query<UserInvitation>(
+    const _result = await query<UserInvitation>(
       `SELECT * FROM user_invitations 
        ${whereClause}
        ORDER BY invited_at DESC
@@ -111,7 +111,7 @@ export async function getInvitations(filters: InvitationFilters = {}): Promise<U
     )
 
     return result
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invitations:', error)
     return []
   }
@@ -122,13 +122,13 @@ export async function getInvitations(filters: InvitationFilters = {}): Promise<U
  */
 export async function getInvitationByClerkId(clerkInvitationId: string): Promise<UserInvitation | null> {
   try {
-    const result = await query<UserInvitation>(
+    const _result = await query<UserInvitation>(
       'SELECT * FROM user_invitations WHERE clerk_invitation_id = $1',
       [clerkInvitationId]
     )
 
     return result[0] || null
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invitation by Clerk ID:', error)
     return null
   }
@@ -166,7 +166,7 @@ export async function updateInvitationStatus(
       updateFields.push(`revoked_at = NOW()`)
     }
 
-    const result = await query<UserInvitation>(
+    const _result = await query<UserInvitation>(
       `UPDATE user_invitations 
        SET ${updateFields.join(', ')}
        WHERE clerk_invitation_id = $1
@@ -186,7 +186,7 @@ export async function updateInvitationStatus(
       data: result[0],
       message: 'Invitation status updated successfully'
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating invitation status:', error)
     return {
       success: false,
@@ -206,7 +206,7 @@ export async function getInvitationStats(): Promise<{
   expired: number
 }> {
   try {
-    const result = await query<{
+    const _result = await query<{
       status: string
       count: number
     }>(
@@ -233,7 +233,7 @@ export async function getInvitationStats(): Promise<{
     })
 
     return stats
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invitation stats:', error)
     return {
       total: 0,
@@ -250,7 +250,7 @@ export async function getInvitationStats(): Promise<{
  */
 export async function cleanupExpiredInvitations(): Promise<number> {
   try {
-    const result = await query<{ count: number }>(
+    const _result = await query<{ count: number }>(
       `UPDATE user_invitations 
        SET status = 'EXPIRED', updated_at = NOW()
        WHERE status = 'INVITED' 
@@ -259,7 +259,7 @@ export async function cleanupExpiredInvitations(): Promise<number> {
     )
 
     return parseInt(result[0]?.count?.toString() || '0')
-  } catch (error) {
+  } catch (_error) {
     console.error('Error cleaning up expired invitations:', error)
     return 0
   }

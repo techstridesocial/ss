@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { searchDiscovery } from '../../../../lib/services/modash'
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     // Check authentication
     const { userId } = await auth()
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const platform = body.platform || 'instagram'
     
     // Call the platform-aware discovery API
-    const result = await searchDiscovery(platform, {
+    const _result = await searchDiscovery(platform, {
       page,
       limit: 15,
       sort,
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error in search v2 API route:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },

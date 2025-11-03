@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
 
 export async function GET(
@@ -9,7 +9,7 @@ export async function GET(
     const { token } = await params
     
     // Get invitation by token (we'll use the clerk_invitation_id as token)
-    const result = await query(
+    const _result = await query(
       `SELECT 
         ui.id,
         ui.email,
@@ -73,7 +73,7 @@ export async function GET(
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error validating invitation:', error)
     return NextResponse.json({
       success: false,

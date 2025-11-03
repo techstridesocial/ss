@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCampaignById, updateCampaign, deleteCampaign, getCampaignInfluencers } from '@/lib/db/queries/campaigns'
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         influencers
       }
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaign:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaign' },
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       success: true, 
       campaign: updatedCampaign 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating campaign:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update campaign' },
@@ -88,7 +88,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       success: true, 
       message: 'Campaign deleted successfully' 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error deleting campaign:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete campaign' },

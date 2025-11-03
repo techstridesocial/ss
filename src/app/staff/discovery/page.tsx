@@ -53,7 +53,7 @@ import { getBrandLogo, getBrandColor } from '@/components/icons/BrandLogos'
 const validateAndSanitizeUrl = (contact: any): string | null => {
   if (!contact?.value || typeof contact.value !== 'string') return null
   
-  let url = contact.value.trim()
+  const url = contact.value.trim()
   
   // If it's already a full URL, validate it
   if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -131,7 +131,7 @@ const addToRoster = async (discoveredId: string, modashUserId?: string, platform
     } else {
       throw new Error(data.error || 'Failed to add to roster')
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error adding to roster:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
@@ -1721,7 +1721,7 @@ function DiscoveredInfluencersTable({
         platform
       })
       
-      const result = await addToRoster(influencer.discoveredId, modashUserId, platform)
+      const _result = await addToRoster(influencer.discoveredId, modashUserId, platform)
       
       if (result.success) {
         const message = result.hasCompleteData 
@@ -1753,7 +1753,7 @@ function DiscoveredInfluencersTable({
           }
         }))
       }
-    } catch (error) {
+    } catch (_error) {
       setRosterMessages(prev => ({
         ...prev,
         [influencer.discoveredId]: {
@@ -1783,7 +1783,7 @@ function DiscoveredInfluencersTable({
 
   // Sort data - improved to handle different property names and nested data
   const sortedInfluencers = React.useMemo(() => {
-    let sortableInfluencers = [...discoveredCreators]
+    const sortableInfluencers = [...discoveredCreators]
     
     if (sortConfig.key) {
       sortableInfluencers.sort((a, b) => {
@@ -1837,7 +1837,7 @@ function DiscoveredInfluencersTable({
           const numA = typeof aValue === 'number' ? aValue : Number(aValue) || 0
           const numB = typeof bValue === 'number' ? bValue : Number(bValue) || 0
           
-          const result = sortConfig.direction === 'asc' ? numA - numB : numB - numA
+          const _result = sortConfig.direction === 'asc' ? numA - numB : numB - numA
           return result
         }
         
@@ -2489,7 +2489,7 @@ function DiscoveryPageClient() {
         throw new Error(errorMessage)
       }
       
-      const result = await response.json()
+      const _result = await response.json()
       
       // Handle different response formats
       let searchResults = []
@@ -2552,7 +2552,7 @@ function DiscoveryPageClient() {
         }, 1000)
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Search error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Search failed'
       
@@ -2707,7 +2707,7 @@ function DiscoveryPageClient() {
         variant: "default"
       })
       
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Failed to save influencer with complete analytics:', error)
       // Fallback to basic save if analytics fetch fails
       try {
@@ -2768,8 +2768,8 @@ function DiscoveryPageClient() {
     
     try {
       // Force the selected platform - NO fallbacks to prevent cross-platform contamination
-      let platformData = influencer.platforms?.[selectedPlatform]
-      let actualPlatform = selectedPlatform
+      const platformData = influencer.platforms?.[selectedPlatform]
+      const actualPlatform = selectedPlatform
       
       // Don't fallback to other platforms - this causes wrong data to show!
       if (!platformData) {
@@ -2993,7 +2993,7 @@ function DiscoveryPageClient() {
         const response = coreResponse
         
         if (response.ok) {
-          const result = await response.json()
+          const _result = await response.json()
           if (result.success && result.data) {
             // Merge the comprehensive data with the existing influencer data
             const enhancedInfluencer = {
@@ -3092,7 +3092,7 @@ function DiscoveryPageClient() {
         } else {
           console.warn('⚠️ Comprehensive report API returned:', response.status, response.statusText)
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('⚠️ Failed to fetch comprehensive report, using basic data:', error)
       }
       
@@ -3120,7 +3120,7 @@ function DiscoveryPageClient() {
         console.error('❌ Failed to fetch location data:', locationError)
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Failed to fetch comprehensive data:', error)
     } finally {
       setDetailLoading(false)
@@ -3467,7 +3467,7 @@ function DiscoveryPageClient() {
                 throw new Error('Profile API returned no data')
               }
               
-            } catch (error) {
+            } catch (_error) {
               console.error(`❌ Error switching to ${platform}:`, error)
               const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
               setSearchError(`Failed to load ${platform} data: ${errorMessage}`)

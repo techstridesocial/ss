@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
-import { getUserFromClerkId } from '@/lib/db/queries/users'
+import { getUserFromClerkId as _getUserFromClerkId } from '@/lib/db/queries/users'
 
 // GET - Fetch notifications for current user
 export async function GET(request: NextRequest) {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       unreadCount
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching notifications:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -142,7 +142,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating notifications:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

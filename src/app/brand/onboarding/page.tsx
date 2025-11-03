@@ -269,7 +269,7 @@ function BrandOnboardingPageContent() {
         throw new Error(errorMessage)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       console.log('Onboarding successful:', result)
       
       setIsCompleted(true)
@@ -278,7 +278,7 @@ function BrandOnboardingPageContent() {
       setTimeout(() => {
         router.push('/brand/campaigns')
       }, 3000)
-    } catch (error) {
+    } catch (_error) {
       console.error('Onboarding submission failed:', error)
       alert('Failed to complete onboarding. Please try again.')
     } finally {
@@ -496,14 +496,14 @@ function BrandOnboardingPageContent() {
                       })
                       
                       if (response.ok) {
-                        const result = await response.json()
+                        const _result = await response.json()
                         updateFormData('logo_url', result.imageUrl)
                         console.log('✅ Logo uploaded to Clerk')
                       } else {
                         console.error('Failed to upload logo')
                         updateFormData('logo_url', URL.createObjectURL(file)) // Fallback
                       }
-                    } catch (error) {
+                    } catch (_error) {
                       console.error('Error uploading logo:', error)
                       updateFormData('logo_url', URL.createObjectURL(file)) // Fallback
                     }

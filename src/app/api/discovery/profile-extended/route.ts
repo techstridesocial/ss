@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getProfileReport, getCreatorCollaborations } from '../../../../lib/services/modash'
 
 // Environment and feature flags
-const enableMockData = process.env.NEXT_PUBLIC_ALLOW_MOCKS === 'true'
+const _enableMockData = process.env.NEXT_PUBLIC_ALLOW_MOCKS === 'true'
 // Note: Never set NEXT_PUBLIC_ALLOW_MOCKS in .env - this ensures no mock data ever
 
 // Cache configuration
@@ -27,7 +27,7 @@ const extendedCache = new Map<string, { data: any, timestamp: number }>()
  * 
  * 83% API call reduction - from 6 calls down to 1 single optimized call!
  */
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     const { userId, platform, sections } = await request.json()
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       throw new Error('No profile data returned from Modash')
     }
     
-    const profile = profileReport.profile?.profile || {}
+    const _profile = profileReport.profile?.profile || {}
     const audience = profileReport.profile?.audience || {}
     
     console.log('✅ OPTIMIZED: Extracting data from profile report instead of multiple API calls')
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
       data: { ...finalData, fromCache: false }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Extended profile API error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

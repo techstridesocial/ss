@@ -86,7 +86,7 @@ export default function InfluencerCampaigns() {
             setCampaigns(data.data.campaigns || [])
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error loading campaigns:', error)
       } finally {
         setIsLoading(false)
@@ -111,7 +111,7 @@ export default function InfluencerCampaigns() {
           }
         }
         setSubmittedContent(contentData)
-      } catch (error) {
+      } catch (_error) {
         console.error('Error loading submitted content:', error)
       }
     }
@@ -176,7 +176,7 @@ export default function InfluencerCampaigns() {
       } else {
         alert('Failed to submit content')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error submitting content:', error)
       alert('Error submitting content')
     } finally {

@@ -98,7 +98,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         // Remove invalid influencer from URL
         updateUrl(null)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load influencer details:', error)
       updateUrl(null)
     } finally {
@@ -136,7 +136,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     try {
       const response = await fetch('/api/influencers')
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         if (result.success) {
           setInfluencers(result.data)
           return result.data
@@ -144,7 +144,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       }
       // Fallback - keep existing data if API fails
       console.warn('API failed, keeping current data')
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading influencers:', error)
     }
   }

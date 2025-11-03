@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getAllQuotations, createQuotation } from '@/lib/db/queries/quotations'
 
@@ -16,7 +16,7 @@ export async function GET() {
       success: true, 
       quotations 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching quotations:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch quotations' },
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       quotation 
     }, { status: 201 })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create quotation' },

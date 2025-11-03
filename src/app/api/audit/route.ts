@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getRecentAuditLogs, getAuditTrailForUser, getAuditTrailForAction } from '@/lib/db/queries/audit'
 import { getCurrentUserRole } from '@/lib/auth/roles'
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Audit API error:', error)
     return NextResponse.json(
       { error: 'Failed to retrieve audit data' },

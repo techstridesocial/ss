@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 
 // Hook to get current user's database ID (not Clerk ID)
 export function useCurrentUserId(): string | null {
-  const { user } = useUser()
+  const { _user } = useUser()
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -26,7 +26,7 @@ export function useCurrentUserId(): string | null {
         } else {
           setUserId(null)
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error fetching current user ID:', error)
         setUserId(null)
       } finally {
@@ -42,7 +42,7 @@ export function useCurrentUserId(): string | null {
 
 // Hook to check if loading current user
 export function useCurrentUserLoading(): boolean {
-  const { user, isLoaded } = useUser()
+  const { _user, isLoaded } = useUser()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

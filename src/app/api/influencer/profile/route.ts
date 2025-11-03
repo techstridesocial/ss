@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 import { cacheModashProfile } from '@/lib/services/modash-cache'
 
 // GET - Fetch influencer profile data
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const profile = profileResult[0]
+    const _profile = profileResult[0]
 
     // Get platform data for this influencer
     const platformsQuery = `
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response)
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching influencer profile:', error)
     return NextResponse.json(
       { error: 'Failed to fetch profile' },
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 }
 
 // PUT - Update influencer profile
-export async function PUT(request: NextRequest) {
+export async function PUT(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -145,7 +145,7 @@ export async function PUT(request: NextRequest) {
     const user_id = userResult[0]?.id
 
     // Update profile in transaction
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Update user profile
       await client.query(`
         UPDATE user_profiles SET
@@ -188,7 +188,7 @@ export async function PUT(request: NextRequest) {
       message: 'Profile updated successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating influencer profile:', error)
     return NextResponse.json(
       { error: 'Failed to update profile' },
@@ -198,7 +198,7 @@ export async function PUT(request: NextRequest) {
 }
 
 // POST - Save selected Modash profile
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     const influencer_id = influencerResult[0]?.id
 
     // Update or insert platform data
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Check if platform record exists
       const existing = await client.query(
         'SELECT id FROM influencer_platforms WHERE influencer_id = $1 AND platform = $2',
@@ -345,7 +345,7 @@ export async function POST(request: NextRequest) {
       cached: cacheResult.success
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error saving selected profile:', error)
     return NextResponse.json(
       { error: 'Failed to save profile' },

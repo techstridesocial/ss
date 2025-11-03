@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 
@@ -60,7 +60,7 @@ export async function PATCH(
       success: true,
       message: 'WhatsApp URL updated successfully'
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating WhatsApp URL:', error)
     return NextResponse.json(
       { error: 'Failed to update WhatsApp URL' },
@@ -114,7 +114,7 @@ export async function DELETE(
       success: true,
       message: 'WhatsApp URL removed successfully'
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error removing WhatsApp URL:', error)
     return NextResponse.json(
       { error: 'Failed to remove WhatsApp URL' },

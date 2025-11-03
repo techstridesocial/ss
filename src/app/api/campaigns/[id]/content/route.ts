@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { 
@@ -21,7 +21,7 @@ export async function GET(
     }
 
     const userRole = await getCurrentUserRole()
-    const campaignId = params.id
+    const _campaignId = params.id
     const { searchParams } = new URL(request.url)
     const includeStats = searchParams.get('stats') === 'true'
     const includeQualityScores = searchParams.get('quality') === 'true'
@@ -87,7 +87,7 @@ export async function GET(
       { status: 403 }
     )
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaign content:', error)
     return NextResponse.json(
       { error: 'Failed to fetch content submissions' },
@@ -115,7 +115,7 @@ export async function PATCH(
       )
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
     const { submissionId, status, reviewNotes } = await request.json()
 
     if (!submissionId || !status) {
@@ -172,7 +172,7 @@ export async function PATCH(
       data: updatedSubmission
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating content submission status:', error)
     return NextResponse.json(
       { error: 'Failed to update content submission status' },

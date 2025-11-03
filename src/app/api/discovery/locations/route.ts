@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listLocations } from '../../../../lib/services/modash'
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('query') || undefined
@@ -11,14 +11,14 @@ export async function GET(request: Request) {
     console.log('🔍 Locations API request:', { query, platform, limit })
     
     // Fix: listLocations expects (platform, query, limit)
-    const result = await listLocations(
+    const _result = await listLocations(
       platform as 'instagram' | 'tiktok' | 'youtube',
       query || 'united states', 
       limit
     )
     
     return NextResponse.json(result)
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Locations API error:', error)
     return NextResponse.json(
       { 

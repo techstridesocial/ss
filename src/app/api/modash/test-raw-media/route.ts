@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { getMediaInfo, detectPlatformFromUrl } from '@/lib/services/modash'
 
 // GET /api/modash/test-raw-media - Test RAW API media info endpoint (auto-detects platform)
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Testing Modash RAW API media info:', { url, platform })
 
     // Call the appropriate RAW API endpoint based on platform
-    const result = await getMediaInfo(url)
+    const _result = await getMediaInfo(url)
     
     console.log('📊 RAW API Response:', {
       hasItems: !!result?.items,
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ RAW API test error:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },

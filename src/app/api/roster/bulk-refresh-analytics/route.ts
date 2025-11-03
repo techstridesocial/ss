@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
 import { getProfileReport } from '@/lib/services/modash'
 
 // POST /api/roster/bulk-refresh-analytics - Refresh analytics for all roster influencers
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         // Add small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100))
 
-      } catch (error) {
+      } catch (_error) {
         errorCount++
         const errorMsg = `Failed to refresh ${influencer.display_name}: ${error instanceof Error ? error.message : 'Unknown error'}`
         errors.push(errorMsg)
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Bulk refresh error:', error)
     return NextResponse.json(
       { error: 'Failed to bulk refresh analytics' },

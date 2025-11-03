@@ -169,7 +169,7 @@ async function checkRosterTypes() {
       console.log('✅ Ready to receive all influencer types')
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error checking roster types:', error)
   }
 }

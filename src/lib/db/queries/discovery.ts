@@ -35,7 +35,7 @@ export async function storeDiscoveredInfluencer(
   modash_data: any
 ): Promise<string> {
   try {
-    const result = await query(`
+    const _result = await query(`
       INSERT INTO discovered_influencers (
         username, platform, followers, engagement_rate, 
         demographics, discovery_date, modash_data
@@ -51,7 +51,7 @@ export async function storeDiscoveredInfluencer(
     `, [username, platform, followers, engagement_rate, demographics, modash_data])
     
     return result[0]?.id
-  } catch (error) {
+  } catch (_error) {
     console.error('Error storing discovered influencer:', error)
     throw error
   }
@@ -62,14 +62,14 @@ export async function storeDiscoveredInfluencer(
  */
 export async function getDiscoveryHistory(limit: number = 50): Promise<DiscoveryHistory[]> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT * FROM discovery_history 
       ORDER BY search_date DESC 
       LIMIT $1
     `, [limit])
     
     return result
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting discovery history:', error)
     throw error
   }
@@ -86,7 +86,7 @@ export async function storeDiscoverySearch(
   userId: string
 ): Promise<string> {
   try {
-    const result = await query(`
+    const _result = await query(`
       INSERT INTO discovery_history (
         search_query, filters_used, results_count, credits_used, search_date, user_id
       ) VALUES ($1, $2, $3, $4, NOW(), $5)
@@ -94,7 +94,7 @@ export async function storeDiscoverySearch(
     `, [searchQuery, JSON.stringify(filtersUsed), resultsCount, creditsUsed, userId])
     
     return result[0]?.id
-  } catch (error) {
+  } catch (_error) {
     console.error('Error storing discovery search:', error)
     throw error
   }
@@ -105,7 +105,7 @@ export async function storeDiscoverySearch(
  */
 export async function checkInfluencerInRoster(username: string, platform: string): Promise<boolean> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT COUNT(*) as count 
       FROM influencers i
       JOIN influencer_platforms ip ON i.id = ip.influencer_id
@@ -113,7 +113,7 @@ export async function checkInfluencerInRoster(username: string, platform: string
     `, [username, platform.toUpperCase()])
     
     return parseInt(result[0]?.count || '0') > 0
-  } catch (error) {
+  } catch (_error) {
     console.error('Error checking influencer in roster:', error)
     return false
   }
@@ -124,14 +124,14 @@ export async function checkInfluencerInRoster(username: string, platform: string
  */
 export async function getDiscoveredInfluencers(limit: number = 100): Promise<DiscoveredInfluencer[]> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT * FROM discovered_influencers 
       ORDER BY discovery_date DESC 
       LIMIT $1
     `, [limit])
     
     return result
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting discovered influencers:', error)
     throw error
   }
@@ -205,7 +205,7 @@ export async function addDiscoveredInfluencerToRoster(
     `, [discoveredId])
     
     return influencerId
-  } catch (error) {
+  } catch (_error) {
     console.error('Error adding discovered influencer to roster:', error)
     throw error
   }
@@ -224,7 +224,7 @@ export async function addDiscoveredInfluencerToRosterWithCompleteData(
     console.log('🔄 Creating influencer with COMPLETE Modash data cache...')
     
     // Extract data from complete Modash response
-    const profile = completeModashData?.profile || {}
+    const _profile = completeModashData?.profile || {}
     const audience = completeModashData?.audience || {}
     
     // Calculate totals for main influencer record
@@ -383,7 +383,7 @@ export async function addDiscoveredInfluencerToRosterWithCompleteData(
     })
     
     return influencerId
-  } catch (error) {
+  } catch (_error) {
     console.error('Error adding discovered influencer to roster with complete data:', error)
     throw error
   }
@@ -399,7 +399,7 @@ export async function getDiscoveryStats(): Promise<{
   averageEngagement: number
 }> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         COUNT(*) as total_discovered,
         COUNT(CASE WHEN added_to_roster = true THEN 1 END) as total_added,
@@ -418,7 +418,7 @@ export async function getDiscoveryStats(): Promise<{
       totalCreditsUsed: parseFloat(historyResult[0]?.total_credits || '0'),
       averageEngagement: parseFloat(result[0]?.avg_engagement || '0')
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting discovery stats:', error)
     throw error
   }

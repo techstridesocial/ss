@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 
@@ -13,7 +13,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
     const data = await request.json()
 
     // Validate required fields
@@ -104,7 +104,7 @@ export async function POST(
       RETURNING id
     `
 
-    const result = await query(insertQuery, [
+    const _result = await query(insertQuery, [
       assignment.campaign_influencer_id,
       data.content_url,
       data.content_type,
@@ -127,7 +127,7 @@ export async function POST(
       submission_id: result[0]?.id
     }, { status: 201 })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error submitting content:', error)
     return NextResponse.json(
       { error: 'Failed to submit content' },

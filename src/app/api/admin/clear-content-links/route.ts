@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
 import { requireAuth } from '@/lib/auth/roles'
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Require admin authentication
-    const user = await requireAuth(request)
+    const user = await requireAuth()
     if (user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       remaining: verifyResult[0].with_content_links
     })
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error clearing content links:', error)
     return NextResponse.json(
       { error: 'Failed to clear content links', details: error instanceof Error ? error.message : 'Unknown error' },

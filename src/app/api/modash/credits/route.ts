@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getUserInfo, getCreditUsage } from '@/lib/services/modash'
 
 // GET - Check Modash API credits for both Discovery and Raw APIs
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response)
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Credit check error:', error)
     return NextResponse.json(
       { 

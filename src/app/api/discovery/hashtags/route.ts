@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listHashtags } from '../../../../lib/services/modash'
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('query') || undefined
@@ -10,10 +10,10 @@ export async function GET(request: Request) {
     
     console.log('🔍 Hashtags API request:', { query, limit, platform })
     
-    const result = await listHashtags(platform as 'instagram' | 'tiktok' | 'youtube', query || 'fitness', limit)
+    const _result = await listHashtags(platform as 'instagram' | 'tiktok' | 'youtube', query || 'fitness', limit)
     
     return NextResponse.json(result)
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Hashtags API error:', error)
     return NextResponse.json(
       { 

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getBrandIdFromUserId } from '@/lib/db/queries/brand-campaigns'
@@ -27,7 +27,7 @@ export async function PATCH(
     let brandId: string
     try {
       brandId = await getBrandIdFromUserId(userId)
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
     }
 
@@ -61,7 +61,7 @@ export async function PATCH(
       quotation: updatedQuotation
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update quotation' },

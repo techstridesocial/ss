@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { getUserFromClerkId } from '@/lib/db/queries/users'
+import { getUserFromClerkId as _getUserFromClerkId } from '@/lib/db/queries/users'
 
 // GET /api/auth/current-user - Get current user's database ID
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId: clerkId } = await auth()
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       email: user.email,
       role: user.role
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching current user:', error)
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 })
   }

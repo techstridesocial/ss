@@ -28,7 +28,7 @@ export async function getBrandIdFromUserId(clerkUserId: string): Promise<string>
 
 // Get all campaigns for a specific brand
 export async function getBrandCampaigns(brandId: string): Promise<Campaign[]> {
-  const result = await query(`
+  const _result = await query(`
     SELECT 
       c.id,
       c.name,

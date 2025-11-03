@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { transaction } from '@/lib/db/connection'
+import { transaction as _transaction } from '@/lib/db/connection'
 import { logAuditEvent } from '@/lib/db/queries/audit'
 
 export async function POST(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Get user data first for audit logging
     const userData = await transaction(async (client) => {
-      const result = await client.query(`
+      const _result = await client.query(`
         SELECT u.*, up.*
         FROM users u
         LEFT JOIN user_profiles up ON u.id = up.user_id
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
       deletion_date: new Date().toISOString()
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('GDPR deletion error:', error)
     return NextResponse.json(
       { error: 'Failed to delete user data' },

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '../../../lib/auth/roles'
 import { getBrands, createBrand } from '../../../lib/db/queries/brands'
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get brands from database
-    const result = await getBrands(filters, page, limit)
+    const _result = await getBrands(filters, page, limit)
 
     return NextResponse.json({
       success: true,
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in GET /api/brands:', error)
     return NextResponse.json(
       { error: 'Failed to fetch brands' },
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       message: 'Brand created successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in POST /api/brands:', error)
     return NextResponse.json(
       { error: 'Failed to create brand' },

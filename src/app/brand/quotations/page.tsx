@@ -38,14 +38,14 @@ function QuotationsPageClient() {
     try {
       const response = await fetch('/api/brand/quotations')
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         if (result.success) {
           setQuotations(result.data)
         }
       } else {
         console.error('Failed to load quotations')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading quotations:', error)
     } finally {
       setIsLoading(false)
@@ -69,7 +69,7 @@ function QuotationsPageClient() {
       } else {
         alert('Failed to approve quotation')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error approving quotation:', error)
       alert('Error approving quotation')
     }
@@ -90,7 +90,7 @@ function QuotationsPageClient() {
       } else {
         alert('Failed to reject quotation')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error rejecting quotation:', error)
       alert('Error rejecting quotation')
     }

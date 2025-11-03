@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, queryOne } from '@/lib/db/connection'
 import { cacheModashProfile } from '@/lib/services/modash-cache'
 
 // GET - Get all social accounts for the current influencer
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       data: socialAccounts
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching social accounts:', error)
     return NextResponse.json(
       { error: 'Failed to fetch social accounts' },
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Connect a new social account
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
       message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} account connected successfully`
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error connecting social account:', error)
     return NextResponse.json(
       { error: 'Failed to connect social account' },
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
 
 
 // DELETE - Disconnect a social account
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -308,7 +308,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Social account disconnected successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error disconnecting social account:', error)
     return NextResponse.json(
       { error: 'Failed to disconnect social account' },
@@ -318,7 +318,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 // PUT - Update username for existing social account
-export async function PUT(request: NextRequest) {
+export async function PUT(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -376,7 +376,7 @@ export async function PUT(request: NextRequest) {
       message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} username updated successfully`
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating username:', error)
     return NextResponse.json(
       { error: 'Failed to update username' },

@@ -37,7 +37,7 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<bo
 
     // For now, return true to indicate "email sent"
     return true
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to send invitation email:', error)
     return false
   }

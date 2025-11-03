@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { getUserInfo } from '@/lib/services/modash'
 
 // GET - Test Raw API with a sample Instagram post
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Raw API test error:', error)
     return NextResponse.json(
       { 

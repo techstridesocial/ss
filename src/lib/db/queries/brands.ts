@@ -27,7 +27,7 @@ export async function getBrands(
 ): Promise<PaginatedResponse<BrandWithUser>> {
   
   try {
-    let whereConditions = ['1=1']
+    const whereConditions = ['1=1']
     const params: any[] = []
     let paramIndex = 1
 
@@ -135,7 +135,7 @@ export async function getBrands(
       totalPages: Math.ceil(total / limit)
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in getBrands:', error)
     throw new Error('Failed to fetch brands')
   }
@@ -170,7 +170,7 @@ export async function getBrandById(id: string): Promise<BrandWithUser | null> {
       WHERE b.id = $1
     `
     
-    const result = await query(brandQuery, [id])
+    const _result = await query(brandQuery, [id])
     
     if (result.length === 0) {
       return null
@@ -210,7 +210,7 @@ export async function getBrandById(id: string): Promise<BrandWithUser | null> {
       }
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in getBrandById:', error)
     throw new Error('Failed to fetch brand')
   }
@@ -228,7 +228,7 @@ export async function createBrand(brandData: Partial<Brand>): Promise<Brand> {
       RETURNING *
     `
     
-    const result = await query(createQuery, [
+    const _result = await query(createQuery, [
       brandData.user_id,
       brandData.company_name,
       brandData.industry,
@@ -237,7 +237,7 @@ export async function createBrand(brandData: Partial<Brand>): Promise<Brand> {
 
     return result[0]
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in createBrand:', error)
     throw new Error('Failed to create brand')
   }
@@ -259,7 +259,7 @@ export async function updateBrand(id: string, brandData: Partial<Brand>): Promis
       RETURNING *
     `
     
-    const result = await query(updateQuery, [
+    const _result = await query(updateQuery, [
       id,
       brandData.company_name,
       brandData.industry,
@@ -272,7 +272,7 @@ export async function updateBrand(id: string, brandData: Partial<Brand>): Promis
 
     return result[0]
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in updateBrand:', error)
     throw new Error('Failed to update brand')
   }
@@ -284,11 +284,11 @@ export async function updateBrand(id: string, brandData: Partial<Brand>): Promis
 export async function deleteBrand(id: string): Promise<boolean> {
   try {
     const deleteQuery = `DELETE FROM brands WHERE id = $1`
-    const result = await query(deleteQuery, [id])
+    const _result = await query(deleteQuery, [id])
     
     return result.length > 0
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in deleteBrand:', error)
     throw new Error('Failed to delete brand')
   }
@@ -313,7 +313,7 @@ export async function getBrandStats(): Promise<{
       FROM brands
     `
     
-    const result = await query(statsQuery)
+    const _result = await query(statsQuery)
     const stats = result[0]
 
     return {
@@ -323,7 +323,7 @@ export async function getBrandStats(): Promise<{
       recentBrands: parseInt(stats.recent || '0')
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in getBrandStats:', error)
     throw new Error('Failed to fetch brand statistics')
   }
@@ -347,7 +347,7 @@ export async function createBrandProfile(
   }
 ): Promise<DatabaseResponse<Brand>> {
   try {
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Insert brand record
       const brandResult = await client.query(`
         INSERT INTO brands (
@@ -395,7 +395,7 @@ export async function createBrandProfile(
       data: result
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in createBrandProfile:', error)
     return {
       success: false,

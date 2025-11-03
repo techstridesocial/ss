@@ -49,7 +49,7 @@ export interface CampaignInvitationData {
  */
 export async function getCampaignInfluencersWithDetails(campaignId: string): Promise<CampaignInfluencerWithDetails[]> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         ci.*,
         ci.content_links,
@@ -119,7 +119,7 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
             try {
               const parsed = JSON.parse(row.content_links);
               links = Array.isArray(parsed) ? parsed : [];
-            } catch (error) {
+            } catch (_error) {
               console.warn('❌ [CONTENT LINKS DEBUG] Failed to parse content_links string for campaign influencer:', row.id, 'Content:', row.content_links, 'Error:', error);
               return [];
             }
@@ -199,7 +199,7 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
         }
       }
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting campaign influencers with details:', error)
     throw error
   }
@@ -216,7 +216,7 @@ export async function assignInfluencerToCampaign(
   notes?: string
 ): Promise<CampaignInfluencer> {
   try {
-    const result = await query(`
+    const _result = await query(`
       INSERT INTO campaign_influencers (
         campaign_id, influencer_id, status, compensation_amount, 
         deadline, notes, created_at, updated_at
@@ -251,7 +251,7 @@ export async function assignInfluencerToCampaign(
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error assigning influencer to campaign:', error)
     throw error
   }
@@ -307,7 +307,7 @@ export async function updateCampaignInfluencerStatus(
       values.push(additionalData.paymentReleased)
     }
 
-    const result = await query(`
+    const _result = await query(`
       UPDATE campaign_influencers 
       SET ${updateFields.join(', ')}
       WHERE campaign_id = $1 AND influencer_id = $2
@@ -338,7 +338,7 @@ export async function updateCampaignInfluencerStatus(
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating campaign influencer status:', error)
     throw error
   }
@@ -355,7 +355,7 @@ export async function updateProductShipmentStatus(
   shippedAt?: Date
 ): Promise<boolean> {
   try {
-    const result = await query(`
+    const _result = await query(`
       UPDATE campaign_influencers 
       SET 
         product_shipped = $3,
@@ -369,7 +369,7 @@ export async function updateProductShipmentStatus(
     `, [campaignId, influencerId, shipped, trackingNumber])
 
     return result.length > 0
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating product shipment status:', error)
     throw error
   }
@@ -386,7 +386,7 @@ export async function updateContentPostingStatus(
   postedAt?: Date
 ): Promise<boolean> {
   try {
-    const result = await query(`
+    const _result = await query(`
       UPDATE campaign_influencers 
       SET 
         content_posted = $3,
@@ -400,7 +400,7 @@ export async function updateContentPostingStatus(
     `, [campaignId, influencerId, posted, postUrl])
 
     return result.length > 0
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating content posting status:', error)
     throw error
   }
@@ -416,7 +416,7 @@ export async function updatePaymentReleaseStatus(
   releasedAt?: Date
 ): Promise<boolean> {
   try {
-    const result = await query(`
+    const _result = await query(`
       UPDATE campaign_influencers 
       SET 
         payment_released = $3,
@@ -426,7 +426,7 @@ export async function updatePaymentReleaseStatus(
     `, [campaignId, influencerId, released])
 
     return result.length > 0
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating payment release status:', error)
     throw error
   }
@@ -499,7 +499,7 @@ export async function getCampaignTimeline(campaignId: string): Promise<{
         paymentReleased: row.payment_released
       }))
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting campaign timeline:', error)
     throw error
   }
@@ -522,7 +522,7 @@ export async function getCampaignStatistics(campaignId: string): Promise<{
   paymentReleasedCount: number
 }> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         COUNT(*) as total_influencers,
         COUNT(CASE WHEN status = 'INVITED' THEN 1 END) as invited_count,
@@ -553,7 +553,7 @@ export async function getCampaignStatistics(campaignId: string): Promise<{
       contentPostedCount: parseInt(stats.content_posted_count),
       paymentReleasedCount: parseInt(stats.payment_released_count)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting campaign statistics:', error)
     throw error
   }

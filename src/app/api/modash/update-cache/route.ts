@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { updateExpiredProfiles, getCacheStats } from '@/lib/services/modash-cache'
 
 // POST - Manually trigger cache updates (for admin/scheduler)
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Starting scheduled Modash cache update...')
     
-    const result = await updateExpiredProfiles()
+    const _result = await updateExpiredProfiles()
     
     return NextResponse.json({
       success: true,
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error during cache update:', error)
     return NextResponse.json(
       { 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       data: stats
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting cache stats:', error)
     return NextResponse.json(
       { error: 'Failed to get cache stats' },

@@ -127,7 +127,7 @@ export default function BrandProfilePage() {
       setSuccessMessage('Profile updated successfully!')
       
       setTimeout(() => setSuccessMessage(''), 3000)
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to update profile:', error)
     } finally {
       setIsLoading(false)
@@ -164,7 +164,7 @@ export default function BrandProfilePage() {
       // In real app, this would upload to Vercel Blob or similar service
       const reader = new FileReader()
       reader.onload = (e) => {
-        const result = e.target?.result as string
+        const _result = e.target?.result as string
         setLogoPreview(result)
         setEditForm(prev => ({ ...prev, logo_url: result }))
       }

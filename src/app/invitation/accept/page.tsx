@@ -116,7 +116,7 @@ function AcceptInvitationContent() {
           setError('Invalid invitation link. Please check the link or contact support.')
           setLoading(false)
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error processing invitation:', error)
         setError('Error processing invitation. Please try again.')
         setLoading(false)

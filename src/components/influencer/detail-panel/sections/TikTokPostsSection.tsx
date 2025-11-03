@@ -59,7 +59,7 @@ export const TikTokPostsSection = ({ influencer }: TikTokPostsSectionProps) => {
     })
     
     // Try different possible image field names from Modash API
-    let imageUrl = post.thumbnail || post.picture || post.image || post.cover || 
+    const imageUrl = post.thumbnail || post.picture || post.image || post.cover || 
                    post.previewUrl || post.preview_url || post.thumbnailUrl || post.thumbnail_url ||
                    post.imageUrl || post.image_url || post.mediaUrl || post.media_url || 
                    post.coverImage || post.cover_image || post.photoUrl || post.photo_url

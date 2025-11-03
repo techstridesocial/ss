@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { searchInfluencers, getProfileReport, getPerformanceData, listUsers, searchDiscovery } from '../../../../lib/services/modash'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { searchInfluencers as _searchInfluencers, getProfileReport, getPerformanceData, listUsers, searchDiscovery } from '../../../../lib/services/modash'
 import { getRosterInfluencerUsernames } from '../../../../lib/db/queries/influencers'
 import { 
   storeDiscoveredInfluencer, 
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           const users = res.users || []
           return users.map((u: any) => ({ ...u, platform }))
         })
-        const result = { users: combinedUsers }
+        const _result = { users: combinedUsers }
         
         if (!result.users || result.users.length === 0) {
           console.error('❌ List Users API failed or returned no results, falling back to Search Influencers API:', {
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
                   already_imported: false
                 }
               }
-            } catch (error) {
+            } catch (_error) {
               console.log(`❌ Error enriching @${user.username}:`, error instanceof Error ? error.message : 'Unknown error')
               return {
                 userId: user.userId,
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
             searchMode: 'list_users_api'
           })
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('❌ List Users API error, falling back to old search:', error)
       }
     }
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
             : mapToModashFilters({ ...body, platform })
           
           console.log(`🔍 Searching ${platform} with filters:`, filters)
-          const result = await searchDiscovery(platform, filters)
+          const _result = await searchDiscovery(platform, filters)
           // Handle platform-specific response structures
           let resultData = []
           let totalCount = 0
@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
             total: totalCount,
             creditsUsed: (result as any).creditsUsed || 0
           }
-        } catch (error) {
+        } catch (_error) {
           console.error(`${platform} search failed:`, error)
           return {
             platform,
@@ -432,7 +432,7 @@ export async function POST(request: NextRequest) {
           const afterCount = mergedCreators.length
           console.log(`🔍 Roster filtering: ${beforeCount} → ${afterCount} (excluded ${beforeCount - afterCount} roster influencers)`)
           
-        } catch (error) {
+        } catch (_error) {
           console.error('❌ Roster filtering failed:', error)
           // Continue without filtering if there's an error
         }
@@ -465,7 +465,7 @@ export async function POST(request: NextRequest) {
           userId
         )
         console.log('📊 Discovery search stored in history')
-      } catch (error) {
+      } catch (_error) {
         console.error('❌ Failed to store discovery search:', error)
         // Continue without failing the entire request
       }
@@ -504,7 +504,7 @@ export async function POST(request: NextRequest) {
           }
         }
         console.log(`💾 Stored ${storedInfluencers.length} discovered influencers`)
-      } catch (error) {
+      } catch (_error) {
         console.error('❌ Failed to store discovered influencers:', error)
         // Continue without failing the entire request
       }
@@ -514,7 +514,7 @@ export async function POST(request: NextRequest) {
       try {
         discoveryStats = await getDiscoveryStats()
         console.log('📈 Discovery stats retrieved')
-      } catch (error) {
+      } catch (_error) {
         console.error('❌ Failed to get discovery stats:', error)
       }
       
@@ -550,11 +550,11 @@ export async function POST(request: NextRequest) {
         }
       })
       
-    } catch (error) {
+    } catch (_error) {
       console.warn('⚠️ Multi-platform search failed, using mock data:', error)
       
       // Fallback to mock data with multiple platforms
-      let mockResponse = generateMultiPlatformMockResponse(body)
+      const mockResponse = generateMultiPlatformMockResponse(body)
       
       // Apply roster filtering to mock data if requested
       if (body.hideProfilesInRoster) {
@@ -594,7 +594,7 @@ export async function POST(request: NextRequest) {
           const afterCount = mockResponse.results.length
           console.log(`🔍 Mock roster filtering: ${beforeCount} → ${afterCount} (excluded ${beforeCount - afterCount} roster influencers)`)
           
-        } catch (error) {
+        } catch (_error) {
           console.error('❌ Mock roster filtering failed:', error)
           // Continue without filtering if there's an error
         }
@@ -615,7 +615,7 @@ export async function POST(request: NextRequest) {
       })
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Discovery search API error:', error)
     
     return NextResponse.json(
@@ -636,7 +636,7 @@ function mergeCreatorResults(platformResults: any[]): MergedCreator[] {
     
     data.forEach((influencer: any) => {
       // Handle Modash's nested profile structure
-      const profile = influencer.profile || influencer
+      const _profile = influencer.profile || influencer
       
       const creatorKey = normalizeCreatorName(profile.fullname || profile.display_name || profile.username || influencer.username)
       

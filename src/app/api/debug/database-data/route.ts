@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     console.log('🔍 Checking database data...')
     
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       }
     })
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error checking database:', error)
     return NextResponse.json(
       { error: 'Failed to check database data' },

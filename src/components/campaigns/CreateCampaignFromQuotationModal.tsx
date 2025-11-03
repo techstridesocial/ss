@@ -172,7 +172,7 @@ export default function CreateCampaignFromQuotationModal({
       
       await onSave(campaignData)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating campaign:', error)
     } finally {
       setIsLoading(false)

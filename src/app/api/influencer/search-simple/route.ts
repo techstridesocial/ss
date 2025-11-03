@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { listUsers } from '../../../../lib/services/modash'
 
 export async function POST(request: NextRequest) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       message: `Found ${formattedResults.length} profiles`
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error in simple search:', error)
     return NextResponse.json(
       { 

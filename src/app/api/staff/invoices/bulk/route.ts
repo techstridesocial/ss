@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { getDatabase } from '@/lib/db/connection'
 
 export async function PUT(request: NextRequest) {
@@ -40,14 +40,14 @@ export async function PUT(request: NextRequest) {
         updatedCount: invoiceIds.length
       })
 
-    } catch (error) {
+    } catch (_error) {
       await client.query('ROLLBACK')
       throw error
     } finally {
       client.release()
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating bulk invoice status:', error)
     return NextResponse.json(
       { error: 'Failed to update invoice status' },

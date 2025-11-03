@@ -201,7 +201,7 @@ export default function AddInfluencerPanel({
         },
         confidence: 0.85 + Math.random() * 0.15
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         found: false,
         error: 'Failed to search Modash database. Please try again.'
@@ -218,7 +218,7 @@ export default function AddInfluencerPanel({
     }
 
     const cleanHandle = discoveryHandle.replace('@', '').trim()
-    const result = await searchModashProfile(cleanHandle, selectedPlatform)
+    const _result = await searchModashProfile(cleanHandle, selectedPlatform)
     setDiscoveryData(result)
     
     if (result.found && result.profile) {
@@ -228,7 +228,7 @@ export default function AddInfluencerPanel({
 
   const handleConfirmDiscovery = () => {
     if (discoveryData?.profile) {
-      const profile = discoveryData.profile
+      const _profile = discoveryData.profile
       setFormData({
         ...formData,
         display_name: profile.display_name,
@@ -292,7 +292,7 @@ export default function AddInfluencerPanel({
         body: JSON.stringify(formData)
       })
 
-      const result = await response.json()
+      const _result = await response.json()
 
       if (result.success) {
         alert(`✅ ${formData.display_name} added to roster successfully!`)
@@ -331,7 +331,7 @@ export default function AddInfluencerPanel({
       } else {
         throw new Error(result.error || 'Failed to add influencer')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving influencer:', error)
       alert(`❌ Failed to add influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -459,7 +459,7 @@ export default function AddInfluencerPanel({
                                   body: JSON.stringify(influencerData)
                                 })
 
-                                const result = await response.json()
+                                const _result = await response.json()
 
                                 if (result.success) {
                                   alert(`✅ ${influencer.displayName} added to roster successfully!`)
@@ -468,7 +468,7 @@ export default function AddInfluencerPanel({
                                 } else {
                                   throw new Error(result.error || 'Failed to add influencer')
                                 }
-                              } catch (error) {
+                              } catch (_error) {
                                 console.error('Error adding influencer:', error)
                                 alert(`❌ Failed to add ${influencer.displayName}: ${error instanceof Error ? error.message : 'Unknown error'}`)
                               } finally {

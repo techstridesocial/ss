@@ -122,7 +122,7 @@ class CreditsService {
     this.globalState.subscribers.forEach(callback => {
       try {
         callback(this.globalState)
-      } catch (error) {
+      } catch (_error) {
         console.error('Credit subscriber error:', error)
       }
     })
@@ -182,7 +182,7 @@ class CreditsService {
     this.updateGlobalState({ activePromise: promise })
 
     try {
-      const result = await promise
+      const _result = await promise
       
       if (result.success && result.data) {
         const detailedUsage = this.transformToDetailedUsage(result.data)
@@ -202,7 +202,7 @@ class CreditsService {
       }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       this.updateGlobalState({
         isLoading: false,
@@ -229,14 +229,14 @@ class CreditsService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       return {
         success: true,
         data: result.data,
         timestamp: new Date().toISOString()
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Failed to fetch credit usage:', error)
       
       return {

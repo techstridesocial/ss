@@ -64,7 +64,7 @@ export async function cacheModashProfile(
       throw new Error('No profile data returned from Modash')
     }
     
-    const profile = modashData.profile.profile || {}
+    const _profile = modashData.profile.profile || {}
     const audience = modashData.profile.audience || {}
     const stats = modashData.profile.stats || {}
     
@@ -174,7 +174,7 @@ export async function cacheModashProfile(
     console.log(`✅ Successfully cached Modash profile for ${platform} user ${modashUserId}`)
     return { success: true }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error caching Modash profile:', error)
     return {
       success: false,
@@ -193,7 +193,7 @@ export async function getCachedProfile(
   try {
     console.log(`🔍 Looking for cached profile:`, { influencerPlatformId, platform: platform.toUpperCase() })
     
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         mpc.*,
         mac.notable_percentage,
@@ -229,7 +229,7 @@ export async function getCachedProfile(
     
     return result[0] as CachedProfileData
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting cached profile:', error)
     return null
   }
@@ -240,7 +240,7 @@ export async function getCachedProfile(
  */
 export async function getProfilesNeedingUpdate(limit: number = 10): Promise<any[]> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT 
         mpc.id,
         mpc.influencer_platform_id,
@@ -262,7 +262,7 @@ export async function getProfilesNeedingUpdate(limit: number = 10): Promise<any[
     
     return result
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting profiles needing update:', error)
     return []
   }
@@ -285,7 +285,7 @@ export async function updateExpiredProfiles(): Promise<{
     try {
       console.log(`🔄 Updating expired cache for ${profile.platform} user ${profile.modash_user_id}`)
       
-      const result = await cacheModashProfile(
+      const _result = await cacheModashProfile(
         profile.influencer_platform_id,
         profile.modash_user_id,
         profile.platform
@@ -301,7 +301,7 @@ export async function updateExpiredProfiles(): Promise<{
       // Small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500))
       
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error updating profile ${profile.modash_user_id}:`, error)
       errors++
     }
@@ -339,7 +339,7 @@ export async function getCacheStats(): Promise<CacheStats> {
       credits_used_this_month: creditsUsed[0]?.credits_used_this_month || 0
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting cache stats:', error)
     return {
       total_cached_profiles: 0,

@@ -722,7 +722,7 @@ function BrandsPageClient() {
       // Redirect to the campaigns page
       router.push('/staff/campaigns')
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating campaign:', error)
       alert('Failed to create campaign. Please try again.')
     }
@@ -752,7 +752,7 @@ function BrandsPageClient() {
         })
       })
 
-      const result = await response.json()
+      const _result = await response.json()
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to send quotation')
@@ -770,7 +770,7 @@ function BrandsPageClient() {
       closePanels()
       alert(`Quotation sent successfully to ${selectedQuotation.brand_name}! They will receive the quote via email.`)
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error sending quotation:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       alert(`Failed to send quotation: ${errorMessage}`)
@@ -807,7 +807,7 @@ function BrandsPageClient() {
         alert(`✅ Assignment removed from ${brand?.company_name}`)
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error assigning brand:', error)
       alert('❌ Error updating assignment. Please try again.')
     } finally {

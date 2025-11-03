@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, queryOne } from '@/lib/db/connection'
@@ -75,7 +75,7 @@ export async function GET(
       lineItems,
       statusHistory 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching invoice details:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invoice details' },
@@ -156,7 +156,7 @@ export async function PUT(
       message: 'Invoice status updated successfully',
       invoice: updateResult 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating invoice status:', error)
     return NextResponse.json(
       { error: 'Failed to update invoice status' },

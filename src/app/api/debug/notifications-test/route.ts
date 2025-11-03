@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 
 // GET /api/debug/notifications-test - Test notifications endpoint
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     console.log('🔍 [DEBUG] Notifications test endpoint called')
     
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('🔍 [DEBUG] Notifications test error:', error)
     return NextResponse.json({ 
       error: 'Notifications test failed',

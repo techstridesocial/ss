@@ -81,7 +81,7 @@ function SavedInfluencersTable({
           return rest
         })
       }, 3000)
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to add to roster:', error)
       setRosterMessages(prev => ({
         ...prev,
@@ -105,7 +105,7 @@ function SavedInfluencersTable({
     
     try {
       await removeSavedInfluencer(influencer.username, influencer.platform)
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to remove influencer:', error)
       alert(error instanceof Error ? error.message : 'Failed to remove influencer')
     } finally {

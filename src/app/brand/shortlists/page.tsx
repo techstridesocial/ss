@@ -187,7 +187,7 @@ export default function BrandShortlistsPage() {
     if (confirmRemove) {
       try {
         await removeInfluencerFromShortlist(confirmRemove.shortlistId, confirmRemove.influencerId)
-      } catch (error) {
+      } catch (_error) {
         console.error('Error removing influencer:', error)
       } finally {
         setConfirmRemove(null)
@@ -236,7 +236,7 @@ export default function BrandShortlistsPage() {
       } else {
         throw new Error('Failed to create campaign')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating campaign:', error)
       alert('Failed to create campaign. Please try again.')
     }

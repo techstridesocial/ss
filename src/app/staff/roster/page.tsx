@@ -96,7 +96,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
         avgViews: selectedInfluencerDetail.total_avg_views || 0,
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('🔍 [DEBUG] Error in useMemo:', error)
       return {
         id: selectedInfluencerDetail.id,
@@ -151,7 +151,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       })
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         console.log('✅ Bulk refresh completed:', result)
         
         // Reload the page to show updated data
@@ -159,7 +159,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       } else {
         throw new Error('Failed to refresh analytics')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Bulk refresh failed:', error)
       alert('Failed to refresh analytics. Please try again.')
     } finally {
@@ -235,7 +235,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         // Remove invalid influencer from URL
         updateUrl(null)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load influencer details:', error)
       updateUrl(null)
     } finally {
@@ -281,7 +281,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       })
       
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         if (result.success && result.data) {
           console.log(`✅ Loaded ${result.data.length} real influencers from database`)
           setInfluencers(result.data)
@@ -298,7 +298,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         setInfluencers([])
         setIsInitialLoading(false)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error loading influencers:', error)
       setInfluencers([])
       setIsInitialLoading(false)
@@ -872,7 +872,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       console.log('🔍 [DEBUG] onPanelStateChange called successfully')
       
       console.log('✅ [DEBUG] handleViewInfluencer completed successfully')
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ [DEBUG] Error in handleViewInfluencer:', error)
       console.error('❌ [DEBUG] Error stack:', error instanceof Error ? error.stack : 'No stack trace available')
     }
@@ -909,7 +909,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     onPanelStateChange?.(false)
   }
 
-  const handlePlatformSwitch = (platform: string) => {
+  const handlePlatformSwitch = (_platform: string) => {
     setSelectedPlatform(platform)
     // Update URL with new platform if an influencer is selected
     if (selectedInfluencerDetail?.id) {
@@ -940,7 +940,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         throw new Error(errorData.error || 'Failed to save management data')
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       console.log('✅ API response:', result)
       
       // Update the influencer in state with the returned data
@@ -968,7 +968,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       console.log('✅ Management data saved successfully to database!')
       
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error saving management data:', error)
       alert(`❌ Error saving management data: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -1012,7 +1012,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       console.log('✅ Assignment successful:', result)
 
       // Refresh the data to show updated influencer
@@ -1022,7 +1022,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       setAssignModalOpen(false)
       setSelectedInfluencer(null)
 
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Assignment failed:', error)
       throw error // Re-throw to let the modal handle the error display
     } finally {
@@ -1081,7 +1081,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         alert(`✅ Influencer ${data.display_name} updated successfully!`)
       }
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error updating influencer:', error)
       alert('❌ Error updating influencer. Please try again.')
     } finally {
@@ -1111,7 +1111,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       console.log(`✅ Influencer list refreshed and switched to ${targetTab} tab`)
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error refreshing influencer list:', error)
       alert('❌ Error refreshing data. Please try again.')
     } finally {
@@ -1135,7 +1135,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       alert(`✅ ${influencer.display_name} has been deleted successfully.`)
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Error deleting influencer:', error)
       alert('❌ Error deleting influencer. Please try again.')
     } finally {
@@ -1151,7 +1151,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500))
       alert('✅ Influencer data refreshed successfully!')
-    } catch (error) {
+    } catch (_error) {
       console.error('Error refreshing data:', error)
       alert('❌ Error refreshing data. Please try again.')
     } finally {

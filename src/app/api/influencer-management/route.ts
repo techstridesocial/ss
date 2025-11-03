@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { Pool } from 'pg'
 
@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest) {
       influencerId
     ]
 
-    const result = await pool.query(query, values)
+    const _result = await pool.query(query, values)
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest) {
       data: result.rows[0] 
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating influencer management data:', error)
     return NextResponse.json({ 
       error: 'Failed to update influencer management data' 

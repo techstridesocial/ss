@@ -143,14 +143,14 @@ function CampaignsPageClient() {
     try {
       const response = await fetch('/api/brand/campaigns')
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         if (result.success) {
           setCampaigns(result.data)
         }
       } else {
         console.error('Failed to load campaigns')
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error loading campaigns:', error)
     } finally {
       setIsLoading(false)

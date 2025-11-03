@@ -74,7 +74,7 @@ export const PremiumInstagramMetricsSection = ({ influencer, selectedPlatform }:
   }
   
   // Extract content type stats
-  let contentTypeStats = []
+  const contentTypeStats = []
   if (statsByContentType) {
     if (statsByContentType.reels) {
       contentTypeStats.push({

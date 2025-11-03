@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
@@ -22,7 +22,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const campaignId = params.id
+    const _campaignId = params.id
     const body = await request.json()
     const { assigned_staff_id } = body
 
@@ -93,7 +93,7 @@ export async function PATCH(
             campaignId
           )
           console.log(`📬 Campaign assignment notification sent to ${assignedStaff.fullName}`)
-        } catch (error) {
+        } catch (_error) {
           console.error('Failed to send campaign assignment notification:', error)
           // Don't fail the request if notification fails
         }
@@ -112,7 +112,7 @@ export async function PATCH(
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating campaign assignment:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getContentSubmissionStats } from '@/lib/db/queries/content-submissions'
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const campaignId = searchParams.get('campaignId')
+    const _campaignId = searchParams.get('campaignId')
 
     if (!campaignId) {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       stats
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching content statistics:', error)
     return NextResponse.json(
       { error: 'Failed to fetch content statistics' },

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getBrandIdFromUserId, getBrandCampaigns } from '@/lib/db/queries/brand-campaigns'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     let brandId: string
     try {
       brandId = await getBrandIdFromUserId(userId)
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage.includes('Brand not found')) {
         // Brand hasn't completed onboarding - return empty campaigns instead of error
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       data: campaigns
     })
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching brand campaigns:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaigns' },

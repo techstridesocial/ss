@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user_id from users table using clerk_id, create if doesn't exist
-    let userResult = await query<{ id: string }>(
+    const userResult = await query<{ id: string }>(
       'SELECT id FROM users WHERE clerk_id = $1',
       [userId]
     )
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start transaction to create/update influencer and profile records
-    const result = await transaction(async (client) => {
+    const _result = await transaction(async (client) => {
       // Check if user profile exists
       const existingProfile = await client.query(
         'SELECT id FROM user_profiles WHERE user_id = $1',
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
       influencer_id: result.influencerId
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Influencer onboarding error:', error)
     console.error('❌ Full error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',

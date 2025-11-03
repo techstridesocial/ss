@@ -241,7 +241,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
       message: 'Influencer stats retrieved successfully'
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting influencer stats:', error)
     return {
       success: false,
@@ -269,7 +269,7 @@ export async function getPlatformStats(influencerId: string, platform: string): 
       WHERE influencer_id = $1 AND platform = $2
     `
 
-    const result = await query(queryText, [influencerId, platform])
+    const _result = await query(queryText, [influencerId, platform])
 
     if (result.length === 0) {
       // Return empty data if no platform data exists
@@ -306,7 +306,7 @@ export async function getPlatformStats(influencerId: string, platform: string): 
       message: 'Platform stats retrieved successfully'
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting platform stats:', error)
     return {
       success: false,

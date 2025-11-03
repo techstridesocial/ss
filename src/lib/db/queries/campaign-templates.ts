@@ -38,7 +38,7 @@ export async function getCampaignTemplates(includeInactive: boolean = false): Pr
   try {
     const whereClause = includeInactive ? '' : 'WHERE is_active = true'
     
-    const result = await query(`
+    const _result = await query(`
       SELECT * FROM campaign_templates 
       ${whereClause}
       ORDER BY created_at DESC
@@ -74,7 +74,7 @@ export async function getCampaignTemplates(includeInactive: boolean = false): Pr
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }))
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting campaign templates:', error)
     throw error
   }
@@ -85,7 +85,7 @@ export async function getCampaignTemplates(includeInactive: boolean = false): Pr
  */
 export async function getCampaignTemplateById(id: string): Promise<CampaignTemplate | null> {
   try {
-    const result = await query(`
+    const _result = await query(`
       SELECT * FROM campaign_templates 
       WHERE id = $1
     `, [id])
@@ -125,7 +125,7 @@ export async function getCampaignTemplateById(id: string): Promise<CampaignTempl
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error getting campaign template by ID:', error)
     throw error
   }
@@ -136,7 +136,7 @@ export async function getCampaignTemplateById(id: string): Promise<CampaignTempl
  */
 export async function createCampaignTemplate(template: Omit<CampaignTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<CampaignTemplate> {
   try {
-    const result = await query(`
+    const _result = await query(`
       INSERT INTO campaign_templates (
         name, description, brand, goals, start_date, end_date, 
         application_deadline, content_deadline, total_budget, per_influencer_budget,
@@ -197,7 +197,7 @@ export async function createCampaignTemplate(template: Omit<CampaignTemplate, 'i
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating campaign template:', error)
     throw error
   }
@@ -292,7 +292,7 @@ export async function updateCampaignTemplate(id: string, updates: Partial<Campai
     setClauses.push(`updated_at = NOW()`)
     values.push(id)
 
-    const result = await query(`
+    const _result = await query(`
       UPDATE campaign_templates 
       SET ${setClauses.join(', ')}
       WHERE id = $${paramCount}
@@ -334,7 +334,7 @@ export async function updateCampaignTemplate(id: string, updates: Partial<Campai
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating campaign template:', error)
     throw error
   }
@@ -345,14 +345,14 @@ export async function updateCampaignTemplate(id: string, updates: Partial<Campai
  */
 export async function deleteCampaignTemplate(id: string): Promise<boolean> {
   try {
-    const result = await query(`
+    const _result = await query(`
       DELETE FROM campaign_templates 
       WHERE id = $1
       RETURNING id
     `, [id])
 
     return result.length > 0
-  } catch (error) {
+  } catch (_error) {
     console.error('Error deleting campaign template:', error)
     throw error
   }
@@ -393,7 +393,7 @@ export async function createCampaignFromTemplate(
     // Use the existing campaign creation function
     const { createCampaign } = await import('./campaigns')
     return await createCampaign(campaign)
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating campaign from template:', error)
     throw error
   }

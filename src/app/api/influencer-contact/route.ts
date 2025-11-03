@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getAllContactRecords, createContactRecord, updateContactRecord } from '@/lib/db/queries/contact-tracking'
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const influencerId = searchParams.get('influencerId')
-    const campaignId = searchParams.get('campaignId')
+    const _campaignId = searchParams.get('campaignId')
     const quotationId = searchParams.get('quotationId')
 
     let contactRecords = await getAllContactRecords()
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       success: true,
       contactRecords
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching contact records:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch contact records' },
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       message: 'Contact record created successfully',
       contactRecord
     }, { status: 201 })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating contact record:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create contact record' },
@@ -144,7 +144,7 @@ export async function PUT(request: NextRequest) {
       message: 'Contact record updated successfully',
       contactRecord: updatedRecord
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating contact record:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update contact record' },

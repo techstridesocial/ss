@@ -68,10 +68,10 @@ export default function CampaignDetailModal({ campaign, isOpen, onClose }: Campa
     try {
       const response = await fetch(`/api/brand/campaigns/${campaign.id}`)
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         setCampaignDetail(result.data)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to fetch campaign details:', error)
     } finally {
       setIsLoading(false)
@@ -84,10 +84,10 @@ export default function CampaignDetailModal({ campaign, isOpen, onClose }: Campa
     try {
       const response = await fetch(`/api/brand/campaigns/${campaign.id}?include=analytics`)
       if (response.ok) {
-        const result = await response.json()
+        const _result = await response.json()
         setAnalytics(result.data)
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to fetch campaign analytics:', error)
     }
   }

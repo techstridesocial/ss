@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { addDiscoveredInfluencerToRoster, getDiscoveredInfluencers, addDiscoveredInfluencerToRosterWithCompleteData } from '../../../../lib/db/queries/discovery'
 import { getProfileReport } from '../../../../lib/services/modash'
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         
         if ((modashResponse as any)?.profile) {
           completeModashData = (modashResponse as any).profile
-          const profile = (modashResponse as any).profile
+          const _profile = (modashResponse as any).profile
           console.log('✅ Complete Modash data fetched:', {
             hasProfile: !!profile.profile,
             hasAudience: !!profile.audience,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error adding to roster:', error)
     return NextResponse.json(
       { 
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error getting discovered influencers:', error)
     return NextResponse.json(
       { 

@@ -80,7 +80,7 @@ class ModashSyncJob {
             // Add delay between requests to respect rate limits
             await new Promise(resolve => setTimeout(resolve, 500))
             
-          } catch (error) {
+          } catch (_error) {
             console.error(`❌ Failed to update influencer ${influencer.id}:`, error)
             failed++
           }

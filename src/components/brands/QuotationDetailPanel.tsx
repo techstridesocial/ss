@@ -130,7 +130,7 @@ const InfluencerPricingCard = ({
   }
 
   // Platform icon mapping
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = (_platform: string) => {
     switch (platform.toLowerCase()) {
       case 'instagram':
         return (
@@ -479,7 +479,7 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation: initi
       await new Promise(resolve => setTimeout(resolve, 1000))
       onSendQuote(totalToUse, quoteNotes)
       onClose()
-    } catch (error) {
+    } catch (_error) {
       console.error('Error sending quote:', error)
     } finally {
       setIsLoading(false)

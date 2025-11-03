@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 import { getCurrentUserRole } from '@/lib/auth/roles'
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       offset
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching users:', error)
     return NextResponse.json(
       { error: 'Failed to fetch users' },

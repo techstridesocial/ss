@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { clerkClient } from '@clerk/nextjs/server'
+import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     queryText += ` ORDER BY ssi.saved_at DESC LIMIT $${queryParams.length + 1}`
     queryParams.push(parseInt(limit))
 
-    const result = await query<SavedInfluencer & { saved_by_email: string; added_to_roster_by_email?: string }>(
+    const _result = await query<SavedInfluencer & { saved_by_email: string; added_to_roster_by_email?: string }>(
       queryText, 
       queryParams
     )
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: result
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching saved influencers:', error)
     return NextResponse.json(
       { error: 'Failed to fetch saved influencers' },
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       hasModashData: !!modash_data
     })
 
-    const result = await query<{ id: string }>(
+    const _result = await query<{ id: string }>(
       `INSERT INTO staff_saved_influencers (
         username, display_name, platform, followers, engagement_rate,
         avg_likes, avg_views, avg_comments, profile_picture, bio, location,
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
       data: { id: result[0]?.id },
       message: 'Influencer saved successfully'
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error saving influencer:', error)
     return NextResponse.json(
       { error: 'Failed to save influencer' },
@@ -308,7 +308,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Influencer removed from saved list'
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error removing saved influencer:', error)
     return NextResponse.json(
       { error: 'Failed to remove saved influencer' },

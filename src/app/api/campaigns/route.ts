@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getAllCampaigns, createCampaign, addInfluencerToCampaign } from '@/lib/db/queries/campaigns'
 
@@ -21,7 +21,7 @@ export async function GET() {
       success: true, 
       campaigns 
     })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching campaigns:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaigns' },
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       campaign 
     }, { status: 201 })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating campaign:', error)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',

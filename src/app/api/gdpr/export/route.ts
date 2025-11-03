@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 import { exportAuditDataForUser } from '@/lib/db/queries/audit'
 import { logAuditEvent } from '@/lib/db/queries/audit'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       data: gdprExport
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('GDPR export error:', error)
     return NextResponse.json(
       { error: 'Failed to export GDPR data' },

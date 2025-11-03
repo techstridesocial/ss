@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 
@@ -113,7 +113,7 @@ export async function PATCH(
       data: updateResult[0]
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating influencer:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

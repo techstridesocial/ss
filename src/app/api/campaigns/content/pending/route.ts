@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getPendingContentReviews } from '@/lib/db/queries/content-submissions'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       submissions: pendingSubmissions
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching pending content reviews:', error)
     return NextResponse.json(
       { error: 'Failed to fetch pending content reviews' },

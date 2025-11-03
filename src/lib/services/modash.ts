@@ -122,7 +122,7 @@ export async function getMediaInfo(url: string) {
     
     console.log(`✅ [MODASH DEBUG] Media info result for ${url}:`, JSON.stringify(result, null, 2))
     return result
-  } catch (error) {
+  } catch (_error) {
     console.error(`❌ [MODASH DEBUG] Error getting media info for ${url}:`, error)
     throw error
   }
@@ -348,7 +348,7 @@ export async function getCreatorCollaborations(
       error: null
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error fetching collaborations:', error)
     return { collaborations: [], error: error instanceof Error ? error.message : 'Unknown error' }
   }

@@ -99,7 +99,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           setOptions(suggestions)
           setIsOpen(suggestions.length > 0)
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Autocomplete fetch error:', error)
         setOptions([])
       } finally {

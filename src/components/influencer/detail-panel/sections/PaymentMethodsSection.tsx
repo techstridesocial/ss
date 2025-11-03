@@ -103,7 +103,7 @@ export function PaymentMethodsSection({ influencer }: PaymentMethodsSectionProps
           setPaymentSummary(mockPaymentSummary)
           setPaymentHistory([])
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error fetching payment data:', error)
         // Set empty state on error
         setPaymentInfo(null)

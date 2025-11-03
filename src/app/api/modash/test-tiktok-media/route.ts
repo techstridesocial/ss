@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { getTikTokMediaInfo } from '@/lib/services/modash'
 
 // GET /api/modash/test-tiktok-media - Test TikTok RAW API media info endpoint
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Testing TikTok RAW API media info:', { url })
 
     // Call the TikTok RAW API media info endpoint
-    const result = await getTikTokMediaInfo(url)
+    const _result = await getTikTokMediaInfo(url)
     
     console.log('📊 TikTok RAW API Response:', {
       hasData: !!result,
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ TikTok RAW API test error:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 
 export async function POST(request: NextRequest) {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       message: 'Profile image uploaded successfully'
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error uploading profile image:', error)
     return NextResponse.json(
       { error: 'Failed to upload profile image' },

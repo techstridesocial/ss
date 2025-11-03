@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createCampaignFromQuotation } from '@/lib/db/queries/quotations'
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create campaign from approved quotation
-    const campaignId = await createCampaignFromQuotation(quotationId)
+    const _campaignId = await createCampaignFromQuotation(quotationId)
     
     if (!campaignId) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       message: 'Campaign created successfully from approved quotation',
       campaignId
     }, { status: 201 })
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating campaign from quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create campaign from quotation' },

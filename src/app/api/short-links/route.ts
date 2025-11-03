@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db/connection'
 
 export async function POST(req: NextRequest) {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       linkId: shortLinkData.idString
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating short link:', error)
     return NextResponse.json(
       { error: 'Failed to create tracking link' }, 
@@ -160,14 +160,14 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ links: formattedLinks })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching tracking links:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // DELETE handler - Delete a tracking link
-export async function DELETE(request: Request) {
+export async function DELETE(_request: Request) {
   try {
     const { userId } = await auth()
     
@@ -206,14 +206,14 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error deleting tracking link:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // PUT handler - Update a tracking link
-export async function PUT(request: Request) {
+export async function PUT(_request: Request) {
   try {
     const { userId } = await auth()
     
@@ -273,7 +273,7 @@ export async function PUT(request: Request) {
       createdAt: updatedLink.createdAt
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating tracking link:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { updateAllInfluencerAnalytics } from '@/lib/services/analytics-updater'
 
 // POST /api/analytics/update-all - Update analytics for all influencers
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Starting analytics update for all influencers...')
 
     // Update analytics for all influencers
-    const result = await updateAllInfluencerAnalytics()
+    const _result = await updateAllInfluencerAnalytics()
 
     return NextResponse.json({
       success: true,
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error updating analytics:', error)
     return NextResponse.json(
       { error: 'Failed to update analytics' },
