@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
+import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -191,14 +193,18 @@ export default function StaffContentManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Content Management</h1>
-        <Button onClick={loadPendingSubmissions} variant="outline">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
+    <StaffProtectedRoute>
+      <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+        <ModernStaffHeader />
+        
+        <main className="px-4 lg:px-8 pb-8">
+          <div className="mb-6 flex justify-between items-center">
+            <h1 className="text-3xl font-bold">Content Management</h1>
+            <Button onClick={loadPendingSubmissions} variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
 
       {/* Stats Overview */}
       {stats && (
@@ -419,6 +425,8 @@ export default function StaffContentManagement() {
           </CardContent>
         </Card>
       </div>
-    </div>
+        </main>
+      </div>
+    </StaffProtectedRoute>
   )
 } 

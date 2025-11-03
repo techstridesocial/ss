@@ -38,6 +38,7 @@ const DashboardInfoPanel = dynamic(() => import('../../../components/influencer/
   loading: () => <div>Loading dashboard...</div>
 })
 import { Platform, InfluencerDetailView } from '../../../types/database'
+import { StaffInfluencer } from '../../../types/staff'
 import { Search, FilterIcon, Eye, Edit, Users, TrendingUp, DollarSign, MapPin, Tag, Trash2, RefreshCw, Globe, ChevronDown, Plus, ChevronUp, BarChart3, User, AlertTriangle } from 'lucide-react'
 
 interface InfluencerTableProps {
@@ -56,11 +57,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null)
+  const [selectedInfluencer, setSelectedInfluencer] = useState<StaffInfluencer | null>(null)
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
-  const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<any>(null)
+  const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<StaffInfluencer | null>(null)
 
 
   const memoizedInfluencer = useMemo(() => {
@@ -151,13 +152,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       if (response.ok) {
         await response.json()
         
-        // Reload the page to show updated data
-        window.location.reload()
+        // Reload data from API to show updated analytics
+        await loadInfluencers()
+        alert('✅ Analytics refreshed successfully!')
       } else {
         throw new Error('Failed to refresh analytics')
       }
-    } catch {
-      alert('Failed to refresh analytics. Please try again.')
+    } catch (error) {
+      alert(`Failed to refresh analytics: ${error instanceof Error ? error.message : 'Please try again.'}`)
     } finally {
       setIsRefreshingAnalytics(false)
     }
@@ -236,18 +238,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }, [urlSearchParams])
 
-  const [influencers, setInfluencers] = useState<any[]>(() => {
-    // Initialize with empty array - will load real data immediately
-    return []
-  })
-
+  const [influencers, setInfluencers] = useState<StaffInfluencer[]>([])
   const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // Function to load influencers from the database
   const loadInfluencers = async () => {
     try {
+      setLoadError(null)
       const token = await getToken()
       if (!token) {
+        setLoadError('Authentication required. Please sign in.')
         setInfluencers([])
         setIsInitialLoading(false)
         return
@@ -264,17 +265,22 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         const result = await response.json()
         if (result.success && result.data) {
           setInfluencers(result.data)
+          setLoadError(null)
           setIsInitialLoading(false)
           return result.data
         } else {
+          setLoadError(result.error || 'Failed to load influencers')
           setInfluencers([])
           setIsInitialLoading(false)
         }
       } else {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to load influencers' }))
+        setLoadError(errorData.error || `Error ${response.status}: ${response.statusText}`)
         setInfluencers([])
         setIsInitialLoading(false)
       }
-    } catch {
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Network error. Please check your connection.')
       setInfluencers([])
       setIsInitialLoading(false)
     }
@@ -427,7 +433,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   // Enhanced filtering logic
-  const applyFilters = (influencers: any[]) => {
+  const applyFilters = (influencers: StaffInfluencer[]) => {
     return influencers.filter(influencer => {
       // Existing tab filter
   if (activeTab === 'ALL') {
@@ -477,7 +483,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       const matchesLocation = !rosterFilters.location || influencer.location_country === rosterFilters.location
       const matchesInfluencerType = !rosterFilters.influencerType || influencer.influencer_type === rosterFilters.influencerType
       const matchesContentType = !rosterFilters.contentType || influencer.content_type === rosterFilters.contentType
-      const matchesTier = !rosterFilters.tier || getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === rosterFilters.tier
+      const matchesTier = !rosterFilters.tier || getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type || '', influencer.tier || '') === rosterFilters.tier
       const matchesStatus = !rosterFilters.status || influencer.is_active.toString() === rosterFilters.status
 
       return matchesNiche && matchesPlatform && matchesFollowerRange && 
@@ -487,7 +493,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   // Check if influencer needs assignment
-  const needsAssignment = (influencer: any) => {
+  const needsAssignment = (influencer: StaffInfluencer) => {
     // Pending if content_type is null OR influencer_type is null
     return !influencer.content_type || !influencer.influencer_type
   }
@@ -538,7 +544,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         matchesFilters = influencer.content_type === rosterFilters.contentType
       }
       if (matchesFilters && rosterFilters.tier) {
-        matchesFilters = getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === rosterFilters.tier
+        matchesFilters = getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type || '', influencer.tier || '') === rosterFilters.tier
       }
       if (matchesFilters && rosterFilters.status) {
         matchesFilters = influencer.is_active.toString() === rosterFilters.status
@@ -605,8 +611,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     if (!sortConfig.key) return filteredInfluencers
 
     return [...filteredInfluencers].sort((a, b) => {
-      let aValue: any = a[sortConfig.key as keyof typeof a]
-      let bValue: any = b[sortConfig.key as keyof typeof b]
+      let aValue = a[sortConfig.key as keyof StaffInfluencer]
+      let bValue = b[sortConfig.key as keyof StaffInfluencer]
 
       // Handle different data types
       switch (sortConfig.key) {
@@ -693,11 +699,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   // Generate detailed influencer data - use real data from database
-  const generateDetailedInfluencerData = (basicInfluencer: any): InfluencerDetailView => {
+  const generateDetailedInfluencerData = (basicInfluencer: StaffInfluencer): any => {
     return {
       ...basicInfluencer,
       price_per_post: Math.floor(basicInfluencer.total_followers * 0.01),
-      last_synced_at: new Date(),
+      
+      // Required fields for InfluencerDetailView compatibility
+      user_id: basicInfluencer.id,
+      estimated_promotion_views: basicInfluencer.total_avg_views || 0,
+      relationship_status: 'ACTIVE',
+      email: null,
       
       // Use existing management fields from database
       assigned_to: basicInfluencer.assigned_to || null,
@@ -707,7 +718,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       // Use existing profile properties
       bio: basicInfluencer.bio || null,
       website_url: basicInfluencer.website_url || null,
-      email: basicInfluencer.email || null,
       
       // Use platform details from database (will be fetched by InfluencerDetailPanel)
       platform_details: [],
@@ -747,17 +757,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     return colors[platform] || 'bg-gray-100 text-gray-800'
   }
 
-  const handleViewInfluencer = (influencer: any) => {
-    setSelectedInfluencerDetail(influencer)
+  const handleViewInfluencer = (influencer: StaffInfluencer) => {
+    const detailedData = generateDetailedInfluencerData(influencer)
+    setSelectedInfluencerDetail(detailedData)
     setDetailPanelOpen(true)
     onPanelStateChange?.(true)
   }
 
-  const handleViewDashboardInfo = (influencer: any) => {
-    // Update URL with influencer ID
-    const url = new URL(window.location.href)
-    url.searchParams.set('influencer', influencer.id)
-    window.history.pushState({}, '', url.toString())
+  const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
+    // Update URL with influencer ID using Next.js router
+    router.push(`${pathname}?influencer=${influencer.id}`, { scroll: false })
     
     // Close any other panels first
     setDetailPanelOpen(false)
@@ -770,10 +779,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleClosePanels = () => {
-    // Clear URL parameter
-    const url = new URL(window.location.href)
-    url.searchParams.delete('influencer')
-    window.history.replaceState({}, '', url.toString())
+    // Clear URL parameter using Next.js router
+    router.replace(pathname, { scroll: false })
     
     setDetailPanelOpen(false)
     setSelectedInfluencerDetail(null)
@@ -845,17 +852,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  const handleEditInfluencer = (influencer: any) => {
+  const handleEditInfluencer = (influencer: StaffInfluencer) => {
     setSelectedInfluencer(influencer)
     setEditModalOpen(true)
   }
 
-  const handleAssignInfluencer = (influencer: any) => {
+  const handleAssignInfluencer = (influencer: StaffInfluencer) => {
     setSelectedInfluencer(influencer)
     setAssignModalOpen(true)
   }
 
-  const handleSaveAssignment = async (assignmentData: any) => {
+  const handleSaveAssignment = async (assignmentData: Partial<StaffInfluencer>) => {
     if (!selectedInfluencer) {
       throw new Error('No influencer selected')
     }
@@ -892,7 +899,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  const handleSaveInfluencerEdit = async (data: any) => {
+  const handleSaveInfluencerEdit = async (data: Partial<StaffInfluencer> & { id: string }) => {
     setIsLoading(true)
     
     try {
@@ -911,8 +918,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           website_url: data.website_url,
           influencer_type: data.influencer_type,
           is_active: data.is_active,
-          total_followers: data.estimated_followers,
-          total_avg_views: data.average_views,
+          total_followers: data.total_followers,
+          total_avg_views: data.total_avg_views,
         })
       })
 
@@ -965,7 +972,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  const handleAddInfluencer = async (data: any) => {
+  const handleAddInfluencer = async (data: Partial<StaffInfluencer>) => {
     setIsLoading(true)
     
     try {
@@ -974,13 +981,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       await loadInfluencers()
       
       // Switch to the appropriate tab to show the new influencer
-      const getTargetTab = (type: string) => {
+      const getTargetTab = (type: string | undefined | null) => {
         if (type === 'SIGNED') return 'SIGNED'
         if (type === 'PARTNERED') return 'PARTNERED'
         if (type === 'AGENCY_PARTNER') return 'AGENCY_PARTNER'
         return 'ALL'
       }
-      const targetTab = getTargetTab(data.influencer_type)
+      const targetTab = getTargetTab(data.influencer_type || null)
       setActiveTab(targetTab)
       
     } catch {
@@ -990,7 +997,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     }
   }
 
-  const handleDeleteInfluencer = async (influencer: any) => {
+  const handleDeleteInfluencer = async (influencer: StaffInfluencer) => {
     setIsLoading(true)
     
     try {
@@ -1399,6 +1406,25 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </div>
       </div>
 
+      {/* Error Message */}
+      {loadError && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-red-500 mr-3" />
+            <div>
+              <h3 className="text-sm font-semibold text-red-800">Failed to Load Influencers</h3>
+              <p className="text-sm text-red-700 mt-1">{loadError}</p>
+              <button
+                onClick={() => loadInfluencers()}
+                className="mt-2 text-sm font-medium text-red-700 hover:text-red-800 underline"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Influencer Table */}
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
         <div className="overflow-x-auto">
@@ -1515,7 +1541,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                     {(influencer.influencer_type === 'SIGNED' || influencer.influencer_type === 'PARTNERED') ? (
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                         influencer.influencer_type === 'SIGNED' 
-                          ? getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type, influencer.tier) === 'GOLD'
+                          ? getInfluencerTier(influencer.total_followers, influencer.total_engagement_rate, influencer.influencer_type || '', influencer.tier || '') === 'GOLD'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-gray-100 text-gray-800'
                           : 'bg-blue-100 text-blue-800'
@@ -1782,8 +1808,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             setEditModalOpen(false)
             setSelectedInfluencer(null)
           }}
-          influencer={selectedInfluencer}
-          onSave={handleSaveInfluencerEdit}
+          influencer={selectedInfluencer as any}
+          onSave={handleSaveInfluencerEdit as any}
         />
       )}
 
@@ -1794,8 +1820,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             setAssignModalOpen(false)
             setSelectedInfluencer(null)
           }}
-          influencer={selectedInfluencer}
-          onAssign={handleSaveAssignment}
+          influencer={selectedInfluencer as any}
+          onAssign={handleSaveAssignment as any}
         />
       )}
 
