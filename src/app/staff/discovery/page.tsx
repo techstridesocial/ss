@@ -132,87 +132,9 @@ const addToRoster = async (discoveredId: string, modashUserId?: string, platform
       throw new Error(data.error || 'Failed to add to roster')
     }
   } catch (error) {
-    console.error('Error adding to roster:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }
-
-// Mock data for discovered influencers
-
-const MOCK_DISCOVERED_INFLUENCERS = [
-  {
-    id: 'discovered_1',
-    display_name: 'HealthyLifeMia',
-    profile_picture: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face',
-    instagram_handle: '@healthylifemia',
-    youtube_handle: '@healthylifemia',
-    tiktok_handle: null,
-    followers: 89000,
-    engagement_rate: 4.7,
-    avg_views: 32000,
-    niche: 'Health',
-    location: 'United Kingdom',
-    verified: true,
-    last_post: '2024-01-19',
-    estimated_price: 650,
-    already_imported: false,
-    modash_score: 92
-  },
-  {
-    id: 'discovered_2',
-    display_name: 'FashionForwardSam',
-    profile_picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    instagram_handle: '@fashionforwardsam',
-    youtube_handle: null,
-    tiktok_handle: '@fashionforwardsam',
-    followers: 156000,
-    engagement_rate: 3.9,
-    avg_views: 58000,
-    niche: 'Fashion',
-    location: 'United States',
-    verified: false,
-    last_post: '2024-01-20',
-    estimated_price: 920,
-    already_imported: true,
-    modash_score: 88
-  },
-  {
-    id: 'discovered_3',
-    display_name: 'TechReviewTom',
-    profile_picture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    instagram_handle: null,
-    youtube_handle: '@techreviewtom',
-    tiktok_handle: '@techreviewtom',
-    followers: 234000,
-    engagement_rate: 5.2,
-    avg_views: 125000,
-    niche: 'Tech',
-    location: 'Canada',
-    verified: true,
-    last_post: '2024-01-18',
-    estimated_price: 1450,
-    already_imported: false,
-    modash_score: 95
-  },
-  {
-    id: 'discovered_4',
-    display_name: 'FitnessWithFiona',
-    profile_picture: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-    instagram_handle: '@fitnesswithfiona',
-    youtube_handle: '@fitnesswithfiona',
-    tiktok_handle: '@fitnesswithfiona',
-    followers: 67000,
-    engagement_rate: 6.1,
-    avg_views: 43000,
-    niche: 'Fitness',
-    location: 'Australia',
-    verified: false,
-    last_post: '2024-01-20',
-    estimated_price: 480,
-    already_imported: false,
-    modash_score: 83
-  }
-]
 
 // Helper functions
 import { formatters } from '@/lib/utils/formatters'
@@ -1668,17 +1590,10 @@ function DiscoveredInfluencersTable({
 }) {
   const [addingToRoster, setAddingToRoster] = useState<string | null>(null)
   const [rosterMessages, setRosterMessages] = useState<Record<string, { type: 'success' | 'error', message: string }>>({})
-  // Use props or fallback to mock data
-  const discoveredCreators = searchResults || MOCK_DISCOVERED_INFLUENCERS
+  // Use props or fallback to empty array
+  const discoveredCreators = searchResults || []
   const showLoading = isLoading || false
   
-  console.log('📊 DiscoveredInfluencersTable received:', {
-    searchResultsLength: searchResults?.length || 0,
-    discoveredCreatorsLength: discoveredCreators.length,
-    firstResult: discoveredCreators[0]?.username || 'No results',
-    isLoading,
-    searchQuery
-  })
   const showError = error || null
   
   // Sorting state
@@ -1695,8 +1610,6 @@ function DiscoveredInfluencersTable({
   
   // Debug logging
   React.useEffect(() => {
-    console.log('💖 Heart context loaded in discovery page')
-    console.log('💖 Current hearted influencers:', heartedInfluencers)
   }, [heartedInfluencers])
 
 
@@ -1704,7 +1617,6 @@ function DiscoveredInfluencersTable({
   // Add to roster functionality with COMPLETE Modash data caching
   const handleAddToRoster = async (influencer: any) => {
     if (!influencer.discoveredId) {
-      console.error('No discovered ID for influencer:', influencer)
       return
     }
 
@@ -1715,11 +1627,6 @@ function DiscoveredInfluencersTable({
       const modashUserId = influencer.userId || influencer.id
       const platform = influencer.platform || selectedPlatform
       
-      console.log('🔄 Adding to roster with complete data:', {
-        discoveredId: influencer.discoveredId,
-        modashUserId,
-        platform
-      })
       
       const result = await addToRoster(influencer.discoveredId, modashUserId, platform)
       
@@ -2152,7 +2059,6 @@ function DiscoveredInfluencersTable({
                                   onClick={(e) => {
                                     e.stopPropagation() // Prevent table row click interference
                                     // Optional: Add analytics tracking
-                                    console.log(`🔗 Social platform link clicked: ${contact.type} - ${platformUrl}`)
                                   }}
                                   className={`
                                     ${platformColor}
@@ -2287,7 +2193,6 @@ function DiscoveryPageClient() {
   useEffect(() => {
     // Only trigger auto-search if we have existing search results or a search query
     if ((searchResults.length > 0 || searchQuery.trim()) && !isSearching) {
-      console.log('🔄 Platform changed to:', selectedPlatform, '- Auto-refreshing search')
       handleSearch()
     }
   }, [selectedPlatform])
@@ -2310,14 +2215,6 @@ function DiscoveryPageClient() {
         filters.searchQuery = searchQuery.trim()
       }
       
-      console.log('🔍 Searching:', {
-        platform: selectedPlatform,
-        mode: searchQuery.trim() ? 'Exact Match' : 'Discovery',
-        activeFilters: Object.keys(currentFilters).filter(k => {
-          const value = currentFilters[k]
-          return value !== undefined && value !== '' && value !== false && !(Array.isArray(value) && value.length === 0)
-        }).length
-      })
       
       // Smart API selection: use List Users for simple searches, Search Influencers for complex filtering
       const activeFilters = Object.keys(currentFilters).filter(k => {
@@ -2326,20 +2223,12 @@ function DiscoveryPageClient() {
       })
       const hasComplexFilters = activeFilters.length > 0
       
-      console.log('🔍 Filter Analysis:', {
-        currentFilters,
-        activeFilterKeys: activeFilters,
-        activeFilterValues: activeFilters.map(k => ({ [k]: currentFilters[k] })),
-        hasComplexFilters
-      })
       
       let apiEndpoint = '/api/discovery/search'
       let requestBody = filters
       
       // FORCE simple text searches to use List Users API - ignore filters for exact username searches
       if (searchQuery.trim()) {
-        console.log('🔍 FORCED simple search (List Users API) for query:', searchQuery)
-        console.log('🔍 Ignoring complex filters for exact username search')
         apiEndpoint = '/api/discovery/search'
         // Send clean request body for simple searches - only essential fields
         requestBody = {
@@ -2347,9 +2236,7 @@ function DiscoveryPageClient() {
           searchQuery: searchQuery.trim(),
           preferFreeAPI: true
         }
-        console.log('🔍 Clean request body for simple search:', requestBody)
       } else if (hasComplexFilters) {
-        console.log('🎯 Using advanced search (Search Influencers API)')
         // Transform current filters to new API format
         const searchFilters: any = {
           influencer: {},
@@ -2452,7 +2339,6 @@ function DiscoveryPageClient() {
           filter: searchFilters
         }
         
-        console.log('🎯 Advanced search filters:', searchFilters)
       }
 
       const response = await fetch(`${window.location.origin}${apiEndpoint}`, {
@@ -2470,21 +2356,13 @@ function DiscoveryPageClient() {
           if (errorData.code === 'AUTH_REQUIRED') {
             errorMessage = `Authentication required: ${errorData.message}`
             // Redirect to sign-in or refresh the page to trigger re-auth
-            console.error('🔒 Authentication failed, user needs to sign in')
           } else if (errorData.message) {
             errorMessage = errorData.message
           }
         } catch {
           // If error text is not JSON, use the original error
-          console.error('📄 Non-JSON error response:', errorText)
         }
         
-        console.error('❌ Search API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-          url: response.url
-        })
         
         throw new Error(errorMessage)
       }
@@ -2501,12 +2379,6 @@ function DiscoveryPageClient() {
           searchResults = result.influencers
           creditsUsed = result.influencers.length * 0.01 // 0.01 credits per result
           
-          console.log('✅ Advanced search completed:', {
-            resultsFound: searchResults.length,
-            totalAvailable: result.pagination?.total || 0,
-            creditsUsed: creditsUsed,
-            isExactMatch: result.metadata?.isExactMatch
-          })
         } else {
           throw new Error(result.error || 'Advanced search failed')
         }
@@ -2521,24 +2393,11 @@ function DiscoveryPageClient() {
             setApiWarning(result.warning)
           }
           
-          console.log('✅ Search completed:', {
-            resultsFound: searchResults.length,
-            creditsUsed: creditsUsed
-          })
         } else {
           throw new Error(result.details || 'Search failed')
         }
       }
       
-      console.log('🎯 Setting search results:', {
-        searchResultsLength: searchResults.length,
-        firstResult: searchResults[0]?.username || 'No results',
-        firstResultFollowers: searchResults[0]?.followers || 'No followers',
-        searchQuery: searchQuery,
-        apiEndpoint: apiEndpoint,
-        resultFormat: result.data ? 'legacy' : 'v2',
-        searchMode: result.data?.searchMode || result.searchMode || 'unknown'
-      })
       
       setSearchResults(searchResults)
       
@@ -2553,7 +2412,6 @@ function DiscoveryPageClient() {
       }
       
     } catch (error) {
-      console.error('❌ Search error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Search failed'
       
       // Show helpful error messages based on error type
@@ -2569,7 +2427,7 @@ function DiscoveryPageClient() {
         setSearchError(`❌ ${errorMessage}`)
       }
       
-      setSearchResults(MOCK_DISCOVERED_INFLUENCERS) // Fallback to mock data
+      setSearchResults([]) // No fallback data
     } finally {
       setIsSearching(false)
     }
@@ -2585,13 +2443,11 @@ function DiscoveryPageClient() {
 
   // Toggle heart status for an influencer - saves to staff system with FULL analytics
   const handleHeartToggle = async (influencer: any) => {
-    console.log('💖 Heart toggle clicked for influencer:', influencer)
     
     const username = influencer.username || influencer.instagram_handle?.replace('@', '') || influencer.tiktok_handle?.replace('@', '') || influencer.youtube_handle?.replace('@', '') || 'unknown'
     
     // Validate username before proceeding
     if (!username || username === 'unknown') {
-      console.error('❌ Invalid username for influencer:', influencer)
       toast({
         title: "Unable to save influencer",
         description: "No valid username found for this influencer.",
@@ -2601,7 +2457,6 @@ function DiscoveryPageClient() {
     }
     
     if (isInfluencerSaved(username, selectedPlatform)) {
-      console.log('💔 Already saved - this will be handled by the Saved tab')
       toast({
         title: "Already saved",
         description: "This influencer is already in your saved list. Use the Saved tab to manage saved influencers.",
@@ -2612,7 +2467,6 @@ function DiscoveryPageClient() {
 
     // Fetch COMPLETE Modash analytics before saving
     try {
-      console.log('🔄 Fetching complete Modash profile data...')
       
       const modashUserId = influencer.userId || influencer.creatorId
       if (!modashUserId) {
@@ -2663,12 +2517,6 @@ function DiscoveryPageClient() {
         extended_analytics: extendedData
       }
 
-      console.log('✅ Fetched complete analytics:', {
-        basicData: !!profileData.data,
-        extendedData: !!extendedData,
-        dataKeys: Object.keys(profileData.data || {}),
-        extendedKeys: Object.keys(extendedData || {})
-      })
 
       const savedInfluencerData = {
         username,
@@ -2689,18 +2537,9 @@ function DiscoveryPageClient() {
         discovered_influencer_id: influencer.discoveredId
       }
       
-      console.log('❤️ Saving influencer with complete analytics to staff system')
-      console.log('📊 Save data:', {
-        username: savedInfluencerData.username,
-        platform: savedInfluencerData.platform,
-        followers: savedInfluencerData.followers,
-        engagement_rate: savedInfluencerData.engagement_rate,
-        hasModashData: !!savedInfluencerData.modash_data
-      })
       
       const saveResult = await saveInfluencer(savedInfluencerData)
       
-      console.log('✅ Successfully saved influencer with full Modash analytics!', saveResult)
       toast({
         title: "✅ Influencer saved!",
         description: `${savedInfluencerData.display_name || username} has been saved to your favorites with complete analytics.`,
@@ -2708,10 +2547,8 @@ function DiscoveryPageClient() {
       })
       
     } catch (error) {
-      console.error('❌ Failed to save influencer with complete analytics:', error)
       // Fallback to basic save if analytics fetch fails
       try {
-        console.log('🔄 Fallback: Saving with basic data only...')
         const basicSavedData = {
           username,
           display_name: influencer.displayName || influencer.display_name || influencer.username,
@@ -2732,7 +2569,6 @@ function DiscoveryPageClient() {
         }
         
         const fallbackResult = await saveInfluencer(basicSavedData)
-        console.log('⚠️ Saved with basic data only due to analytics fetch error', fallbackResult)
         toast({
           title: "⚠️ Partially saved",
           description: `${basicSavedData.display_name || username} has been saved with basic data only. Full analytics could not be retrieved.`,
@@ -2740,7 +2576,6 @@ function DiscoveryPageClient() {
         })
         
       } catch (fallbackError) {
-        console.error('❌ Failed to save even basic data:', fallbackError)
         const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error'
         toast({
           title: "❌ Failed to save influencer",
@@ -2773,42 +2608,19 @@ function DiscoveryPageClient() {
       
       // Don't fallback to other platforms - this causes wrong data to show!
       if (!platformData) {
-        console.log(`📊 No ${selectedPlatform} data available, will fetch fresh data from ${selectedPlatform} API`)
       }
       
       const userId = platformData?.userId || influencer.userId
       
       if (!userId) {
-        console.log('📊 No userId available for detailed profile fetch, using fallback data')
         setDetailLoading(false)
         return
       }
       
-      console.log('🔍 About to fetch profile for:', {
-        userId: userId,
-        platform: actualPlatform,
-        originalInfluencer: {
-          username: influencer.username,
-          handle: influencer.handle,
-          userId: influencer.userId,
-          followers: influencer.followers
-        }
-      })
       
-      console.log('🔍 Full influencer object for debugging:', influencer)
-      console.log('🖼️ Profile picture debugging:', {
-        profile_picture: influencer.profile_picture,
-        profilePicture: influencer.profilePicture,
-        picture: influencer.picture,
-        avatar_url: influencer.avatar_url,
-        platformData_profile_picture: platformData?.profile_picture,
-        allInfluencerKeys: Object.keys(influencer),
-        platformDataKeys: platformData ? Object.keys(platformData) : 'No platform data'
-      })
       
       // Fetch core profile data first (faster)
       try {
-        console.log('📊 Step 1: Fetching core influencer profile...')
         const coreResponse = await fetch(`${window.location.origin}/api/discovery/profile`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2923,10 +2735,8 @@ function DiscoveryPageClient() {
             setDetailInfluencer(coreInfluencer)
             setDetailLoading(false) // Show basic profile
             
-            console.log('✅ Step 1 complete: Core profile loaded')
             
             // Step 2: Fetch extended data in background
-            console.log('📊 Step 2: Fetching extended profile data...')
               try {
               const extendedResponse = await fetch(`${window.location.origin}/api/discovery/profile-extended`, {
                 method: 'POST',
@@ -2942,13 +2752,6 @@ function DiscoveryPageClient() {
                 const extendedResult = await extendedResponse.json()
                 if (extendedResult.success && extendedResult.data) {
                   // DEBUG: Check extended API overlap data
-                  console.log('🔗 Extended API Debug - Overlap Data:', {
-                    hasOverlapData: !!extendedResult.data.overlap,
-                    overlapValue: extendedResult.data.overlap?.value,
-                    overlapValueLength: extendedResult.data.overlap?.value?.length || 0,
-                    overlapConfidence: extendedResult.data.overlap?.confidence,
-                    overlapSource: extendedResult.data.overlap?.source
-                  })
                   
                   // Merge extended data with core data
                   const fullInfluencer = {
@@ -2976,11 +2779,9 @@ function DiscoveryPageClient() {
 
                   
                   setDetailInfluencer(fullInfluencer)
-                  console.log('✅ Step 2 complete: Extended profile data loaded')
                 }
               }
             } catch (extendedError) {
-              console.warn('⚠️ Extended data fetch failed (non-critical):', extendedError)
               // Core profile still works without extended data
             }
             
@@ -2989,7 +2790,6 @@ function DiscoveryPageClient() {
         }
         
         // Fallback to old method if new tiered approach fails
-        console.log('⚠️ Tiered loading failed, falling back to single request...')
         const response = coreResponse
         
         if (response.ok) {
@@ -3083,17 +2883,13 @@ function DiscoveryPageClient() {
             
             // Update the detail influencer with enhanced data
             setDetailInfluencer(enhancedInfluencer)
-            console.log('📊 Enhanced influencer data with demographics:', enhancedInfluencer)
           } else {
-            console.log('📊 Using basic influencer data, no enhanced report available')
             // Use the basic influencer data without enhancement
             setDetailInfluencer(influencer)
           }
         } else {
-          console.warn('⚠️ Comprehensive report API returned:', response.status, response.statusText)
         }
       } catch (error) {
-        console.warn('⚠️ Failed to fetch comprehensive report, using basic data:', error)
       }
       
       // Also fetch basic location data as fallback
@@ -3113,15 +2909,12 @@ function DiscoveryPageClient() {
           if (locationResult.success && locationResult.data && (locationResult.data.city || locationResult.data.country)) {
             setDetailCity(locationResult.data.city || fallbackCity)
             setDetailCountry(locationResult.data.country || fallbackCountry)
-            console.log('📍 Updated location data:', locationResult.data)
           }
         }
       } catch (locationError) {
-        console.error('❌ Failed to fetch location data:', locationError)
       }
       
     } catch (error) {
-      console.error('❌ Failed to fetch comprehensive data:', error)
     } finally {
       setDetailLoading(false)
     }
@@ -3283,7 +3076,6 @@ function DiscoveryPageClient() {
         onClose={() => setDetailPanelOpen(false)}
         selectedPlatform={selectedPlatform}
         onPlatformSwitch={async (platform) => {
-          console.log('🔄 Platform switched to:', platform)
           
           // ALWAYS update the selected platform first for immediate UI feedback
           setSelectedPlatform(platform)
@@ -3294,24 +3086,20 @@ function DiscoveryPageClient() {
             
             try {
               // 🎯 GENIUS APPROACH: Extract userId directly from contact URL!
-              console.log(`🔍 ALL CONTACTS DEBUG:`, detailInfluencer.contacts)
               
               // Find the contact for the target platform
               const platformContact = detailInfluencer.contacts?.find((contact: any) => contact.type === platform)
               
               if (!platformContact) {
-                console.log(`❌ No ${platform} contact found. Available contacts:`, detailInfluencer.contacts?.map((c: any) => ({ type: c.type, value: c.value })))
                 throw new Error(`No ${platform} contact found for this influencer`)
               }
               
-              console.log(`🔍 FOUND CONTACT:`, platformContact)
               
               // Extract userId directly from contact URL - no need to search!
               const contactUrl = platformContact.value
               let platformUserId = null
               
               if (contactUrl) {
-                console.log(`🔍 DEBUG: Trying to extract userId from ${platform} URL: ${contactUrl}`)
                 
                 // Extract userId from URL patterns:
                 // TikTok: https://www.tiktok.com/share/user/5831967 → 5831967
@@ -3322,11 +3110,9 @@ function DiscoveryPageClient() {
                   const tiktokMatch = contactUrl.match(/\/user\/(\d+)/)
                   if (tiktokMatch) {
                     platformUserId = tiktokMatch[1]
-                    console.log(`✅ TikTok userId extracted: ${platformUserId}`)
                   }
                 } else if (platform === 'instagram') {
                   // Let's see what Instagram URLs actually look like
-                  console.log(`🔍 Instagram URL to parse: ${contactUrl}`)
                   
                   // Try different Instagram patterns
                   const patterns = [
@@ -3341,24 +3127,20 @@ function DiscoveryPageClient() {
                     const match = contactUrl.match(pattern)
                     if (match) {
                       platformUserId = match[1]
-                      console.log(`✅ Instagram match found with pattern ${pattern}: ${platformUserId}`)
                       break
                     }
                   }
                   
                   if (!platformUserId) {
-                    console.log(`❌ Instagram: No userId pattern matched. URL: ${contactUrl}`)
                   }
                 } else if (platform === 'youtube') {
                   const youtubeMatch = contactUrl.match(/\/channel\/(UC[a-zA-Z0-9_-]+)/)
                   if (youtubeMatch) {
                     platformUserId = youtubeMatch[1]
-                    console.log(`✅ YouTube userId extracted: ${platformUserId}`)
                   }
                 }
                 
                 if (!platformUserId) {
-                  console.log(`⚠️ Could not extract userId from ${platform} URL: ${contactUrl}`)
                   throw new Error(`Could not extract userId from ${platform} contact URL`)
                 }
               }
@@ -3367,7 +3149,6 @@ function DiscoveryPageClient() {
                 throw new Error(`No userId found in ${platform} contact`)
               }
               
-              console.log(`✅ Using ${platform} userId: ${platformUserId} (no search needed!)`)
               
               // Fetch the detailed profile directly with the userId from contacts
               const profileResponse = await fetch(`${window.location.origin}/api/discovery/profile`, {
@@ -3458,17 +3239,11 @@ function DiscoveryPageClient() {
                 }
                 
                 setDetailInfluencer(updatedInfluencer)
-                console.log(`✅ Successfully loaded ${platform} data`, {
-                  platformData: updatedInfluencer.platforms[platform],
-                  followers: updatedInfluencer.platforms[platform]?.followers,
-                  profilePicture: updatedInfluencer.platforms[platform]?.profile_picture
-                })
               } else {
                 throw new Error('Profile API returned no data')
               }
               
             } catch (error) {
-              console.error(`❌ Error switching to ${platform}:`, error)
               const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
               setSearchError(`Failed to load ${platform} data: ${errorMessage}`)
             } finally {
@@ -3482,19 +3257,6 @@ function DiscoveryPageClient() {
       />
       {/* 🚨 DEBUG: Log what's being passed to the panel */}
       {detailPanelOpen && selectedPlatform === 'tiktok' && (() => {
-        console.log('🚨 Discovery Page - Data being passed to TikTok popup:', {
-          selectedPlatform,
-          detailInfluencer,
-          hasEngagements: detailInfluencer?.engagements,
-          hasTotalLikes: detailInfluencer?.totalLikes,
-          hasPostsCount: detailInfluencer?.postsCount,
-          hasAverageViews: detailInfluencer?.averageViews,
-          hasGender: detailInfluencer?.gender,
-          hasAgeGroup: detailInfluencer?.ageGroup,
-          hasRecentPosts: detailInfluencer?.recentPosts,
-          hasPopularPosts: detailInfluencer?.popularPosts,
-          hasPaidData: detailInfluencer?.paidPostPerformance
-        })
         return null
       })()}
       

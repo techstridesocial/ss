@@ -62,26 +62,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<any>(null)
 
-  // 🔍 [DEBUG] Panel state debugging
-  useEffect(() => {
-    console.log('🔍 [DEBUG] Panel state changed:', {
-      detailPanelOpen,
-      hasSelectedInfluencerDetail: !!selectedInfluencerDetail,
-      selectedInfluencerDetailId: selectedInfluencerDetail?.id,
-      dashboardPanelOpen,
-      hasSelectedDashboardInfluencer: !!selectedDashboardInfluencer,
-      timestamp: new Date().toISOString()
-    })
-  }, [detailPanelOpen, selectedInfluencerDetail, dashboardPanelOpen, selectedDashboardInfluencer])
 
-  // 🔧 FIX: Move useMemo to top level to avoid Rules of Hooks violation
   const memoizedInfluencer = useMemo(() => {
     if (!selectedInfluencerDetail) {
-      console.log('🔍 [DEBUG] useMemo: selectedInfluencerDetail is null')
       return null
     }
-    
-    console.log('🔍 [DEBUG] useMemo called with selectedInfluencerDetail:', selectedInfluencerDetail)
     try {
       // Memoize platforms object separately to prevent recreation
       const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
@@ -121,7 +106,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         avgViews: selectedInfluencerDetail.total_avg_views || 0,
       }
     } catch (error) {
-      console.error('🔍 [DEBUG] Error in useMemo:', error)
       return {
         id: selectedInfluencerDetail.id,
         displayName: selectedInfluencerDetail.display_name,
@@ -140,16 +124,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       }
     }
   }, [selectedInfluencerDetail])
-
-  // 🔍 [DEBUG] Log memoized influencer changes
-  useEffect(() => {
-    console.log('🔍 [DEBUG] memoizedInfluencer changed:', {
-      hasMemoizedInfluencer: !!memoizedInfluencer,
-      influencerId: memoizedInfluencer?.id,
-      influencerName: memoizedInfluencer?.displayName,
-      timestamp: new Date().toISOString()
-    })
-  }, [memoizedInfluencer])
 
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
   const [isLoading, setIsLoading] = useState(false)
@@ -175,16 +149,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       })
       
       if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Bulk refresh completed:', result)
+        await response.json()
         
         // Reload the page to show updated data
         window.location.reload()
       } else {
         throw new Error('Failed to refresh analytics')
       }
-    } catch (error) {
-      console.error('❌ Bulk refresh failed:', error)
+    } catch {
       alert('Failed to refresh analytics. Please try again.')
     } finally {
       setIsRefreshingAnalytics(false)
@@ -259,8 +231,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         // Remove invalid influencer from URL
         updateUrl(null)
       }
-    } catch (error) {
-      console.error('Failed to load influencer details:', error)
+    } catch {
       updateUrl(null)
     } finally {
       setIsLoading(false)
@@ -282,21 +253,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const [isInitialLoading, setIsInitialLoading] = useState(true)
 
-  // No fallback mock data - API must provide real data
-  const FALLBACK_INFLUENCERS: any[] = []
-
   // Function to load influencers from the database
   const loadInfluencers = async () => {
     try {
       const token = await getToken()
       if (!token) {
-        console.error('❌ No auth token available')
         setInfluencers([])
         setIsInitialLoading(false)
         return
       }
 
-      console.log('📋 Loading influencers from OPTIMIZED API...')
       const response = await fetch('/api/influencers/light', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -307,23 +273,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       if (response.ok) {
         const result = await response.json()
         if (result.success && result.data) {
-          console.log(`✅ Loaded ${result.data.length} real influencers from database`)
           setInfluencers(result.data)
           setIsInitialLoading(false)
           return result.data
         } else {
-          console.warn('⚠️ API returned success but no data:', result)
           setInfluencers([])
           setIsInitialLoading(false)
         }
       } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('❌ API response not ok:', response.status, response.statusText, errorData)
         setInfluencers([])
         setIsInitialLoading(false)
       }
-    } catch (error) {
-      console.error('❌ Error loading influencers:', error)
+    } catch {
       setInfluencers([])
       setIsInitialLoading(false)
     }
@@ -891,36 +852,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const handleViewInfluencer = (influencer: any) => {
-    console.log('🔍 [DEBUG] handleViewInfluencer called with:', {
-      influencer: influencer,
-      displayName: influencer?.display_name,
-      id: influencer?.id,
-      hasInfluencer: !!influencer,
-      timestamp: new Date().toISOString()
-    })
-    
-    try {
-      console.log('🔍 [DEBUG] Setting selectedInfluencerDetail...')
-      setSelectedInfluencerDetail(influencer)
-      console.log('🔍 [DEBUG] selectedInfluencerDetail set successfully')
-      
-      console.log('🔍 [DEBUG] Setting detailPanelOpen to true...')
-      setDetailPanelOpen(true)
-      console.log('🔍 [DEBUG] detailPanelOpen set successfully')
-      
-      console.log('🔍 [DEBUG] Calling onPanelStateChange with true...')
-      onPanelStateChange?.(true)
-      console.log('🔍 [DEBUG] onPanelStateChange called successfully')
-      
-      console.log('✅ [DEBUG] handleViewInfluencer completed successfully')
-    } catch (error) {
-      console.error('❌ [DEBUG] Error in handleViewInfluencer:', error)
-      console.error('❌ [DEBUG] Error stack:', error instanceof Error ? error.stack : 'No stack trace available')
-    }
+    setSelectedInfluencerDetail(influencer)
+    setDetailPanelOpen(true)
+    onPanelStateChange?.(true)
   }
 
   const handleViewDashboardInfo = (influencer: any) => {
-    console.log('👤 Viewing dashboard info for:', influencer.display_name)
     // Update URL with influencer ID
     const url = new URL(window.location.href)
     url.searchParams.set('influencer', influencer.id)
@@ -962,7 +899,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     if (!selectedInfluencerDetail) return
     
     setIsLoading(true)
-    console.log('🔄 Saving management data to database:', data)
     
     try {
       // Call the real API to update influencer management data
@@ -981,8 +917,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         throw new Error(errorData.error || 'Failed to save management data')
       }
 
-      const result = await response.json()
-      console.log('✅ API response:', result)
+      await response.json()
       
       // Update the influencer in state with the returned data
       setInfluencers(prev => prev.map(inf => {
@@ -1007,10 +942,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         })
       }
       
-      console.log('✅ Management data saved successfully to database!')
-      
     } catch (error) {
-      console.error('❌ Error saving management data:', error)
       alert(`❌ Error saving management data: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
@@ -1029,13 +961,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handleSaveAssignment = async (assignmentData: any) => {
     if (!selectedInfluencer) {
-      console.error('❌ No selected influencer for assignment')
       throw new Error('No influencer selected')
     }
     
     setIsLoading(true)
     try {
-      console.log('🚀 Assigning influencer:', selectedInfluencer.display_name, assignmentData)
       
       const response = await fetch(`/api/influencers/${selectedInfluencer.id}`, {
         method: 'PATCH',
@@ -1045,16 +975,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         body: JSON.stringify(assignmentData)
       })
 
-      console.log('📡 Assignment API response status:', response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ Assignment API error:', response.status, errorData)
         throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`)
       }
 
-      const result = await response.json()
-      console.log('✅ Assignment successful:', result)
+      await response.json()
 
       // Refresh the data to show updated influencer
       await loadInfluencers()
@@ -1064,7 +990,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       setSelectedInfluencer(null)
 
     } catch (error) {
-      console.error('❌ Assignment failed:', error)
       throw error // Re-throw to let the modal handle the error display
     } finally {
       setIsLoading(false)
@@ -1073,7 +998,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handleSaveInfluencerEdit = async (data: any) => {
     setIsLoading(true)
-    console.log('Saving influencer:', data)
     
     try {
       // Simulate API delay
@@ -1122,8 +1046,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         alert(`✅ Influencer ${data.display_name} updated successfully!`)
       }
       
-    } catch (error) {
-      console.error('Error updating influencer:', error)
+    } catch {
       alert('❌ Error updating influencer. Please try again.')
     } finally {
       setIsLoading(false)
@@ -1132,12 +1055,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handleAddInfluencer = async (data: any) => {
     setIsLoading(true)
-    console.log('Adding new influencer:', data)
     
     try {
       // Refresh the influencer list from the database to get latest data
       // The AddInfluencerPanel already calls the API, so we just need to refresh
-      console.log('Refreshing influencer list from database...')
       await loadInfluencers()
       
       // Switch to the appropriate tab to show the new influencer
@@ -1150,10 +1071,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       const targetTab = getTargetTab(data.influencer_type)
       setActiveTab(targetTab)
       
-      console.log(`✅ Influencer list refreshed and switched to ${targetTab} tab`)
-      
-    } catch (error) {
-      console.error('Error refreshing influencer list:', error)
+    } catch {
       alert('❌ Error refreshing data. Please try again.')
     } finally {
       setIsLoading(false)
@@ -1176,8 +1094,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       alert(`✅ ${influencer.display_name} has been deleted successfully.`)
       
-    } catch (error) {
-      console.error('Error deleting influencer:', error)
+    } catch {
       alert('❌ Error deleting influencer. Please try again.')
     } finally {
       setIsLoading(false)
@@ -1192,8 +1109,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500))
       alert('✅ Influencer data refreshed successfully!')
-    } catch (error) {
-      console.error('Error refreshing data:', error)
+    } catch {
       alert('❌ Error refreshing data. Please try again.')
     } finally {
       setIsLoading(false)
@@ -1646,7 +1562,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                             src={influencer.avatar_url} 
                             alt={influencer.display_name}
                             onError={(e) => {
-                              console.log('🖼️ Image failed to load:', influencer.avatar_url)
                               // Fallback to default icon
                               e.currentTarget.style.display = 'none'
                               e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex')
@@ -1808,13 +1723,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                       {/* Analytics Button */}
                       <button
                         onClick={(e) => {
-                          console.log('🔍 [DEBUG] Analytics button clicked:', {
-                            influencer: influencer,
-                            displayName: influencer?.display_name,
-                            id: influencer?.id,
-                            event: e,
-                            timestamp: new Date().toISOString()
-                          })
                           e.preventDefault()
                           e.stopPropagation()
                           handleViewInfluencer(influencer)
@@ -2029,46 +1937,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       {/* Side Panels */}
       {selectedInfluencerDetail && memoizedInfluencer && (
         <div>
-          {(() => {
-            console.log('🔍 [DEBUG] Rendering InfluencerDetailPanel with:', {
-              detailPanelOpen,
-              hasSelectedInfluencerDetail: !!selectedInfluencerDetail,
-              selectedInfluencerDetailId: selectedInfluencerDetail?.id,
-              hasMemoizedInfluencer: !!memoizedInfluencer,
-              timestamp: new Date().toISOString()
-            })
-            return null
-          })()}
-          
-          {/* 🔍 [DEBUG] Visual indicator that panel should render */}
-          {detailPanelOpen && (
-            <div style={{
-              position: 'fixed',
-              top: '10px',
-              right: '10px',
-              background: 'red',
-              color: 'white',
-              padding: '10px',
-              zIndex: 9999,
-              borderRadius: '5px'
-            }}>
-              🔍 PANEL SHOULD BE OPENING
-            </div>
-          )}
-          
           <ErrorBoundary>
-            {(() => {
-              console.log('🔍 [DEBUG] About to render InfluencerDetailPanel with:', {
-                isOpen: detailPanelOpen,
-                hasInfluencer: !!memoizedInfluencer,
-                influencerKeys: memoizedInfluencer ? Object.keys(memoizedInfluencer) : 'null',
-                influencerId: memoizedInfluencer?.id,
-                influencerName: memoizedInfluencer?.displayName,
-                selectedPlatform,
-                timestamp: new Date().toISOString()
-              })
-              return null
-            })()}
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
               onClose={() => setDetailPanelOpen(false)}
@@ -2091,7 +1960,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
           onPlatformSwitch={(platform) => {
             setSelectedPlatform(platform)
-            console.log('🔄 Roster platform switched to:', platform)
           }}
         />
           </ErrorBoundary>

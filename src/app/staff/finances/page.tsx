@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { 
@@ -24,7 +25,14 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import InvoiceDetailModal from '../../../components/staff/InvoiceDetailModal'
+
+// Lazy load heavy modal components
+const InvoiceDetailModal = dynamic(() => import('../../../components/staff/InvoiceDetailModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
 
 interface Invoice {
   id: string
@@ -95,8 +103,7 @@ export default function StaffFinancePage() {
         setInvoices(data.invoices || [])
         setSummary(data.summary)
       }
-    } catch (error) {
-      console.error('Error fetching invoices:', error)
+    } catch {
     } finally {
       setIsLoading(false)
     }
@@ -120,8 +127,7 @@ export default function StaffFinancePage() {
         setShowInvoiceModal(false)
         setSelectedInvoice(null)
       }
-    } catch (error) {
-      console.error('Error updating invoice status:', error)
+    } catch {
     }
   }
 
@@ -168,8 +174,7 @@ export default function StaffFinancePage() {
         setBulkStatus('')
         setBulkNotes('')
       }
-    } catch (error) {
-      console.error('Error updating bulk status:', error)
+    } catch {
     } finally {
       setIsBulkUpdating(false)
     }

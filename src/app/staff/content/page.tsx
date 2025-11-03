@@ -87,8 +87,7 @@ export default function StaffContentManagement() {
           variant: "destructive"
         })
       }
-    } catch (error) {
-      console.error('Error loading pending submissions:', error)
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load pending submissions",
@@ -106,8 +105,7 @@ export default function StaffContentManagement() {
         const data = await response.json()
         setStats(data.stats)
       }
-    } catch (error) {
-      console.error('Error loading content stats:', error)
+    } catch {
     }
   }
 
@@ -154,8 +152,7 @@ export default function StaffContentManagement() {
           variant: "destructive"
         })
       }
-    } catch (error) {
-      console.error('Error reviewing submission:', error)
+    } catch {
       toast({
         title: "Error",
         description: "Failed to review submission",

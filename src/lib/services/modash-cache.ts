@@ -1,5 +1,8 @@
 import { query, transaction } from '../db/connection'
 import { getProfileReport } from './modash'
+import { cache } from '../cache/redis'
+import { cacheKeys } from '../cache/cache-keys'
+import { TTL } from '../cache/cache-middleware'
 
 export interface CachedProfileData {
   id: string
@@ -64,7 +67,7 @@ export async function cacheModashProfile(
       throw new Error('No profile data returned from Modash')
     }
     
-    const _profile = modashData.profile.profile || {}
+    const profile = modashData.profile.profile || {}
     const audience = modashData.profile.audience || {}
     const stats = modashData.profile.stats || {}
     
@@ -129,7 +132,7 @@ export async function cacheModashProfile(
         JSON.stringify(modashData.profile.sponsoredPosts || [])
       ])
       
-      const profileCacheId = cacheResult[0]?.id
+      const profileCacheId = cacheResult.rows[0]?.id
       
       // Cache audience data
       await client.query(`
@@ -184,15 +187,28 @@ export async function cacheModashProfile(
 }
 
 /**
- * Get cached profile data with freshness check
+ * Get cached profile data with 3-tier caching strategy
+ * L1: Redis (fast, 1 hour TTL)
+ * L2: PostgreSQL (medium, 4 weeks TTL)
+ * L3: Modash API (slow, live data)
  */
 export async function getCachedProfile(
   influencerPlatformId: string,
   platform: string
 ): Promise<CachedProfileData | null> {
   try {
-    console.log(`🔍 Looking for cached profile:`, { influencerPlatformId, platform: platform.toUpperCase() })
+    console.log(`🔍 Looking for cached profile (3-tier):`, { influencerPlatformId, platform: platform.toUpperCase() })
     
+    // L1: Check Redis cache first (~10ms)
+    const redisKey = `${cacheKeys.modash.profile(platform, influencerPlatformId)}`
+    const redisData = await cache.get<CachedProfileData>(redisKey)
+    
+    if (redisData) {
+      console.log(`✅ L1 Cache HIT (Redis): ${redisData.username}`)
+      return redisData
+    }
+    
+    // L2: Check PostgreSQL cache (~50ms)
     const result = await query(`
       SELECT 
         mpc.*,
@@ -213,24 +229,75 @@ export async function getCachedProfile(
       LIMIT 1
     `, [influencerPlatformId, platform.toUpperCase()])
     
-    console.log(`🔍 Cache query result:`, result.length > 0 ? 'Found cached data' : 'No cached data found')
     if (result.length > 0) {
-      console.log(`✅ Cached profile found:`, {
-        username: result[0].username,
-        followers: result[0].followers,
-        engagement_rate: result[0].engagement_rate,
-        cached_at: result[0].cached_at
-      })
+      const dbData = result[0] as CachedProfileData
+      console.log(`✅ L2 Cache HIT (PostgreSQL): ${dbData.username}`)
+      
+      // Populate Redis cache for next time
+      await cache.set(redisKey, dbData, TTL.MODASH_PROFILE)
+      
+      return dbData
     }
     
-    if (result.length === 0) {
-      return null
-    }
-    
-    return result[0] as CachedProfileData
+    console.log(`❌ Cache MISS (L1 & L2): No cached data found`)
+    return null
     
   } catch (error) {
     console.error('Error getting cached profile:', error)
+    return null
+  }
+}
+
+/**
+ * Get profile with automatic fallback through all cache tiers
+ * This is the main entry point for getting Modash profile data
+ */
+export async function getCachedOrFetchProfile(
+  modashUserId: string,
+  platform: string,
+  influencerPlatformId?: string
+): Promise<any> {
+  try {
+    // Try Redis first (L1)
+    const redisKey = cacheKeys.modash.profile(platform, modashUserId)
+    const redisData = await cache.get<any>(redisKey)
+    
+    if (redisData) {
+      console.log(`✅ L1 Cache HIT (Redis) for ${modashUserId}`)
+      return redisData
+    }
+    
+    // Try PostgreSQL if we have influencerPlatformId (L2)
+    if (influencerPlatformId) {
+      const dbData = await getCachedProfile(influencerPlatformId, platform)
+      if (dbData) {
+        console.log(`✅ L2 Cache HIT (PostgreSQL) for ${modashUserId}`)
+        // Populate Redis
+        await cache.set(redisKey, dbData, TTL.MODASH_PROFILE)
+        return dbData
+      }
+    }
+    
+    // Fetch from Modash API (L3)
+    console.log(`🌐 L3 Fetching from Modash API for ${modashUserId}`)
+    const freshData = await getProfileReport(modashUserId, platform)
+    
+    if (freshData && !freshData.error) {
+      // Cache in Redis
+      await cache.set(redisKey, freshData, TTL.MODASH_PROFILE)
+      
+      // Cache in PostgreSQL if we have influencerPlatformId
+      if (influencerPlatformId) {
+        await cacheModashProfile(influencerPlatformId, modashUserId, platform)
+      }
+      
+      console.log(`✅ Fresh data fetched and cached for ${modashUserId}`)
+      return freshData
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error in getCachedOrFetchProfile:', error)
     return null
   }
 }

@@ -1,10 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
-import CampaignDetailPanel from '../../../components/campaigns/CampaignDetailPanel'
-import EditCampaignModal from '../../../components/campaigns/EditCampaignModal'
-import CreateCampaignModal from '../../../components/campaigns/CreateCampaignModal'
 import { 
   Megaphone, 
   Users, 
@@ -37,6 +35,28 @@ import { useCurrentUserId } from '@/lib/auth/current-user'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+// Lazy load heavy modal and panel components
+const CampaignDetailPanel = dynamic(() => import('../../../components/campaigns/CampaignDetailPanel'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+
+const EditCampaignModal = dynamic(() => import('../../../components/campaigns/EditCampaignModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+
+const CreateCampaignModal = dynamic(() => import('../../../components/campaigns/CreateCampaignModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
 
 // StatCard component for dashboard metrics
 interface StatCardProps {
@@ -171,7 +191,7 @@ function CampaignsPageClient() {
       
       // Date filters - using the actual nested timeline structure from the API
       if (appliedFilters.startDate) {
-        const campaignStartDate = new Date(campaign.timeline?.startDate || campaign.start_date)
+        const campaignStartDate = new Date(campaign.timeline.startDate)
         // Parse the filter date correctly (YYYY-MM-DD format from HTML date input)
         const filterStartDate = new Date(appliedFilters.startDate + 'T00:00:00')
         // Show campaigns that start on or after the filter date
@@ -179,7 +199,7 @@ function CampaignsPageClient() {
       }
       
       if (appliedFilters.endDate) {
-        const campaignEndDate = new Date(campaign.timeline?.endDate || campaign.end_date)
+        const campaignEndDate = new Date(campaign.timeline.endDate)
         // Parse the filter date correctly (YYYY-MM-DD format from HTML date input)
         const filterEndDate = new Date(appliedFilters.endDate + 'T23:59:59')
         // Show campaigns that end on or before the filter date
@@ -189,8 +209,9 @@ function CampaignsPageClient() {
       // Timeline status filter - based on current date vs campaign dates
       if (appliedFilters.timelineStatus && appliedFilters.timelineStatus !== 'all') {
         const now = new Date()
-        const campaignStartDate = new Date(campaign.timeline?.startDate || campaign.start_date)
-        const campaignEndDate = new Date(campaign.timeline?.endDate || campaign.end_date)
+        const campaignStartDate = new Date(campaign.timeline.startDate)
+        const campaignEndDate = new Date(campaign.timeline.endDate)
+        const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
         
         switch (appliedFilters.timelineStatus) {
           case 'upcoming':
@@ -207,7 +228,6 @@ function CampaignsPageClient() {
             break
           case 'starting_soon':
             // Campaigns starting within next 7 days
-            const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
             if (campaignStartDate < now || campaignStartDate > weekFromNow) return false
             break
           case 'ending_soon':
@@ -306,7 +326,6 @@ function CampaignsPageClient() {
         setStaffMembers(result.data || [])
       }
     } catch (error) {
-      console.error('Error loading staff members:', error)
     }
   }
 
@@ -346,7 +365,6 @@ function CampaignsPageClient() {
       )
       
     } catch (error) {
-      console.error('Error assigning campaign:', error)
       showNotificationModal(
         'Assignment Failed',
         error instanceof Error ? error.message : 'Failed to update assignment',
@@ -408,10 +426,8 @@ function CampaignsPageClient() {
 
 
   const handleViewCampaign = (campaign: Campaign) => {
-    console.log('handleViewCampaign called with:', campaign)
     setSelectedCampaign(campaign)
     setShowDetailPanel(true)
-    console.log('Panel should be open now, showDetailPanel:', true)
   }
 
   const handleEditCampaign = (campaignId: string) => {
@@ -495,7 +511,8 @@ function CampaignsPageClient() {
       startDate: '',
       endDate: '',
       timelineStatus: 'all',
-      performance: ''
+      performance: '',
+      assignment: ''
     })
     setAppliedFilters({
       status: 'all',
@@ -506,7 +523,8 @@ function CampaignsPageClient() {
       startDate: '',
       endDate: '',
       timelineStatus: 'all',
-      performance: ''
+      performance: '',
+      assignment: ''
     })
     setSearchTerm('')
     setCurrentPage(1)
@@ -1213,7 +1231,6 @@ function CampaignsPageClient() {
             isOpen={showDetailPanel}
             campaign={selectedCampaign}
             onClose={() => {
-              console.log('Closing campaign detail panel')
               setShowDetailPanel(false)
             }}
             onPauseCampaign={handlePauseCampaign}

@@ -3,13 +3,38 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUserId } from '@/lib/auth/current-user'
+import dynamic from 'next/dynamic'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
-import BulkApproveModal from '@/components/modals/BulkApproveModal'
-import AddBrandPanel from '@/components/brands/AddBrandPanel'
-import ViewBrandPanel from '@/components/brands/ViewBrandPanel'
-import QuotationDetailPanel from '@/components/brands/QuotationDetailPanel'
-import CreateCampaignFromQuotationModal from '@/components/campaigns/CreateCampaignFromQuotationModal'
 import { Building2, Eye, FileText, Download, Star, Clock, CheckCircle, XCircle, Plus, FilterIcon, ChevronDown, Mail, DollarSign, Users, Calendar, ChevronUp } from 'lucide-react'
+
+// Lazy load heavy modal and panel components
+const AddBrandPanel = dynamic(() => import('@/components/brands/AddBrandPanel'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+
+const ViewBrandPanel = dynamic(() => import('@/components/brands/ViewBrandPanel'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+
+const QuotationDetailPanel = dynamic(() => import('@/components/brands/QuotationDetailPanel'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+
+const CreateCampaignFromQuotationModal = dynamic(() => import('@/components/campaigns/CreateCampaignFromQuotationModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
 
 // Mock data for brands and their shortlists
 const MOCK_BRANDS = [
@@ -677,7 +702,6 @@ function BrandsPageClient() {
   }
 
   const handleSaveBrand = async (brandData: any) => {
-    console.log('Saving brand:', brandData)
     // Mock save operation
     const newBrand = {
       ...brandData,
@@ -706,8 +730,6 @@ function BrandsPageClient() {
         created_at: new Date().toISOString()
       }
       
-      console.log('Creating campaign from quotation:', campaignWithQuotation)
-      
       // In a real app, this would make an API call to create the campaign
       // For now, we'll simulate the creation
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -722,8 +744,7 @@ function BrandsPageClient() {
       // Redirect to the campaigns page
       router.push('/staff/campaigns')
       
-    } catch (error) {
-      console.error('Error creating campaign:', error)
+    } catch {
       alert('Failed to create campaign. Please try again.')
     }
   }
@@ -771,7 +792,6 @@ function BrandsPageClient() {
       alert(`Quotation sent successfully to ${selectedQuotation.brand_name}! They will receive the quote via email.`)
       
     } catch (error) {
-      console.error('Error sending quotation:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       alert(`Failed to send quotation: ${errorMessage}`)
     }
@@ -807,8 +827,7 @@ function BrandsPageClient() {
         alert(`✅ Assignment removed from ${brand?.company_name}`)
       }
       
-    } catch (error) {
-      console.error('Error assigning brand:', error)
+    } catch {
       alert('❌ Error updating assignment. Please try again.')
     } finally {
       setAssignmentLoading(null)

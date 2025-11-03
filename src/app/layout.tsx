@@ -6,6 +6,7 @@ import "./globals.css";
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { HeartedInfluencersProvider } from '../lib/context/HeartedInfluencersContext';
+import { QueryProvider } from '../components/providers/QueryProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,9 +44,11 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <HeartedInfluencersProvider>
-            {children}
-          </HeartedInfluencersProvider>
+          <QueryProvider>
+            <HeartedInfluencersProvider>
+              {children}
+            </HeartedInfluencersProvider>
+          </QueryProvider>
           {/* Google Analytics */}
           <Script
             src="https://www.googletagmanager.com/gtag/js?id=G-T68YCYENPE"

@@ -1,6 +1,9 @@
 import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getAllCampaigns, createCampaign, addInfluencerToCampaign } from '@/lib/db/queries/campaigns'
+import { cache } from '@/lib/cache/redis'
+import { cacheKeys } from '@/lib/cache/cache-keys'
+import { TTL } from '@/lib/cache/cache-middleware'
 
 export async function GET() {
   try {
@@ -15,11 +18,37 @@ export async function GET() {
       }, { status: 401 })
     }
 
+    // Try to get from cache first
+    const cacheKey = cacheKeys.campaign.list()
+    const cached = await cache.get<any[]>(cacheKey)
+    
+    if (cached) {
+      return NextResponse.json({ 
+        success: true, 
+        campaigns: cached,
+        cached: true
+      }, {
+        headers: {
+          'X-Cache': 'HIT',
+          'Cache-Control': `public, max-age=${TTL.CAMPAIGN_LIST}, stale-while-revalidate=${TTL.CAMPAIGN_LIST * 2}`,
+        }
+      })
+    }
+
     const campaigns = await getAllCampaigns()
+    
+    // Cache the result
+    await cache.set(cacheKey, campaigns, TTL.CAMPAIGN_LIST)
     
     return NextResponse.json({ 
       success: true, 
-      campaigns 
+      campaigns,
+      cached: false
+    }, {
+      headers: {
+        'X-Cache': 'MISS',
+        'Cache-Control': `public, max-age=${TTL.CAMPAIGN_LIST}, stale-while-revalidate=${TTL.CAMPAIGN_LIST * 2}`,
+      }
     })
   } catch (error) {
     console.error('Error fetching campaigns:', error)
@@ -122,6 +151,9 @@ export async function POST(request: NextRequest) {
     
     const campaign = await createCampaign(campaignData)
     console.log('✅ Campaign created successfully:', { id: campaign.id, name: campaign.name })
+    
+    // Invalidate campaigns list cache
+    await cache.del(cacheKeys.campaign.list())
     
     // Add selected influencers to the campaign if any were selected
     if (data.selectedInfluencers && data.selectedInfluencers.length > 0) {

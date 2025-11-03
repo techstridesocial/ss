@@ -12,17 +12,35 @@ export function getDatabase(): Pool {
     pool = new Pool({
       connectionString: ENV.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      max: 10, // Reduced max connections
-      idleTimeoutMillis: 60000, // Increased idle timeout
-      connectionTimeoutMillis: 10000, // Increased connection timeout to 10 seconds
+      // Optimized for serverless - fewer connections, shorter timeouts
+      max: 5, // Reduced for serverless (was 10)
+      idleTimeoutMillis: 30000, // 30 seconds (was 60 seconds)
+      connectionTimeoutMillis: 5000, // 5 seconds (was 10 seconds)
+      // Critical for serverless: allow process to exit when idle
+      allowExitOnIdle: true,
       keepAlive: true,
       keepAliveInitialDelayMillis: 0,
+      // Query timeout for long-running queries
+      query_timeout: 15000, // 15 seconds max per query
+      // Statement timeout
+      statement_timeout: 20000, // 20 seconds
     })
     
     // Handle pool errors
     pool.on('error', (err) => {
       console.error('Database pool error:', err)
     })
+    
+    // Log pool statistics periodically in development
+    if (process.env.NODE_ENV !== 'production') {
+      pool.on('connect', () => {
+        console.log('🔗 Database connection established')
+      })
+      
+      pool.on('remove', () => {
+        console.log('🔌 Database connection removed from pool')
+      })
+    }
   }
   
   return pool

@@ -2,6 +2,9 @@ import { NextRequest as _NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, transaction } from '@/lib/db/connection'
 import { getCurrentUserRole } from '@/lib/auth/roles'
+import { cache } from '@/lib/cache/redis'
+import { cacheKeys } from '@/lib/cache/cache-keys'
+import { TTL } from '@/lib/cache/cache-middleware'
 
 interface CreateInfluencerRequest {
   display_name: string
@@ -43,6 +46,24 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ 
         error: 'Access denied. Only staff, admin, and brand users can view influencers' 
       }, { status: 403 })
+    }
+
+    // Try to get from cache first
+    const cacheKey = cacheKeys.influencer.list()
+    const cached = await cache.get<any[]>(cacheKey)
+    
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        data: cached,
+        count: cached.length,
+        cached: true
+      }, {
+        headers: {
+          'X-Cache': 'HIT',
+          'Cache-Control': `public, max-age=${TTL.INFLUENCER_LIST}, stale-while-revalidate=${TTL.INFLUENCER_LIST * 2}`,
+        }
+      })
     }
 
     // Fetch real influencers from database
@@ -113,10 +134,19 @@ export async function GET(_request: NextRequest) {
       estimated_promotion_views: inf.estimated_promotion_views || Math.floor((inf.total_avg_views || 0) * 0.85)
     }))
     
+    // Cache the result
+    await cache.set(cacheKey, transformedInfluencers, TTL.INFLUENCER_LIST)
+    
     return NextResponse.json({
       success: true,
       data: transformedInfluencers,
-      count: transformedInfluencers.length
+      count: transformedInfluencers.length,
+      cached: false
+    }, {
+      headers: {
+        'X-Cache': 'MISS',
+        'Cache-Control': `public, max-age=${TTL.INFLUENCER_LIST}, stale-while-revalidate=${TTL.INFLUENCER_LIST * 2}`,
+      }
     })
 
   } catch (error) {
@@ -150,7 +180,7 @@ export async function GET(_request: NextRequest) {
 }
 
 // POST - Create new influencer
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
