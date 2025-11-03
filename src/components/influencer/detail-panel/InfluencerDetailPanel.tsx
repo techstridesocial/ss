@@ -2,13 +2,19 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink } from 'lucide-react'
+import { X, ExternalLink, Download, Copy, FileText } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Types
 import { InfluencerDetailPanelProps, SocialContact, InfluencerData } from './types'
 import SocialMediaIcons from '../SocialMediaIcons'
 import { InstagramLogo, YouTubeLogo, TikTokLogo } from '../../icons/BrandLogos'
+
+// Export utilities
+import { exportAsJSON, exportAsCSV, copyToClipboard } from './utils/exportAnalytics'
+
+// Custom hooks
+import { useInfluencerAnalytics } from './hooks/useInfluencerAnalytics'
 
 // Sections
 import { PremiumOverviewSection } from './sections/PremiumOverviewSection'
@@ -405,13 +411,47 @@ const PanelHeader = ({
         </div>
 
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="flex-shrink-0 w-10 h-10 ml-4 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
-          aria-label="Close panel"
-        >
-          <X className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
-        </button>
+        {/* Export Actions */}
+        <div className="flex items-center space-x-2 ml-4">
+          <button
+            onClick={async () => {
+              const success = await copyToClipboard(influencer, selectedPlatform || 'instagram')
+              if (success) {
+                alert('✅ Analytics copied to clipboard!')
+              } else {
+                alert('❌ Failed to copy to clipboard')
+              }
+            }}
+            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
+            title="Copy analytics summary"
+          >
+            <Copy className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+          </button>
+          
+          <button
+            onClick={() => exportAsCSV(influencer, selectedPlatform || 'instagram')}
+            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
+            title="Export as CSV"
+          >
+            <FileText className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+          </button>
+          
+          <button
+            onClick={() => exportAsJSON(influencer, selectedPlatform || 'instagram')}
+            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
+            title="Export as JSON"
+          >
+            <Download className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+          </button>
+          
+          <button
+            onClick={onClose}
+            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
+            aria-label="Close panel"
+          >
+            <X className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
+          </button>
+        </div>
       </div>
 
       {/* Social Media & Platform Tabs Section */}
@@ -454,54 +494,22 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 }: InfluencerDetailPanelProps) {
 
   const [mounted, setMounted] = useState(false)
-  const [apiData, setApiData] = useState<any>(null)
-  const [isLoadingApiData, setIsLoadingApiData] = useState(false)
-
-  // 🔍 [DEBUG] Comprehensive logging for panel state
-  useEffect(() => {
-  }, [isOpen, influencer, selectedPlatform, loading])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Fetch Modash API data for roster influencers (FIXED with stable dependencies)
-  useEffect(() => {
-    if (isOpen && influencer?.isRosterInfluencer && influencer?.id) {
-      const fetchModashData = async () => {
-        setIsLoadingApiData(true)
-        try {
-          // Get the first connected platform
-          const connectedPlatform = influencer.platforms && Object.entries(influencer.platforms).find(([_, data]: [string, any]) => data.username)
-          
-          if (connectedPlatform) {
-            const [platform, platformData] = connectedPlatform
-            
-            const response = await fetch('/api/discovery/profile', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                username: platformData.username,
-                platform: platform
-              })
-            })
-            
-            if (response.ok) {
-              const data = await response.json()
-              if (data.success && data.data) {
-                setApiData(data.data)
-              }
-            }
-          }
-        } catch (error) {
-        } finally {
-          setIsLoadingApiData(false)
-        }
-      }
-      
-      fetchModashData()
-    }
-  }, [isOpen, influencer?.id]) // FIXED: Only depend on isOpen and influencer.id (stable)
+  // Use React Query for API data fetching with automatic caching and retry
+  const { 
+    data: apiData, 
+    isLoading: isLoadingApiData,
+    error: apiError,
+    refetch: refetchAnalytics
+  } = useInfluencerAnalytics({
+    influencerId: influencer?.rosterId || influencer?.id,
+    platform: selectedPlatform || 'instagram',
+    enabled: isOpen && !!influencer?.isRosterInfluencer
+  })
 
   // Handle escape key and focus management
   useEffect(() => {
@@ -609,6 +617,24 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
             <div className="flex-1 overflow-y-auto overscroll-contain">
               {(loading || isLoadingApiData) ? (
                 <LoadingSpinner />
+              ) : apiError ? (
+                <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                  <div className="text-red-500 text-center">
+                    <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Analytics</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {apiError instanceof Error ? apiError.message : String(apiError)}
+                    </p>
+                    <button
+                      onClick={() => refetchAnalytics()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="min-h-full">
                   {/* Core Profile Section - Always visible */}
@@ -730,13 +756,13 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                     selectedPlatform={selectedPlatform}
                   />
                   
-                  {/* Audience Reachability - CRITICAL Missing Data */}
+                  {/* Audience Reachability */}
                   <AudienceReachabilitySection 
                     influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
-                  {/* Geographic Reach - CRITICAL Missing Data */}
+                  {/* Geographic Reach */}
                   <GeographicReachSection 
                     influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}
@@ -745,7 +771,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   {/* Brand Partnerships & Strategy Sections */}
                   <PremiumBrandPartnershipsSection influencer={enrichedInfluencer} />
                   
-                  {/* Brand Affinity - CRITICAL Missing Data */}
+                  {/* Brand Affinity */}
                   <BrandAffinitySection 
                     influencer={enrichedInfluencer}
                     selectedPlatform={selectedPlatform}

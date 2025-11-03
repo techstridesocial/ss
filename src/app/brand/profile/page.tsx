@@ -209,21 +209,27 @@ export default function BrandProfilePage() {
   }
 
   const handleNicheToggle = (niche: string) => {
-    setEditForm(prev => ({
-      ...prev,
-      preferred_niches: prev.preferred_niches.includes(niche)
-        ? prev.preferred_niches.filter(n => n !== niche)
-        : [...prev.preferred_niches, niche]
-    }))
+    setEditForm(prev => {
+      if (!prev) return null
+      return {
+        ...prev,
+        preferred_niches: prev.preferred_niches.includes(niche)
+          ? prev.preferred_niches.filter(n => n !== niche)
+          : [...prev.preferred_niches, niche]
+      }
+    })
   }
 
   const handleRegionToggle = (region: string) => {
-    setEditForm(prev => ({
-      ...prev,
-      preferred_regions: prev.preferred_regions.includes(region)
-        ? prev.preferred_regions.filter(r => r !== region)
-        : [...prev.preferred_regions, region]
-    }))
+    setEditForm(prev => {
+      if (!prev) return null
+      return {
+        ...prev,
+        preferred_regions: prev.preferred_regions.includes(region)
+          ? prev.preferred_regions.filter(r => r !== region)
+          : [...prev.preferred_regions, region]
+      }
+    })
   }
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,12 +238,48 @@ export default function BrandProfilePage() {
       // In real app, this would upload to Vercel Blob or similar service
       const reader = new FileReader()
       reader.onload = (e) => {
-        const _result = e.target?.result as string
+        const result = e.target?.result as string
         setLogoPreview(result)
-        setEditForm(prev => ({ ...prev, logo_url: result }))
+        setEditForm(prev => prev ? ({ ...prev, logo_url: result }) : null)
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  // Show loading state while fetching brand profile
+  if (isLoading && !brandProfile) {
+    return (
+      <BrandProtectedRoute>
+        <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+          <ModernBrandHeader />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          </div>
+        </div>
+      </BrandProtectedRoute>
+    )
+  }
+
+  // Show error state if profile failed to load
+  if (profileError || !brandProfile || !editForm) {
+    return (
+      <BrandProtectedRoute>
+        <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
+          <ModernBrandHeader />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{profileError || 'Failed to load brand profile'}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </BrandProtectedRoute>
+    )
   }
 
   return (
@@ -355,8 +397,8 @@ export default function BrandProfilePage() {
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editForm.company_name}
-                        onChange={(e) => setEditForm({...editForm, company_name: e.target.value})}
+                        value={editForm?.company_name || ''}
+                        onChange={(e) => editForm && setEditForm({...editForm, company_name: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     ) : (
@@ -369,8 +411,8 @@ export default function BrandProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
                     {isEditing ? (
                       <select
-                        value={editForm.industry}
-                        onChange={(e) => setEditForm({...editForm, industry: e.target.value})}
+                        value={editForm?.industry || ''}
+                        onChange={(e) => editForm && setEditForm({...editForm, industry: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         {industryOptions.map(option => (
@@ -388,8 +430,8 @@ export default function BrandProfilePage() {
                     {isEditing ? (
                       <input
                         type="url"
-                        value={editForm.website_url}
-                        onChange={(e) => setEditForm({...editForm, website_url: e.target.value})}
+                        value={editForm?.website_url || ''}
+                        onChange={(e) => editForm && setEditForm({...editForm, website_url: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="https://example.com"
                       />
@@ -411,8 +453,8 @@ export default function BrandProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Company Size</label>
                     {isEditing ? (
                       <select
-                        value={editForm.company_size}
-                        onChange={(e) => setEditForm({...editForm, company_size: e.target.value})}
+                        value={editForm?.company_size || ''}
+                        onChange={(e) => editForm && setEditForm({...editForm, company_size: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         {companySizeOptions.map(option => (
@@ -430,8 +472,8 @@ export default function BrandProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Company Description</label>
                   {isEditing ? (
                     <textarea
-                      value={editForm.description}
-                      onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                        value={editForm?.description || ''}
+                        onChange={(e) => editForm && setEditForm({...editForm, description: e.target.value})}
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Tell us about your company..."
@@ -456,8 +498,8 @@ export default function BrandProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Annual Marketing Budget</label>
                   {isEditing ? (
                     <select
-                      value={editForm.annual_budget_range}
-                      onChange={(e) => setEditForm({...editForm, annual_budget_range: e.target.value})}
+                        value={editForm?.annual_budget_range || ''}
+                        onChange={(e) => editForm && setEditForm({...editForm, annual_budget_range: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {budgetRangeOptions.map(option => (
@@ -478,7 +520,7 @@ export default function BrandProfilePage() {
                         <label key={niche} className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={editForm.preferred_niches.includes(niche)}
+                            checked={editForm?.preferred_niches?.includes(niche) || false}
                             onChange={() => handleNicheToggle(niche)}
                             className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
@@ -506,7 +548,7 @@ export default function BrandProfilePage() {
                         <label key={region} className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={editForm.preferred_regions.includes(region)}
+                            checked={editForm?.preferred_regions?.includes(region) || false}
                             onChange={() => handleRegionToggle(region)}
                             className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />

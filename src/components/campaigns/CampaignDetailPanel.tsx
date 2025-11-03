@@ -1350,77 +1350,8 @@ export default function CampaignDetailPanel({
   // Determine if campaign has started (Active, Paused, or Completed campaigns)
   const campaignHasStarted = ['ACTIVE', 'PAUSED', 'COMPLETED'].includes(campaign.status)
 
-  // Mock influencer data for the campaign - in real app this would come from props or API
-  const baseInfluencers = [
-    {
-      id: 'inf_1',
-      name: 'Sarah Creator',
-      platform: 'Instagram',
-      followers: 45000,
-      engagement_rate: 4.2,
-      contact_status: 'confirmed',
-      offered_amount: 1500,
-      contacted_at: '2024-01-10T14:30:00Z',
-      contact_notes: 'Confirmed participation. Content delivery scheduled for Jan 25th.'
-    },
-    {
-      id: 'inf_2',
-      name: 'BeautyByBella',
-      platform: 'TikTok',
-      followers: 89000,
-      engagement_rate: 6.1,
-      contact_status: 'confirmed',
-      offered_amount: 2200,
-      contacted_at: '2024-01-12T09:15:00Z',
-      contact_notes: 'Confirmed. Requesting product samples by Jan 20th.'
-    },
-    {
-      id: 'inf_3',
-      name: 'TechReviewTom',
-      platform: 'YouTube',
-      followers: 125000,
-      engagement_rate: 3.8,
-      contact_status: campaignHasStarted ? 'confirmed' : 'contacted',
-      offered_amount: 3000,
-      contacted_at: '2024-01-15T11:00:00Z',
-      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'Initial contact made. Awaiting response by Jan 22nd.'
-    },
-    {
-      id: 'inf_4',
-      name: 'FitnessLifestyle',
-      platform: 'Instagram',
-      followers: 67000,
-      engagement_rate: 5.3,
-      contact_status: campaignHasStarted ? 'confirmed' : 'contacted',
-      offered_amount: 1800,
-      contacted_at: '2024-01-14T16:45:00Z',
-      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'Sent collaboration proposal. Follow-up scheduled for Jan 21st.'
-    },
-    {
-      id: 'inf_5',
-      name: 'WellnessWarrior',
-      platform: 'Instagram',
-      followers: 34000,
-      engagement_rate: 7.2,
-      contact_status: campaignHasStarted ? 'confirmed' : 'pending',
-      offered_amount: 1200,
-      contacted_at: campaignHasStarted ? '2024-01-16T10:30:00Z' : null,
-      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'Identified as potential match. Contact planned for Jan 20th.'
-    },
-    {
-      id: 'inf_6',
-      name: 'LifestyleLuxe',
-      platform: 'TikTok',
-      followers: 112000,
-      engagement_rate: 4.9,
-      contact_status: campaignHasStarted ? 'confirmed' : 'pending',
-      offered_amount: 2500,
-      contacted_at: campaignHasStarted ? '2024-01-17T14:00:00Z' : null,
-      contact_notes: campaignHasStarted ? 'Confirmed participation. Campaign is now active.' : 'On contact list. Outreach scheduled for this week.'
-    }
-  ]
-
-  const mockInfluencers = baseInfluencers
+  // Campaign influencers are loaded from /api/campaigns/[id]/influencers in useEffect above
+  // Using campaignInfluencers state which is populated from the API
 
   const handleAction = async (action: string) => {
     setIsLoading(true)

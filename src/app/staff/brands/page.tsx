@@ -638,19 +638,29 @@ function BrandsPageClient() {
         created_at: new Date().toISOString()
       }
       
-      // In a real app, this would make an API call to create the campaign
-      // For now, we'll simulate the creation
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Create campaign via API
+      const response = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(campaignWithQuotation)
+      })
       
-      // Close modal and redirect to campaigns page
-      setShowCreateCampaignModal(false)
-      setCampaignQuotation(null)
-      
-      // Show success message and redirect
-      alert(`Campaign "${campaignData.name}" created successfully! Redirecting to campaigns page...`)
-      
-      // Redirect to the campaigns page
-      router.push('/staff/campaigns')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          // Close modal and redirect to campaigns page
+          setShowCreateCampaignModal(false)
+          setCampaignQuotation(null)
+          alert(`✅ Campaign "${campaignData.name}" created successfully! Redirecting to campaigns page...`)
+          // Redirect to the campaigns page
+          router.push('/staff/campaigns')
+        } else {
+          alert(`❌ Error: ${result.error || 'Failed to create campaign'}`)
+        }
+      } else {
+        const error = await response.json()
+        alert(`❌ Error: ${error.error || 'Failed to create campaign'}`)
+      }
       
     } catch {
       alert('Failed to create campaign. Please try again.')

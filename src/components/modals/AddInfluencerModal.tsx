@@ -99,135 +99,69 @@ export default function AddInfluencerModal({
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const searchModashProfile = async (handle: string, platform: string): Promise<ModashDiscoveryData> => {
-    // Mock Modash Discovery API call
-    // In real implementation, this would call the actual Modash API
-    
     setIsSearching(true)
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Call real Modash API via discovery/profile endpoint
+      const response = await fetch('/api/discovery/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: handle,
+          platform: platform.toLowerCase(),
+          includePerformanceData: true
+        })
+      })
       
-      // Return "not found" only for very specific test cases
-      if (handle.toLowerCase() === 'notfound' || handle.toLowerCase() === 'test404') {
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
         return {
           found: false,
-          error: 'Profile not found in Modash database or below 1k followers threshold'
+          error: error.error || 'Profile not found in Modash database or below 1k followers threshold'
         }
       }
       
-      // Generate realistic mock data for any other handle
-      const displayName = handle.charAt(0).toUpperCase() + handle.slice(1)
+      const result = await response.json()
       
-      // Generate different data based on handle characteristics
-      let mockData: {
-        followers: number
-        engagement_rate: number
-        bio: string
-        location_country: string
-        location_city: string
-        average_views: number
-        credibility_score: number
-        niches_detected: string[]
+      if (!result.profile) {
+        return {
+          found: false,
+          error: 'Profile not found in Modash database'
+        }
       }
       
-      if (handle.toLowerCase().includes('beauty') || handle.toLowerCase().includes('makeup')) {
-        mockData = {
-          followers: 85000 + Math.floor(Math.random() * 50000),
-          engagement_rate: 3.8 + Math.random() * 2,
-          bio: `Beauty enthusiast | Makeup tutorials | Skincare tips ✨`,
-          location_country: "United Kingdom",
-          location_city: "London",
-          average_views: 32000 + Math.floor(Math.random() * 20000),
-          credibility_score: 0.85 + Math.random() * 0.1,
-          niches_detected: ['Beauty', 'Fashion', 'Lifestyle']
-        }
-      } else if (handle.toLowerCase().includes('tech') || handle.toLowerCase().includes('review')) {
-        mockData = {
-          followers: 120000 + Math.floor(Math.random() * 80000),
-          engagement_rate: 3.2 + Math.random() * 2,
-          bio: `Tech reviewer | Latest gadgets | Honest opinions 📱💻`,
-          location_country: "United States", 
-          location_city: "San Francisco",
-          average_views: 65000 + Math.floor(Math.random() * 30000),
-          credibility_score: 0.88 + Math.random() * 0.1,
-          niches_detected: ['Tech', 'Product review', 'Gaming']
-        }
-      } else if (handle.toLowerCase().includes('fitness') || handle.toLowerCase().includes('gym')) {
-        mockData = {
-          followers: 95000 + Math.floor(Math.random() * 60000),
-          engagement_rate: 4.5 + Math.random() * 2,
-          bio: `Fitness coach | Workout tips | Healthy lifestyle 💪`,
-          location_country: "Australia",
-          location_city: "Sydney", 
-          average_views: 45000 + Math.floor(Math.random() * 25000),
-          credibility_score: 0.82 + Math.random() * 0.15,
-          niches_detected: ['Fitness', 'Health', 'Lifestyle']
-        }
-      } else if (handle.toLowerCase().includes('travel') || handle.toLowerCase().includes('adventure')) {
-        mockData = {
-          followers: 78000 + Math.floor(Math.random() * 45000),
-          engagement_rate: 3.9 + Math.random() * 2,
-          bio: `Travel blogger | Adventure seeker | Exploring the world 🌍`,
-          location_country: "Canada",
-          location_city: "Vancouver",
-          average_views: 38000 + Math.floor(Math.random() * 20000),
-          credibility_score: 0.79 + Math.random() * 0.15,
-          niches_detected: ['Travel', 'Adventure', 'Lifestyle']
-        }
-      } else {
-        // Default generic influencer data for any other handle
-        const randomNiches = [
-          ['Lifestyle', 'Fashion'],
-          ['Entertainment', 'Music'], 
-          ['Food', 'Lifestyle'],
-          ['Education', 'Lifestyle'],
-          ['Sports', 'Fitness']
-        ]
-        
-        const randomCountries = ["United Kingdom", "United States", "Canada", "Australia", "Germany"]
-        const randomCities = ["London", "New York", "Toronto", "Sydney", "Berlin"]
-        const randomIndex = Math.floor(Math.random() * 5)
-        
-        mockData = {
-          followers: 50000 + Math.floor(Math.random() * 100000),
-          engagement_rate: 2.8 + Math.random() * 3,
-          bio: `Content creator | ${displayName} | Follow for daily updates ✨`,
-          location_country: randomCountries[randomIndex] || "United Kingdom",
-          location_city: randomCities[randomIndex] || "London",
-          average_views: 25000 + Math.floor(Math.random() * 40000),
-          credibility_score: 0.75 + Math.random() * 0.2,
-          niches_detected: randomNiches[randomIndex] || ['Lifestyle', 'Fashion']
-        }
-      }
+      // Transform Modash API response to match expected format
+      const profile = result.profile
       
       return {
         found: true,
         profile: {
           username: handle,
-          display_name: `${displayName} ${mockData.niches_detected[0]}`,
-          followers: mockData.followers,
-          engagement_rate: parseFloat(mockData.engagement_rate.toFixed(1)),
+          display_name: profile.name || profile.username || handle,
+          followers: profile.followers || 0,
+          engagement_rate: profile.engagementRate || 0,
           platform: platform as any,
-          verified: Math.random() > 0.7, // 30% chance of being verified
-          bio: mockData.bio,
-          location_country: mockData.location_country,
-          location_city: mockData.location_city,
-          average_views: mockData.average_views,
+          verified: profile.verified || false,
+          bio: profile.bio || '',
+          location_country: profile.location?.country || '',
+          location_city: profile.location?.city || '',
+          average_views: profile.avgViews || profile.averageViews || 0,
           audience_demographics: {
-            age_groups: { "18-24": 0.3 + Math.random() * 0.2, "25-34": 0.4 + Math.random() * 0.2, "35-44": 0.2 + Math.random() * 0.1 },
-            gender: { "female": 0.4 + Math.random() * 0.4, "male": 0.4 + Math.random() * 0.4 },
-            locations: { 
-              [mockData.location_country.substring(0, 2).toUpperCase()]: 0.6 + Math.random() * 0.2,
-              "US": 0.2 + Math.random() * 0.15,
-              "CA": 0.1 + Math.random() * 0.1 
-            }
+            age_groups: profile.audience?.ageGroup || { "18-24": 0, "25-34": 0, "35-44": 0 },
+            gender: profile.audience?.gender || { "female": 0, "male": 0 },
+            locations: profile.audience?.locations || {}
           },
-          credibility_score: parseFloat(mockData.credibility_score.toFixed(2)),
-          niches_detected: mockData.niches_detected,
-          email: `contact@${handle.toLowerCase()}.com`
+          credibility_score: profile.credibility || 0,
+          niches_detected: profile.niches || [],
+          email: profile.email || `contact@${handle.toLowerCase()}.com`
         },
-        confidence: 80 + Math.floor(Math.random() * 15) // 80-95% confidence
+        confidence: 95
+      }
+    } catch (error) {
+      console.error('Error searching Modash profile:', error)
+      return {
+        found: false,
+        error: error instanceof Error ? error.message : 'Failed to search Modash profile'
       }
     } finally {
       setIsSearching(false)

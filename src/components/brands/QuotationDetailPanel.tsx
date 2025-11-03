@@ -475,8 +475,7 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation: initi
     setIsLoading(true)
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call parent's send quote handler which uses real API
       onSendQuote(totalToUse, quoteNotes)
       onClose()
     } catch (error) {

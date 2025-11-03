@@ -680,8 +680,9 @@ export default function ViewBrandPanel({ isOpen, onClose, brand }: ViewBrandPane
     
     if (confirmDelete) {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // TODO: Create API endpoint for deleting team members if needed
+        // For now, this is handled locally as team members may not be a separate database entity
+        // If team members are stored in database, create DELETE /api/brands/[id]/team/[memberId] endpoint
         
         // Remove from local state
         setTeamMembers(prev => prev.filter(member => member.id !== memberId))
@@ -700,13 +701,34 @@ export default function ViewBrandPanel({ isOpen, onClose, brand }: ViewBrandPane
 
   const handleSaveEdit = async (editedData: any) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch(`/api/brands/${brand.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: editedData.company_name,
+          industry: editedData.industry,
+          website_url: editedData.website_url,
+          description: editedData.description,
+          logo_url: editedData.logo_url
+        })
+      })
       
-      console.log('Saving edited brand data:', editedData)
-      alert(`✅ ${editedData.company_name} has been updated successfully!`)
-      
-      setIsEditMode(false)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          alert(`✅ ${editedData.company_name} has been updated successfully!`)
+          setIsEditMode(false)
+          // Optionally refresh brand data
+          if (onClose) {
+            onClose()
+          }
+        } else {
+          alert('❌ Error updating brand. Please try again.')
+        }
+      } else {
+        const error = await response.json()
+        alert(`❌ Error: ${error.error || 'Failed to update brand'}`)
+      }
     } catch (error) {
       console.error('Error updating brand:', error)
       alert('❌ Error updating brand. Please try again.')

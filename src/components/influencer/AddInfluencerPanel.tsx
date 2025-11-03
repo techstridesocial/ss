@@ -113,98 +113,61 @@ export default function AddInfluencerPanel({
     setIsSearching(true)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Call real Modash API via discovery/profile endpoint
+      const response = await fetch('/api/discovery/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: handle,
+          platform: platform.toLowerCase(),
+          includePerformanceData: true
+        })
+      })
       
-      if (handle.toLowerCase() === 'notfound' || handle.toLowerCase() === 'test404') {
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
         return {
           found: false,
-          error: 'Profile not found in Modash database or below 1k followers threshold'
+          error: error.error || 'Profile not found in Modash database or below 1k followers threshold'
         }
       }
       
-      const displayName = handle.charAt(0).toUpperCase() + handle.slice(1)
+      const result = await response.json()
       
-      let mockData: {
-        followers: number
-        engagement_rate: number
-        bio: string
-        location_country: string
-        location_city: string
-        average_views: number
-        credibility_score: number
-        niches_detected: string[]
+      if (!result.profile) {
+        return {
+          found: false,
+          error: 'Profile not found in Modash database'
+        }
       }
       
-      if (handle.toLowerCase().includes('beauty') || handle.toLowerCase().includes('makeup')) {
-        mockData = {
-          followers: 85000 + Math.floor(Math.random() * 50000),
-          engagement_rate: 3.8 + Math.random() * 2,
-          bio: `Beauty enthusiast | Makeup tutorials | Skincare tips ✨`,
-          location_country: "United Kingdom",
-          location_city: "London",
-          average_views: 32000 + Math.floor(Math.random() * 20000),
-          credibility_score: 0.85 + Math.random() * 0.1,
-          niches_detected: ['Beauty', 'Fashion', 'Lifestyle']
-        }
-      } else if (handle.toLowerCase().includes('tech') || handle.toLowerCase().includes('review')) {
-        mockData = {
-          followers: 120000 + Math.floor(Math.random() * 80000),
-          engagement_rate: 3.2 + Math.random() * 2,
-          bio: `Tech reviewer | Latest gadgets | Honest opinions 📱💻`,
-          location_country: "United States", 
-          location_city: "San Francisco",
-          average_views: 65000 + Math.floor(Math.random() * 30000),
-          credibility_score: 0.88 + Math.random() * 0.1,
-          niches_detected: ['Tech', 'Product Reviews', 'Gaming']
-        }
-      } else {
-        const randomNiches = [
-          ['Lifestyle', 'Fashion'],
-          ['Entertainment', 'Music'], 
-          ['Food', 'Lifestyle'],
-          ['Education', 'Lifestyle'],
-          ['Sports', 'Fitness']
-        ]
-        
-        const randomCountries = ["United Kingdom", "United States", "Canada", "Australia", "Germany"]
-        const randomCities = ["London", "New York", "Toronto", "Sydney", "Berlin"]
-        const randomIndex = Math.floor(Math.random() * 5)
-        
-        mockData = {
-          followers: 50000 + Math.floor(Math.random() * 100000),
-          engagement_rate: 2.8 + Math.random() * 3,
-          bio: `Content creator | ${displayName} | Follow for daily updates ✨`,
-          location_country: randomCountries[randomIndex] || "United Kingdom",
-          location_city: randomCities[randomIndex] || "London",
-          average_views: 25000 + Math.floor(Math.random() * 40000),
-          credibility_score: 0.75 + Math.random() * 0.2,
-          niches_detected: randomNiches[randomIndex] || ['Lifestyle', 'Fashion']
-        }
-      }
-
+      // Transform Modash API response to match expected format
+      const profile = result.profile
+      
       return {
         found: true,
         profile: {
           username: handle,
-          display_name: displayName,
-          followers: mockData.followers,
-          engagement_rate: mockData.engagement_rate,
+          display_name: profile.name || profile.username || handle,
+          followers: profile.followers || 0,
+          engagement_rate: profile.engagementRate || 0,
           platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE',
-          verified: Math.random() > 0.6,
-          bio: mockData.bio,
-          location_country: mockData.location_country,
-          location_city: mockData.location_city,
-          average_views: mockData.average_views,
-          credibility_score: mockData.credibility_score,
-          niches_detected: mockData.niches_detected,
-          email: `contact@${handle.toLowerCase()}.com`
+          verified: profile.verified || false,
+          bio: profile.bio || '',
+          location_country: profile.location?.country || '',
+          location_city: profile.location?.city || '',
+          average_views: profile.avgViews || profile.averageViews || 0,
+          credibility_score: profile.credibility || 0,
+          niches_detected: profile.niches || [],
+          email: profile.email || `contact@${handle.toLowerCase()}.com`
         },
-        confidence: 0.85 + Math.random() * 0.15
+        confidence: 0.95
       }
     } catch (error) {
+      console.error('Error searching Modash profile:', error)
       return {
         found: false,
-        error: 'Failed to search Modash database. Please try again.'
+        error: error instanceof Error ? error.message : 'Failed to search Modash profile'
       }
     } finally {
       setIsSearching(false)
