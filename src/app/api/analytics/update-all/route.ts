@@ -4,7 +4,7 @@ import { getCurrentUserRole } from '@/lib/auth/roles'
 import { updateAllInfluencerAnalytics } from '@/lib/services/analytics-updater'
 
 // POST /api/analytics/update-all - Update analytics for all influencers
-export async function POST(_request: NextRequest) {
+export async function POST(_request: _NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -21,7 +21,7 @@ export async function POST(_request: NextRequest) {
     console.log('🔄 Starting analytics update for all influencers...')
 
     // Update analytics for all influencers
-    const _result = await updateAllInfluencerAnalytics()
+    const result = await updateAllInfluencerAnalytics()
 
     return NextResponse.json({
       success: true,

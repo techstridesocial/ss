@@ -33,7 +33,7 @@ interface OnboardingRequest {
   stride_contact_phone?: string
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: _NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start transaction to create brand and contact records
-    const _result = await transaction(async (client) => {
+    const result = await transaction(async (client) => {
       // Insert brand record with new optional fields
       const brandResult = await client.query(`
         INSERT INTO brands (

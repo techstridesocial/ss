@@ -6,7 +6,7 @@ import { getBrandQuotations, createQuotationRequest } from '@/lib/db/queries/quo
 import { notifyQuoteSubmitted } from '@/lib/services/notifications'
 
 // GET - Fetch all quotations for the brand
-export async function GET(_request: NextRequest) {
+export async function GET(_request: _NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest) {
 }
 
 // POST - Create a new quotation request
-export async function POST(_request: NextRequest) {
+export async function POST(_request: _NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -89,7 +89,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
     }
 
-    const data = await request.json()
+    const data = await _request.json()
     
     // Validate required fields
     const requiredFields = ['campaign_name', 'description', 'influencer_count']

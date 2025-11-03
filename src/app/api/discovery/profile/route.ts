@@ -3,7 +3,7 @@ import { getProfileReport, getPerformanceData as _getPerformanceData } from '../
 
 export async function POST(_request: Request) {
   try {
-    const { userId, platform, includePerformanceData } = await request.json()
+    const { userId, platform, includePerformanceData } = await _request.json()
     
     console.log('🔍 Modash Profile Request:', { userId, platform, includePerformanceData })
     
@@ -15,7 +15,7 @@ export async function POST(_request: Request) {
     }
     
     // Extract the profile data directly from Modash
-    const _profile = modashResponse.profile?.profile || {}
+    const profile = modashResponse.profile?.profile || {}
     const audience = modashResponse.profile?.audience || {}
     
     console.log('✅ Raw Modash profile data:', {
@@ -49,7 +49,7 @@ export async function POST(_request: Request) {
     if ((includePerformanceData || platform === 'tiktok') && profile.username) {
       try {
         console.log('📊 Fetching performance data for enhanced metrics and thumbnails...')
-        const perfResult = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', profile.username, 10) as any // Get more posts for better thumbnails
+        const perfResult = await _getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', profile.username, 10) as any // Get more posts for better thumbnails
         if (perfResult && (perfResult.posts || perfResult.reels)) {
           performanceData = perfResult
           console.log('✅ Performance data fetched:', {

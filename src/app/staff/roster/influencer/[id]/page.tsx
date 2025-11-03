@@ -31,7 +31,7 @@ export default function InfluencerDetailPage() {
         const response = await fetch(`/api/roster/${influencerId}`)
         
         if (response.ok) {
-          const _result = await response.json()
+          const result = await response.json()
           if (result.success) {
             setInfluencer(result.data)
           } else {

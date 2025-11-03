@@ -553,7 +553,7 @@ export async function batchUpdateInfluencerAnalytics(
 
   for (const update of influencerUpdates) {
     try {
-      const _result = await updateInfluencerAnalyticsFromContentLinks(
+      const result = await updateInfluencerAnalyticsFromContentLinks(
         update.influencerId, 
         update.contentLinks
       )
@@ -611,7 +611,7 @@ export async function updateAllInfluencerAnalytics(): Promise<{
     }))
 
     // Use batch update function
-    const _result = await batchUpdateInfluencerAnalytics(updates)
+    const result = await batchUpdateInfluencerAnalytics(updates)
     
     console.log(`✅ Completed analytics update for all influencers`)
     return result
@@ -637,7 +637,7 @@ export async function getInfluencerAnalyticsSummary(influencerId: string): Promi
   last_updated: Date | null
 } | null> {
   try {
-    const _result = await query(`
+    const result = await query(`
       SELECT 
         total_avg_views,
         total_likes,
