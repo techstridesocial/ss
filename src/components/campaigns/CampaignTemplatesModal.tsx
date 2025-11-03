@@ -69,7 +69,7 @@ export default function CampaignTemplatesModal({
         const data = await response.json()
         setTemplates(data.templates)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error fetching templates:', error)
     } finally {
       setLoading(false)

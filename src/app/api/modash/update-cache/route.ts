@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error during cache update:', error)
     return NextResponse.json(
       { 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       data: stats
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting cache stats:', error)
     return NextResponse.json(
       { error: 'Failed to get cache stats' },

@@ -146,7 +146,7 @@ export async function POST(
       submission_id: submissionResult[0]?.id
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error submitting campaign content:', error)
     return NextResponse.json(
       { error: 'Failed to submit content' },
@@ -228,7 +228,7 @@ export async function GET(
       { status: 403 }
     )
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaign content submissions:', error)
     return NextResponse.json(
       { error: 'Failed to fetch submissions' },

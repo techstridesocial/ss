@@ -323,7 +323,7 @@ export default function AddInfluencerModal({
       setDiscoveryData(null)
       setShowPreview(false)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error adding influencer:', error)
     } finally {
       setIsLoading(false)

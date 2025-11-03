@@ -107,7 +107,7 @@ export async function GET(_request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching payment data:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     console.error('Full error stack:', error)
@@ -229,7 +229,7 @@ export async function POST(_request: NextRequest) {
       message: 'Payment information saved successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating payment information:', error)
     return NextResponse.json(
       { error: 'Failed to update payment information' },

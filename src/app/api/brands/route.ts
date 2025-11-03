@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in GET /api/brands:', error)
     return NextResponse.json(
       { error: 'Failed to fetch brands' },
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       message: 'Brand created successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in POST /api/brands:', error)
     return NextResponse.json(
       { error: 'Failed to create brand' },

@@ -60,7 +60,7 @@ export default function AssignInfluencerModal({
       await onAssign(formData)
       console.log('✅ Assignment successful')
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error assigning influencer:', error)
       setError(error instanceof Error ? error.message : 'Failed to assign influencer')
     } finally {

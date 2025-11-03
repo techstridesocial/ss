@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       message: 'Campaign created successfully from approved quotation',
       campaignId
     }, { status: 201 })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating campaign from quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create campaign from quotation' },

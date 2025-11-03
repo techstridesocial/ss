@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error adding to roster:', error)
     return NextResponse.json(
       { 
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error getting discovered influencers:', error)
     return NextResponse.json(
       { 

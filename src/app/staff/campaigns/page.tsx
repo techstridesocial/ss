@@ -305,7 +305,7 @@ function CampaignsPageClient() {
         const _result = await response.json()
         setStaffMembers(result.data || [])
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading staff members:', error)
     }
   }
@@ -345,7 +345,7 @@ function CampaignsPageClient() {
         'success'
       )
       
-    } catch (_error) {
+    } catch (error) {
       console.error('Error assigning campaign:', error)
       showNotificationModal(
         'Assignment Failed',
@@ -401,7 +401,7 @@ function CampaignsPageClient() {
         const error = await response.json()
         showNotificationModal('Error', error.error || 'Failed to create campaign', 'error')
       }
-    } catch (_error) {
+    } catch (error) {
       showNotificationModal('Error', 'Failed to create campaign', 'error')
     }
   }
@@ -433,7 +433,7 @@ function CampaignsPageClient() {
       } else {
         showNotificationModal('Error', 'Failed to pause campaign', 'error')
       }
-    } catch (_error) {
+    } catch (error) {
       showNotificationModal('Error', 'Failed to pause campaign', 'error')
     }
   }
@@ -452,7 +452,7 @@ function CampaignsPageClient() {
       } else {
         showNotificationModal('Error', 'Failed to resume campaign', 'error')
       }
-    } catch (_error) {
+    } catch (error) {
       showNotificationModal('Error', 'Failed to resume campaign', 'error')
     }
   }
@@ -475,7 +475,7 @@ function CampaignsPageClient() {
       } else {
         showNotificationModal('Error', 'Failed to update campaign', 'error')
       }
-    } catch (_error) {
+    } catch (error) {
       showNotificationModal('Error', 'Failed to update campaign', 'error')
     }
   }

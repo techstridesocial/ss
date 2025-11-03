@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Tracking links table created successfully' })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Migration error:', error)
     return NextResponse.json({ error: 'Migration failed' }, { status: 500 })
   }

@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest) {
       data: result.rows[0] 
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating influencer management data:', error)
     return NextResponse.json({ 
       error: 'Failed to update influencer management data' 

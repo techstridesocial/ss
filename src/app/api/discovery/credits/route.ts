@@ -20,7 +20,7 @@ export async function GET() {
       }
     })
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Credit usage API error:', error)
     
     return NextResponse.json(

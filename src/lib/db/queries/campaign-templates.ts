@@ -74,7 +74,7 @@ export async function getCampaignTemplates(includeInactive: boolean = false): Pr
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }))
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting campaign templates:', error)
     throw error
   }
@@ -125,7 +125,7 @@ export async function getCampaignTemplateById(id: string): Promise<CampaignTempl
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting campaign template by ID:', error)
     throw error
   }
@@ -197,7 +197,7 @@ export async function createCampaignTemplate(template: Omit<CampaignTemplate, 'i
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating campaign template:', error)
     throw error
   }
@@ -334,7 +334,7 @@ export async function updateCampaignTemplate(id: string, updates: Partial<Campai
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating campaign template:', error)
     throw error
   }
@@ -352,7 +352,7 @@ export async function deleteCampaignTemplate(id: string): Promise<boolean> {
     `, [id])
 
     return result.length > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error deleting campaign template:', error)
     throw error
   }
@@ -393,7 +393,7 @@ export async function createCampaignFromTemplate(
     // Use the existing campaign creation function
     const { createCampaign } = await import('./campaigns')
     return await createCampaign(campaign)
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating campaign from template:', error)
     throw error
   }

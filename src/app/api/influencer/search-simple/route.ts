@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       message: `Found ${formattedResults.length} profiles`
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in simple search:', error)
     return NextResponse.json(
       { 

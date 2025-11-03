@@ -48,7 +48,7 @@ export async function GET(_request: NextRequest) {
     `, [influencer_id])
 
     return NextResponse.json({ invoices })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching invoices:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invoices' },
@@ -173,7 +173,7 @@ export async function POST(_request: NextRequest) {
       message: 'Invoice created successfully',
       invoice: invoiceResult 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating invoice:', error)
     return NextResponse.json(
       { error: 'Failed to create invoice' },

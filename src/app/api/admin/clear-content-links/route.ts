@@ -64,7 +64,7 @@ export async function POST() {
       remaining: verifyResult[0].with_content_links
     })
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error clearing content links:', error)
     return NextResponse.json(
       { error: 'Failed to clear content links', details: error instanceof Error ? error.message : 'Unknown error' },

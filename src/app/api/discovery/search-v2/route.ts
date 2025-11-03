@@ -90,7 +90,7 @@ export async function POST(_request: Request) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error in search v2 API route:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },

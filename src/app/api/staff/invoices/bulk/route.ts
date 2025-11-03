@@ -40,14 +40,14 @@ export async function PUT(request: NextRequest) {
         updatedCount: invoiceIds.length
       })
 
-    } catch (_error) {
+    } catch (error) {
       await client.query('ROLLBACK')
       throw error
     } finally {
       client.release()
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating bulk invoice status:', error)
     return NextResponse.json(
       { error: 'Failed to update invoice status' },

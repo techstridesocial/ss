@@ -73,7 +73,7 @@ export async function GET(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error validating invitation:', error)
     return NextResponse.json({
       success: false,

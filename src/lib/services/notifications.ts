@@ -29,7 +29,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
     
     console.log(`📬 Notification created for user ${params.recipientId}: ${params.title}`)
     return true
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating notification:', error)
     return false
   }
@@ -120,7 +120,7 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
     `, [userId])
     
     return parseInt(result[0]?.count || '0')
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting unread count:', error)
     return 0
   }

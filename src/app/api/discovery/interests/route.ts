@@ -12,7 +12,7 @@ export async function GET(_request: Request) {
     const _result = await listInterests(query || '', limit)
     
     return NextResponse.json(result)
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Interests API error:', error)
     return NextResponse.json(
       { 

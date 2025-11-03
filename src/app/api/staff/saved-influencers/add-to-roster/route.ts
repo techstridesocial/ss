@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         message: 'Influencer successfully added to roster'
       }
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding influencer to roster:', error)
     return NextResponse.json(
       { error: 'Failed to add influencer to roster' },

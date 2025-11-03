@@ -51,7 +51,7 @@ export async function storeDiscoveredInfluencer(
     `, [username, platform, followers, engagement_rate, demographics, modash_data])
     
     return result[0]?.id
-  } catch (_error) {
+  } catch (error) {
     console.error('Error storing discovered influencer:', error)
     throw error
   }
@@ -69,7 +69,7 @@ export async function getDiscoveryHistory(limit: number = 50): Promise<Discovery
     `, [limit])
     
     return result
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting discovery history:', error)
     throw error
   }
@@ -94,7 +94,7 @@ export async function storeDiscoverySearch(
     `, [searchQuery, JSON.stringify(filtersUsed), resultsCount, creditsUsed, userId])
     
     return result[0]?.id
-  } catch (_error) {
+  } catch (error) {
     console.error('Error storing discovery search:', error)
     throw error
   }
@@ -113,7 +113,7 @@ export async function checkInfluencerInRoster(username: string, platform: string
     `, [username, platform.toUpperCase()])
     
     return parseInt(result[0]?.count || '0') > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error checking influencer in roster:', error)
     return false
   }
@@ -131,7 +131,7 @@ export async function getDiscoveredInfluencers(limit: number = 100): Promise<Dis
     `, [limit])
     
     return result
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting discovered influencers:', error)
     throw error
   }
@@ -205,7 +205,7 @@ export async function addDiscoveredInfluencerToRoster(
     `, [discoveredId])
     
     return influencerId
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding discovered influencer to roster:', error)
     throw error
   }
@@ -383,7 +383,7 @@ export async function addDiscoveredInfluencerToRosterWithCompleteData(
     })
     
     return influencerId
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding discovered influencer to roster with complete data:', error)
     throw error
   }
@@ -418,7 +418,7 @@ export async function getDiscoveryStats(): Promise<{
       totalCreditsUsed: parseFloat(historyResult[0]?.total_credits || '0'),
       averageEngagement: parseFloat(result[0]?.avg_engagement || '0')
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting discovery stats:', error)
     throw error
   }

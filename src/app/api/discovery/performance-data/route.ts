@@ -49,7 +49,7 @@ export async function GET(_request: Request) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Performance Data API error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -89,7 +89,7 @@ export async function POST(_request: Request) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Performance Data API (POST) error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

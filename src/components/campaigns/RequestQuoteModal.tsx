@@ -81,7 +81,7 @@ export default function RequestQuoteModal({
       } else {
         console.error('Failed to load staff members')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading staff members:', error)
     } finally {
       setLoadingStaff(false)
@@ -174,7 +174,7 @@ export default function RequestQuoteModal({
         const _result = await response.json()
         setError(result.error || 'Failed to submit quotation request')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error submitting quotation:', error)
       setError('Network error. Please try again.')
     } finally {

@@ -193,7 +193,7 @@ export class LocationService {
       console.log('✅ Fetched', modashLocations.length, 'locations from Modash')
       return modashLocations
 
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error fetching Modash locations:', error)
       return DISCOVERY_LOCATIONS // Fallback to predefined
     }
@@ -260,7 +260,7 @@ export async function getBestAvailableLocations(platform: string = 'instagram'):
       console.log('✅ Using', dynamicLocations.length, 'dynamic Modash locations')
       return dynamicLocations.map(loc => ({ value: loc.value, label: loc.label }))
     }
-  } catch (_error) {
+  } catch (error) {
     console.warn('⚠️ Dynamic locations failed, using predefined fallback')
   }
 

@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error accepting invitation:', error)
     return NextResponse.json({
       success: false,

@@ -502,7 +502,7 @@ export async function updateInfluencerStatus(
       data: influencer,
       message: `Influencer ${isActive ? 'activated' : 'deactivated'} successfully`
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating influencer status:', error)
     return {
       success: false,
@@ -540,7 +540,7 @@ export async function updateInfluencerNiches(
       data: influencer,
       message: 'Influencer niches updated successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating influencer niches:', error)
     return {
       success: false,
@@ -771,7 +771,7 @@ export async function createInfluencerProfile(
       data: result
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in createInfluencerProfile:', error)
     return {
       success: false,

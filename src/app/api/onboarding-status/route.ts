@@ -56,7 +56,7 @@ export async function GET(_request: NextRequest) {
     // For STAFF/ADMIN, always considered onboarded
     return NextResponse.json({ is_onboarded: true })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error checking onboarding status:', error)
     return NextResponse.json(
       { error: 'Internal server error' }, 

@@ -138,7 +138,7 @@ export default function InfluencerProfile() {
               niches: []
             })
           }
-        } catch (_error) {
+        } catch (error) {
           console.error('Error loading profile:', error)
           // Fallback to Clerk user data
           setProfileData({
@@ -207,7 +207,7 @@ export default function InfluencerProfile() {
         console.error('Failed to save profile')
         // Show error message
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving profile:', error)
       // Show error message
     } finally {
@@ -321,7 +321,7 @@ export default function InfluencerProfile() {
                           } else {
                             console.error('Failed to update profile image')
                           }
-                        } catch (_error) {
+                        } catch (error) {
                           console.error('Error updating profile image:', error)
                         }
                       }

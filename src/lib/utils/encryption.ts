@@ -44,7 +44,7 @@ export function encryptData(data: string): string {
     const combined = Buffer.concat([salt, iv, tag, Buffer.from(encrypted, 'hex')])
     
     return combined.toString('base64')
-  } catch (_error) {
+  } catch (error) {
     console.error('Encryption error:', error)
     throw new Error('Failed to encrypt data')
   }
@@ -74,7 +74,7 @@ export function decryptData(encryptedData: string): string {
     decrypted += decipher.final('utf8')
     
     return decrypted
-  } catch (_error) {
+  } catch (error) {
     console.error('Decryption error:', error)
     throw new Error('Failed to decrypt data')
   }

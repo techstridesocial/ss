@@ -44,7 +44,7 @@ export default function CacheManagementModal({
         const data = await response.json()
         setCacheStats(data.data)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading cache stats:', error)
     } finally {
       setIsLoading(false)
@@ -74,7 +74,7 @@ export default function CacheManagementModal({
         const error = await response.json()
         console.error('Refresh failed:', error)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error refreshing profile:', error)
     } finally {
       setIsRefreshing(false)
@@ -95,7 +95,7 @@ export default function CacheManagementModal({
       if (response.ok) {
         await loadCacheStats() // Refresh stats
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error running full update:', error)
     } finally {
       setIsRefreshing(false)

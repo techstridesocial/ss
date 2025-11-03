@@ -57,7 +57,7 @@ export async function createInvitation(
       data: result[0],
       message: 'Invitation created successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating invitation:', error)
     return {
       success: false,
@@ -111,7 +111,7 @@ export async function getInvitations(filters: InvitationFilters = {}): Promise<U
     )
 
     return result
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching invitations:', error)
     return []
   }
@@ -128,7 +128,7 @@ export async function getInvitationByClerkId(clerkInvitationId: string): Promise
     )
 
     return result[0] || null
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching invitation by Clerk ID:', error)
     return null
   }
@@ -186,7 +186,7 @@ export async function updateInvitationStatus(
       data: result[0],
       message: 'Invitation status updated successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating invitation status:', error)
     return {
       success: false,
@@ -233,7 +233,7 @@ export async function getInvitationStats(): Promise<{
     })
 
     return stats
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching invitation stats:', error)
     return {
       total: 0,
@@ -259,7 +259,7 @@ export async function cleanupExpiredInvitations(): Promise<number> {
     )
 
     return parseInt(result[0]?.count?.toString() || '0')
-  } catch (_error) {
+  } catch (error) {
     console.error('Error cleaning up expired invitations:', error)
     return 0
   }

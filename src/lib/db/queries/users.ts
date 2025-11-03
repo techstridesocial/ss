@@ -235,7 +235,7 @@ export async function getUsers(
       totalPages: Math.ceil(total / limit)
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getUsers:', error)
     throw new Error('Failed to fetch users')
   }
@@ -360,7 +360,7 @@ export async function createUser(
       data: result,
       message: 'User created successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating user:', error)
     return {
       success: false,
@@ -398,7 +398,7 @@ export async function updateUserRole(
       data: user,
       message: 'User role updated successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating user role:', error)
     return {
       success: false,
@@ -464,7 +464,7 @@ export async function updateUserProfile(
       data: profile,
       message: 'Profile updated successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating user profile:', error)
     return {
       success: false,
@@ -496,7 +496,7 @@ export async function deleteUser(userId: string): Promise<DatabaseResponse<void>
       success: true,
       message: 'User deleted successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error deleting user:', error)
     return {
       success: false,
@@ -548,7 +548,7 @@ export async function getUserStats(): Promise<{
       onboardedUsers: parseInt(stats.onboarded || '0')
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getUserStats:', error)
     throw new Error('Failed to fetch user statistics')
   }

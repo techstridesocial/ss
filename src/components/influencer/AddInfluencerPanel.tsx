@@ -201,7 +201,7 @@ export default function AddInfluencerPanel({
         },
         confidence: 0.85 + Math.random() * 0.15
       }
-    } catch (_error) {
+    } catch (error) {
       return {
         found: false,
         error: 'Failed to search Modash database. Please try again.'
@@ -331,7 +331,7 @@ export default function AddInfluencerPanel({
       } else {
         throw new Error(result.error || 'Failed to add influencer')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving influencer:', error)
       alert(`❌ Failed to add influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -468,7 +468,7 @@ export default function AddInfluencerPanel({
                                 } else {
                                   throw new Error(result.error || 'Failed to add influencer')
                                 }
-                              } catch (_error) {
+                              } catch (error) {
                                 console.error('Error adding influencer:', error)
                                 alert(`❌ Failed to add ${influencer.displayName}: ${error instanceof Error ? error.message : 'Unknown error'}`)
                               } finally {

@@ -81,7 +81,7 @@ export default function EditCampaignModal({
           const campaignInfluencersResult = await campaignInfluencersResponse.json()
           setCampaignInfluencers(campaignInfluencersResult.data || [])
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
         setInfluencersLoading(false)
@@ -141,7 +141,7 @@ export default function EditCampaignModal({
         const _result = await response.json()
         setCampaignInfluencers(prev => [...prev, result.data])
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error adding influencer to campaign:', error)
     }
   }
@@ -165,7 +165,7 @@ export default function EditCampaignModal({
       if (response.ok) {
         setCampaignInfluencers(prev => prev.filter(ci => ci.id !== campaignInfluencer.id))
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error removing influencer from campaign:', error)
     }
   }
@@ -246,7 +246,7 @@ export default function EditCampaignModal({
       
       await onSave(updatedCampaign)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving campaign:', error)
     } finally {
       setIsLoading(false)

@@ -60,7 +60,7 @@ export async function PATCH(
       success: true,
       message: 'WhatsApp URL updated successfully'
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating WhatsApp URL:', error)
     return NextResponse.json(
       { error: 'Failed to update WhatsApp URL' },
@@ -114,7 +114,7 @@ export async function DELETE(
       success: true,
       message: 'WhatsApp URL removed successfully'
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error removing WhatsApp URL:', error)
     return NextResponse.json(
       { error: 'Failed to remove WhatsApp URL' },

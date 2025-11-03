@@ -127,7 +127,7 @@ export default function BrandProfilePage() {
       setSuccessMessage('Profile updated successfully!')
       
       setTimeout(() => setSuccessMessage(''), 3000)
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to update profile:', error)
     } finally {
       setIsLoading(false)

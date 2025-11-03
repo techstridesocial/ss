@@ -70,7 +70,7 @@ export async function GET(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaign payments:', error)
     return NextResponse.json(
       { error: 'Failed to fetch payment information' },
@@ -179,7 +179,7 @@ export async function POST(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating payment status:', error)
     return NextResponse.json(
       { error: 'Failed to update payment status' },

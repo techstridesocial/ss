@@ -119,7 +119,7 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
             try {
               const parsed = JSON.parse(row.content_links);
               links = Array.isArray(parsed) ? parsed : [];
-            } catch (_error) {
+            } catch (error) {
               console.warn('❌ [CONTENT LINKS DEBUG] Failed to parse content_links string for campaign influencer:', row.id, 'Content:', row.content_links, 'Error:', error);
               return [];
             }
@@ -199,7 +199,7 @@ export async function getCampaignInfluencersWithDetails(campaignId: string): Pro
         }
       }
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting campaign influencers with details:', error)
     throw error
   }
@@ -251,7 +251,7 @@ export async function assignInfluencerToCampaign(
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error assigning influencer to campaign:', error)
     throw error
   }
@@ -338,7 +338,7 @@ export async function updateCampaignInfluencerStatus(
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating campaign influencer status:', error)
     throw error
   }
@@ -369,7 +369,7 @@ export async function updateProductShipmentStatus(
     `, [campaignId, influencerId, shipped, trackingNumber])
 
     return result.length > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating product shipment status:', error)
     throw error
   }
@@ -400,7 +400,7 @@ export async function updateContentPostingStatus(
     `, [campaignId, influencerId, posted, postUrl])
 
     return result.length > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating content posting status:', error)
     throw error
   }
@@ -426,7 +426,7 @@ export async function updatePaymentReleaseStatus(
     `, [campaignId, influencerId, released])
 
     return result.length > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating payment release status:', error)
     throw error
   }
@@ -499,7 +499,7 @@ export async function getCampaignTimeline(campaignId: string): Promise<{
         paymentReleased: row.payment_released
       }))
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting campaign timeline:', error)
     throw error
   }
@@ -553,7 +553,7 @@ export async function getCampaignStatistics(campaignId: string): Promise<{
       contentPostedCount: parseInt(stats.content_posted_count),
       paymentReleasedCount: parseInt(stats.payment_released_count)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting campaign statistics:', error)
     throw error
   }

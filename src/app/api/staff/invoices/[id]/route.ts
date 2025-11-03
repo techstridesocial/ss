@@ -75,7 +75,7 @@ export async function GET(
       lineItems,
       statusHistory 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching invoice details:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invoice details' },
@@ -156,7 +156,7 @@ export async function PUT(
       message: 'Invoice status updated successfully',
       invoice: updateResult 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating invoice status:', error)
     return NextResponse.json(
       { error: 'Failed to update invoice status' },

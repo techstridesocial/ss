@@ -99,7 +99,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(response)
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching influencer profile:', error)
     return NextResponse.json(
       { error: 'Failed to fetch profile' },
@@ -188,7 +188,7 @@ export async function PUT(_request: NextRequest) {
       message: 'Profile updated successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating influencer profile:', error)
     return NextResponse.json(
       { error: 'Failed to update profile' },
@@ -345,7 +345,7 @@ export async function POST(_request: NextRequest) {
       cached: cacheResult.success
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error saving selected profile:', error)
     return NextResponse.json(
       { error: 'Failed to save profile' },

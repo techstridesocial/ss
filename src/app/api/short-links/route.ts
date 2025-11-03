@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       linkId: shortLinkData.idString
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating short link:', error)
     return NextResponse.json(
       { error: 'Failed to create tracking link' }, 
@@ -160,7 +160,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ links: formattedLinks })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching tracking links:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -206,7 +206,7 @@ export async function DELETE(_request: Request) {
 
     return NextResponse.json({ success: true })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error deleting tracking link:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -273,7 +273,7 @@ export async function PUT(_request: Request) {
       createdAt: updatedLink.createdAt
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating tracking link:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

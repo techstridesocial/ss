@@ -58,7 +58,7 @@ export async function logAuditEvent(event: AuditEvent): Promise<DatabaseResponse
       data: result[0] as AuditLog,
       message: 'Audit event logged successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error logging audit event:', error)
     return {
       success: false,
@@ -89,7 +89,7 @@ export async function getAuditTrailForUser(
       data: result as AuditLog[],
       message: 'Audit trail retrieved successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error retrieving audit trail:', error)
     return {
       success: false,
@@ -121,7 +121,7 @@ export async function getAuditTrailForRecord(
       data: result as AuditLog[],
       message: 'Record audit trail retrieved successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error retrieving record audit trail:', error)
     return {
       success: false,
@@ -152,7 +152,7 @@ export async function getAuditTrailForAction(
       data: result as AuditLog[],
       message: 'Action audit trail retrieved successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error retrieving action audit trail:', error)
     return {
       success: false,
@@ -184,7 +184,7 @@ export async function getRecentAuditLogs(
       data: result as AuditLog[],
       message: 'Recent audit logs retrieved successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error retrieving recent audit logs:', error)
     return {
       success: false,
@@ -211,7 +211,7 @@ export async function cleanupOldAuditLogs(
       data: { deletedCount: result.length || 0 },
       message: `Cleaned up ${result.length || 0} old audit logs`
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error cleaning up old audit logs:', error)
     return {
       success: false,
@@ -239,7 +239,7 @@ export async function exportAuditDataForUser(
       data: result as AuditLog[],
       message: 'Audit data exported successfully'
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error exporting audit data:', error)
     return {
       success: false,

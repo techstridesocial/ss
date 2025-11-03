@@ -69,7 +69,7 @@ async function checkCurrentData() {
 
     console.log('✅ Database data check completed!')
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error checking database data:', error)
   }
 }

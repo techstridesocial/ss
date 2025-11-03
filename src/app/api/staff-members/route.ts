@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(staffMembers)
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching staff members:', error)
     return NextResponse.json(
       { error: 'Failed to fetch staff members' }, 

@@ -38,7 +38,7 @@ export async function GET(_request: NextRequest) {
       data: statsResult.data
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching influencer stats:', error)
     return NextResponse.json(
       { error: 'Failed to fetch statistics' },

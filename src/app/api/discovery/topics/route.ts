@@ -12,7 +12,7 @@ export async function GET(_request: Request) {
     const _result = await listTopics(query || 'lifestyle', limit)
     
     return NextResponse.json(result)
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Topics API error:', error)
     return NextResponse.json(
       { 

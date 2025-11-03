@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: result
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching saved influencers:', error)
     return NextResponse.json(
       { error: 'Failed to fetch saved influencers' },
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
       data: { id: result[0]?.id },
       message: 'Influencer saved successfully'
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error saving influencer:', error)
     return NextResponse.json(
       { error: 'Failed to save influencer' },
@@ -308,7 +308,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Influencer removed from saved list'
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error removing saved influencer:', error)
     return NextResponse.json(
       { error: 'Failed to remove saved influencer' },

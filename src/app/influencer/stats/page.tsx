@@ -72,7 +72,7 @@ export default function EnhancedInfluencerStats() {
           
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading stats:', error)
     } finally {
       setIsLoading(false)
@@ -137,7 +137,7 @@ export default function EnhancedInfluencerStats() {
         const errorText = await response.text()
         console.error('❌ Search failed:', response.status, errorText)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error searching profiles:', error)
     } finally {
       setIsSearching(false)
@@ -223,7 +223,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ ${errorData.message || errorData.error || 'Failed to connect profile'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error connecting profile:', error)
     }
   }
@@ -251,7 +251,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ Failed to update username: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error updating username:', error)
       setSuccessMessage(`❌ Failed to update username: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
@@ -301,7 +301,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ Failed to disconnect: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error disconnecting platform:', error)
       setSuccessMessage(`❌ Failed to disconnect: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)
@@ -335,7 +335,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`❌ Failed to refresh data: ${errorData.error || 'Unknown error'}`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error refreshing Modash data:', error)
       setSuccessMessage(`❌ Failed to refresh data: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setTimeout(() => setSuccessMessage(''), 5000)

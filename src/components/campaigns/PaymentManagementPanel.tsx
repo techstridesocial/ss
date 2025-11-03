@@ -71,7 +71,7 @@ export default function PaymentManagementPanel({
           variant: "destructive"
         })
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading payments:', error)
       toast({
         title: "Error",
@@ -117,7 +117,7 @@ export default function PaymentManagementPanel({
           variant: "destructive"
         })
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating payment:', error)
       toast({
         title: "Error",

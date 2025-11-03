@@ -41,7 +41,7 @@ export function useUserRole(): UserRole | null {
           // Other errors - fallback to publicMetadata
           setRole(metadataRole || null)
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching user role:', error)
         // Fallback to publicMetadata
         setRole(metadataRole || null)

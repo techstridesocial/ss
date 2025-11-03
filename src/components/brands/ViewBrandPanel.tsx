@@ -263,7 +263,7 @@ const EditBrandPanel = ({
     try {
       await onSave(formData)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating brand:', error)
     } finally {
       setIsLoading(false)
@@ -687,7 +687,7 @@ export default function ViewBrandPanel({ isOpen, onClose, brand }: ViewBrandPane
         setTeamMembers(prev => prev.filter(member => member.id !== memberId))
         
         alert(`✅ ${memberName} has been successfully removed from the team.`)
-      } catch (_error) {
+      } catch (error) {
         console.error('Error deleting team member:', error)
         alert('❌ Error removing team member. Please try again.')
       }
@@ -707,7 +707,7 @@ export default function ViewBrandPanel({ isOpen, onClose, brand }: ViewBrandPane
       alert(`✅ ${editedData.company_name} has been updated successfully!`)
       
       setIsEditMode(false)
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating brand:', error)
       alert('❌ Error updating brand. Please try again.')
       throw error

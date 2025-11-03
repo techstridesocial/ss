@@ -26,7 +26,7 @@ export async function GET(
     let brandId: string
     try {
       brandId = await getBrandIdFromUserId(userId)
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage.includes('Brand not found')) {
         // Brand hasn't completed onboarding - return not found for specific campaign
@@ -55,7 +55,7 @@ export async function GET(
       })
     }
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaign detail:', error)
     
     if (error instanceof Error && error.message === 'Campaign not found or access denied') {

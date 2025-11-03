@@ -135,7 +135,7 @@ export async function getBrands(
       totalPages: Math.ceil(total / limit)
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getBrands:', error)
     throw new Error('Failed to fetch brands')
   }
@@ -210,7 +210,7 @@ export async function getBrandById(id: string): Promise<BrandWithUser | null> {
       }
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getBrandById:', error)
     throw new Error('Failed to fetch brand')
   }
@@ -237,7 +237,7 @@ export async function createBrand(brandData: Partial<Brand>): Promise<Brand> {
 
     return result[0]
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in createBrand:', error)
     throw new Error('Failed to create brand')
   }
@@ -272,7 +272,7 @@ export async function updateBrand(id: string, brandData: Partial<Brand>): Promis
 
     return result[0]
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in updateBrand:', error)
     throw new Error('Failed to update brand')
   }
@@ -288,7 +288,7 @@ export async function deleteBrand(id: string): Promise<boolean> {
     
     return result.length > 0
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in deleteBrand:', error)
     throw new Error('Failed to delete brand')
   }
@@ -323,7 +323,7 @@ export async function getBrandStats(): Promise<{
       recentBrands: parseInt(stats.recent || '0')
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getBrandStats:', error)
     throw new Error('Failed to fetch brand statistics')
   }
@@ -395,7 +395,7 @@ export async function createBrandProfile(
       data: result
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in createBrandProfile:', error)
     return {
       success: false,

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       message: 'Quotation approved successfully - ready for manual influencer contact',
       quotation: approvedQuotation
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error approving quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to approve quotation' },

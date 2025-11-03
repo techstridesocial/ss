@@ -22,7 +22,7 @@ export async function GET(_request: NextRequest) {
       email: user.email,
       role: user.role
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching current user:', error)
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 })
   }

@@ -131,7 +131,7 @@ export async function GET(
       count: campaigns.length
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching influencer campaigns:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaigns' },

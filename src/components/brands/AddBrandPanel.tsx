@@ -292,7 +292,7 @@ export default function AddBrandPanel({ isOpen, onClose, onSave }: AddBrandPanel
       }, 500)
       
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving brand:', error)
     } finally {
       setIsLoading(false)

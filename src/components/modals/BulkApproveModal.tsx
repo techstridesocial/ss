@@ -40,7 +40,7 @@ export default function BulkApproveModal({
       setApprovalNotes('')
       setPriceAdjustment(undefined)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error approving shortlists:', error)
     } finally {
       setIsLoading(false)

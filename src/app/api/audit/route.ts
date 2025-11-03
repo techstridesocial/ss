@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Audit API error:', error)
     return NextResponse.json(
       { error: 'Failed to retrieve audit data' },

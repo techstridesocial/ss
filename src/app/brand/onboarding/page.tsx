@@ -278,7 +278,7 @@ function BrandOnboardingPageContent() {
       setTimeout(() => {
         router.push('/brand/campaigns')
       }, 3000)
-    } catch (_error) {
+    } catch (error) {
       console.error('Onboarding submission failed:', error)
       alert('Failed to complete onboarding. Please try again.')
     } finally {
@@ -503,7 +503,7 @@ function BrandOnboardingPageContent() {
                         console.error('Failed to upload logo')
                         updateFormData('logo_url', URL.createObjectURL(file)) // Fallback
                       }
-                    } catch (_error) {
+                    } catch (error) {
                       console.error('Error uploading logo:', error)
                       updateFormData('logo_url', URL.createObjectURL(file)) // Fallback
                     }

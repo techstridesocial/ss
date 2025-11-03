@@ -33,7 +33,7 @@ export async function POST(_request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error updating analytics:', error)
     return NextResponse.json(
       { error: 'Failed to update analytics' },

@@ -58,7 +58,7 @@ export async function GET(_request: NextRequest) {
       data: socialAccounts
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching social accounts:', error)
     return NextResponse.json(
       { error: 'Failed to fetch social accounts' },
@@ -232,7 +232,7 @@ export async function POST(_request: NextRequest) {
       message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} account connected successfully`
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error connecting social account:', error)
     return NextResponse.json(
       { error: 'Failed to connect social account' },
@@ -308,7 +308,7 @@ export async function DELETE(_request: NextRequest) {
       message: 'Social account disconnected successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error disconnecting social account:', error)
     return NextResponse.json(
       { error: 'Failed to disconnect social account' },
@@ -376,7 +376,7 @@ export async function PUT(_request: NextRequest) {
       message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} username updated successfully`
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating username:', error)
     return NextResponse.json(
       { error: 'Failed to update username' },

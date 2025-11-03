@@ -134,7 +134,7 @@ export async function GET(_request: NextRequest) {
       data: gdprExport
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('GDPR export error:', error)
     return NextResponse.json(
       { error: 'Failed to export GDPR data' },

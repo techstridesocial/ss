@@ -75,7 +75,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error in content link deletion API:', error)
     return NextResponse.json(
       { 
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
       stats
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error getting content link stats:', error)
     return NextResponse.json(
       { 

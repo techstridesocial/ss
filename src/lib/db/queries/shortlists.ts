@@ -174,7 +174,7 @@ export async function deleteShortlist(shortlistId: string): Promise<boolean> {
     const success = result && result.length > 0
     console.log('✅ Delete success:', success)
     return success
-  } catch (_error) {
+  } catch (error) {
     console.error('💥 Error in deleteShortlist:', error)
     throw error
   }
@@ -221,7 +221,7 @@ export async function addInfluencerToShortlist(
     `, [shortlistId])
     
     return true
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding influencer to shortlist:', error)
     return false
   }
@@ -252,7 +252,7 @@ export async function addInfluencersToShortlist(
     `, [shortlistId])
     
     return true
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding influencers to shortlist:', error)
     return false
   }
@@ -275,7 +275,7 @@ export async function removeInfluencerFromShortlist(
     `, [shortlistId])
     
     return result.rowCount > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error removing influencer from shortlist:', error)
     return false
   }

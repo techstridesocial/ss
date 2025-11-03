@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Influencer(s) added to shortlist successfully'
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding influencer(s) to shortlist:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to add influencer(s) to shortlist' },
@@ -93,7 +93,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Influencer removed from shortlist successfully'
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error removing influencer from shortlist:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to remove influencer from shortlist' },
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         data: shortlists
       })
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching influencer shortlists:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch influencer shortlists' },

@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Raw API test error:', error)
     return NextResponse.json(
       { 

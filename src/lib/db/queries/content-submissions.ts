@@ -124,7 +124,7 @@ export async function getCampaignContentSubmissions(campaignId: string): Promise
         name: row.reviewer_name
       } : undefined
     }))
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting campaign content submissions:', error)
     throw error
   }
@@ -171,7 +171,7 @@ export async function getInfluencerContentSubmissions(
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }))
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting influencer content submissions:', error)
     throw error
   }
@@ -229,7 +229,7 @@ export async function updateContentSubmissionStatus(
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating content submission status:', error)
     throw error
   }
@@ -421,7 +421,7 @@ export async function getContentSubmissionStats(campaignId: string): Promise<{
       averageQualityScore,
       topPerformingContent
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting content submission stats:', error)
     throw error
   }
@@ -443,7 +443,7 @@ export async function addContentScreenshot(
     `, [submissionId, screenshotUrl])
 
     return result.length > 0
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding content screenshot:', error)
     throw error
   }
@@ -507,7 +507,7 @@ export async function getPendingContentReviews(): Promise<ContentSubmissionWithD
         brand: row.campaign_brand
       }
     }))
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting pending content reviews:', error)
     throw error
   }

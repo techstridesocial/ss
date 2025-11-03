@@ -73,7 +73,7 @@ export default function CreateCampaignModal({
           setBrands(result.data || [])
           setFilteredBrands(result.data || [])
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching brands:', error)
       }
     }
@@ -108,7 +108,7 @@ export default function CreateCampaignModal({
           setInfluencers(result.data || [])
           setFilteredInfluencers(result.data || [])
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching influencers:', error)
       } finally {
         setInfluencersLoading(false)
@@ -317,7 +317,7 @@ export default function CreateCampaignModal({
       setActiveSection('basic')
       setSelectedInfluencers([])
         onCloseAction()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error creating campaign:', error)
     } finally {
       setIsLoading(false)

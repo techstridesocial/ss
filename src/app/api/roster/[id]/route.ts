@@ -92,7 +92,7 @@ export async function GET(
       data: transformedInfluencer
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching influencer:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

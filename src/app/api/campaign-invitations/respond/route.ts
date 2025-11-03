@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       message: `Campaign invitation ${response} successfully`
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error responding to campaign invitation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to respond to invitation' },

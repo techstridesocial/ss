@@ -51,7 +51,7 @@ export async function GET(_request: NextRequest) {
       data: formattedStaff
     })
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching staff members:', error)
     return NextResponse.json(
       { error: 'Failed to fetch staff members' },

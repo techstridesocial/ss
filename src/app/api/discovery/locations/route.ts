@@ -18,7 +18,7 @@ export async function GET(_request: Request) {
     )
     
     return NextResponse.json(result)
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Locations API error:', error)
     return NextResponse.json(
       { 

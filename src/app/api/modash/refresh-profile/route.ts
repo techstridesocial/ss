@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       refreshedAt: new Date().toISOString()
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error refreshing profile cache:', error)
     return NextResponse.json(
       { 

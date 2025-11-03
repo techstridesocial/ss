@@ -119,7 +119,7 @@ export async function GET(_request: NextRequest) {
       count: transformedInfluencers.length
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error fetching influencers:', error)
     
     // Provide more specific error messages
@@ -292,7 +292,7 @@ export async function POST(_request: NextRequest) {
       }
     }, { status: 201 })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating influencer:', error)
     return NextResponse.json(
       { error: 'Failed to create influencer' },

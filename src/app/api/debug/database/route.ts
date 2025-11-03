@@ -42,7 +42,7 @@ export async function GET(_request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Database debug error:', error)
     return NextResponse.json({
       success: false,

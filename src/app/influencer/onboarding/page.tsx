@@ -178,7 +178,7 @@ function InfluencerOnboardingPageContent() {
       setTimeout(() => {
         router.push('/influencer/campaigns')
       }, 3000)
-    } catch (_error) {
+    } catch (error) {
       console.error('Onboarding submission failed:', error)
       alert('Failed to complete onboarding. Please try again.')
     } finally {
@@ -373,7 +373,7 @@ function InfluencerOnboardingPageContent() {
                           console.error('Failed to upload profile image')
                           updateFormData('profile_picture', file.name) // Fallback
                         }
-                      } catch (_error) {
+                      } catch (error) {
                         console.error('Error uploading profile image:', error)
                         updateFormData('profile_picture', file.name) // Fallback
                       }

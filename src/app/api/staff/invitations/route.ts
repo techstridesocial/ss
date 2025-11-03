@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       message: `Invitation sent to ${email} with ${role} role via Clerk email system`
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating invitation:', error)
     return NextResponse.json(
       { error: 'Failed to create invitation' },
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
       total: invitations.length
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching invitations:', error)
     return NextResponse.json(
       { error: 'Failed to fetch invitations' },

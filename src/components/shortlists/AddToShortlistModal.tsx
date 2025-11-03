@@ -119,7 +119,7 @@ export function AddToShortlistModal({
           onClose()
         }, 400)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error in quick add:', error)
     } finally {
       setIsQuickAdding(false)

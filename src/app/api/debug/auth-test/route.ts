@@ -59,7 +59,7 @@ export async function GET(_request: NextRequest) {
       }, { status: 500 })
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('🔍 [DEBUG] Auth test error:', error)
     return NextResponse.json({ 
       error: 'Auth test failed',

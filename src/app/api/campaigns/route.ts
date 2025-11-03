@@ -21,7 +21,7 @@ export async function GET() {
       success: true, 
       campaigns 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaigns:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaigns' },
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       campaign 
     }, { status: 201 })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating campaign:', error)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',

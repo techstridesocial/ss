@@ -227,7 +227,7 @@ export async function POST(_request: Request) {
       data: { ...finalData, fromCache: false }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Extended profile API error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

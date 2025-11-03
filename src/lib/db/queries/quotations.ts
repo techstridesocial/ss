@@ -92,7 +92,7 @@ export async function getAllQuotations(): Promise<Quotation[]> {
     }));
     
     return quotations;
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getAllQuotations:', error);
     
     // Return mock data if database fails

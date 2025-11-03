@@ -57,7 +57,7 @@ export async function GET(
         
         // Return unmasked details for display
         unmaskedDetails = details
-      } catch (_error) {
+      } catch (error) {
         console.error('Error parsing payment details:', error)
       }
 
@@ -114,7 +114,7 @@ export async function GET(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching payment data:', error)
     return NextResponse.json(
       { error: 'Failed to fetch payment data' },

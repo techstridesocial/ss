@@ -24,7 +24,7 @@ export async function GET(_request: NextRequest) {
     let brandId: string
     try {
       brandId = await getBrandIdFromUserId(userId)
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage.includes('Brand not found')) {
         // Brand hasn't completed onboarding - return empty quotations
@@ -44,7 +44,7 @@ export async function GET(_request: NextRequest) {
       data: quotations
     })
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching brand quotations:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch quotations' },
@@ -81,7 +81,7 @@ export async function POST(_request: NextRequest) {
       `, [brandId])
       
       brandName = brandResult[0]?.company_name || 'Unknown Brand'
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (errorMessage.includes('Brand not found')) {
         return NextResponse.json({ error: 'Please complete brand onboarding first' }, { status: 400 })
@@ -117,7 +117,7 @@ export async function POST(_request: NextRequest) {
           assignedStaffId = brandStaffResult[0].assigned_staff_id
           console.log('🎯 Auto-assigned quote to brand manager:', assignedStaffId)
         }
-      } catch (_error) {
+      } catch (error) {
         console.log('⚠️ Could not auto-assign staff, will remain unassigned')
       }
     }
@@ -149,7 +149,7 @@ export async function POST(_request: NextRequest) {
           quotation.id
         )
         console.log(`📬 Notification sent to staff ${assignedStaffId} for new quote`)
-      } catch (_error) {
+      } catch (error) {
         console.error('Failed to send notification:', error)
         // Don't fail the request if notification fails
       }
@@ -160,7 +160,7 @@ export async function POST(_request: NextRequest) {
       quotation 
     }, { status: 201 })
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create quotation' },

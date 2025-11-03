@@ -12,7 +12,7 @@ export async function GET(_request: Request) {
     const _result = await listPartnerships(query || '', limit)
     
     return NextResponse.json(result)
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Partnerships API error:', error)
     return NextResponse.json(
       { 

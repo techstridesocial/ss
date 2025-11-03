@@ -13,7 +13,7 @@ export async function GET(_request: Request) {
     const _result = await listHashtags(platform as 'instagram' | 'tiktok' | 'youtube', query || 'fitness', limit)
     
     return NextResponse.json(result)
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Hashtags API error:', error)
     return NextResponse.json(
       { 

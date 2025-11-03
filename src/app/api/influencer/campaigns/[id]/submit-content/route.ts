@@ -127,7 +127,7 @@ export async function POST(
       submission_id: result[0]?.id
     }, { status: 201 })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error submitting content:', error)
     return NextResponse.json(
       { error: 'Failed to submit content' },

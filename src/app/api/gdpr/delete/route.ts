@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
       deletion_date: new Date().toISOString()
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('GDPR deletion error:', error)
     return NextResponse.json(
       { error: 'Failed to delete user data' },

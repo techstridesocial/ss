@@ -13,7 +13,7 @@ export async function fetchInfluencerDetails(influencerId: string): Promise<Infl
     }
     
     return influencer
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching influencer details:', error)
     throw error
   }

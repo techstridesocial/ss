@@ -69,7 +69,7 @@ export async function POST(_request: NextRequest) {
           errors.push(errorDetail)
           console.error(`❌ ${errorDetail}`)
         }
-      } catch (_error) {
+      } catch (error) {
         errorCount++
         const errorMsg = `Error caching ${platform.platform}: ${error instanceof Error ? error.message : 'Unknown error'}`
         errors.push(errorMsg)
@@ -89,7 +89,7 @@ export async function POST(_request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error refreshing Modash data:', error)
     return NextResponse.json(
       { error: 'Failed to refresh Modash data' },

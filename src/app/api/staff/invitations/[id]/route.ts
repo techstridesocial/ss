@@ -44,7 +44,7 @@ export async function DELETE(
       message: 'Invitation cancelled successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error cancelling invitation:', error)
     return NextResponse.json(
       { error: 'Failed to cancel invitation' },
@@ -139,7 +139,7 @@ export async function POST(
       message: 'Invitation resent successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error resending invitation:', error)
     return NextResponse.json(
       { error: 'Failed to resend invitation' },

@@ -93,7 +93,7 @@ export async function PATCH(
             campaignId
           )
           console.log(`📬 Campaign assignment notification sent to ${assignedStaff.fullName}`)
-        } catch (_error) {
+        } catch (error) {
           console.error('Failed to send campaign assignment notification:', error)
           // Don't fail the request if notification fails
         }
@@ -112,7 +112,7 @@ export async function PATCH(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating campaign assignment:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

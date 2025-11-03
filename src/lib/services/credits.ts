@@ -122,7 +122,7 @@ class CreditsService {
     this.globalState.subscribers.forEach(callback => {
       try {
         callback(this.globalState)
-      } catch (_error) {
+      } catch (error) {
         console.error('Credit subscriber error:', error)
       }
     })
@@ -202,7 +202,7 @@ class CreditsService {
       }
 
       return result
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       this.updateGlobalState({
         isLoading: false,
@@ -236,7 +236,7 @@ class CreditsService {
         data: result.data,
         timestamp: new Date().toISOString()
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Failed to fetch credit usage:', error)
       
       return {

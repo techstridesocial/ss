@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       stats
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching content statistics:', error)
     return NextResponse.json(
       { error: 'Failed to fetch content statistics' },

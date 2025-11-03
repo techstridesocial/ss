@@ -96,7 +96,7 @@ export async function PATCH(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating brand assignment:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -150,7 +150,7 @@ function CampaignsPageClient() {
       } else {
         console.error('Failed to load campaigns')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading campaigns:', error)
     } finally {
       setIsLoading(false)

@@ -71,7 +71,7 @@ export default function CampaignDetailModal({ campaign, isOpen, onClose }: Campa
         const _result = await response.json()
         setCampaignDetail(result.data)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to fetch campaign details:', error)
     } finally {
       setIsLoading(false)
@@ -87,7 +87,7 @@ export default function CampaignDetailModal({ campaign, isOpen, onClose }: Campa
         const _result = await response.json()
         setAnalytics(result.data)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to fetch campaign analytics:', error)
     }
   }

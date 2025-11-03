@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       message: 'Profile image uploaded successfully'
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error uploading profile image:', error)
     return NextResponse.json(
       { error: 'Failed to upload profile image' },

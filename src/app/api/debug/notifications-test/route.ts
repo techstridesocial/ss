@@ -50,7 +50,7 @@ export async function GET(_request: NextRequest) {
       }, { status: 500 })
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('🔍 [DEBUG] Notifications test error:', error)
     return NextResponse.json({ 
       error: 'Notifications test failed',

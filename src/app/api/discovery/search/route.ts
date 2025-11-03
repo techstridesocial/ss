@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
                   already_imported: false
                 }
               }
-            } catch (_error) {
+            } catch (error) {
               console.log(`❌ Error enriching @${user.username}:`, error instanceof Error ? error.message : 'Unknown error')
               return {
                 userId: user.userId,
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
             searchMode: 'list_users_api'
           })
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('❌ List Users API error, falling back to old search:', error)
       }
     }
@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
             total: totalCount,
             creditsUsed: (result as any).creditsUsed || 0
           }
-        } catch (_error) {
+        } catch (error) {
           console.error(`${platform} search failed:`, error)
           return {
             platform,
@@ -432,7 +432,7 @@ export async function POST(request: NextRequest) {
           const afterCount = mergedCreators.length
           console.log(`🔍 Roster filtering: ${beforeCount} → ${afterCount} (excluded ${beforeCount - afterCount} roster influencers)`)
           
-        } catch (_error) {
+        } catch (error) {
           console.error('❌ Roster filtering failed:', error)
           // Continue without filtering if there's an error
         }
@@ -465,7 +465,7 @@ export async function POST(request: NextRequest) {
           userId
         )
         console.log('📊 Discovery search stored in history')
-      } catch (_error) {
+      } catch (error) {
         console.error('❌ Failed to store discovery search:', error)
         // Continue without failing the entire request
       }
@@ -504,7 +504,7 @@ export async function POST(request: NextRequest) {
           }
         }
         console.log(`💾 Stored ${storedInfluencers.length} discovered influencers`)
-      } catch (_error) {
+      } catch (error) {
         console.error('❌ Failed to store discovered influencers:', error)
         // Continue without failing the entire request
       }
@@ -514,7 +514,7 @@ export async function POST(request: NextRequest) {
       try {
         discoveryStats = await getDiscoveryStats()
         console.log('📈 Discovery stats retrieved')
-      } catch (_error) {
+      } catch (error) {
         console.error('❌ Failed to get discovery stats:', error)
       }
       
@@ -550,7 +550,7 @@ export async function POST(request: NextRequest) {
         }
       })
       
-    } catch (_error) {
+    } catch (error) {
       console.warn('⚠️ Multi-platform search failed, using mock data:', error)
       
       // Fallback to mock data with multiple platforms
@@ -594,7 +594,7 @@ export async function POST(request: NextRequest) {
           const afterCount = mockResponse.results.length
           console.log(`🔍 Mock roster filtering: ${beforeCount} → ${afterCount} (excluded ${beforeCount - afterCount} roster influencers)`)
           
-        } catch (_error) {
+        } catch (error) {
           console.error('❌ Mock roster filtering failed:', error)
           // Continue without filtering if there's an error
         }
@@ -615,7 +615,7 @@ export async function POST(request: NextRequest) {
       })
     }
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Discovery search API error:', error)
     
     return NextResponse.json(

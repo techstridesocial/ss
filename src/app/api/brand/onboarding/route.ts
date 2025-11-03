@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
       brand_id: result.brandId
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Brand onboarding error:', error)
     return NextResponse.json(
       { error: 'Internal server error' }, 

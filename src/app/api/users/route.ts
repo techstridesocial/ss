@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in GET /api/users:', error)
     return NextResponse.json(
       { error: 'Failed to fetch users' },

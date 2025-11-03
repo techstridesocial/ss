@@ -66,7 +66,7 @@ export default function EnhancedInfluencerStats() {
           setStatsData(data.data)
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading stats:', error)
     } finally {
       setIsLoading(false)
@@ -96,7 +96,7 @@ export default function EnhancedInfluencerStats() {
           setSearchResults(data.results)
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error searching profiles:', error)
     } finally {
       setIsSearching(false)
@@ -121,7 +121,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error connecting profile:', error)
     }
   }
@@ -146,7 +146,7 @@ export default function EnhancedInfluencerStats() {
         setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error refreshing platform:', error)
     } finally {
       setRefreshingPlatform('')

@@ -94,7 +94,7 @@ export async function POST(
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error refreshing analytics:', error)
     return NextResponse.json(
       { error: 'Failed to refresh analytics' },

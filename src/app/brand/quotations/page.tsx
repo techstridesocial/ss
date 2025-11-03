@@ -45,7 +45,7 @@ function QuotationsPageClient() {
       } else {
         console.error('Failed to load quotations')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading quotations:', error)
     } finally {
       setIsLoading(false)
@@ -69,7 +69,7 @@ function QuotationsPageClient() {
       } else {
         alert('Failed to approve quotation')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error approving quotation:', error)
       alert('Error approving quotation')
     }
@@ -90,7 +90,7 @@ function QuotationsPageClient() {
       } else {
         alert('Failed to reject quotation')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error rejecting quotation:', error)
       alert('Error rejecting quotation')
     }

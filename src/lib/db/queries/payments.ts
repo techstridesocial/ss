@@ -84,7 +84,7 @@ export async function getPaymentInfo(influencerId: string): Promise<DatabaseResp
     try {
       const decrypted = decryptData(payment.encrypted_details)
       decryptedDetails = JSON.parse(decrypted)
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to decrypt payment details:', error)
       console.error('Payment record ID:', payment.id)
       console.error('Encrypted details (first 50 chars):', payment.encrypted_details?.substring(0, 50))
@@ -123,7 +123,7 @@ export async function getPaymentInfo(influencerId: string): Promise<DatabaseResp
       message: 'Payment information retrieved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting payment info:', error)
     return {
       success: false,
@@ -178,7 +178,7 @@ export async function updatePaymentInfo(
       message: 'Payment information saved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating payment info:', error)
     return {
       success: false,
@@ -246,7 +246,7 @@ export async function getPaymentSummary(influencerId: string): Promise<DatabaseR
       message: 'Payment summary retrieved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting payment summary:', error)
     return {
       success: false,
@@ -300,7 +300,7 @@ export async function getPaymentHistory(influencerId: string): Promise<DatabaseR
       message: 'Payment history retrieved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting payment history:', error)
     return {
       success: false,

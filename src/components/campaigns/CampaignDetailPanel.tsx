@@ -45,7 +45,7 @@ const CampaignIdField = ({ campaignId, campaignUuid, onUpdate }: CampaignIdField
     try {
       await onUpdate(inputValue.trim())
       setIsEditing(false)
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating campaign ID:', error)
     } finally {
       setIsLoading(false)
@@ -379,7 +379,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to update campaign ID')
         alert('Failed to update campaign ID. Please try again.')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating campaign ID:', error)
       alert('Error updating campaign ID. Please try again.')
     } finally {
@@ -538,7 +538,7 @@ export default function CampaignDetailPanel({
           const influencersResult = await influencersResponse.json()
           setAvailableInfluencers(influencersResult.data || [])
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching influencers:', error)
       } finally {
         setInfluencersLoading(false)
@@ -625,7 +625,7 @@ export default function CampaignDetailPanel({
           }
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error adding influencer to campaign:', error)
       alert(`Error adding influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -708,7 +708,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (_error) {
+          } catch (error) {
             console.error('❌ Error refreshing analytics:', error)
           }
         }, 2000) // Wait 2 seconds for analytics processing
@@ -721,7 +721,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to update content links:', errorData)
         alert(`Failed to update content links: ${errorData.error || 'Unknown error'}`)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating content links:', error)
       alert(`Error updating content links: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -826,7 +826,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (_error) {
+          } catch (error) {
             console.error('❌ Error refreshing analytics:', error)
           }
         }, 2000) // Wait 2 seconds for analytics processing
@@ -839,7 +839,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to add link:', errorData)
         alert(`Failed to add link: ${errorData.error || 'Unknown error'}`)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error adding single link:', error)
       alert(`Error adding link: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -927,7 +927,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (_error) {
+          } catch (error) {
             console.error('❌ Error refreshing analytics after clearing all links:', error)
           }
         }, 1000) // Wait 1 second for backend processing
@@ -979,7 +979,7 @@ export default function CampaignDetailPanel({
         }
       }
       
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error clearing all content links:', error)
       alert(`Error clearing content links: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -1076,7 +1076,7 @@ export default function CampaignDetailPanel({
                 }
               }
             }
-          } catch (_error) {
+          } catch (error) {
             console.error('❌ Error refreshing analytics after deletion:', error)
           }
         }, 1000) // Wait 1 second for backend processing
@@ -1099,7 +1099,7 @@ export default function CampaignDetailPanel({
       // Also update the campaign_influencers table for consistency
       // This function is deprecated - using the comprehensive deletion service above instead
       console.log('⚠️ This old removal method should not be called - using comprehensive deletion service instead')
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error removing link:', error)
       alert(`Error removing link: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -1156,7 +1156,7 @@ export default function CampaignDetailPanel({
         console.error('❌ Failed to update discount code:', errorData)
         alert(`Failed to update discount code: ${(errorData as any)?.error || 'Unknown error'}`)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating discount code:', error)
       alert(`Error updating discount code: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -1269,7 +1269,7 @@ export default function CampaignDetailPanel({
         const errorData = await response.json()
         console.error('❌ [FRONTEND DEBUG] Error response:', errorData)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Error updating influencer:', error)
     } finally {
       setIsLoading(false)

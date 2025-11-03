@@ -113,7 +113,7 @@ export async function PATCH(
       data: updateResult[0]
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating influencer:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -70,7 +70,7 @@ export async function updateInfluencerAnalyticsFromContentLinks(
         } else {
           console.log(`⚠️ No analytics data returned for: ${link}`)
         }
-      } catch (_error) {
+      } catch (error) {
         console.error(`❌ Error processing content link ${link}:`, error)
         console.error(`❌ Error details:`, {
           message: error instanceof Error ? error.message : 'Unknown error',
@@ -96,7 +96,7 @@ export async function updateInfluencerAnalyticsFromContentLinks(
     console.log(`✅ Successfully updated analytics for influencer ${influencerId}`)
     return true
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error updating analytics for influencer ${influencerId}:`, error)
     return false
   }
@@ -142,7 +142,7 @@ async function processContentLink(url: string): Promise<ContentAnalytics | null>
 
     return analytics
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error processing content link ${url}:`, error)
     return null
   }
@@ -178,7 +178,7 @@ function extractAnalyticsFromMediaInfo(mediaInfo: any, platform: string, url: st
 
     return analytics
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error extracting analytics from ${platform} response:`, error)
     return null
   }
@@ -244,7 +244,7 @@ function extractInstagramAnalytics(mediaInfo: any, url: string): ContentAnalytic
 
     console.log(`✅ [IG DEBUG] Extracted analytics:`, analytics)
     return analytics
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error extracting Instagram analytics:`, error)
     return null
   }
@@ -321,7 +321,7 @@ function extractTikTokAnalytics(mediaInfo: any, url: string): ContentAnalytics |
     }
     
     return analytics
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error extracting TikTok analytics:`, error)
     return null
   }
@@ -389,7 +389,7 @@ function extractYouTubeAnalytics(mediaInfo: any, url: string): ContentAnalytics 
 
     console.log(`✅ [YT DEBUG] Extracted analytics:`, analytics)
     return analytics
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error extracting YouTube analytics:`, error)
     return null
   }
@@ -491,7 +491,7 @@ async function updateInfluencerAnalytics(
 
     console.log(`✅ Database updated successfully for influencer ${influencerId}`)
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error updating database for influencer ${influencerId}:`, error)
     throw error
   }
@@ -532,7 +532,7 @@ async function resetInfluencerAnalytics(influencerId: string): Promise<void> {
 
     console.log(`✅ Analytics reset to 0 for influencer ${influencerId}`)
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error resetting analytics for influencer ${influencerId}:`, error)
     throw error
   }
@@ -564,7 +564,7 @@ export async function batchUpdateInfluencerAnalytics(
         failed++
         errors.push(`Failed to update influencer ${update.influencerId}`)
       }
-    } catch (_error) {
+    } catch (error) {
       failed++
       const errorMsg = `Error updating influencer ${update.influencerId}: ${error instanceof Error ? error.message : 'Unknown error'}`
       errors.push(errorMsg)
@@ -616,7 +616,7 @@ export async function updateAllInfluencerAnalytics(): Promise<{
     console.log(`✅ Completed analytics update for all influencers`)
     return result
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error updating analytics for all influencers:', error)
     return {
       success: 0,
@@ -662,7 +662,7 @@ export async function getInfluencerAnalyticsSummary(influencerId: string): Promi
       last_updated: row.analytics_updated_at
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`❌ Error getting analytics summary for influencer ${influencerId}:`, error)
     return null
   }

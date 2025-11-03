@@ -72,7 +72,7 @@ export function PaymentMethodsSection({ influencer }: PaymentMethodsSectionProps
             }
           }
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching payment data:', error)
         setPaymentInfo(null)
         setPaymentSummary(null)

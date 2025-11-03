@@ -27,7 +27,7 @@ export async function PATCH(
     let brandId: string
     try {
       brandId = await getBrandIdFromUserId(userId)
-    } catch (_error) {
+    } catch (error) {
       return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
     }
 
@@ -61,7 +61,7 @@ export async function PATCH(
       quotation: updatedQuotation
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update quotation' },

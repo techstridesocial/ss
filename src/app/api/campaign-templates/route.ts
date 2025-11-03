@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       success: true, 
       templates 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaign templates:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaign templates' },
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       template 
     }, { status: 201 })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating campaign template:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create campaign template' },
@@ -158,7 +158,7 @@ export async function PUT(request: NextRequest) {
       success: true, 
       template: updatedTemplate 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating campaign template:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update campaign template' },
@@ -204,7 +204,7 @@ export async function DELETE(request: NextRequest) {
       success: true, 
       message: 'Campaign template deleted successfully' 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error deleting campaign template:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete campaign template' },

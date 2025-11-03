@@ -42,7 +42,7 @@ export default function InfluencerDetailPage() {
         } else {
           setError('Failed to load influencer')
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error loading influencer:', error)
         setError('Failed to load influencer')
       } finally {

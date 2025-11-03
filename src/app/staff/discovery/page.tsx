@@ -131,7 +131,7 @@ const addToRoster = async (discoveredId: string, modashUserId?: string, platform
     } else {
       throw new Error(data.error || 'Failed to add to roster')
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Error adding to roster:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
@@ -1753,7 +1753,7 @@ function DiscoveredInfluencersTable({
           }
         }))
       }
-    } catch (_error) {
+    } catch (error) {
       setRosterMessages(prev => ({
         ...prev,
         [influencer.discoveredId]: {
@@ -2552,7 +2552,7 @@ function DiscoveryPageClient() {
         }, 1000)
       }
       
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Search error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Search failed'
       
@@ -2707,7 +2707,7 @@ function DiscoveryPageClient() {
         variant: "default"
       })
       
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Failed to save influencer with complete analytics:', error)
       // Fallback to basic save if analytics fetch fails
       try {
@@ -3092,7 +3092,7 @@ function DiscoveryPageClient() {
         } else {
           console.warn('⚠️ Comprehensive report API returned:', response.status, response.statusText)
         }
-      } catch (_error) {
+      } catch (error) {
         console.warn('⚠️ Failed to fetch comprehensive report, using basic data:', error)
       }
       
@@ -3120,7 +3120,7 @@ function DiscoveryPageClient() {
         console.error('❌ Failed to fetch location data:', locationError)
       }
       
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Failed to fetch comprehensive data:', error)
     } finally {
       setDetailLoading(false)
@@ -3467,7 +3467,7 @@ function DiscoveryPageClient() {
                 throw new Error('Profile API returned no data')
               }
               
-            } catch (_error) {
+            } catch (error) {
               console.error(`❌ Error switching to ${platform}:`, error)
               const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
               setSearchError(`Failed to load ${platform} data: ${errorMessage}`)

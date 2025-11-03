@@ -104,7 +104,7 @@ export async function getAllCampaigns(): Promise<Campaign[]> {
       updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }));
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error in getAllCampaigns:', error);
     
     // Re-throw the error instead of returning mock data
@@ -434,7 +434,7 @@ export async function addInfluencerToCampaign(campaignId: string, influencerId: 
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Database error in addInfluencerToCampaign:', error);
     
     // Check for unique constraint violation
@@ -768,7 +768,7 @@ export async function getInfluencerCampaigns(influencerId: string): Promise<any>
       message: 'Influencer campaigns retrieved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting influencer campaigns:', error)
     return {
       success: false,

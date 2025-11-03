@@ -85,7 +85,7 @@ export default function InvoiceSubmissionModal({
         const data = await response.json()
         setCampaigns(data.campaigns || [])
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading campaigns:', error)
     } finally {
       setIsLoading(false)
@@ -171,7 +171,7 @@ export default function InvoiceSubmissionModal({
         const error = await response.json()
         throw new Error(error.error || 'Failed to create invoice')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error creating invoice:', error)
       toast({
         title: "Error",

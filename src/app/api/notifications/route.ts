@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       unreadCount
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching notifications:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -142,7 +142,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating notifications:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

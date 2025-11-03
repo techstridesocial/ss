@@ -90,7 +90,7 @@ export async function POST(_request: NextRequest) {
         // Add small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100))
 
-      } catch (_error) {
+      } catch (error) {
         errorCount++
         const errorMsg = `Failed to refresh ${influencer.display_name}: ${error instanceof Error ? error.message : 'Unknown error'}`
         errors.push(errorMsg)
@@ -112,7 +112,7 @@ export async function POST(_request: NextRequest) {
       }
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Bulk refresh error:', error)
     return NextResponse.json(
       { error: 'Failed to bulk refresh analytics' },

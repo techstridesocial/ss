@@ -51,7 +51,7 @@ export async function GET(_request: NextRequest) {
     `, [influencer_id])
 
     return NextResponse.json({ campaigns })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaigns:', error)
     return NextResponse.json(
       { error: 'Failed to fetch campaigns' },

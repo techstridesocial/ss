@@ -136,7 +136,7 @@ export default function DashboardInfoPanel({
         const errorData = await response.json()
         setValidationErrors({ general: errorData.error || 'Failed to save changes' })
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving changes:', error)
       setValidationErrors({ general: 'Network error. Please try again.' })
     } finally {
@@ -186,7 +186,7 @@ export default function DashboardInfoPanel({
         const errorData = await response.json()
         setWhatsappError(errorData.error || 'Failed to save WhatsApp URL')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving WhatsApp URL:', error)
       setWhatsappError('Network error. Please try again.')
     } finally {
@@ -218,7 +218,7 @@ export default function DashboardInfoPanel({
         const errorData = await response.json()
         setWhatsappError(errorData.error || 'Failed to remove WhatsApp URL')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error removing WhatsApp URL:', error)
       setWhatsappError('Network error. Please try again.')
     } finally {

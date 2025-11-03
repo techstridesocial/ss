@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: 'Campaign duplicated successfully',
       campaign: duplicatedCampaign 
     }, { status: 201 })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error duplicating campaign:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to duplicate campaign' },

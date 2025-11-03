@@ -25,7 +25,7 @@ export async function GET(_request: NextRequest) {
       submissions: pendingSubmissions
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching pending content reviews:', error)
     return NextResponse.json(
       { error: 'Failed to fetch pending content reviews' },

@@ -241,7 +241,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
       message: 'Influencer stats retrieved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting influencer stats:', error)
     return {
       success: false,
@@ -306,7 +306,7 @@ export async function getPlatformStats(influencerId: string, platform: string): 
       message: 'Platform stats retrieved successfully'
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting platform stats:', error)
     return {
       success: false,

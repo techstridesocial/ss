@@ -95,7 +95,7 @@ export default function StaffFinancePage() {
         setInvoices(data.invoices || [])
         setSummary(data.summary)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error fetching invoices:', error)
     } finally {
       setIsLoading(false)
@@ -120,7 +120,7 @@ export default function StaffFinancePage() {
         setShowInvoiceModal(false)
         setSelectedInvoice(null)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating invoice status:', error)
     }
   }
@@ -168,7 +168,7 @@ export default function StaffFinancePage() {
         setBulkStatus('')
         setBulkNotes('')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating bulk status:', error)
     } finally {
       setIsBulkUpdating(false)

@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
       influencer_id: result.influencerId
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Influencer onboarding error:', error)
     console.error('❌ Full error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',

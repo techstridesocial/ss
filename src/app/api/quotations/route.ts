@@ -16,7 +16,7 @@ export async function GET() {
       success: true, 
       quotations 
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching quotations:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch quotations' },
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       quotation 
     }, { status: 201 })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error creating quotation:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create quotation' },

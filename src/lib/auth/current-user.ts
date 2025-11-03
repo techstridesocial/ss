@@ -26,7 +26,7 @@ export function useCurrentUserId(): string | null {
         } else {
           setUserId(null)
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Error fetching current user ID:', error)
         setUserId(null)
       } finally {

@@ -119,7 +119,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           loadFromLocalStorage()
         }
       }
-    } catch (_error) {
+    } catch (error) {
       // Only log actual errors, not expected authentication failures
       if (error instanceof Error && !error.message.includes('fetch')) {
         console.error('Unexpected error loading shortlists:', error)
@@ -162,7 +162,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         }
         setShortlists([defaultShortlist])
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to load data from localStorage:', error)
     }
   }
@@ -192,7 +192,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           }
 
           console.log(`✅ Migrated shortlist: ${localShortlist.name}`)
-        } catch (_error) {
+        } catch (error) {
           console.error(`❌ Failed to migrate shortlist: ${localShortlist.name}`, error)
         }
       }
@@ -203,7 +203,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
 
       // Reload shortlists from database
       await loadShortlists()
-    } catch (_error) {
+    } catch (error) {
       console.error('Migration error:', error)
     }
   }
@@ -344,7 +344,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         throw new Error(`API Error: ${errorData.error || 'Unknown error'}`)
       }
       throw new Error('Failed to create shortlist')
-    } catch (_error) {
+    } catch (error) {
       console.error('🚨 CRITICAL ERROR creating shortlist:', error)
       console.error('🚨 API failed for authenticated user - NO FALLBACK TO LOCALSTORAGE!')
       
@@ -387,7 +387,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           ))
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating shortlist:', error)
       // Fallback to local update
       setShortlists(prev => prev.map(shortlist => 
@@ -451,7 +451,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         }
         throw new Error(errorMessage)
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('💥 Error deleting shortlist:', error)
       // Don't fallback to local deletion on API error - let user know something went wrong
       throw error
@@ -512,7 +512,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
         console.error('API error response:', response.status, errorData)
         throw new Error(errorData.error || 'Failed to duplicate shortlist')
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error duplicating shortlist:', error)
       // Fallback to local duplication
       const newId = `shortlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -570,7 +570,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             : shortlist
         ))
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error adding influencer to shortlist:', error)
       // Fallback to local addition
       setShortlists(prev => prev.map(shortlist => 
@@ -619,7 +619,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
             : shortlist
         ))
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error removing influencer from shortlist:', error)
       // Fallback to local removal
       setShortlists(prev => prev.map(shortlist => 

@@ -479,7 +479,7 @@ export default function QuotationDetailPanel({ isOpen, onClose, quotation: initi
       await new Promise(resolve => setTimeout(resolve, 1000))
       onSendQuote(totalToUse, quoteNotes)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error sending quote:', error)
     } finally {
       setIsLoading(false)

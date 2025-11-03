@@ -49,7 +49,7 @@ export async function GET(_request: NextRequest) {
       }
     })
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Error checking database:', error)
     return NextResponse.json(
       { error: 'Failed to check database data' },

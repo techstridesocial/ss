@@ -56,7 +56,7 @@ export function useInfluencerOnboardingCheck() {
         } else {
           setStatus({ is_onboarded: true, loading: false })
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Failed to check influencer onboarding status:', error)
         setStatus({
           is_onboarded: true,

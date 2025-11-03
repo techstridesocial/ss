@@ -174,7 +174,7 @@ export async function cacheModashProfile(
     console.log(`✅ Successfully cached Modash profile for ${platform} user ${modashUserId}`)
     return { success: true }
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error caching Modash profile:', error)
     return {
       success: false,
@@ -229,7 +229,7 @@ export async function getCachedProfile(
     
     return result[0] as CachedProfileData
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting cached profile:', error)
     return null
   }
@@ -262,7 +262,7 @@ export async function getProfilesNeedingUpdate(limit: number = 10): Promise<any[
     
     return result
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting profiles needing update:', error)
     return []
   }
@@ -301,7 +301,7 @@ export async function updateExpiredProfiles(): Promise<{
       // Small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500))
       
-    } catch (_error) {
+    } catch (error) {
       console.error(`Error updating profile ${profile.modash_user_id}:`, error)
       errors++
     }
@@ -339,7 +339,7 @@ export async function getCacheStats(): Promise<CacheStats> {
       credits_used_this_month: creditsUsed[0]?.credits_used_this_month || 0
     }
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting cache stats:', error)
     return {
       total_cached_profiles: 0,

@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       offset
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json(
       { error: 'Failed to fetch users' },

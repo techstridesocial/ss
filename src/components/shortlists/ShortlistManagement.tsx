@@ -40,7 +40,7 @@ export function CreateShortlistModal({
       setDescription('')
       onCreateSuccess?.(newShortlistId)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error creating shortlist:', error)
       // Keep the form open so user can retry
     } finally {
@@ -173,7 +173,7 @@ export function EditShortlistModal({
         description: description.trim() || undefined
       })
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating shortlist:', error)
     } finally {
       setIsSubmitting(false)
@@ -303,7 +303,7 @@ export function DuplicateShortlistModal({
       const newShortlistId = await duplicateShortlist(shortlist.id, name.trim())
       onDuplicateSuccess?.(newShortlistId)
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error duplicating shortlist:', error)
     } finally {
       setIsSubmitting(false)
@@ -418,7 +418,7 @@ export function DeleteShortlistModal({
       await deleteShortlist(shortlist.id)
       onDeleteConfirm?.()
       onClose()
-    } catch (_error) {
+    } catch (error) {
       console.error('Error deleting shortlist:', error)
       setDeleteError(error instanceof Error ? error.message : 'Failed to delete shortlist')
     } finally {

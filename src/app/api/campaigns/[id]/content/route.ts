@@ -87,7 +87,7 @@ export async function GET(
       { status: 403 }
     )
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching campaign content:', error)
     return NextResponse.json(
       { error: 'Failed to fetch content submissions' },
@@ -172,7 +172,7 @@ export async function PATCH(
       data: updatedSubmission
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error updating content submission status:', error)
     return NextResponse.json(
       { error: 'Failed to update content submission status' },

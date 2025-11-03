@@ -83,7 +83,7 @@ export async function GET(
         'Cache-Control': 'no-cache',
       },
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error generating PDF:', error)
     return NextResponse.json(
       { error: 'Failed to generate PDF' },
