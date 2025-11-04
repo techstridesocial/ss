@@ -18,7 +18,7 @@ import {
 // RouteParams removed - params now Promise in Next.js 15
 
 // GET - Get campaign influencers with enhanced details
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // POST - Add influencer to campaign (when staff marks them as accepted)
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     console.log('🔐 Starting authentication for campaign influencer assignment...')
     
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 // PUT - Update influencer status in campaign
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate
     await auth.protect()
@@ -270,7 +270,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 // PATCH - Update product shipment status
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
     if (!userId) {
