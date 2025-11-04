@@ -23,17 +23,24 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
       setError(null)
 
       try {
-        // Step 1: Get platform username from database (simple query)
+        console.log(`🔍 Roster Analytics: Fetching for influencer ${influencer.id}, platform ${selectedPlatform}`)
+        
+        // Step 1: Get platform username from database (same as discovery)
         const platformResponse = await fetch(`/api/influencers/${influencer.id}/platform-username?platform=${selectedPlatform}`)
         
         let username: string | null = null
         if (platformResponse.ok) {
           const platformData = await platformResponse.json()
           username = platformData.success ? platformData.username : null
+          console.log(`✅ Roster Analytics: Found username "${username}" for platform ${selectedPlatform}`)
+        } else {
+          const errorData = await platformResponse.json().catch(() => ({}))
+          console.error(`❌ Roster Analytics: Failed to get username:`, errorData)
         }
 
-        // Step 2: If we have username, fetch Modash analytics
+        // Step 2: If we have username, fetch Modash analytics (same as discovery)
         if (username) {
+          console.log(`🔍 Roster Analytics: Fetching Modash data for username "${username}" on ${selectedPlatform}`)
           const modashResponse = await fetch('/api/discovery/profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -47,7 +54,8 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
             const modashData = await modashResponse.json()
             
             if (modashData.success && modashData.data) {
-              // Merge Modash data with roster influencer data we already have
+              console.log(`✅ Roster Analytics: Successfully fetched Modash data`)
+              // Merge Modash data with roster influencer data (same structure as discovery)
               setDetailData({
                 ...modashData.data,
                 // Preserve roster-specific fields
@@ -62,6 +70,7 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
                 hasPreservedAnalytics: true
               })
             } else {
+              console.warn(`⚠️ Roster Analytics: Modash returned no data:`, modashData)
               // Modash failed, use roster data as fallback
               setDetailData({
                 ...influencer,
@@ -70,6 +79,8 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
               })
             }
           } else {
+            const errorData = await modashResponse.json().catch(() => ({}))
+            console.error(`❌ Roster Analytics: Modash API error:`, errorData)
             // Modash API error, use roster data as fallback
             setDetailData({
               ...influencer,
@@ -78,6 +89,7 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
             })
           }
         } else {
+          console.warn(`⚠️ Roster Analytics: No username found for platform ${selectedPlatform} - using roster data only`)
           // No username found, use roster data only
           setDetailData({
             ...influencer,
