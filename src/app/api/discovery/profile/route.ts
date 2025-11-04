@@ -25,19 +25,36 @@ export async function POST(_request: Request) {
         
         let users = searchResult?.users || searchResult?.data || []
         
+        console.log(`🔍 Search results:`, {
+          usersCount: users.length,
+          firstUser: users[0] ? {
+            username: users[0].username,
+            userId: users[0].userId,
+            id: users[0].id,
+            allKeys: Object.keys(users[0] || {})
+          } : null
+        })
+        
         // Look for exact match (case-insensitive)
         const exactMatch = users.find((user: any) => 
           user.username?.toLowerCase() === cleanUsername.toLowerCase()
         )
         
-        if (exactMatch?.id) {
-          actualUserId = exactMatch.id
+        // Try both userId and id fields (Modash API uses different field names)
+        const userId = exactMatch?.userId || exactMatch?.id
+        if (userId) {
+          actualUserId = userId
           console.log(`✅ Found exact match userId: ${actualUserId} for username: ${username}`)
-        } else if (users.length > 0 && users[0].id) {
+        } else if (users.length > 0) {
           // If no exact match, use first result (might be close match)
-          actualUserId = users[0].id
-          console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for username: ${username}`)
-          console.log(`   Available usernames: ${users.map((u: any) => u.username).join(', ')}`)
+          const firstUserId = users[0].userId || users[0].id
+          if (firstUserId) {
+            actualUserId = firstUserId
+            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for username: ${username}`)
+            console.log(`   Available usernames: ${users.map((u: any) => u.username).join(', ')}`)
+          } else {
+            throw new Error(`No userId found in search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
+          }
         } else {
           throw new Error(`No user found with username: ${username}. Searched for: ${cleanUsername}`)
         }
