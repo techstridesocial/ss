@@ -286,12 +286,11 @@ export function CreditAlerts({ alerts, className = '', onDismiss }: CreditAlertP
  * Complete credit dashboard component
  */
 export function CreditDashboard({ className = '' }: { className?: string }) {
-  const { usage, alerts, clearAlerts } = useCreditDisplay()
+  const { usage } = useCreditDisplay()
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Alerts */}
-      <CreditAlerts alerts={alerts} onDismiss={clearAlerts} />
+      {/* Alerts - removed as not part of useCreditDisplay return type */}
       
       {/* Credit cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

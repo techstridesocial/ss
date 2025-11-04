@@ -392,7 +392,7 @@ export async function createCampaignFromTemplate(
 
     // Use the existing campaign creation function
     const { createCampaign } = await import('./campaigns')
-    return await createCampaign(campaign)
+    return await createCampaign(campaign as any)
   } catch (error) {
     console.error('Error creating campaign from template:', error)
     throw error

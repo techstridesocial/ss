@@ -47,17 +47,17 @@ export async function POST(request: NextRequest) {
           completeModashData = (modashResponse as any).profile
           const _profile = (modashResponse as any).profile
           console.log('✅ Complete Modash data fetched:', {
-            hasProfile: !!profile.profile,
-            hasAudience: !!profile.audience,
-            hasRecentPosts: !!profile.recentPosts,
-            hasPopularPosts: !!profile.popularPosts,
-            hasSponsoredPosts: !!profile.sponsoredPosts,
-            hasHashtags: !!profile.hashtags,
-            hasMentions: !!profile.mentions,
-            hasBrandAffinity: !!profile.brandAffinity,
-            hasStatHistory: !!profile.statHistory,
-            hasContacts: !!profile.contacts,
-            dataKeys: Object.keys(profile)
+            hasProfile: !!_profile.profile,
+            hasAudience: !!_profile.audience,
+            hasRecentPosts: !!_profile.recentPosts,
+            hasPopularPosts: !!_profile.popularPosts,
+            hasSponsoredPosts: !!_profile.sponsoredPosts,
+            hasHashtags: !!_profile.hashtags,
+            hasMentions: !!_profile.mentions,
+            hasBrandAffinity: !!_profile.brandAffinity,
+            hasStatHistory: !!_profile.statHistory,
+            hasContacts: !!_profile.contacts,
+            dataKeys: Object.keys(_profile)
           })
         }
       } catch (modashError) {

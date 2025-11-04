@@ -75,7 +75,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await _request.json()
     const { platform, handle, profileData } = body
 
     // Convert platform to uppercase to match database enum
@@ -89,10 +89,9 @@ export async function POST(_request: NextRequest) {
       )
     }
 
-    // Check user's role in Clerk
-    const { user } = await auth()
-    const clerkRole = user?.publicMetadata?.role
-    console.log('🔑 User role in Clerk publicMetadata:', clerkRole)
+    // Note: Clerk auth() in Next.js 15 doesn't return user object directly
+    // We'll get role from database instead
+    console.log('🔑 Getting user role from database')
 
     // Get influencer ID from user
     console.log('🔍 Looking for user in database with clerk_id:', userId)
@@ -250,7 +249,7 @@ export async function DELETE(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await _request.json()
     const { accountId } = body
 
     if (!accountId) {
@@ -325,7 +324,7 @@ export async function PUT(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await _request.json()
     const { platform, username } = body
 
     // Convert platform to uppercase to match database enum

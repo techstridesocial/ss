@@ -27,13 +27,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
     // Upload to Clerk user profile
-    const uploadedImage = await clerkClient.users.updateUserProfileImage(userId, {
-      file: buffer
+    const client = await clerkClient()
+    const uploadedImage = await client.users.updateUserProfileImage(userId, {
+      file: file as any // Pass the File object directly
     })
 
     if (!uploadedImage || !uploadedImage.imageUrl) {

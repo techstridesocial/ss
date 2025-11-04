@@ -24,7 +24,7 @@ export async function GET(
 
     // Await params in Next.js 15
     const { id } = await params
-    const _campaignId = id
+    const campaignId = id
 
     // Get payment status for all influencers in the campaign
     const payments = await query(`
@@ -100,7 +100,9 @@ export async function POST(
       )
     }
 
-    const _campaignId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const campaignId = id
     const { influencerId, status } = await request.json()
 
     if (!influencerId || !status) {

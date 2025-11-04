@@ -706,10 +706,10 @@ export async function getInfluencerCampaigns(influencerId: string): Promise<any>
     // Group content submissions by campaign
     const contentByCampaign = contentSubmissions.reduce((acc: any, content: any) => {
       const _campaignId = content.campaign_influencer_id
-      if (!acc[campaignId]) {
-        acc[campaignId] = []
+      if (!acc[_campaignId]) {
+        acc[_campaignId] = []
       }
-      acc[campaignId].push(content)
+      acc[_campaignId].push(content)
       return acc
     }, {})
 

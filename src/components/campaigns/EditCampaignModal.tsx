@@ -186,9 +186,9 @@ export default function EditCampaignModal({
   }
 
   const handlePlatformToggle = (_platform: string) => {
-    const newPlatforms = formData.target_platforms.includes(platform)
-      ? formData.target_platforms.filter(p => p !== platform)
-      : [...formData.target_platforms, platform]
+    const newPlatforms = formData.target_platforms.includes(_platform)
+      ? formData.target_platforms.filter(p => p !== _platform)
+      : [...formData.target_platforms, _platform]
     handleInputChange('target_platforms', newPlatforms)
   }
 

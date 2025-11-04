@@ -71,13 +71,13 @@ export async function GET(_request: NextRequest) {
       ORDER BY platform
     `
 
-    const platforms = await query(platformsQuery, [profile.influencer_id])
+    const platforms = await query(platformsQuery, [_profile.influencer_id])
 
     // Format the response
     const response = {
       success: true,
       data: {
-        ...profile,
+        ..._profile,
         platforms: platforms.map(p => ({
           platform: p.platform.toLowerCase(),
           username: p.username,
@@ -116,7 +116,7 @@ export async function PUT(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const data = await request.json()
+    const data = await _request.json()
 
     // Validate required fields
     const requiredFields = ['first_name', 'last_name', 'display_name']
@@ -205,7 +205,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { selectedProfile, platform } = await request.json()
+    const { selectedProfile, platform } = await _request.json()
 
     if (!selectedProfile || !platform) {
       return NextResponse.json(
@@ -243,6 +243,13 @@ export async function POST(_request: NextRequest) {
     }
 
     const influencer_id = influencerResult[0]?.id
+    
+    if (!influencer_id) {
+      return NextResponse.json(
+        { error: 'Influencer ID not found' },
+        { status: 404 }
+      )
+    }
 
     // Update or insert platform data
     const result = await transaction(async (client) => {

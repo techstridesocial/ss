@@ -7,7 +7,7 @@ let pool: Pool | null = null
 export function getDatabase(): Pool {
   if (!pool) {
     // Use the pre-validated environment variable
-    console.log('🔗 Creating new database pool with URL:', ENV.DATABASE_URL.substring(0, 50) + '...')
+    console.log('🔗 Creating new database pool with URL:', ENV.DATABASE_URL?.substring(0, 50) + '...')
     
     pool = new Pool({
       connectionString: ENV.DATABASE_URL,

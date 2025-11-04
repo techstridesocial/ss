@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { query } from '@/lib/db/connection'
 
 export async function GET(_request: NextRequest) {
   try {
@@ -20,6 +21,9 @@ export async function GET(_request: NextRequest) {
     }
 
     const user = userResult[0]
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
     const userRole = user.role
 
     // For BRAND users, check if they have completed brand onboarding

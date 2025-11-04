@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useToast } from '@/components/ui/toast'
+// Toast functionality temporarily disabled
+// import { useToast } from '@/components/ui/toast'
 
 export interface Campaign {
   id: string
@@ -60,7 +61,8 @@ export function useCampaigns(options: UseCampaignsOptions = {}) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { addToast } = useToast()
+  // const { addToast } = useToast()
+  const addToast = (msg: any) => console.log('Toast:', msg.title, msg.message)
 
   const {
     page = 1,

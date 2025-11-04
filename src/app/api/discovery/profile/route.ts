@@ -186,7 +186,7 @@ export async function POST(_request: Request) {
         totalViews: modashResponse.profile?.totalViews || 0, // Total channel views
         handle: modashResponse.profile?.profile?.handle || modashResponse.profile?.handle || null, // Channel handle (@username)
         description: modashResponse.profile?.profile?.description || modashResponse.profile?.description || null, // Channel description
-        url: modashResponse.profile?.profile?.url || modashResponse.profile?.url || null, // Channel URL
+        channelUrl: modashResponse.profile?.profile?.url || modashResponse.profile?.url || null, // Channel URL
         
         // 🆕 NEW: Content data - Enhanced with performance data for better thumbnails
         recentPosts: (() => {

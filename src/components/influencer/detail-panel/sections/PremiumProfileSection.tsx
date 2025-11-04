@@ -16,9 +16,9 @@ export const PremiumProfileSection = ({ influencer, selectedPlatform }: PremiumP
   const isVerified = getMetricValue(influencer.isVerified, influencer.verified)
   const isPrivate = getMetricValue(influencer.isPrivate, influencer.private)
   const accountType = getMetricValue(influencer.accountType, influencer.account_type)
-  const postsCount = getMetricValue(influencer.postsCount, influencer.posts_count, influencer.totalPosts)
-  const ageGroup = getMetricValue(influencer.ageGroup, influencer.age_group)
-  const bio = getMetricValue(influencer.bio, influencer.description, influencer.biography)
+  const postsCount = getMetricValue(influencer.postsCount, (influencer as any).posts_count || (influencer as any).totalPosts)
+  const ageGroup = getMetricValue(influencer.ageGroup, (influencer as any).age_group)
+  const bio = getMetricValue(influencer.bio, influencer.description || (influencer as any).biography)
   
   // Location information
   const city = getMetricValue(influencer.city, influencer.location?.city)

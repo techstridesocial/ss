@@ -34,7 +34,12 @@ async function getBrandIdFromUserId(userId: string): Promise<string> {
     throw new Error('Brand not found - Please complete onboarding first')
   }
 
-  return brandResult[0]?.id
+  const brandId = brandResult[0]?.id
+  if (!brandId) {
+    throw new Error('Brand ID not found')
+  }
+  
+  return brandId
 }
 
 // GET /api/shortlists - Get all shortlists for the authenticated brand

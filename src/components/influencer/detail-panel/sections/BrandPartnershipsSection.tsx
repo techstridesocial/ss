@@ -23,8 +23,8 @@ export const BrandPartnershipsSection = ({ influencer }: BrandPartnershipsSectio
     return acc
   }, [])
   
-  const brandAffinity = influencer.brandAffinity || influencer.audience?.brandAffinity || []
-  const mentions = influencer.mentions || []
+  const brandAffinity = (influencer as any).brandAffinity || (influencer.audience as any)?.brandAffinity || []
+  const mentions = (influencer as any).mentions || []
   
 
   
@@ -47,7 +47,7 @@ export const BrandPartnershipsSection = ({ influencer }: BrandPartnershipsSectio
   // Aggregate brand partners from sponsored posts if explicit list isn't provided
   const brandNameToInfo: Record<string, { count: number; logo?: string; domain?: string }> = {}
   for (const post of sponsoredPostsWithSponsors) {
-    const sponsors = Array.isArray(post?.sponsors) ? post.sponsors : []
+    const sponsors = Array.isArray((post as any)?.sponsors) ? (post as any).sponsors : []
     for (const s of sponsors) {
       const key = (s?.name || s?.domain || 'Unknown Brand').trim()
       if (!brandNameToInfo[key]) brandNameToInfo[key] = { count: 0, logo: s?.logo_url, domain: s?.domain }

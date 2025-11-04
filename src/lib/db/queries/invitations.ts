@@ -217,9 +217,9 @@ export async function getInvitationStats(): Promise<{
 
     const stats = {
       total: 0,
-      invited: 0,
+      pending: 0,
       accepted: 0,
-      declined: 0,
+      revoked: 0,
       expired: 0
     }
 
@@ -237,9 +237,9 @@ export async function getInvitationStats(): Promise<{
     console.error('Error fetching invitation stats:', error)
     return {
       total: 0,
-      invited: 0,
+      pending: 0,
       accepted: 0,
-      declined: 0,
+      revoked: 0,
       expired: 0
     }
   }

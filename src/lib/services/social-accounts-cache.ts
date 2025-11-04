@@ -221,18 +221,19 @@ export class SocialAccountsCache {
   private async fetchFreshData(handle: string, platform: string): Promise<any | null> {
     try {
       // Use the appropriate Modash API based on platform
-      const profileData = await modashService.getProfile(handle, platform)
+      const profileData = await modashService.getProfileReport(handle, platform)
       
       if (!profileData) {
         return null
       }
 
       // Extract and format the data
+      const data = profileData as any
       return {
-        followers: profileData.followers || 0,
-        engagementRate: profileData.engagementRate || 0,
-        avgViews: profileData.avgViews || 0,
-        profileUrl: profileData.url || null
+        followers: data.followers || 0,
+        engagementRate: data.engagementRate || 0,
+        avgViews: data.avgViews || 0,
+        profileUrl: data.url || null
       }
 
     } catch (error) {
@@ -262,11 +263,11 @@ export class SocialAccountsCache {
         SELECT * FROM influencer_platforms
         WHERE platform = $1 AND is_connected = true
         ORDER BY last_synced ASC NULLS FIRST
-      `, [platform])
+      `, [_platform])
 
       return accounts
     } catch (error) {
-      console.error(`Error fetching ${platform} accounts:`, error)
+      console.error(`Error fetching ${_platform} accounts:`, error)
       throw error
     }
   }

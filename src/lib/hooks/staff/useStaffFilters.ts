@@ -97,7 +97,7 @@ export function useStaffFilters<T extends Record<string, any>, D = any>(
   // Apply filters using the provided filter function
   const applyFilters = useCallback((data: D[]) => {
     return filterFn(data, filters)
-  }, [data, filters, filterFn])
+  }, [filters, filterFn])
 
   return {
     filters,

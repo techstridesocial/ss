@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 import { cacheModashProfile } from '@/lib/services/modash-cache'
-import { hasRole } from '@/lib/auth/roles'
+import { getCurrentUserRole } from '@/lib/auth/roles'
 
 // POST - Manually refresh a specific influencer's cached data
 export async function POST(request: NextRequest) {
@@ -13,9 +13,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has staff/admin role OR if they're refreshing their own profile
-    const userRole = await hasRole(userId, ['STAFF', 'ADMIN'])
+    const userRole = await getCurrentUserRole()
+    const isStaffOrAdmin = userRole === 'STAFF' || userRole === 'ADMIN'
     
-    if (!userRole) {
+    if (!isStaffOrAdmin) {
       // Allow influencers to refresh their own profiles
       // We'll verify ownership in the query below
       console.log('🔄 User is not staff/admin, checking if they own this profile...')

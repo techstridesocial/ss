@@ -14,8 +14,7 @@ interface AllContentSectionProps {
 export const AllContentSection = ({ influencer, currentPlatformData }: AllContentSectionProps) => {
   const engagementRate = getMetricValue(
     currentPlatformData?.engagement_rate,
-    influencer.engagement_rate,
-    influencer.engagement?.engagement_rate
+    influencer.engagement_rate || (influencer.engagement as any)?.engagement_rate
   )
 
   // ❌ REMOVED: These fields are not available in YouTube API
@@ -41,7 +40,7 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
   return (
     <CollapsibleSection title="All content" defaultOpen={true}>
       <div className="space-y-3 md:space-y-2">
-        {engagementRate > 0 && (
+        {engagementRate && engagementRate > 0 && (
           <MetricRow
             icon={Heart}
             label="Engagement Rate"
@@ -50,7 +49,7 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
           />
         )}
         
-        {estimatedImpressions > 0 && (
+        {estimatedImpressions && estimatedImpressions > 0 && (
           <MetricRow
             icon={Eye}
             label="Estimated impressions"
@@ -58,7 +57,7 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
           />
         )}
         
-        {estimatedReach > 0 && (
+        {estimatedReach && estimatedReach > 0 && (
           <MetricRow
             icon={Users}
             label="Estimated reach"
@@ -66,7 +65,7 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
           />
         )}
         
-        {avgLikes > 0 && (
+        {avgLikes && avgLikes > 0 && (
           <MetricRow
             icon={Heart}
             label="Average likes"
@@ -75,7 +74,7 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
           />
         )}
         
-        {avgComments > 0 && (
+        {avgComments && avgComments > 0 && (
           <MetricRow
             icon={MessageCircle}
             label="Average comments"
@@ -83,7 +82,7 @@ export const AllContentSection = ({ influencer, currentPlatformData }: AllConten
           />
         )}
         
-        {avgShares > 0 && (
+        {avgShares && avgShares > 0 && (
           <MetricRow
             icon={Share}
             label="Average shares"

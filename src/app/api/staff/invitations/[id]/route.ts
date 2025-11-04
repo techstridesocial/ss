@@ -33,7 +33,7 @@ export async function DELETE(
     }
 
     // Cancel the invitation
-    await clerkClient().invitations.revokeInvitation(invitationId)
+    await (await _clerkClient()).invitations.revokeInvitation(invitationId)
 
     // Update status in our database
     const dbResult = await updateInvitationStatus(invitationId, 'DECLINED')
@@ -72,7 +72,7 @@ export async function POST(
       )
     }
 
-    const invitationId = params.id
+    const { id: invitationId } = await params
 
     if (!invitationId) {
       return NextResponse.json(
@@ -91,10 +91,10 @@ export async function POST(
     }
 
     // Revoke the old invitation
-    await clerkClient().invitations.revokeInvitation(invitationId)
+    await (await _clerkClient()).invitations.revokeInvitation(invitationId)
     
     // Create a new invitation with the same details
-    const newInvitation = await clerkClient().invitations.createInvitation({
+    const newInvitation = await (await _clerkClient()).invitations.createInvitation({
       emailAddress: originalInvitation.email,
       publicMetadata: {
         role: originalInvitation.role,
@@ -121,7 +121,7 @@ export async function POST(
       originalInvitation.invited_by_email || 'system@stridesocial.com',
       originalInvitation.first_name,
       originalInvitation.last_name,
-      newInvitation.expiresAt ? new Date(newInvitation.expiresAt) : undefined
+      (newInvitation as any).expiresAt ? new Date((newInvitation as any).expiresAt) : undefined
     )
 
     if (!newDbResult.success) {
@@ -136,7 +136,7 @@ export async function POST(
         role: newInvitation.publicMetadata?.role,
         status: newInvitation.status,
         createdAt: newInvitation.createdAt,
-        expiresAt: newInvitation.expiresAt
+        expiresAt: (newInvitation as any).expiresAt
       },
       message: 'Invitation resent successfully'
     })

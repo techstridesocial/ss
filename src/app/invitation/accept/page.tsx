@@ -95,7 +95,7 @@ function AcceptInvitationContent() {
           if (clerkTicket) {
             try {
               // Decode the JWT token to get invitation info (basic decode, not verification)
-              const payload = JSON.parse(atob(clerkTicket.split('.')[1]))
+              const payload = JSON.parse(atob(clerkTicket.split('.')[1] || ''))
               console.log('Clerk ticket payload:', payload)
               
               // Check if we can find the invitation in our database

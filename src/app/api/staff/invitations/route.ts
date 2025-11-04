@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       clerkInvitation.id,
       email,
       role,
-      currentUser.userId || null, // Use null instead of 'system' for UUID field
+      currentUser.userId || '', // Use empty string as fallback
       currentUserEmail,
       firstName,
       lastName,

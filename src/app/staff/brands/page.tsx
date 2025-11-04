@@ -1134,7 +1134,7 @@ function BrandsPageClient() {
                             <option value="">Unassigned</option>
                             {staffMembers.map(staff => (
                               <option key={staff.id} value={staff.id}>
-                                {staff.name}
+                                {(staff as any).name}
                               </option>
                             ))}
                           </select>

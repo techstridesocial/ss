@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { queryOne as _queryOne } from '@/lib/db/connection'
+import { queryOne } from '@/lib/db/connection'
 import { pdf } from '@react-pdf/renderer'
 import { InvoicePDF } from '@/lib/pdf/InvoicePDF'
 import React from 'react'
@@ -49,7 +49,7 @@ export async function GET(
     }
 
     // Check if user has access to this invoice
-    if (userRole === 'INFLUENCER') {
+    if (userRole && userRole.toUpperCase() === 'INFLUENCER') {
       // Get user ID from Clerk ID
       const userResult = await queryOne<{ id: string }>(
         'SELECT id FROM users WHERE clerk_id = $1',
@@ -75,10 +75,11 @@ export async function GET(
     }
 
     // Generate PDF
-    const pdfBuffer = await pdf(React.createElement(InvoicePDF, { invoice })).toBuffer()
+    // @ts-ignore - Type mismatch between InvoicePDF and react-pdf Document
+    const pdfBuffer = await pdf(React.createElement(InvoicePDF, { invoice: invoice as any })).toBuffer()
 
     // Return PDF as response
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as any, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="invoice-${invoice.invoice_number}.pdf"`,

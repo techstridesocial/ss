@@ -127,23 +127,23 @@ export default function EnhancedInfluencerStats() {
   }
 
   const refreshPlatform = async (_platform: string) => {
-    setRefreshingPlatform(platform)
+    setRefreshingPlatform(_platform)
     
     try {
-      const platformData = statsData?.platforms?.find((p: any) => p.platform === platform)
+      const platformData = statsData?.platforms?.find((p: any) => p.platform === _platform)
       
       const response = await fetch('/api/modash/refresh-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          influencerPlatformId: platformData?.id,
-          platform: platform
+          influencerPlatformId: (platformData as any)?.id,
+          platform: _platform
         })
       })
       
       if (response.ok) {
         await loadStats()
-        setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
+        setSuccessMessage(`✅ ${_platform.charAt(0).toUpperCase() + _platform.slice(1)} data refreshed successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       }
     } catch (error) {
@@ -167,7 +167,7 @@ export default function EnhancedInfluencerStats() {
   }
 
   const getPlatformIcon = (_platform: string) => {
-    switch (platform) {
+    switch (_platform) {
       case 'instagram':
         return <Instagram className="h-5 w-5 text-pink-600" />
       case 'tiktok':
@@ -256,7 +256,7 @@ export default function EnhancedInfluencerStats() {
                       <h3 className="text-lg font-semibold text-gray-900 capitalize">{platform}</h3>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {isConnected && (
+                      {isConnected && platformData && (
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                           platformData.data_source === 'cached' 
                             ? 'bg-blue-100 text-blue-800' 
@@ -273,30 +273,30 @@ export default function EnhancedInfluencerStats() {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Followers</span>
                       <span className="font-medium">
-                        {isConnected ? formatNumber(platformData.followers) : 'Not connected'}
+                        {isConnected && platformData ? formatNumber(platformData.followers) : 'Not connected'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Engagement Rate</span>
                       <span className="font-medium">
-                        {isConnected ? formatPercentage(platformData.engagement_rate) : '-'}
+                        {isConnected && platformData ? formatPercentage(platformData.engagement_rate) : '-'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Avg. Views</span>
                       <span className="font-medium">
-                        {isConnected ? formatNumber(platformData.avg_views) : '-'}
+                        {isConnected && platformData ? formatNumber(platformData.avg_views) : '-'}
                       </span>
                     </div>
                     
-                    {isConnected && platformData.username && (
+                    {isConnected && platformData && platformData.username && (
                       <div className="flex justify-between pt-2 border-t border-gray-100">
                         <span className="text-sm text-gray-600">Username</span>
                         <span className="font-medium text-blue-600">@{platformData.username}</span>
                       </div>
                     )}
                     
-                    {isConnected && platformData.cached_at && (
+                    {isConnected && platformData && platformData.cached_at && (
                       <div className="flex justify-between items-center pt-1">
                         <span className="text-xs text-gray-500">Last updated</span>
                         <div className="flex items-center space-x-2">

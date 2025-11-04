@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create campaign from approved quotation
-    const _campaignId = await createCampaignFromQuotation(quotationId)
+    const campaignId = await createCampaignFromQuotation(quotationId)
     
     if (!campaignId) {
       return NextResponse.json(

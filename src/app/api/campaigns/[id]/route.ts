@@ -12,14 +12,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const campaign = await getCampaignById(params.id)
+    // Await params in Next.js 15
+    const { id: campaignId } = await params
+    const campaign = await getCampaignById(campaignId)
     
     if (!campaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
     }
 
     // Also get campaign influencers
-    const influencers = await getCampaignInfluencers(params.id)
+    const influencers = await getCampaignInfluencers(campaignId)
 
     return NextResponse.json({ 
       success: true, 
@@ -45,9 +47,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await params in Next.js 15
+    const { id: campaignId } = await params
     const data = await request.json()
     
-    const updatedCampaign = await updateCampaign(params.id, data)
+    const updatedCampaign = await updateCampaign(campaignId, data)
     
     if (!updatedCampaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
@@ -74,7 +78,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const deleted = await deleteCampaign(params.id)
+    // Await params in Next.js 15
+    const { id: campaignId } = await params
+    const deleted = await deleteCampaign(campaignId)
     
     if (!deleted) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })

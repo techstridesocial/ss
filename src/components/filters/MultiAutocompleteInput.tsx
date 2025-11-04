@@ -166,7 +166,9 @@ const MultiAutocompleteInput: React.FC<MultiAutocompleteInputProps> = ({
     if (e.key === 'Backspace' && !searchTerm && selectedValues.length > 0) {
       // Remove last selected item when backspace is pressed on empty input
       const lastValue = selectedValues[selectedValues.length - 1]
-      handleRemoveSelection(lastValue)
+      if (lastValue) {
+        handleRemoveSelection(lastValue)
+      }
     }
   }
 

@@ -5,7 +5,7 @@ interface MetricData {
   value: string | number
   secondaryValue?: string
   trend?: number
-  quality?: 'high' | 'medium' | 'low'
+  quality?: 'high' | 'medium' | 'low' | 'below_average' | 'average' | 'above_average' | string
 }
 
 interface PremiumMetricsGridProps {

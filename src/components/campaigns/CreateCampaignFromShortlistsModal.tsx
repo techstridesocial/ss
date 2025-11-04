@@ -77,9 +77,9 @@ export default function CreateCampaignFromShortlistsModal({
       const [parent, child] = field.split('.')
       setFormData(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
+        [parent as string]: {
+          ...(prev[parent as keyof typeof prev] as any),
+          [child as string]: value
         }
       }))
     } else {
@@ -100,9 +100,9 @@ export default function CreateCampaignFromShortlistsModal({
   }
 
   const handlePlatformToggle = (_platform: string) => {
-    const platforms = formData.requirements.platforms.includes(platform)
-      ? formData.requirements.platforms.filter(p => p !== platform)
-      : [...formData.requirements.platforms, platform]
+    const platforms = formData.requirements.platforms.includes(_platform)
+      ? formData.requirements.platforms.filter(p => p !== _platform)
+      : [...formData.requirements.platforms, _platform]
     handleInputChange('requirements.platforms', platforms)
   }
 

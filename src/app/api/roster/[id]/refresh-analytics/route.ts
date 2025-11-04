@@ -22,7 +22,8 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden - Staff access required' }, { status: 403 })
     }
 
-    const { id } = params
+    // Await params in Next.js 15
+    const { id } = await params
 
     // Get current influencer data
     const influencerResult = await query<{
@@ -39,6 +40,9 @@ export async function POST(
     }
 
     const influencer = influencerResult[0]
+    if (!influencer) {
+      return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
+    }
     
     // Parse existing notes to get modash data
     const existingNotes = influencer.notes ? JSON.parse(influencer.notes) : {}
@@ -62,7 +66,7 @@ export async function POST(
     // Fetch fresh analytics from Modash
     const freshProfileData = await getProfileReport(modashUserId, platform)
     
-    if (!freshProfileData?.profile) {
+    if (!(freshProfileData as any)?.profile) {
       throw new Error('Failed to fetch fresh analytics from Modash')
     }
 
@@ -71,7 +75,7 @@ export async function POST(
       ...existingNotes,
       modash_data: {
         ...existingNotes.modash_data,
-        ...freshProfileData, // Fresh complete analytics
+        ...(freshProfileData as any), // Fresh complete analytics
         last_refreshed: new Date().toISOString(),
         refreshed_by: userId
       }

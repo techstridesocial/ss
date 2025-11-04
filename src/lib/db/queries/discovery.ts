@@ -228,37 +228,37 @@ export async function addDiscoveredInfluencerToRosterWithCompleteData(
     const audience = completeModashData?.audience || {}
     
     // Calculate totals for main influencer record
-    const totalFollowers = profile.followers || influencer.followers || 0
-    const totalEngagement = profile.engagementRate || influencer.engagement_rate || 0
-    const totalAvgViews = profile.avgViews || influencer.modash_data?.avg_views || 0
+    const totalFollowers = _profile.followers || influencer.followers || 0
+    const totalEngagement = _profile.engagementRate || influencer.engagement_rate || 0
+    const totalAvgViews = _profile.avgViews || influencer.modash_data?.avg_views || 0
     
     // Create comprehensive notes with ALL Modash data
     const completeNotes = {
       modash_data: {
         // Core profile data
-        userId: profile.userId || completeModashData.userId,
+        userId: _profile.userId || completeModashData.userId,
         platform: influencer.platform,
-        username: profile.username || influencer.username,
-        fullname: profile.fullname || influencer.display_name,
+        username: _profile.username || influencer.username,
+        fullname: _profile.fullname || influencer.display_name,
         followers: totalFollowers,
         engagementRate: totalEngagement,
-        avgLikes: profile.avgLikes || 0,
-        avgComments: profile.avgComments || 0,
+        avgLikes: _profile.avgLikes || 0,
+        avgComments: _profile.avgComments || 0,
         avgViews: totalAvgViews,
-        picture: profile.picture,
-        url: profile.url,
-        bio: profile.bio,
-        city: profile.city,
-        state: profile.state,
-        country: profile.country,
-        gender: profile.gender,
-        ageGroup: profile.ageGroup,
-        isVerified: profile.isVerified,
-        accountType: profile.accountType,
-        isPrivate: profile.isPrivate,
-        postsCount: profile.postsCount || profile.postsCounts || 0,
-        engagements: profile.engagements || 0,
-        totalLikes: profile.totalLikes || 0,
+        picture: _profile.picture,
+        url: _profile.url,
+        bio: _profile.bio,
+        city: _profile.city,
+        state: _profile.state,
+        country: _profile.country,
+        gender: _profile.gender,
+        ageGroup: _profile.ageGroup,
+        isVerified: _profile.isVerified,
+        accountType: _profile.accountType,
+        isPrivate: _profile.isPrivate,
+        postsCount: _profile.postsCount || _profile.postsCounts || 0,
+        engagements: _profile.engagements || 0,
+        totalLikes: _profile.totalLikes || 0,
         
         // Complete audience data
         audience: {
@@ -330,7 +330,7 @@ export async function addDiscoveredInfluencerToRosterWithCompleteData(
       RETURNING id
     `, [
       userId,
-      profile.fullname || influencer.username,
+      _profile.fullname || influencer.username,
       'discovered',
       ['discovered'],
       totalFollowers,
@@ -360,7 +360,7 @@ export async function addDiscoveredInfluencerToRosterWithCompleteData(
       totalFollowers,
       totalEngagement,
       totalAvgViews,
-      profile.url || `https://${influencer.platform.toLowerCase()}.com/${influencer.username}`,
+      _profile.url || `https://${influencer.platform.toLowerCase()}.com/${influencer.username}`,
       true,
       new Date()
     ])

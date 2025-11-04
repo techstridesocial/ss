@@ -26,10 +26,10 @@ export const ContentGridModal = ({ isOpen, onClose, posts, title }: ContentGridM
   
   if (!isOpen || posts.length === 0) return null
 
-  const selectedPost = posts[selectedIndex]
+  const selectedPost = posts[selectedIndex] as any
 
   const handlePlayClick = () => {
-    if (selectedPost.url) {
+    if (selectedPost && selectedPost.url) {
       window.open(selectedPost.url, '_blank', 'noopener,noreferrer')
     }
   }
@@ -74,11 +74,11 @@ export const ContentGridModal = ({ isOpen, onClose, posts, title }: ContentGridM
           
           {/* Left Side - Large Image */}
           <div className="flex-1 relative bg-gray-100 group">
-            {selectedPost.thumbnail || selectedPost.picture || selectedPost.image || selectedPost.cover || 
+            {selectedPost && (selectedPost.thumbnail || selectedPost.picture || selectedPost.image || selectedPost.cover || 
              selectedPost.previewUrl || selectedPost.preview_url || selectedPost.thumbnailUrl || selectedPost.thumbnail_url ||
              selectedPost.imageUrl || selectedPost.image_url || selectedPost.mediaUrl || selectedPost.media_url || 
              selectedPost.coverImage || selectedPost.cover_image || selectedPost.photoUrl || selectedPost.photo_url ||
-             selectedPost.url ? (
+             selectedPost.url) ? (
               <>
                 <img
                   src={selectedPost.thumbnail || selectedPost.picture || selectedPost.image || selectedPost.cover || 
@@ -221,7 +221,7 @@ export const ContentGridModal = ({ isOpen, onClose, posts, title }: ContentGridM
         {posts.length > 1 && (
           <div className="border-t border-gray-200 p-4">
             <div className="flex space-x-2 overflow-x-auto">
-              {posts.map((post, index) => (
+                {posts.map((post: any, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedIndex(index)}

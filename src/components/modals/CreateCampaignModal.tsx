@@ -116,9 +116,9 @@ export default function CreateCampaignModal({
   const togglePlatform = (_platform: string) => {
     setFormData(prev => ({
       ...prev,
-      target_platforms: prev.target_platforms.includes(platform)
-        ? prev.target_platforms.filter(p => p !== platform)
-        : [...prev.target_platforms, platform]
+      target_platforms: prev.target_platforms.includes(_platform)
+        ? prev.target_platforms.filter(p => p !== _platform)
+        : [...prev.target_platforms, _platform]
     }))
   }
 

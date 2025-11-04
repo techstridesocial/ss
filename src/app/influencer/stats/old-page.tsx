@@ -98,18 +98,18 @@ export default function InfluencerStats() {
   }
 
   const refreshPlatform = async (_platform: string) => {
-    setRefreshingPlatform(platform)
+    setRefreshingPlatform(_platform)
     
     try {
       // Find the platform data to get the influencer platform ID
-      const platformData = statsData?.platforms?.find((p: any) => p.platform === platform)
+      const platformData = statsData?.platforms?.find((p: any) => p.platform === _platform)
       
       const response = await fetch('/api/modash/refresh-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           influencerPlatformId: platformData?.id,
-          platform: platform
+          platform: _platform
         })
       })
       
@@ -120,7 +120,7 @@ export default function InfluencerStats() {
           const statsData = await statsResponse.json()
           if (statsData.success) {
             setStatsData(statsData.data)
-            setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} data refreshed successfully!`)
+            setSuccessMessage(`✅ ${_platform.charAt(0).toUpperCase() + _platform.slice(1)} data refreshed successfully!`)
             setTimeout(() => setSuccessMessage(''), 5000)
           }
         }

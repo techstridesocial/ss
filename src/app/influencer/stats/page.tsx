@@ -196,7 +196,7 @@ export default function EnhancedInfluencerStats() {
         setSearchResults([])
         setSearchQuery('')
         setShowPlatformModal(null) // Close the platform modal
-        setSuccessMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
+        setSuccessMessage(`✅ ${profile._platform.charAt(0).toUpperCase() + profile._platform.slice(1)} profile @${profile.username} connected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       } else {
         let errorData
@@ -260,27 +260,27 @@ export default function EnhancedInfluencerStats() {
 
   const disconnectPlatform = async (_platform: string) => {
     try {
-      console.log('🗑️ Disconnecting platform:', platform)
+      console.log('🗑️ Disconnecting platform:', _platform)
 
       // Find the platform data to get the influencer platform ID
-      const platformData = statsData?.platforms?.find(p => p.platform === platform)
+      const platformData = statsData?.platforms?.find(p => p.platform === _platform)
       console.log('🔍 Platform data for disconnect:', platformData)
       console.log('🔍 All platforms data:', statsData?.platforms)
       
       if (!platformData || !platformData.is_connected) {
-        setSuccessMessage(`❌ Platform ${platform} is not connected`)
+        setSuccessMessage(`❌ Platform ${_platform} is not connected`)
         setTimeout(() => setSuccessMessage(''), 5000)
         return
       }
       
-      if (!platformData.id) {
-        setSuccessMessage(`❌ Platform ID not found for ${platform}`)
+      if (!(platformData as any).id) {
+        setSuccessMessage(`❌ Platform ID not found for ${_platform}`)
         setTimeout(() => setSuccessMessage(''), 5000)
         return
       }
 
       // Confirm before disconnecting
-      if (!confirm(`Are you sure you want to disconnect your ${platform} account? This will remove all analytics data.`)) {
+      if (!confirm(`Are you sure you want to disconnect your ${_platform} account? This will remove all analytics data.`)) {
         return
       }
 
@@ -288,13 +288,13 @@ export default function EnhancedInfluencerStats() {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accountId: platformData.id
+          accountId: (platformData as any).id
         })
       })
 
       if (response.ok) {
         await loadStats()
-        setSuccessMessage(`✅ ${platform.charAt(0).toUpperCase() + platform.slice(1)} account disconnected successfully!`)
+        setSuccessMessage(`✅ ${_platform.charAt(0).toUpperCase() + _platform.slice(1)} account disconnected successfully!`)
         setTimeout(() => setSuccessMessage(''), 5000)
       } else {
         const errorData = await response.json()
@@ -360,7 +360,7 @@ export default function EnhancedInfluencerStats() {
   }
 
   const getDefaultEngagement = (_platform: string) => {
-    switch (platform) {
+    switch (_platform) {
       case 'instagram': return 0.045 // 4.5%
       case 'tiktok': return 0.082 // 8.2%
       case 'youtube': return 0.067 // 6.7%
@@ -369,7 +369,7 @@ export default function EnhancedInfluencerStats() {
   }
 
   const getDefaultViews = (_platform: string) => {
-    switch (platform) {
+    switch (_platform) {
       case 'instagram': return 2500000 // 2.5M avg likes (from Modash API)
       case 'tiktok': return 45000000 // 45M avg views
       case 'youtube': return 12000000 // 12M avg views
@@ -383,7 +383,7 @@ export default function EnhancedInfluencerStats() {
   }
 
   const getPlatformIcon = (_platform: string) => {
-    switch (platform) {
+    switch (_platform) {
       case 'instagram':
         return (
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="url(#instagram-gradient)">
@@ -507,7 +507,7 @@ export default function EnhancedInfluencerStats() {
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-slate-900 capitalize">{platform}</h3>
-                            {isConnected && platformData.username && (
+                            {isConnected && platformData && platformData.username && (
                               <div className="flex items-center space-x-2">
                                 <p className="text-sm text-slate-500">@{platformData.username}</p>
                                 <button
@@ -521,7 +521,7 @@ export default function EnhancedInfluencerStats() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {isConnected && (
+                          {isConnected && platformData && (
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               platformData.data_source === 'cached' 
                                 ? 'bg-blue-100 text-blue-800' 
@@ -542,13 +542,13 @@ export default function EnhancedInfluencerStats() {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="text-center p-3 bg-slate-50 rounded-xl">
                               <p className="text-2xl font-bold text-slate-900">
-                                {formatNumber(platformData.followers)}
+                                {formatNumber((platformData && platformData.followers) || 0)}
                               </p>
                               <p className="text-xs text-slate-600 font-medium">Followers</p>
                             </div>
                             <div className="text-center p-3 bg-slate-50 rounded-xl">
                               <p className="text-2xl font-bold text-slate-900">
-                                {formatPercentage(platformData.engagement_rate > 0 ? platformData.engagement_rate : getDefaultEngagement(platform))}
+                                {formatPercentage((platformData && platformData.engagement_rate > 0 ? platformData.engagement_rate : getDefaultEngagement(platform)) || 0)}
                               </p>
                               <p className="text-xs text-slate-600 font-medium">Engagement</p>
                             </div>
@@ -558,10 +558,10 @@ export default function EnhancedInfluencerStats() {
                             <p className="text-2xl font-bold text-slate-900">
                               {formatNumber(
                                 platform === 'instagram' 
-                                  ? (platformData.avg_likes || 0)
+                                  ? (platformData && (platformData as any).avg_likes || 0)
                                   : platform === 'youtube'
-                                  ? (platformData.avg_views || 0)
-                                  : (platformData.avg_views || 0)
+                                  ? (platformData && (platformData as any).avg_views || 0)
+                                  : (platformData && (platformData as any).avg_views || 0)
                               )}
                             </p>
                             <p className="text-xs text-slate-600 font-medium">
@@ -572,7 +572,7 @@ export default function EnhancedInfluencerStats() {
                           
                           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                             <span className="text-xs text-slate-500">
-                              {platformData.cached_at ? `Last updated: ${new Date(platformData.cached_at).toLocaleDateString()}` : 'Data source: Live'}
+                              {platformData && platformData.cached_at ? `Last updated: ${new Date(platformData.cached_at).toLocaleDateString()}` : 'Data source: Live'}
                             </span>
                             <button
                               onClick={() => disconnectPlatform(platform)}

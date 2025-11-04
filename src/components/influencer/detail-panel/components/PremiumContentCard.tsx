@@ -5,7 +5,7 @@ import { ExternalLink } from 'lucide-react'
 interface ContentMetric {
   label: string
   value: string | number
-  color?: 'default' | 'red' | 'blue' | 'green'
+  color?: 'default' | 'red' | 'blue' | 'green' | string
 }
 
 interface PremiumContentCardProps {

@@ -25,13 +25,16 @@ export const formatPercentage = (num: number | undefined): string => {
 /**
  * Get quality badge color based on fake followers quality
  */
-export const getQualityColor = (quality: 'below_average' | 'average' | 'above_average'): string => {
+export const getQualityColor = (quality: string): string => {
   switch (quality) {
     case 'below_average':
+    case 'low':
       return 'bg-green-100 text-green-700'
     case 'average':
+    case 'medium':
       return 'bg-yellow-100 text-yellow-700'
     case 'above_average':
+    case 'high':
       return 'bg-red-100 text-red-700'
     default:
       return 'bg-gray-100 text-gray-700'
@@ -41,7 +44,7 @@ export const getQualityColor = (quality: 'below_average' | 'average' | 'above_av
 /**
  * Get quality display text
  */
-export const getQualityText = (quality: 'below_average' | 'average' | 'above_average'): string => {
+export const getQualityText = (quality: string): string => {
   return quality.replace('_', ' ')
 }
 

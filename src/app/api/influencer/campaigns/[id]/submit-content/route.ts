@@ -15,7 +15,7 @@ export async function POST(
 
     // Await params in Next.js 15
     const { id } = await params
-    const _campaignId = id
+    const campaignId = id
     const data = await request.json()
 
     // Validate required fields

@@ -23,8 +23,8 @@ export const BrandAffinitySection = ({
   const audience = influencer.audience || {}
   
   // Extract brand affinity data
-  const profileBrandAffinity = getMetricValue(influencer.brandAffinity) || []
-  const audienceBrandAffinity = getMetricValue(audience.brandAffinity, influencer.audience?.brandAffinity) || []
+  const profileBrandAffinity = getMetricValue((influencer as any).brandAffinity) || []
+  const audienceBrandAffinity = getMetricValue((audience as any).brandAffinity, (influencer.audience as any)?.brandAffinity) || []
 
   // Build brand affinity metrics
   const brandMetrics = []
@@ -114,7 +114,7 @@ export const BrandAffinitySection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={brandMetrics}
+        metrics={brandMetrics as any}
         columns={3}
       />
     </PremiumSection>

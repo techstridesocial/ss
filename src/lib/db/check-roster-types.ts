@@ -108,13 +108,13 @@ async function checkRosterTypes() {
       if (!typeGroups[pc.influencer_type]) {
         typeGroups[pc.influencer_type] = []
       }
-      if (pc.platform) {
-        typeGroups[pc.influencer_type].push(`${pc.platform}(${pc.count})`)
+      if (pc.platform && pc.influencer_type) {
+        typeGroups[pc.influencer_type]?.push(`${pc.platform}(${pc.count})`)
       }
     })
     
     Object.keys(typeGroups).forEach(type => {
-      console.log(`   ${type}: ${typeGroups[type].join(', ')}`)
+      console.log(`   ${type}: ${typeGroups[type]?.join(', ')}`)
     })
     
     // 7. Check if roster page can handle all types

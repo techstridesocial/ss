@@ -175,7 +175,7 @@ export default function InfluencerDetailPage() {
                   }
                 })()}
                 selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
-                onPlatformChange={setSelectedPlatform}
+                {... (setSelectedPlatform ? { onPlatformChange: setSelectedPlatform } : {})}
               />
             </div>
 

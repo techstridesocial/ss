@@ -28,7 +28,7 @@ export const ContentStrategySection = ({ influencer }: ContentStrategySectionPro
               <span className="font-medium text-gray-700">Relevant Hashtags</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              {hashtags.slice(0, 8).map((hashtag, index) => {
+              {hashtags.slice(0, 8).map((hashtag: any, index) => {
                 // Handle both string hashtags and Modash hashtag objects
                 const tag = typeof hashtag === 'string' ? hashtag : hashtag?.tag || ''
                 return (

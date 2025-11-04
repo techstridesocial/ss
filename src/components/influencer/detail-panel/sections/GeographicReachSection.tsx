@@ -20,12 +20,12 @@ export const GeographicReachSection = ({
     return null
   }
 
-  const audience = influencer.audience || {}
+  const audience = (influencer.audience || {}) as any
   
   // Extract geographic data
-  const geoCountries = getMetricValue(audience.geoCountries, influencer.geoCountries) || []
-  const geoStates = getMetricValue(audience.geoStates, influencer.geoStates) || []
-  const geoCities = getMetricValue(audience.geoCities, influencer.geoCities) || []
+  const geoCountries = getMetricValue(audience.geoCountries, (influencer as any).geoCountries) || []
+  const geoStates = getMetricValue(audience.geoStates, (influencer as any).geoStates) || []
+  const geoCities = getMetricValue(audience.geoCities, (influencer as any).geoCities) || []
 
   // Build geographic metrics
   const geographicMetrics = []
@@ -123,7 +123,7 @@ export const GeographicReachSection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={geographicMetrics}
+        metrics={geographicMetrics as any}
         columns={3}
       />
     </PremiumSection>

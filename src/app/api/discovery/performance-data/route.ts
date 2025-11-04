@@ -3,7 +3,7 @@ import { getPerformanceData } from '../../../../lib/services/modash'
 
 export async function GET(_request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(_request.url)
     const url = searchParams.get('url')
     const platform = searchParams.get('platform') || 'instagram'
 
@@ -22,30 +22,30 @@ export async function GET(_request: Request) {
       result: typeof result,
       hasResult: !!result,
       keys: result ? Object.keys(result) : 'none',
-      hasError: !!result?.error,
-      postsTotal: result?.posts?.total,
-      reelsTotal: result?.reels?.total
+      hasError: !!(result as any)?.error,
+      postsTotal: (result as any)?.posts?.total,
+      reelsTotal: (result as any)?.reels?.total
     })
 
     // Modash API returns { error, posts, reels } directly
-    if (result?.error) {
+    if ((result as any)?.error) {
       return NextResponse.json(
-        { success: false, error: result.error || 'Failed to fetch performance data' },
+        { success: false, error: (result as any).error || 'Failed to fetch performance data' },
         { status: 500 }
       )
     }
 
     console.log('✅ Performance Data API success:', {
-      postsTotal: result?.posts?.total,
-      reelsTotal: result?.reels?.total,
-      hasData: !!(result?.posts || result?.reels)
+      postsTotal: (result as any)?.posts?.total,
+      reelsTotal: (result as any)?.reels?.total,
+      hasData: !!((result as any)?.posts || (result as any)?.reels)
     })
 
     return NextResponse.json({
       success: true,
       data: {
-        posts: result?.posts,
-        reels: result?.reels
+        posts: (result as any)?.posts,
+        reels: (result as any)?.reels
       }
     })
 
@@ -60,7 +60,7 @@ export async function GET(_request: Request) {
 
 export async function POST(_request: Request) {
   try {
-    const { url, platform = 'instagram' } = await request.json()
+    const { url, platform = 'instagram' } = await _request.json()
 
     if (!url) {
       return NextResponse.json(
@@ -74,9 +74,9 @@ export async function POST(_request: Request) {
     const result = await getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', url, 3)
 
     // Modash API returns { error, posts, reels } directly
-    if (result?.error) {
+    if ((result as any)?.error) {
       return NextResponse.json(
-        { success: false, error: result.error || 'Failed to fetch performance data' },
+        { success: false, error: (result as any).error || 'Failed to fetch performance data' },
         { status: 500 }
       )
     }
@@ -84,8 +84,8 @@ export async function POST(_request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        posts: result?.posts,
-        reels: result?.reels
+        posts: (result as any)?.posts,
+        reels: (result as any)?.reels
       }
     })
 

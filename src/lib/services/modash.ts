@@ -165,7 +165,7 @@ export function detectPlatformFromUrl(url: string): 'instagram' | 'tiktok' | 'yo
 // Helper function to extract shortcode from Instagram URL (supports both posts and reels)
 function extractShortcodeFromUrl(url: string): string | null {
   const match = url.match(/instagram\.com\/(?:p|reel)\/([A-Za-z0-9_-]+)/)
-  return match ? match[1] : null
+  return match ? (match[1] || null) : null
 }
 
 // Hashtags based on content (platform-aware)

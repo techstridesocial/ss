@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { query } from '@/lib/db/connection'
 import { 
   getPaymentInfo, 
   getPaymentSummary, 
@@ -130,7 +131,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await _request.json()
     const { payment_method, payment_details } = body
 
     if (!payment_method || !payment_details) {

@@ -21,12 +21,12 @@ export async function GET(request: NextRequest) {
     
     console.log('📊 TikTok RAW API Response:', {
       hasData: !!result,
-      hasError: !!result?.error
+      hasError: !!(result as any)?.error
     })
 
-    if (result?.error) {
+    if ((result as any)?.error) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: (result as any).error },
         { status: 500 }
       )
     }

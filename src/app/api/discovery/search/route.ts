@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           const users = res.users || []
           return users.map((u: any) => ({ ...u, platform }))
         })
-        const _result = { users: combinedUsers }
+        const result = { users: combinedUsers }
         
         if (!result.users || result.users.length === 0) {
           console.error('❌ List Users API failed or returned no results, falling back to Search Influencers API:', {
@@ -638,20 +638,20 @@ function mergeCreatorResults(platformResults: any[]): MergedCreator[] {
       // Handle Modash's nested profile structure
       const _profile = influencer.profile || influencer
       
-      const creatorKey = normalizeCreatorName(profile.fullname || profile.display_name || profile.username || influencer.username)
+      const creatorKey = normalizeCreatorName(_profile.fullname || _profile.display_name || _profile.username || influencer.username)
       
       if (!creatorMap.has(creatorKey)) {
         // Create new merged creator
         creatorMap.set(creatorKey, {
           creatorId: creatorKey,
-          displayName: profile.fullname || profile.display_name || profile.username || influencer.username,
+          displayName: _profile.fullname || _profile.display_name || _profile.username || influencer.username,
           platforms: {},
           totalFollowers: 0,
           averageEngagement: 0,
           verified: false,
-          location: profile.location || influencer.location || 'Unknown',
-          bio: profile.bio || influencer.bio || '',
-          profilePicture: profile.picture || profile.profile_picture || '',
+          location: _profile.location || influencer.location || 'Unknown',
+          bio: _profile.bio || influencer.bio || '',
+          profilePicture: _profile.picture || _profile.profile_picture || '',
           score: influencer.score || 0
         })
       }
@@ -661,26 +661,26 @@ function mergeCreatorResults(platformResults: any[]): MergedCreator[] {
       // Add platform-specific data
       creator.platforms[platform as keyof typeof creator.platforms] = {
         userId: influencer.userId,
-        username: profile.username || influencer.username,
-        followers: profile.followers || influencer.followers,
-        engagement_rate: profile.engagementRate || influencer.engagement_rate,
-        profile_picture: profile.picture || profile.profile_picture,
-        url: profile.url || influencer.url,
-        verified: profile.isVerified || profile.verified || influencer.verified,
-        bio: profile.bio || influencer.bio
+        username: _profile.username || influencer.username,
+        followers: _profile.followers || influencer.followers,
+        engagement_rate: _profile.engagementRate || influencer.engagement_rate,
+        profile_picture: _profile.picture || _profile.profile_picture,
+        url: _profile.url || influencer.url,
+        verified: _profile.isVerified || _profile.verified || influencer.verified,
+        bio: _profile.bio || influencer.bio
       }
       
       // Update aggregated data
-      creator.totalFollowers += profile.followers || influencer.followers || 0
-      creator.verified = creator.verified || profile.isVerified || profile.verified || influencer.verified
+      creator.totalFollowers += _profile.followers || influencer.followers || 0
+      creator.verified = creator.verified || _profile.isVerified || _profile.verified || influencer.verified
       
       // Use the best profile picture and bio
-      const influencerPicture = profile.picture || profile.profile_picture
+      const influencerPicture = _profile.picture || _profile.profile_picture
       if (influencerPicture && !creator.profilePicture) {
         creator.profilePicture = influencerPicture
       }
-      if ((profile.bio || influencer.bio) && !creator.bio) {
-        creator.bio = profile.bio || influencer.bio
+      if ((_profile.bio || influencer.bio) && !creator.bio) {
+        creator.bio = _profile.bio || influencer.bio
       }
       
       // Calculate average engagement

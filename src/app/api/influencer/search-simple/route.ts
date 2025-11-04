@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Extract results from the API response
-    const results = response?.users || response?.data || response || []
+    const results = (response as any)?.users || (response as any)?.data || response || []
 
     if (!results || !Array.isArray(results) || results.length === 0) {
       return NextResponse.json({

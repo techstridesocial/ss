@@ -22,7 +22,6 @@ export function YouTubePaidOrganicSection({ influencer }: YouTubePaidOrganicSect
     return (
       <CollapsibleSection
         title="Sponsored vs Organic Performance"
-        icon={<DollarSign className="h-4 w-4" />}
         defaultOpen={false}
       >
         <div className="p-4 text-center text-gray-500">
@@ -41,7 +40,6 @@ export function YouTubePaidOrganicSection({ influencer }: YouTubePaidOrganicSect
   return (
     <CollapsibleSection
       title="Sponsored vs Organic Performance"
-      icon={<DollarSign className="h-4 w-4" />}
       defaultOpen={true}
     >
       <div className="space-y-4 p-4">

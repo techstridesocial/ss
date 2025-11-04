@@ -571,7 +571,7 @@ export default function StaffFinancePage() {
               setShowInvoiceModal(false)
               setSelectedInvoice(null)
             }}
-            invoice={selectedInvoice}
+            invoice={selectedInvoice as any}
             onStatusUpdate={handleStatusUpdate}
           />
 

@@ -220,9 +220,9 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                   <div className="flex space-x-1">
                     {[
                       { value: 'all', label: 'All', count: filteredInvitations.length },
-                      { value: 'invited', label: 'Invited', count: filteredInvitations.filter(i => i.status === 'invited').length },
+                      { value: 'pending', label: 'Pending', count: filteredInvitations.filter(i => i.status === 'pending').length },
                       { value: 'accepted', label: 'Accepted', count: filteredInvitations.filter(i => i.status === 'accepted').length },
-                      { value: 'declined', label: 'Declined', count: filteredInvitations.filter(i => i.status === 'declined').length }
+                      { value: 'revoked', label: 'Revoked', count: filteredInvitations.filter(i => i.status === 'revoked').length }
                     ].map((filterOption) => (
                       <button
                         key={filterOption.value}

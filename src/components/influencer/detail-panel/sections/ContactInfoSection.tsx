@@ -73,7 +73,7 @@ export const ContactInfoSection = ({ contacts }: ContactInfoSectionProps) => {
               key={index}
               icon={getContactIcon(contact.type)}
               label={contact.type.charAt(0).toUpperCase() + contact.type.slice(1)}
-              value={formatContactValue(contact)}
+              value={formatContactValue(contact) as any}
             />
           ))
         ) : (

@@ -72,6 +72,7 @@ export const HistoricalGrowthSection = ({ influencer }: HistoricalGrowthSectionP
                   {(() => {
                     const latest = statHistory[statHistory.length - 1]
                     const previous = statHistory[statHistory.length - 2]
+                    if (!latest || !previous) return null
                     const followerGrowth = ((latest.followers - previous.followers) / previous.followers * 100)
                     const likesGrowth = ((latest.avgLikes - previous.avgLikes) / previous.avgLikes * 100)
                     

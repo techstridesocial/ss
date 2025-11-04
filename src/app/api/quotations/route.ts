@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       timeline: data.timeline || '',
       deliverables: data.deliverables || [],
       platforms: data.platforms || [],
-      status: 'pending' as const,
+      status: 'PENDING_REVIEW' as const,
       submittedAt: new Date(),
       reviewedAt: undefined,
       reviewedBy: undefined,

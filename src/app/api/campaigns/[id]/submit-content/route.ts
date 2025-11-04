@@ -38,7 +38,7 @@ export async function POST(
 
     // Await params in Next.js 15
     const { id } = await params
-    const _campaignId = id
+    const campaignId = id
     const submissionData: ContentSubmission = await request.json()
 
     // Validate required fields
@@ -168,8 +168,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await params in Next.js 15
+    const { id } = await params
+    const campaignId = id
     const userRole = await getCurrentUserRole()
-    const _campaignId = params.id
 
     // Staff/Admin can see all submissions for the campaign
     if (userRole && ['STAFF', 'ADMIN'].includes(userRole)) {

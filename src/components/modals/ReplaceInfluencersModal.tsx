@@ -215,7 +215,7 @@ export default function ReplaceInfluencersModal({
   }
 
   const getPlatformIcon = (_platform: string) => {
-    switch (platform) {
+    switch (_platform) {
       case 'INSTAGRAM': return <Instagram size={14} className="text-pink-500" />
       case 'YOUTUBE': return <Youtube size={14} className="text-red-500" />
       case 'TIKTOK': return <Hash size={14} className="text-black" />

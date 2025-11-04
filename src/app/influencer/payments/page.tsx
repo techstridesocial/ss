@@ -261,16 +261,19 @@ export default function InfluencerPayments() {
     
     // Reset form
     setBankDetails({
+      accountType: '',
       accountHolderName: '',
       accountNumber: '',
       routingNumber: '',
+      abaCode: '',
       bankName: '',
       swiftCode: '',
       iban: '',
       address: '',
       city: '',
       country: '',
-      currency: 'GBP'
+      currency: 'GBP',
+      vatRegistered: ''
     })
         
         // Refresh payment data
@@ -306,16 +309,19 @@ export default function InfluencerPayments() {
     // Reset forms
     setPaypalDetails({ email: '', firstName: '', lastName: '' })
     setBankDetails({
+      accountType: '',
       accountHolderName: '',
       accountNumber: '',
       routingNumber: '',
+      abaCode: '',
       bankName: '',
       swiftCode: '',
       iban: '',
       address: '',
       city: '',
       country: '',
-      currency: 'GBP'
+      currency: 'GBP',
+      vatRegistered: ''
     })
   }
 

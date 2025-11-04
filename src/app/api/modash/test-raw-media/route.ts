@@ -22,14 +22,14 @@ export async function GET(request: NextRequest) {
     const result = await getMediaInfo(url)
     
     console.log('📊 RAW API Response:', {
-      hasItems: !!result?.items,
-      itemsCount: result?.items?.length || 0,
-      hasError: !!result?.error
+      hasItems: !!(result as any)?.items,
+      itemsCount: (result as any)?.items?.length || 0,
+      hasError: !!(result as any)?.error
     })
 
-    if (result?.error) {
+    if ((result as any)?.error) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: (result as any).error },
         { status: 500 }
       )
     }

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get current user to check if they have staff/admin permissions
-    const currentUser = await (await clerkClient()).users.getUser(userId)
+    const currentUser = await (await _clerkClient()).users.getUser(userId)
     const userRole = currentUser.publicMetadata?.role as string
     
     // Only allow staff and admin users to fetch staff members
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch all users with staff or admin roles
-    const staffUsers = await (await clerkClient()).users.getUserList({
+    const staffUsers = await (await _clerkClient()).users.getUserList({
       limit: 100,
       // Note: Clerk doesn't support filtering by metadata in the API call
       // so we'll need to filter after fetching

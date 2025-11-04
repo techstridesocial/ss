@@ -3,7 +3,8 @@
  * Runs tiered updates based on influencer tiers and priority scores
  */
 
-import { modashService, tierUtils } from '../services/modash'
+import { modashService } from '../services/modash'
+// import { tierUtils } from '../services/modash'
 import { getInfluencers } from '../db/queries/influencers'
 import { InfluencerTier } from '../../types/database'
 

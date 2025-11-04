@@ -62,7 +62,7 @@ export async function POST(_request: NextRequest) {
         // Fetch fresh analytics from Modash
         const freshProfileData = await getProfileReport(modashUserId, platform)
         
-        if (!freshProfileData?.profile) {
+        if (!(freshProfileData as any)?.profile) {
           throw new Error(`No profile data returned for ${influencer.display_name}`)
         }
 
@@ -71,7 +71,7 @@ export async function POST(_request: NextRequest) {
           ...existingNotes,
           modash_data: {
             ...existingNotes.modash_data,
-            ...freshProfileData, // Fresh complete analytics
+            ...(freshProfileData as any), // Fresh complete analytics
             last_refreshed: new Date().toISOString(),
             refreshed_by: userId,
             bulk_refresh: true

@@ -127,8 +127,8 @@ async function processContentLink(url: string): Promise<ContentAnalytics | null>
     
     console.log(`🔍 [ANALYTICS DEBUG] Modash API response for ${url}:`, JSON.stringify(mediaInfo, null, 2))
     
-    if (!mediaInfo || mediaInfo.error) {
-      console.error(`❌ Modash API error for ${url}:`, mediaInfo?.error)
+    if (!mediaInfo || (mediaInfo as any).error) {
+      console.error(`❌ Modash API error for ${url}:`, (mediaInfo as any)?.error)
       return null
     }
 
@@ -315,7 +315,7 @@ function extractTikTokAnalytics(mediaInfo: any, url: string): ContentAnalytics |
         likes: analytics.likes,
         comments: analytics.comments,
         shares: analytics.shares,
-        engagement_rate: analytics.engagement_rate,
+        engagement_rate: (analytics as any).engagement_rate,
         url: analytics.url
       })
     }

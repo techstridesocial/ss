@@ -166,7 +166,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
             avg_views: 0,
             is_connected: false,
             status: 'not_connected',
-            data_source: 'none'
+            data_source: undefined
           }
         }
       })

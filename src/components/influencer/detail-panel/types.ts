@@ -183,6 +183,8 @@ export interface InfluencerData {
       weight: number
       code: string
     }>
+    geoCities?: Array<any>
+    geoStates?: Array<any>
     languages?: Array<{
       language: string
       percentage: number
@@ -214,6 +216,14 @@ export interface InfluencerData {
       followers: number
       engagements: number
     }>
+    ethnicities?: Array<any>
+    audienceReachability?: any
+    audienceTypes?: Array<any>
+    brandAffinity?: Array<any>
+    credibility?: number
+    fake_followers_percentage?: number
+    // Catch-all for other audience fields
+    [key: string]: any
   }
   engagement?: {
     avg_likes?: number
@@ -401,6 +411,9 @@ export interface InfluencerData {
       total: number
       median?: boolean
     }>
+    credibilityDistribution?: Array<any>
+    // Catch-all for other audienceExtra fields
+    [key: string]: any
   }
   audience_ethnicities?: Array<any>
   audience_reachability?: Array<any>
@@ -412,7 +425,31 @@ export interface InfluencerData {
   creator_interests?: Array<any>
   creator_brand_affinity?: Array<any>
   lookalikes?: Array<any>
-
+  
+  // Additional Modash API fields that were missing
+  hashtags?: Array<{ tag: string; weight: number }> | string[]
+  genders?: Array<{ code: string; weight: number }>
+  ages?: Array<{ code: string; weight: number }>
+  ethnicities?: Array<any>
+  geoStates?: Array<any>
+  geoCountries?: Array<any>
+  geoCities?: Array<any>
+  languages?: Array<{ code: string; name: string; weight: number }>
+  audienceReachability?: any
+  audienceTypes?: Array<any>
+  brandAffinity?: Array<any>
+  credibility?: number
+  notable?: number
+  notableUsers?: Array<any>
+  audienceLikers?: any
+  audienceLookalikes?: Array<any>
+  stats?: any
+  fullname?: string
+  recent_posts?: Array<any>
+  stats_by_content_type?: any
+  
+  // Catch-all for any other Modash fields we haven't explicitly typed
+  [key: string]: any
 }
 
 export interface InfluencerDetailPanelProps {
@@ -433,7 +470,7 @@ export interface MetricRowProps {
   value: string | number
   secondaryValue?: string
   trend?: number
-  quality?: 'below_average' | 'average' | 'above_average'
+  quality?: 'below_average' | 'average' | 'above_average' | 'low' | 'medium' | 'high' | string
 }
 
 export interface CollapsibleSectionProps {

@@ -542,11 +542,11 @@ export async function createCampaignFromQuotation(quotationId: string): Promise<
     await query(`
       INSERT INTO campaign_influencers (campaign_id, influencer_id, status, rate)
       VALUES ($1, $2, 'INVITED', $3)
-    `, [campaignId, quotationInfluencer.influencerId, quotationInfluencer.proposedRate]);
+    `, [_campaignId, quotationInfluencer.influencerId, quotationInfluencer.proposedRate]);
   }
 
   // Update quotation status
   await updateQuotation(quotationId, { status: 'EXPIRED' });
 
-  return campaignId;
+  return _campaignId;
 } 

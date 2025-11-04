@@ -29,7 +29,7 @@ const extendedCache = new Map<string, { data: any, timestamp: number }>()
  */
 export async function POST(_request: Request) {
   try {
-    const { userId, platform, sections } = await request.json()
+    const { userId, platform, sections } = await _request.json()
 
     if (!userId) {
       return NextResponse.json(
@@ -59,21 +59,21 @@ export async function POST(_request: Request) {
     // Single API call to get profile report with all needed data
     const profileReport = await getProfileReport(userId, platform)
     
-    if (!profileReport?.profile) {
+    if (!(profileReport as any)?.profile) {
       throw new Error('No profile data returned from Modash')
     }
     
-    const _profile = profileReport.profile?.profile || {}
-    const audience = profileReport.profile?.audience || {}
+    const _profile = (profileReport as any).profile?.profile || {}
+    const audience = (profileReport as any).profile?.audience || {}
     
     console.log('✅ OPTIMIZED: Extracting data from profile report instead of multiple API calls')
     
     // Extract requested sections from the profile report
-    requestedSections.forEach(section => {
+    requestedSections.forEach((section: string) => {
       switch (section) {
         case 'hashtags':
           // Extract hashtags directly from profile report
-          const hashtags = profileReport.profile?.hashtags || []
+          const hashtags = (profileReport as any).profile?.hashtags || []
           extendedData.hashtags = {
             value: hashtags,
             confidence: hashtags.length > 0 ? 'high' : 'low',
@@ -84,8 +84,8 @@ export async function POST(_request: Request) {
           
         case 'partnerships':
           // Extract sponsored posts directly from profile report (OPTIMIZED!)
-          const sponsoredPosts = profileReport.profile?.sponsoredPosts || []
-          const brandAffinity = profileReport.profile?.brandAffinity || []
+          const sponsoredPosts = (profileReport as any).profile?.sponsoredPosts || []
+          const brandAffinity = (profileReport as any).profile?.brandAffinity || []
           
           // Transform sponsored posts into partnership format
           const partnerships = sponsoredPosts.map((post: any) => ({
@@ -103,18 +103,18 @@ export async function POST(_request: Request) {
             performance_metrics: {
               engagement_rate: post.engagement_rate || 0,
               reach: post.reach || 0,
-              performance_vs_organic: post.performance_ratio || profileReport.profile?.paidPostPerformance || 0
+              performance_vs_organic: post.performance_ratio || (profileReport as any).profile?.paidPostPerformance || 0
             }
           }))
           
           // Add aggregate performance metrics
           const aggregateMetrics = {
             total_sponsored_posts: sponsoredPosts.length,
-            paid_post_performance: profileReport.profile?.paidPostPerformance || 0,
-            sponsored_posts_median_views: profileReport.profile?.sponsoredPostsMedianViews || 0,
-            sponsored_posts_median_likes: profileReport.profile?.sponsoredPostsMedianLikes || 0,
-            non_sponsored_posts_median_views: profileReport.profile?.nonSponsoredPostsMedianViews || 0,
-            non_sponsored_posts_median_likes: profileReport.profile?.nonSponsoredPostsMedianLikes || 0,
+            paid_post_performance: (profileReport as any).profile?.paidPostPerformance || 0,
+            sponsored_posts_median_views: (profileReport as any).profile?.sponsoredPostsMedianViews || 0,
+            sponsored_posts_median_likes: (profileReport as any).profile?.sponsoredPostsMedianLikes || 0,
+            non_sponsored_posts_median_views: (profileReport as any).profile?.nonSponsoredPostsMedianViews || 0,
+            non_sponsored_posts_median_likes: (profileReport as any).profile?.nonSponsoredPostsMedianLikes || 0,
             brand_affinity: brandAffinity
           }
           
@@ -130,7 +130,7 @@ export async function POST(_request: Request) {
           
         case 'mentions':
           // Extract brand mentions directly from profile report
-          const mentions = profileReport.profile?.mentions || []
+          const mentions = (profileReport as any).profile?.mentions || []
           extendedData.mentions = {
             value: mentions,
             confidence: mentions.length > 0 ? 'high' : 'medium',

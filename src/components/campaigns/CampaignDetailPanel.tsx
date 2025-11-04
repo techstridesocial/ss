@@ -401,7 +401,7 @@ export default function CampaignDetailPanel({
   const getPlatformIcon = (_platform: string): React.JSX.Element => {
     const iconProps = { className: "w-5 h-5" }
     
-    switch(platform) {
+    switch(_platform) {
       case 'instagram':
         return (
           <svg {...iconProps} viewBox="0 0 24 24" fill="url(#instagram-gradient)">
@@ -466,7 +466,7 @@ export default function CampaignDetailPanel({
       facebook: 'Facebook',
       unknown: 'Other'
     }
-    return names[platform as keyof typeof names] || 'Other'
+    return names[_platform as keyof typeof names] || 'Other'
   }
 
   const groupLinksByPlatform = (contentLinks: string[]) => {
@@ -1583,8 +1583,8 @@ export default function CampaignDetailPanel({
                             </h4>
                             <div className="flex flex-wrap gap-2">
                               {campaign.target_platforms?.map((_platform: string) => (
-                                <span key={platform} className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-                                  {platform}
+                                <span key={_platform} className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                                  {_platform}
                                 </span>
                               ))}
                             </div>
@@ -2028,23 +2028,6 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Heart size={14} className="text-red-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {console.log(`📊 [ANALYTICS TABLE DEBUG] Total Engagements for ${influencer.display_name}:`, {
-                                          campaignInfluencer: campaignInfluencer,
-                                          totalEngagements: campaignInfluencer.totalEngagements,
-                                          totalEngagementsType: typeof campaignInfluencer.totalEngagements,
-                                          influencer: influencer,
-                                          influencer_total_engagements: influencer.total_engagements,
-                                          contentLinks: campaignInfluencer.contentLinks,
-                                          contentLinksLength: campaignInfluencer.contentLinks?.length,
-                                          platform: campaignInfluencer.contentLinks?.map(link => {
-                                            if (link.includes('tiktok.com')) return 'TikTok';
-                                            if (link.includes('instagram.com')) return 'Instagram';
-                                            if (link.includes('youtube.com')) return 'YouTube';
-                                            return 'Unknown';
-                                          }),
-                                          analyticsUpdatedAt: campaignInfluencer.analyticsUpdatedAt,
-                                          hasAnalytics: !!(campaignInfluencer.totalEngagements || campaignInfluencer.totalViews || campaignInfluencer.totalLikes)
-                                        })}
                                         {campaignInfluencer.totalEngagements ? formatNumber(campaignInfluencer.totalEngagements) : '0'}
                                       </span>
                                     </div>
@@ -2055,13 +2038,6 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Heart size={14} className="text-red-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {console.log(`📊 [ANALYTICS TABLE DEBUG] Avg ER% for ${influencer.display_name}:`, {
-                                          avgEngagementRate: campaignInfluencer.avgEngagementRate,
-                                          avgEngagementRateType: typeof campaignInfluencer.avgEngagementRate,
-                                          totalEngagements: campaignInfluencer.totalEngagements,
-                                          totalViews: campaignInfluencer.totalViews,
-                                          calculatedER: campaignInfluencer.totalViews > 0 ? ((campaignInfluencer.totalEngagements || 0) / campaignInfluencer.totalViews * 100).toFixed(2) : '0'
-                                        })}
                                         {campaignInfluencer.avgEngagementRate ? `${campaignInfluencer.avgEngagementRate.toFixed(2)}%` : '0%'}
                                       </span>
                                     </div>
@@ -2072,12 +2048,6 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Users size={14} className="text-blue-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {console.log(`📊 [ANALYTICS TABLE DEBUG] Est. Reach for ${influencer.display_name}:`, {
-                                          estimatedReach: campaignInfluencer.estimatedReach,
-                                          estimatedReachType: typeof campaignInfluencer.estimatedReach,
-                                          totalViews: campaignInfluencer.totalViews,
-                                          isSameAsViews: campaignInfluencer.estimatedReach === campaignInfluencer.totalViews
-                                        })}
                                         {campaignInfluencer.estimatedReach ? formatNumber(campaignInfluencer.estimatedReach) : '0'}
                                       </span>
                                     </div>
@@ -2088,13 +2058,6 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Heart size={14} className="text-red-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {console.log(`📊 [ANALYTICS TABLE DEBUG] Total Likes for ${influencer.display_name}:`, {
-                                          totalLikes: campaignInfluencer.totalLikes,
-                                          totalLikesType: typeof campaignInfluencer.totalLikes,
-                                          contentLinks: campaignInfluencer.contentLinks,
-                                          hasTikTok: campaignInfluencer.contentLinks?.some(link => link.includes('tiktok.com')),
-                                          hasInstagram: campaignInfluencer.contentLinks?.some(link => link.includes('instagram.com'))
-                                        })}
                                         {campaignInfluencer.totalLikes ? formatNumber(campaignInfluencer.totalLikes) : '0'}
                                       </span>
                                     </div>
@@ -2105,15 +2068,6 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <MessageCircle size={14} className="text-green-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {console.log(`📊 [ANALYTICS TABLE DEBUG] Total Comments for ${influencer.display_name}:`, {
-                                          totalComments: campaignInfluencer.totalComments,
-                                          totalCommentsType: typeof campaignInfluencer.totalComments,
-                                          platform: campaignInfluencer.contentLinks?.map(link => {
-                                            if (link.includes('tiktok.com')) return 'TikTok';
-                                            if (link.includes('instagram.com')) return 'Instagram';
-                                            return 'Other';
-                                          })
-                                        })}
                                         {campaignInfluencer.totalComments ? formatNumber(campaignInfluencer.totalComments) : '0'}
                                       </span>
                                     </div>
@@ -2124,14 +2078,6 @@ export default function CampaignDetailPanel({
                                     <div className="flex items-center gap-2">
                                       <Eye size={14} className="text-purple-400" />
                                       <span className="text-sm font-medium text-gray-900">
-                                        {console.log(`📊 [ANALYTICS TABLE DEBUG] Total Views for ${influencer.display_name}:`, {
-                                          totalViews: campaignInfluencer.totalViews,
-                                          totalViewsType: typeof campaignInfluencer.totalViews,
-                                          contentLinks: campaignInfluencer.contentLinks,
-                                          analyticsUpdatedAt: campaignInfluencer.analyticsUpdatedAt,
-                                          timeSinceUpdate: campaignInfluencer.analyticsUpdatedAt ? 
-                                            Math.round((Date.now() - new Date(campaignInfluencer.analyticsUpdatedAt).getTime()) / 1000 / 60) + ' minutes ago' : 'never'
-                                        })}
                                         {campaignInfluencer.totalViews ? formatNumber(campaignInfluencer.totalViews) : '0'}
                                       </span>
                                     </div>

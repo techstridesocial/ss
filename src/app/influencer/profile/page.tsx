@@ -100,20 +100,20 @@ export default function InfluencerProfile() {
               
               // Update profile form data
               setProfileData({
-                firstName: profile.first_name || '',
-                lastName: profile.last_name || '',
-                displayName: profile.display_name || '',
-                email: profile.email || '',
-                phone: profile.phone || '',
-                bio: profile.bio || '',
+                firstName: _profile.first_name || '',
+                lastName: _profile.last_name || '',
+                displayName: _profile.display_name || '',
+                email: _profile.email || '',
+                phone: _profile.phone || '',
+                bio: _profile.bio || '',
                 website: '',
-                location: profile.location_country || '',
-                niches: profile.niches || []
+                location: _profile.location_country || '',
+                niches: _profile.niches || []
               })
               
               // Update connected accounts
-              if (profile.connected_accounts) {
-                setConnectedAccounts(profile.connected_accounts.map((acc: any) => ({
+              if (_profile.connected_accounts) {
+                setConnectedAccounts(_profile.connected_accounts.map((acc: any) => ({
                   platform: acc.platform,
                   username: acc.username || '@your_handle',
                   followers: acc.followers || 0,
@@ -192,13 +192,13 @@ export default function InfluencerProfile() {
             const _profile = data.data
             setProfileData(prev => ({
               ...prev,
-              firstName: profile.first_name || prev.firstName,
-              lastName: profile.last_name || prev.lastName,
-              displayName: profile.display_name || prev.displayName,
-              bio: profile.bio || prev.bio,
-              phone: profile.phone || prev.phone,
-              location: profile.location_country || prev.location,
-              niches: profile.niches || prev.niches
+              firstName: _profile.first_name || prev.firstName,
+              lastName: _profile.last_name || prev.lastName,
+              displayName: _profile.display_name || prev.displayName,
+              bio: _profile.bio || prev.bio,
+              phone: _profile.phone || prev.phone,
+              location: _profile.location_country || prev.location,
+              niches: _profile.niches || prev.niches
             }))
           }
         }
@@ -243,7 +243,7 @@ export default function InfluencerProfile() {
   }
 
   const getPlatformIcon = (_platform: string) => {
-    switch (platform) {
+    switch (_platform) {
       case 'instagram': return <Instagram className="h-5 w-5" />
       case 'tiktok': return <Music className="h-5 w-5" />
       case 'youtube': return <Youtube className="h-5 w-5" />

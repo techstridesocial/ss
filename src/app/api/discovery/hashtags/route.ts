@@ -3,7 +3,7 @@ import { listHashtags } from '../../../../lib/services/modash'
 
 export async function GET(_request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(_request.url)
     const query = searchParams.get('query') || undefined
     const limit = parseInt(searchParams.get('limit') || '10')
     const platform = searchParams.get('platform') || 'instagram'

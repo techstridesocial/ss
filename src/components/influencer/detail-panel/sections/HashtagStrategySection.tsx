@@ -10,7 +10,7 @@ interface HashtagStrategySectionProps {
 
 export const HashtagStrategySection = ({ influencer }: HashtagStrategySectionProps) => {
   const hashtags = influencer.relevant_hashtags || []
-  const modashHashtags = influencer.hashtags || [] // From Modash API
+  const modashHashtags = (influencer as any).hashtags || [] // From Modash API
   const hasHashtags = hashtags.length > 0 || modashHashtags.length > 0
 
   if (!hasHashtags) {
@@ -53,7 +53,7 @@ export const HashtagStrategySection = ({ influencer }: HashtagStrategySectionPro
               Most Used Hashtags
             </h4>
             <div className="flex flex-wrap gap-2">
-              {topHashtags.map((hashtag, index) => {
+              {topHashtags.map((hashtag: any, index: number) => {
                 // Handle both string hashtags and Modash hashtag objects
                 const tag = typeof hashtag === 'string' ? hashtag : hashtag.tag
                 const weight = typeof hashtag === 'object' ? hashtag.weight : null

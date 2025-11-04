@@ -25,8 +25,8 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
 
   // ❌ CONDITIONAL: fake_followers_percentage may not be available in YouTube API
   const fakeFollowersPercentage = selectedPlatform !== 'youtube' ? getMetricValue(
-    influencer.fake_followers_percentage, 
-    influencer.audience?.fake_followers_percentage
+    (influencer as any).fake_followers_percentage, 
+    (influencer.audience as any)?.fake_followers_percentage
   ) : null
 
   const engagementRate = getMetricValue(
@@ -180,7 +180,6 @@ export const OverviewSection = ({ influencer, currentPlatformData, selectedPlatf
             icon={CheckCircle}
             label="Verification Status"
             value="Verified Account"
-            valueClassName="text-blue-600 font-medium"
           />
         )}
         

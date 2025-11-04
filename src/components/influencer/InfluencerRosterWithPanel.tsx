@@ -105,10 +105,10 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
   }
 
   const handlePlatformSwitch = (_platform: string) => {
-    setSelectedPlatform(platform)
+    setSelectedPlatform(_platform)
     // Update URL with new platform
     if (selectedInfluencer) {
-      updateUrl(selectedInfluencer.id, platform)
+      updateUrl(selectedInfluencer.id, _platform)
     }
   }
 
@@ -234,10 +234,10 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
 
       {/* Detail Panel */}
       <InfluencerDetailPanel
-        influencer={selectedInfluencer}
+        influencer={selectedInfluencer as any}
         isOpen={isPanelOpen}
         onClose={handlePanelClose}
-        selectedPlatform={selectedPlatform}
+        selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
         onPlatformSwitch={handlePlatformSwitch}
       />
     </div>

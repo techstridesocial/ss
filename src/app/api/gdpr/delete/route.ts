@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user data first for audit logging
-    const userData = await transaction(async (client) => {
+    const userData = await _transaction(async (client) => {
       const result = await client.query(`
         SELECT u.*, up.*
         FROM users u
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Perform the deletion in a transaction
-    await transaction(async (client) => {
+    await _transaction(async (client) => {
       // Delete in order to respect foreign key constraints
       
       // 1. Delete campaign content submissions

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const influencerId = searchParams.get('influencerId')
-    const _campaignId = searchParams.get('campaignId')
+    const campaignId = searchParams.get('campaignId')
     const quotationId = searchParams.get('quotationId')
 
     let contactRecords = await getAllContactRecords()

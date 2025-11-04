@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       
       try {
         // Get user details from Clerk
-        const client = await clerkClient()
+        const client = await _clerkClient()
         const clerkUser = await client.users.getUser(userId)
         const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
         const userRole = clerkUser.publicMetadata?.role as string || 'STAFF'

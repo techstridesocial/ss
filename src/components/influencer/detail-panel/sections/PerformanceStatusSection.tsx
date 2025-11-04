@@ -14,13 +14,13 @@ interface PerformanceStatusSectionProps {
 export const PerformanceStatusSection = ({ influencer }: PerformanceStatusSectionProps) => {
   const hasPerformanceData = influencer.raw_performance_data
   const performanceStatus = influencer.performance_data_status
-  const stats = influencer.stats || {}
+  const stats = (influencer as any).stats || {}
   
   // Debug: Check what data we have for this influencer
   console.log('🔍 Full influencer data check:', {
     influencerKeys: Object.keys(influencer),
     hasAudienceExtra: !!influencer.audienceExtra,
-    hasStats: !!influencer.stats,
+    hasStats: !!(influencer as any).stats,
     engagementRate: influencer.engagementRate,
     audienceExtraStructure: influencer.audienceExtra ? Object.keys(influencer.audienceExtra) : 'none'
   })
@@ -32,8 +32,8 @@ export const PerformanceStatusSection = ({ influencer }: PerformanceStatusSectio
   // ONLY use real API data - no fallback sample data
   const engagementDistribution = rawEngagementDistribution
   
-  const credibilityDistribution = audienceExtra.credibilityDistribution || []
-  const followersRange = audienceExtra.followersRange || {}
+  const credibilityDistribution = (audienceExtra as any).credibilityDistribution || []
+  const followersRange = (audienceExtra as any).followersRange || {}
   
   console.log('🔍 Benchmark data check:', {
     hasRawData: rawEngagementDistribution.length > 0,

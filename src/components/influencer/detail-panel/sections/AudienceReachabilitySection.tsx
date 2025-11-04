@@ -20,12 +20,12 @@ export const AudienceReachabilitySection = ({
     return null
   }
 
-  const audience = influencer.audience || {}
+  const audience = (influencer.audience || {}) as any
   
   // Extract reachability and targeting data
-  const audienceReachability = getMetricValue(audience.audienceReachability, influencer.audienceReachability)
-  const audienceTypes = getMetricValue(audience.audienceTypes, influencer.audienceTypes) || []
-  const geoCities = getMetricValue(audience.geoCities, influencer.geoCities) || []
+  const audienceReachability = getMetricValue(audience.audienceReachability, (influencer as any).audienceReachability)
+  const audienceTypes = getMetricValue(audience.audienceTypes, (influencer as any).audienceTypes) || []
+  const geoCities = getMetricValue(audience.geoCities, (influencer as any).geoCities) || []
 
   // Build reachability metrics
   const reachabilityMetrics = []
@@ -103,7 +103,7 @@ export const AudienceReachabilitySection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={reachabilityMetrics}
+        metrics={reachabilityMetrics as any}
         columns={2}
       />
     </PremiumSection>

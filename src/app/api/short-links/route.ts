@@ -175,7 +175,7 @@ export async function DELETE(_request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(_request.url)
     const linkId = searchParams.get('linkId')
 
     if (!linkId) {
@@ -221,7 +221,7 @@ export async function PUT(_request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await _request.json()
     const { linkId, title } = body
 
     if (!linkId) {

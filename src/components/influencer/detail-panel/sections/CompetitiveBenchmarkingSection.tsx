@@ -23,8 +23,8 @@ export const CompetitiveBenchmarkingSection = ({
   const audience = influencer.audience || {}
   
   // Extract competitive data
-  const lookalikes = getMetricValue(influencer.lookalikes) || []
-  const audienceLookalikes = getMetricValue(audience.audienceLookalikes, influencer.audienceLookalikes) || []
+  const lookalikes = getMetricValue((influencer as any).lookalikes) || []
+  const audienceLookalikes = getMetricValue((audience as any).audienceLookalikes, (influencer as any).audienceLookalikes) || []
 
   // Build competitive metrics
   const competitiveMetrics = []
@@ -109,7 +109,7 @@ export const CompetitiveBenchmarkingSection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={competitiveMetrics}
+        metrics={competitiveMetrics as any}
         columns={3}
       />
     </PremiumSection>

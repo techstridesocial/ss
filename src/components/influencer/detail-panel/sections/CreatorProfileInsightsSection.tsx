@@ -127,7 +127,7 @@ export const CreatorProfileInsightsSection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={profileMetrics}
+        metrics={profileMetrics as any}
         columns={3}
       />
     </PremiumSection>

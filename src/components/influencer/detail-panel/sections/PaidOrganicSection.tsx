@@ -148,7 +148,6 @@ export const PaidOrganicSection = ({ influencer }: PaidOrganicSectionProps) => {
             icon={TrendingUp}
             label="Sponsored vs Organic Ratio"
             value={`${(sponsoredData.paidPostPerformance * 100).toFixed(2)}%`}
-            valueClassName={sponsoredData.paidPostPerformance < 1 ? 'text-red-600' : 'text-green-600'}
           />
         )}
         

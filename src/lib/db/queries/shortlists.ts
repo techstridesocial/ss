@@ -274,7 +274,7 @@ export async function removeInfluencerFromShortlist(
       UPDATE shortlists SET updated_at = NOW() WHERE id = $1
     `, [shortlistId])
     
-    return result.rowCount > 0
+    return (result as any).rowCount > 0
   } catch (error) {
     console.error('Error removing influencer from shortlist:', error)
     return false

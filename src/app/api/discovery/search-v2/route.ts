@@ -15,7 +15,7 @@ export async function POST(_request: Request) {
       }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await _request.json()
     console.log('🔍 Search v2 API request:', {
       hasFilters: !!body.filter,
       page: body.page || 0,
@@ -40,10 +40,10 @@ export async function POST(_request: Request) {
       filter
     })
 
-    if (!result.success) {
-      console.error('❌ Search v2 failed:', result.error)
+    if (!(result as any).success) {
+      console.error('❌ Search v2 failed:', (result as any).error)
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: (result as any).error },
         { status: 500 }
       )
     }
@@ -72,7 +72,7 @@ export async function POST(_request: Request) {
     console.log('✅ Search v2 success:', {
       totalFound: (result as any)?.data?.total || (result as any)?.total || 0,
       resultsReturned: transformedResults.length,
-      isExactMatch: result.data?.isExactMatch
+      isExactMatch: (result as any).data?.isExactMatch
     })
 
     return NextResponse.json({
@@ -81,7 +81,7 @@ export async function POST(_request: Request) {
       pagination: {
         page,
         total: (result as any)?.data?.total || (result as any)?.total || 0,
-        hasMore: transformedResults.length >= 15 && (result.data?.total || 0) > (page + 1) * 15
+        hasMore: transformedResults.length >= 15 && ((result as any).data?.total || 0) > (page + 1) * 15
       },
       metadata: {
         isExactMatch: (result as any)?.data?.isExactMatch,

@@ -16,7 +16,6 @@ export function YouTubeShortsSection({ influencer }: YouTubeShortsSectionProps) 
     return (
       <CollapsibleSection
         title="YouTube Shorts Performance"
-        icon={<Smartphone className="h-4 w-4" />}
         defaultOpen={false}
       >
         <div className="p-4 text-center text-gray-500">
@@ -33,8 +32,7 @@ export function YouTubeShortsSection({ influencer }: YouTubeShortsSectionProps) 
   return (
     <CollapsibleSection
       title="YouTube Shorts Performance"
-      icon={<Smartphone className="h-4 w-4" />}
-      defaultOpen={hasEngagementData}
+      defaultOpen={!!hasEngagementData}
     >
       <div className="space-y-4 p-4">
         {/* Shorts Performance Overview */}

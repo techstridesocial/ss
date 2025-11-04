@@ -105,7 +105,7 @@ export async function PUT(
       )
     }
 
-    const invoiceId = params.id
+    const { id: invoiceId } = await params
     const { status, staff_notes } = await request.json()
 
     if (!status) {

@@ -196,11 +196,11 @@ export function PaymentMethodsSection({ influencer }: PaymentMethodsSectionProps
                       <>
                         <div>
                           <span className="text-gray-500">Bank:</span>
-                          <span className="ml-2 font-medium">{paymentInfo.masked_details.bankName}</span>
+                          <span className="ml-2 font-medium">{(paymentInfo as any).masked_details?.bankName}</span>
                         </div>
                         <div>
                           <span className="text-gray-500">Country:</span>
-                          <span className="ml-2 font-medium">{paymentInfo.masked_details.country}</span>
+                          <span className="ml-2 font-medium">{(paymentInfo as any).masked_details?.country}</span>
                         </div>
                       </>
                     )}

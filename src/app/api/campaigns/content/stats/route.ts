@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const _campaignId = searchParams.get('campaignId')
+    const campaignId = searchParams.get('campaignId')
 
     if (!campaignId) {
       return NextResponse.json(

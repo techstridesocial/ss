@@ -20,14 +20,14 @@ export const FollowerQualityScoreSection = ({
     return null
   }
 
-  const audience = influencer.audience || {}
+  const audience = (influencer.audience || {}) as any
   
   // Extract quality metrics
-  const credibility = getMetricValue(audience.credibility, influencer.credibility)
-  const notable = getMetricValue(audience.notable, influencer.notable)
-  const notableUsers = getMetricValue(audience.notableUsers, influencer.notableUsers) || []
-  const audienceLikers = getMetricValue(audience.audienceLikers, influencer.audienceLikers)
-  const fake_followers_percentage = getMetricValue(influencer.fake_followers_percentage)
+  const credibility = getMetricValue(audience.credibility, (influencer as any).credibility)
+  const notable = getMetricValue(audience.notable, (influencer as any).notable)
+  const notableUsers = getMetricValue(audience.notableUsers, (influencer as any).notableUsers) || []
+  const audienceLikers = getMetricValue(audience.audienceLikers, (influencer as any).audienceLikers)
+  const fake_followers_percentage = getMetricValue((influencer as any).fake_followers_percentage)
 
   // Build quality metrics
   const qualityMetrics = []
@@ -112,7 +112,7 @@ export const FollowerQualityScoreSection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={qualityMetrics}
+        metrics={qualityMetrics as any}
         columns={3}
       />
     </PremiumSection>

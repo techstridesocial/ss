@@ -23,7 +23,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const userRole = userResult[0].role
+    const userRole = userResult[0]?.role
     if (userRole !== 'STAFF' && userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
@@ -92,12 +92,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const userRole = userResult[0].role
+    const userRole = userResult[0]?.role
     if (userRole !== 'STAFF' && userRole !== 'ADMIN') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const influencerId = params.id
+    // Await params in Next.js 15
+    const { id: influencerId } = await params
 
     // Remove WhatsApp URL from influencer
     const updateResult = await query(

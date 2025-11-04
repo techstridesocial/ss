@@ -28,7 +28,7 @@ export async function GET(_request: NextRequest) {
         error: 'Database connection failed',
         authenticated: true,
         clerkId,
-        dbError: dbError.message
+        dbError: dbError instanceof Error ? dbError.message : String(dbError)
       }, { status: 500 })
     }
 
@@ -55,7 +55,7 @@ export async function GET(_request: NextRequest) {
         error: 'User lookup failed',
         authenticated: true,
         clerkId,
-        userError: userError.message
+        userError: userError instanceof Error ? userError.message : String(userError)
       }, { status: 500 })
     }
 
@@ -63,7 +63,7 @@ export async function GET(_request: NextRequest) {
     console.error('🔍 [DEBUG] Auth test error:', error)
     return NextResponse.json({ 
       error: 'Auth test failed',
-      details: error.message 
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }
 }

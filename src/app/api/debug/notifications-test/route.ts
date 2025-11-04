@@ -46,7 +46,7 @@ export async function GET(_request: NextRequest) {
         error: 'Role check failed',
         authenticated: true,
         userId,
-        roleError: roleError.message
+        roleError: roleError instanceof Error ? roleError.message : String(roleError)
       }, { status: 500 })
     }
 
@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest) {
     console.error('🔍 [DEBUG] Notifications test error:', error)
     return NextResponse.json({ 
       error: 'Notifications test failed',
-      details: error.message 
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }
 }

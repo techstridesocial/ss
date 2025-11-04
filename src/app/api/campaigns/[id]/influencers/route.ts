@@ -55,18 +55,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Debug: Log what we're returning
     console.log('📊 [API DEBUG] Returning campaign influencers:', {
       count: campaignInfluencers.length,
-      influencers: campaignInfluencers.map(inf => ({
-        id: inf.influencerId,
-        display_name: inf.influencer.display_name,
-        analytics: {
-          total_engagements: inf.influencer.total_engagements,
-          avg_engagement_rate: inf.influencer.avg_engagement_rate,
-          estimated_reach: inf.influencer.estimated_reach,
-          total_likes: inf.influencer.total_likes,
-          total_comments: inf.influencer.total_comments,
-          total_views: inf.influencer.total_views
-        }
-      }))
+      sampleInfluencer: campaignInfluencers[0] ? {
+        id: campaignInfluencers[0].influencerId,
+        display_name: campaignInfluencers[0].influencer.display_name,
+        total_followers: campaignInfluencers[0].influencer.total_followers,
+        total_engagement_rate: campaignInfluencers[0].influencer.total_engagement_rate
+      } : null
     })
 
     return NextResponse.json({
@@ -277,7 +271,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: campaignId } = params
+    // Await params in Next.js 15
+    const { id: campaignId } = await params
     const data = await request.json()
     const { action, influencerId, ...actionData } = data
 

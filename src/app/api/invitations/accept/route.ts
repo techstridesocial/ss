@@ -82,7 +82,8 @@ export async function POST(request: NextRequest) {
 
     // Create Clerk user
     try {
-      const clerkUser = await clerkClient().users.createUser({
+      const client = await _clerkClient()
+      const clerkUser = await client.users.createUser({
         emailAddress: [invitation.email],
         firstName: firstName,
         lastName: lastName,
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
              accepted_user_id = $1,
              clerk_id = $2
          WHERE clerk_invitation_id = $3`,
-        [newUser.id, clerkUser.id, token]
+        [newUser.id, clerkUser.id, invitationId]
       )
 
       return NextResponse.json({

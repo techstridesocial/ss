@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       
       try {
         // Get user details from Clerk
-        const client = await clerkClient()
+        const client = await (await _clerkClient())
         const clerkUser = await client.users.getUser(userId)
         const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
         const userRole = clerkUser.publicMetadata?.role as string || 'STAFF'
@@ -117,6 +117,10 @@ export async function POST(request: NextRequest) {
     }
 
     const savedInfluencer = savedInfluencerResult[0]
+    
+    if (!savedInfluencer) {
+      return NextResponse.json({ error: 'Saved influencer data is invalid' }, { status: 400 })
+    }
 
     // Check if already in roster by username
     const existingRosterResult = await query(

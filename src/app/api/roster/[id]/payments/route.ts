@@ -20,7 +20,8 @@ export async function GET(
       )
     }
 
-    const { id: influencerId } = params
+    // Await params in Next.js 15
+    const { id: influencerId } = await params
 
     if (!influencerId) {
       return NextResponse.json(
@@ -127,6 +128,7 @@ export async function GET(
 function maskEmail(email: string): string {
   if (!email) return ''
   const [localPart, domain] = email.split('@')
+  if (!localPart || !domain) return email
   if (localPart.length <= 2) return email
   return localPart.charAt(0) + '*'.repeat(localPart.length - 2) + localPart.charAt(localPart.length - 1) + '@' + domain
 }

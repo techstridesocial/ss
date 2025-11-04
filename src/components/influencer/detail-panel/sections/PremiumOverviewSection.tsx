@@ -45,8 +45,7 @@ export const PremiumOverviewSection = ({
 
   const credibility = getMetricValue(
     currentPlatformData?.credibility,
-    influencer.credibility,
-    influencer.audience?.credibility
+    influencer.credibility || influencer.audience?.credibility
   )
 
   // Build metrics array for grid display

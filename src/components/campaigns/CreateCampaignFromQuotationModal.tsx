@@ -81,9 +81,9 @@ export default function CreateCampaignFromQuotationModal({
       const [parent, child] = field.split('.')
       setFormData(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
+        [parent as string]: {
+          ...(prev[parent as keyof typeof prev] as any),
+          [child as string]: value
         }
       }))
     } else {

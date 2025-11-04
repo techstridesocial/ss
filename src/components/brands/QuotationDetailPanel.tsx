@@ -131,7 +131,7 @@ const InfluencerPricingCard = ({
 
   // Platform icon mapping
   const getPlatformIcon = (_platform: string) => {
-    switch (platform.toLowerCase()) {
+    switch (_platform.toLowerCase()) {
       case 'instagram':
         return (
           <div className="w-5 h-5 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-lg flex items-center justify-center">

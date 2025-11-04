@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const influencerId = searchParams.get('influencer_id')
-    const _campaignId = searchParams.get('campaign_id')
+    const campaignId = searchParams.get('campaign_id')
 
     // Build query with filters
     let whereClause = 'WHERE 1=1'

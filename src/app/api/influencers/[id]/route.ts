@@ -13,6 +13,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await params in Next.js 15
+    const { id: influencerId } = await params
+
     // Check if user is staff or admin using Clerk metadata
     console.log('🔍 Checking staff user with Clerk ID:', userId)
     const client = await clerkClient()
@@ -195,7 +198,7 @@ export async function PATCH(
 
     // Always update the timestamp
     updateFields.push('updated_at = NOW()')
-    updateValues.push(params.id)
+    updateValues.push(influencerId)
 
     if (updateFields.length === 1) { // Only timestamp update
       return NextResponse.json({ 
@@ -241,6 +244,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await params in Next.js 15
+    const { id: influencerId } = await params
+
     // Check if user is staff or admin using Clerk metadata
     const client = await clerkClient()
     const clerkUser = await client.users.getUser(userId)
@@ -249,8 +255,6 @@ export async function DELETE(
     if (!userRole || (userRole !== 'STAFF' && userRole !== 'ADMIN')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
-
-    const influencerId = params.id
 
     // Delete the influencer
     const deleteResult = await query(

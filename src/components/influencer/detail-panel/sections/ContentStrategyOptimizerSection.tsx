@@ -21,9 +21,9 @@ export const ContentStrategyOptimizerSection = ({
   }
 
   // Extract content strategy data
-  const postsCount = getMetricValue(influencer.postsCount)
-  const statsByContentType = getMetricValue(influencer.statsByContentType, influencer.stats_by_content_type)
-  const recentPosts = getMetricValue(influencer.recentPosts, influencer.recent_posts) || []
+  const postsCount = getMetricValue((influencer as any).postsCount)
+  const statsByContentType = getMetricValue((influencer as any).statsByContentType, (influencer as any).stats_by_content_type)
+  const recentPosts = getMetricValue((influencer as any).recentPosts, (influencer as any).recent_posts) || []
 
   // Build content strategy metrics
   const contentMetrics = []
@@ -46,7 +46,7 @@ export const ContentStrategyOptimizerSection = ({
         return date ? new Date(date).getTime() : null
       })
       .filter(Boolean)
-      .sort((a, b) => b - a)
+      .sort((a: any, b: any) => b - a)
 
     if (timestamps.length >= 2) {
       const intervals = []
@@ -111,7 +111,7 @@ export const ContentStrategyOptimizerSection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={contentMetrics}
+        metrics={contentMetrics as any}
         columns={2}
       />
     </PremiumSection>

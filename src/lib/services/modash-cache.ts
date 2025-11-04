@@ -58,10 +58,10 @@ export async function cacheModashProfile(
     
     // Fetch full profile data from Modash
     console.log(`📡 Calling getProfileReport with:`, { modashUserId, platform })
-    const modashData = await getProfileReport(modashUserId, platform)
+    const modashData = await getProfileReport(modashUserId, platform) as any
     console.log(`📊 Modash API response:`, modashData ? 'Data received' : 'No data')
     
-    if (!modashData?.profile) {
+    if (!(modashData as any)?.profile) {
       console.error(`❌ No profile data returned from Modash for ${modashUserId} on ${platform}`)
       console.error(`❌ Full Modash response:`, modashData)
       throw new Error('No profile data returned from Modash')
@@ -280,7 +280,7 @@ export async function getCachedOrFetchProfile(
     
     // Fetch from Modash API (L3)
     console.log(`🌐 L3 Fetching from Modash API for ${modashUserId}`)
-    const freshData = await getProfileReport(modashUserId, platform)
+    const freshData = await getProfileReport(modashUserId, platform) as any
     
     if (freshData && !freshData.error) {
       // Cache in Redis

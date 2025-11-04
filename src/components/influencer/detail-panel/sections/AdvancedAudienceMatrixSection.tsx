@@ -20,14 +20,14 @@ export const AdvancedAudienceMatrixSection = ({
     return null
   }
 
-  const audience = influencer.audience || {}
+  const audience = (influencer.audience || {}) as any
   
   // Extract demographic data (platform-aware)
-  const genders = getMetricValue(audience.genders, influencer.genders) || []
-  const ages = getMetricValue(audience.ages, influencer.ages) || []
-  const ethnicities = getMetricValue(audience.ethnicities, influencer.ethnicities) || [] // Instagram only
-  const geoStates = getMetricValue(audience.geoStates, influencer.geoStates) || [] // Instagram only
-  const languages = getMetricValue(audience.languages, influencer.languages) || [] // Both platforms
+  const genders = getMetricValue(audience.genders, (influencer as any).genders) || []
+  const ages = getMetricValue(audience.ages, (influencer as any).ages) || []
+  const ethnicities = getMetricValue(audience.ethnicities, (influencer as any).ethnicities) || [] // Instagram only
+  const geoStates = getMetricValue(audience.geoStates, (influencer as any).geoStates) || [] // Instagram only
+  const languages = getMetricValue(audience.languages, (influencer as any).languages) || [] // Both platforms
 
   // Build demographic metrics
   const demographicMetrics = []
@@ -96,7 +96,7 @@ export const AdvancedAudienceMatrixSection = ({
       defaultOpen={false}
     >
       <PremiumMetricsGrid 
-        metrics={demographicMetrics}
+        metrics={demographicMetrics as any}
         columns={2}
       />
     </PremiumSection>
