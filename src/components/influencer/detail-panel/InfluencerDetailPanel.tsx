@@ -500,6 +500,8 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   }, [])
 
   // Use React Query for API data fetching with automatic caching and retry
+  // FIXED: Disable when it's a roster influencer (we get data from useRosterInfluencerAnalytics instead)
+  // The roster hook already fetches the data correctly with username
   const { 
     data: apiData, 
     isLoading: isLoadingApiData,
@@ -508,7 +510,8 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   } = useInfluencerAnalytics({
     influencerId: influencer?.rosterId || influencer?.id,
     platform: selectedPlatform || 'instagram',
-    enabled: isOpen && !!influencer?.isRosterInfluencer
+    // Disable when it's a roster influencer - we get data from parent component instead
+    enabled: isOpen && !!influencer && !influencer.isRosterInfluencer
   })
 
   // Handle escape key and focus management
@@ -540,19 +543,37 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 
   if (!mounted || !isOpen || !influencer) return null
 
-  // Merge API data with influencer data for roster influencers (FIXED with stable dependencies)
+  // Merge API data with influencer data
+  // FIXED: Use stable references to prevent infinite re-renders
+  // For roster influencers, data is already merged by useRosterInfluencerAnalytics
+  // For discovery influencers, merge apiData here
+  // React Query provides stable object references, so using apiData directly is safe
   const enrichedInfluencer = useMemo(() => {
-    if (apiData && influencer.isRosterInfluencer) {
+    // If it's a roster influencer, data is already merged, just return as-is
+    if (influencer.isRosterInfluencer) {
+      return influencer
+    }
+    
+    // For discovery influencers, merge with apiData
+    if (apiData) {
       return {
         ...influencer,
         ...apiData,
-        // Preserve roster-specific metadata
-        isRosterInfluencer: true,
-        rosterId: influencer.rosterId
+        // Preserve metadata
+        id: influencer.id,
+        isRosterInfluencer: influencer.isRosterInfluencer
       }
     }
+    
     return influencer
-  }, [influencer?.id, apiData]) // FIXED: Only depend on influencer.id and apiData (stable)
+  }, [
+    influencer?.id, 
+    influencer?.isRosterInfluencer, 
+    influencer?.rosterId,
+    // Use apiData directly - React Query ensures stable references
+    // This ensures all apiData changes (growth_trends, content_performance, etc.) trigger recalculation
+    apiData
+  ])
 
   // Get platform-specific data if available (guard against missing platforms type)
   const platforms = enrichedInfluencer.platforms
@@ -561,6 +582,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     : null
 
   // Get platform-specific profile picture or fallback to general (PRIORITIZE apiData)
+  // FIXED: Use stable references to prevent infinite re-renders
   const pictureSrc = useMemo(() => {
     // PRIORITY 1: Fresh API data picture (from Modash)
     if (apiData?.picture) {
@@ -576,7 +598,16 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
       enrichedInfluencer.picture ||
       enrichedInfluencer.profilePicture ||
       enrichedInfluencer.profile_picture || ''
-  }, [selectedPlatform, enrichedInfluencer.id, apiData?.picture])
+  }, [
+    selectedPlatform, 
+    enrichedInfluencer?.id,
+    enrichedInfluencer?.picture,
+    enrichedInfluencer?.profilePicture,
+    enrichedInfluencer?.profile_picture,
+    enrichedInfluencer?.platforms,
+    // Use stable reference for apiData picture
+    apiData?.picture || null
+  ])
 
   // DEBUG: Log data discrepancy for Charlie
 

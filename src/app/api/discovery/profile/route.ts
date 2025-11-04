@@ -3,12 +3,46 @@ import { getProfileReport, getPerformanceData as _getPerformanceData } from '../
 
 export async function POST(_request: Request) {
   try {
-    const { userId, platform, includePerformanceData } = await _request.json()
+    const { userId, username, platform, includePerformanceData } = await _request.json()
     
-    console.log('🔍 Modash Profile Request:', { userId, platform, includePerformanceData })
+    console.log('🔍 Modash Profile Request:', { userId, username, platform, includePerformanceData })
+    
+    // If username is provided but userId is not, search for userId first
+    let actualUserId = userId
+    if (!actualUserId && username) {
+      console.log(`🔍 Looking up userId for username: ${username} on ${platform}`)
+      try {
+        const { listUsers } = await import('../../../../lib/services/modash')
+        const searchResult = await listUsers(platform as 'instagram' | 'tiktok' | 'youtube', {
+          query: username.replace('@', ''),
+          limit: 1
+        }) as any
+        
+        const users = searchResult?.users || searchResult?.data || []
+        if (users.length > 0 && users[0].id) {
+          actualUserId = users[0].id
+          console.log(`✅ Found userId: ${actualUserId} for username: ${username}`)
+        } else {
+          throw new Error(`No user found with username: ${username}`)
+        }
+      } catch (searchError) {
+        console.error('❌ Error searching for userId:', searchError)
+        return NextResponse.json({
+          success: false,
+          error: `Could not find user with username: ${username}. ${searchError instanceof Error ? searchError.message : 'Unknown error'}`
+        }, { status: 404 })
+      }
+    }
+    
+    if (!actualUserId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Either userId or username must be provided'
+      }, { status: 400 })
+    }
     
     // Get raw Modash data
-    const modashResponse = await getProfileReport(userId, platform) as any
+    const modashResponse = await getProfileReport(actualUserId, platform) as any
     
     if (!modashResponse?.profile) {
       throw new Error('No profile data returned from Modash')
@@ -70,7 +104,7 @@ export async function POST(_request: Request) {
       success: true,
       data: {
         // Core profile metrics from Modash
-        userId: userId,
+        userId: actualUserId,
         username: profile.username,
         fullname: profile.fullname,
         followers: profile.followers,
