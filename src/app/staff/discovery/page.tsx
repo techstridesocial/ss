@@ -3263,9 +3263,6 @@ function DiscoveryPageClient() {
         loading={detailLoading}
       />
       {/* 🚨 DEBUG: Log what's being passed to the panel */}
-      {detailPanelOpen && selectedPlatform === 'tiktok' && (() => {
-        return null
-      })()}
       
       {/* Toast notifications */}
       <Toaster />

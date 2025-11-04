@@ -502,16 +502,19 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   // Use React Query for API data fetching with automatic caching and retry
   // FIXED: Disable when it's a roster influencer (we get data from useRosterInfluencerAnalytics instead)
   // The roster hook already fetches the data correctly with username
+  // Get influencer ID - handle both roster and discovery influencers
+  const influencerId = influencer?.rosterId || influencer?.id || influencer?.userId
+  
   const { 
     data: apiData, 
     isLoading: isLoadingApiData,
     error: apiError,
     refetch: refetchAnalytics
   } = useInfluencerAnalytics({
-    influencerId: influencer?.rosterId || influencer?.id,
+    influencerId: influencerId,
     platform: selectedPlatform || 'instagram',
     // Disable when it's a roster influencer - we get data from parent component instead
-    enabled: isOpen && !!influencer && !influencer.isRosterInfluencer
+    enabled: isOpen && !!influencer && !!influencerId && !influencer.isRosterInfluencer
   })
 
   // Handle escape key and focus management
@@ -570,9 +573,9 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     influencer?.id, 
     influencer?.isRosterInfluencer, 
     influencer?.rosterId,
-    // Use apiData directly - React Query ensures stable references
-    // This ensures all apiData changes (growth_trends, content_performance, etc.) trigger recalculation
-    apiData
+    // Use JSON.stringify for deep comparison of apiData to prevent unnecessary recalculations
+    // but ensure we recalculate when apiData actually changes
+    apiData ? JSON.stringify(apiData) : null
   ])
 
   // Get platform-specific data if available (guard against missing platforms type)
