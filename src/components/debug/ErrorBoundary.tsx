@@ -1,6 +1,7 @@
 'use client'
 
 import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { captureException } from '@/lib/monitoring/error-tracker'
 
 interface Props {
   children: ReactNode
@@ -25,12 +26,10 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('🔍 [DEBUG] ErrorBoundary componentDidCatch:', {
-      error: error,
-      errorInfo: errorInfo,
-      errorStack: error.stack,
+    // Capture error in error tracking service
+    captureException(error, {
       componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString()
+      errorInfo: errorInfo.toString(),
     })
     
     this.setState({

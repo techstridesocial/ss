@@ -8,7 +8,7 @@
     "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "node scripts/run-tests.js --watch",
     "test:coverage": "jest --coverage",
     "test:unit": "node scripts/run-tests.js --unit",

@@ -340,7 +340,7 @@ export async function updateUserProfile(
 
     const _profile = await queryOne<UserProfile>(sql, values)
 
-    if (!profile) {
+    if (!_profile) {
       return {
         success: false,
         error: 'User profile not found'
@@ -349,7 +349,7 @@ export async function updateUserProfile(
 
     return {
       success: true,
-      data: profile,
+      data: _profile,
       message: 'Profile updated successfully'
     }
   } catch (error) {

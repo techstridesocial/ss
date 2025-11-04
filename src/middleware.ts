@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { checkRateLimit, getRateLimitConfig } from './lib/rate-limit'
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
@@ -29,12 +30,44 @@ const isPublicRoute = createRouteMatcher([
   '/api/health'
 ])
 
-// Rate limiting store (in production, use Redis)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
-
 // Rate limiting configuration
-const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100 // 100 requests per minute
+const RATE_LIMIT_CONFIG = getRateLimitConfig()
+
+// CSRF protection - allowed origins
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : []
+
+// Always allow same-origin, localhost, and all Vercel domains for development/preview
+// This includes: *.vercel.app, *.vercel.app/*, and custom domains
+const TRUSTED_ORIGINS = [
+  'localhost',
+  '127.0.0.1',
+  'vercel.app',  // Covers all *.vercel.app preview deployments
+  ...ALLOWED_ORIGINS
+]
+
+/**
+ * Check if origin is trusted
+ * Allows all Vercel deployments and custom domains from ALLOWED_ORIGINS
+ */
+function isTrustedOrigin(origin: string): boolean {
+  // Same-origin requests (no origin header) are always allowed
+  if (!origin) return true
+  
+  // Check if it's a Vercel deployment
+  if (origin.includes('vercel.app')) {
+    return true
+  }
+  
+  // Check if it's localhost
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return true
+  }
+  
+  // Check custom domains from ALLOWED_ORIGINS
+  return TRUSTED_ORIGINS.some(trusted => origin.includes(trusted))
+}
 
 // Security headers configuration
 const SECURITY_HEADERS = {
@@ -62,29 +95,6 @@ const SECURITY_HEADERS = {
   ].join('; '),
 }
 
-/**
- * Rate limiting middleware
- */
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const record = rateLimitStore.get(ip)
-
-  if (!record || now > record.resetTime) {
-    // Reset or create new record
-    rateLimitStore.set(ip, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
-    })
-    return true
-  }
-
-  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return false
-  }
-
-  record.count++
-  return true
-}
 
 /**
  * Get client IP address
@@ -110,26 +120,26 @@ export default clerkMiddleware(async (auth, request) => {
     return response
   }
 
-  // Rate limiting for API routes (disabled in production without a shared store)
-  if (process.env.NODE_ENV !== 'production') {
-    if (pathname.startsWith('/api/')) {
-      const clientIP = getClientIP(request)
-      if (!checkRateLimit(clientIP)) {
-        return new NextResponse(
-          JSON.stringify({ 
-            error: 'Rate limit exceeded',
-            retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000)
-          }),
-          {
-            status: 429,
-            headers: {
-              'Content-Type': 'application/json',
-              'Retry-After': Math.ceil(RATE_LIMIT_WINDOW / 1000).toString(),
-              ...SECURITY_HEADERS
-            }
+  // Rate limiting for API routes (enabled in production with Redis)
+  if (pathname.startsWith('/api/')) {
+    const clientIP = getClientIP(request)
+    const allowed = await checkRateLimit(clientIP)
+    
+    if (!allowed) {
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          retryAfter: Math.ceil(RATE_LIMIT_CONFIG.window / 1000)
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': Math.ceil(RATE_LIMIT_CONFIG.window / 1000).toString(),
+            ...SECURITY_HEADERS
           }
-        )
-      }
+        }
+      )
     }
   }
 
@@ -141,12 +151,28 @@ export default clerkMiddleware(async (auth, request) => {
   // CSRF protection for state-changing operations
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     const origin = request.headers.get('origin')
-    const referer = request.headers.get('referer')
     
-    // Check if request is from same origin or trusted origin
-    if (origin && !origin.includes('localhost') && !origin.includes('vercel.app')) {
-      // In production, you'd want to check against a whitelist of trusted origins
-      console.log(`Cross-origin request detected: ${origin}`)
+    // Allow requests without origin (same-origin) - these are always safe
+    if (!origin) {
+      return response
+    }
+    
+    // Check if origin is trusted
+    if (!isTrustedOrigin(origin)) {
+      // Block unauthorized cross-origin requests
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Forbidden',
+          message: 'Cross-origin request not allowed'
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+            ...SECURITY_HEADERS
+          }
+        }
+      )
     }
   }
 

@@ -7,6 +7,7 @@ import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { HeartedInfluencersProvider } from '../lib/context/HeartedInfluencersContext';
 import { QueryProvider } from '../components/providers/QueryProvider';
+import { ErrorTrackingProvider } from '../components/providers/ErrorTrackingProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,11 +45,13 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <QueryProvider>
-            <HeartedInfluencersProvider>
-              {children}
-            </HeartedInfluencersProvider>
-          </QueryProvider>
+          <ErrorTrackingProvider>
+            <QueryProvider>
+              <HeartedInfluencersProvider>
+                {children}
+              </HeartedInfluencersProvider>
+            </QueryProvider>
+          </ErrorTrackingProvider>
           {/* Google Analytics */}
           <Script
             src="https://www.googletagmanager.com/gtag/js?id=G-T68YCYENPE"

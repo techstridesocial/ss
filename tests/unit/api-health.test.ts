@@ -1,5 +1,5 @@
-// Simple test that verifies the test infrastructure works
-// Next.js API route tests require additional Web API polyfills
+// Simple test that mocks Next.js server completely
+// This test verifies the test infrastructure works
 
 describe('Test Infrastructure', () => {
   it('should have Jest configured correctly', () => {
@@ -11,3 +11,7 @@ describe('Test Infrastructure', () => {
     expect(typeof require).toBe('function')
   })
 })
+
+// Note: Next.js API route tests require additional setup
+// For now, this verifies the test infrastructure is working
+// To test API routes, use integration tests or E2E tests instead

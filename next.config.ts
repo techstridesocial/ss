@@ -7,12 +7,12 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Temporarily ignore ESLint errors during build for deployment
-    ignoreDuringBuilds: true,
+    // Enable ESLint during builds to catch errors
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // Temporarily ignore TypeScript errors during build for deployment
-    ignoreBuildErrors: true,
+    // Enable TypeScript error checking during builds
+    ignoreBuildErrors: false,
   },
   
   // Performance optimizations
