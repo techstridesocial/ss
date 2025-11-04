@@ -40,14 +40,21 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Platform parameter is required' }, { status: 400 })
     }
 
-    // Simple query: just get username for this platform
+    // Normalize platform name (convert to uppercase to match database enum)
+    const normalizedPlatform = platform.toUpperCase()
+
+    console.log(`🔍 Platform Username Lookup: influencer_id=${influencerId}, platform=${platform}, normalized=${normalizedPlatform}`)
+
+    // Query: get username for this platform (platform is stored as enum/uppercase in DB)
     const result = await query(`
-      SELECT username
+      SELECT username, platform as db_platform
       FROM influencer_platforms
       WHERE influencer_id = $1 
-        AND LOWER(platform::text) = LOWER($2)
+        AND (LOWER(platform::text) = LOWER($2) OR platform::text = $3)
       LIMIT 1
-    `, [influencerId, platform])
+    `, [influencerId, platform, normalizedPlatform])
+
+    console.log(`🔍 Query result:`, result)
 
     if (result.length === 0 || !result[0].username) {
       return NextResponse.json({ 
