@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCampaignById, updateCampaign, deleteCampaign, getCampaignInfluencers } from '@/lib/db/queries/campaigns'
 
-// RouteParams removed - params now Promise in Next.js 15
+// { params: Promise<{ id: string }> } removed - params now Promise in Next.js 15
 
 // GET - Get single campaign
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // PUT - Update campaign
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE - Delete campaign
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
     if (!userId) {
