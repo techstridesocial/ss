@@ -544,14 +544,18 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     }
   }, [isOpen, onClose])
 
-  if (!mounted || !isOpen || !influencer) return null
-
   // Merge API data with influencer data
   // FIXED: Use stable references to prevent infinite re-renders
   // For roster influencers, data is already merged by useRosterInfluencerAnalytics
   // For discovery influencers, merge apiData here
   // React Query provides stable object references, so using apiData directly is safe
+  // IMPORTANT: This hook must be called BEFORE any conditional returns
   const enrichedInfluencer = useMemo(() => {
+    // If influencer is not available, return null
+    if (!influencer) {
+      return null
+    }
+    
     // If it's a roster influencer, data is already merged, just return as-is
     if (influencer.isRosterInfluencer) {
       return influencer
@@ -570,23 +574,16 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     
     return influencer
   }, [
-    influencer?.id, 
-    influencer?.isRosterInfluencer, 
-    influencer?.rosterId,
-    // Use JSON.stringify for deep comparison of apiData to prevent unnecessary recalculations
-    // but ensure we recalculate when apiData actually changes
+    influencer, // Use full object for stable reference
     apiData ? JSON.stringify(apiData) : null
   ])
 
-  // Get platform-specific data if available (guard against missing platforms type)
-  const platforms = enrichedInfluencer.platforms
-  const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
-    ? platforms[selectedPlatform]
-    : null
-
   // Get platform-specific profile picture or fallback to general (PRIORITIZE apiData)
   // FIXED: Use stable references to prevent infinite re-renders
+  // IMPORTANT: This hook must be called BEFORE any conditional returns
   const pictureSrc = useMemo(() => {
+    if (!enrichedInfluencer) return ''
+    
     // PRIORITY 1: Fresh API data picture (from Modash)
     if (apiData?.picture) {
       return apiData.picture
@@ -603,14 +600,18 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
       enrichedInfluencer.profile_picture || ''
   }, [
     selectedPlatform, 
-    enrichedInfluencer?.id,
-    enrichedInfluencer?.picture,
-    enrichedInfluencer?.profilePicture,
-    enrichedInfluencer?.profile_picture,
-    enrichedInfluencer?.platforms,
-    // Use stable reference for apiData picture
+    enrichedInfluencer,
     apiData?.picture || null
   ])
+
+  // Early return AFTER all hooks are called
+  if (!mounted || !isOpen || !influencer || !enrichedInfluencer) return null
+
+  // Get platform-specific data if available (guard against missing platforms type)
+  const platforms = enrichedInfluencer.platforms
+  const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
+    ? platforms[selectedPlatform]
+    : null
 
   // DEBUG: Log data discrepancy for Charlie
 
