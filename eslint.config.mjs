@@ -39,7 +39,9 @@ const eslintConfig = [
       // Allow @ts-ignore
       "@typescript-eslint/ban-ts-comment": "warn",
       // Allow require imports
-      "@typescript-eslint/no-require-imports": "warn"
+      "@typescript-eslint/no-require-imports": "warn",
+      // Prevent circular dependencies (prevents "Cannot access before initialization" errors)
+      "import/no-cycle": ["error", { "maxDepth": 1 }]
     }
   }
 ];

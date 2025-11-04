@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs'
 import "./globals.css";
 import Script from 'next/script';
@@ -8,16 +7,6 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { HeartedInfluencersProvider } from '../lib/context/HeartedInfluencersContext';
 import { QueryProvider } from '../components/providers/QueryProvider';
 import { ErrorTrackingProvider } from '../components/providers/ErrorTrackingProvider';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Stride Social Dashboard",
@@ -42,9 +31,7 @@ export default function RootLayout({
       }}
     >
       <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+        <body className="antialiased font-sans">
           <ErrorTrackingProvider>
             <QueryProvider>
               <HeartedInfluencersProvider>

@@ -11,7 +11,7 @@ import { Platform, InfluencerDetailView } from '../../../types/database'
 import { StaffInfluencer, RosterFilters } from '../../../types/staff'
 import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle } from 'lucide-react'
 
-// Extracted components
+// Import from separate files to avoid circular dependency issues during bundling
 import {
   PlatformIcon,
   RosterSortableHeader,
@@ -19,17 +19,23 @@ import {
   RosterEmptyState,
   RosterLoadingSkeleton,
   RosterErrorBanner,
-  RosterFilterPanel,
+  RosterFilterPanel
+} from '../../../components/staff/roster/ui'
+
+import {
   useRosterData,
   useRosterActions,
-  useRosterInfluencerAnalytics,
+  useRosterInfluencerAnalytics
+} from '../../../components/staff/roster/hooks'
+
+import {
   transformInfluencerForDetailPanel,
   formatNumber,
   getInfluencerTier,
   checkFollowerRange,
   checkEngagementRange,
   needsAssignment
-} from '../../../components/staff/roster'
+} from '../../../components/staff/roster/utils'
 
 // Lazy load heavy modal components
 const EditInfluencerModal = dynamic(() => import('../../../components/modals/EditInfluencerModal'), {
@@ -109,6 +115,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<StaffInfluencer | null>(null)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
 
+  // Filter and search state - MUST be declared before hooks that use them
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram')
+
   // Fetch complete influencer analytics when panel opens
   const {
     data: analyticsData,
@@ -117,10 +126,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     retry: retryAnalytics
   } = useRosterInfluencerAnalytics(selectedInfluencerForAnalytics, detailPanelOpen, selectedPlatform)
 
-  // Filter and search state
+  // Additional filter and search state
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram')
   const [rosterFilters, setRosterFilters] = useState<RosterFilters>({
     niche: '',
     platform: '',
@@ -406,7 +414,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
     router.push(`${pathname}?influencer=${influencer.id}`, { scroll: false })
     setDetailPanelOpen(false)
-    setSelectedInfluencerDetail(null)
+    setSelectedInfluencerForAnalytics(null)
     setSelectedDashboardInfluencer(influencer)
     setDashboardPanelOpen(true)
     onPanelStateChange?.(true)

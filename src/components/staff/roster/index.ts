@@ -1,33 +1,21 @@
 /**
- * Roster Components Index
- * Central export point for all roster-related components
+ * ⚠️ IMPORTANT: Use direct imports from ./ui, ./hooks, ./utils, ./constants
+ * 
+ * This barrel export is provided for backward compatibility only.
+ * 
+ * To avoid circular dependency issues during Next.js bundling, prefer:
+ * - import { ... } from './ui' for UI components
+ * - import { ... } from './hooks' for hooks
+ * - import { ... } from './utils' for utilities
+ * - import { ... } from './constants' for constants
+ * 
+ * This prevents the "Cannot access before initialization" errors that occur
+ * when the module graph re-imports itself during initialization.
  */
 
-// Components
-export { PlatformIcon } from './PlatformIcon'
-export { RosterSortableHeader } from './RosterSortableHeader'
-export { RosterPagination } from './RosterPagination'
-export { RosterEmptyState } from './RosterEmptyState'
-export { RosterLoadingSkeleton } from './RosterLoadingSkeleton'
-export { RosterErrorBanner } from './RosterErrorBanner'
-export { RosterFilterPanel } from './RosterFilterPanel'
-
-// Hooks
-export { useRosterData } from './useRosterData'
-export { useRosterActions } from './useRosterActions'
-export { useRosterInfluencerAnalytics } from './useRosterInfluencerAnalytics'
-
-// Utilities
-export { transformInfluencerForDetailPanel } from './transformInfluencerData'
-export { 
-  formatNumber,
-  getPlatformBadgeColor,
-  checkFollowerRange,
-  checkEngagementRange,
-  getInfluencerTier,
-  needsAssignment
-} from './RosterHelpers'
-
-// Constants
-export { rosterFilterOptions } from './RosterFilterOptions'
+// Re-export from split files to maintain backward compatibility
+export * from './ui'
+export * from './hooks'
+export * from './utils'
+export * from './constants'
 
