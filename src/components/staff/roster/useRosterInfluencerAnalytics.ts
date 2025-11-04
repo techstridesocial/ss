@@ -40,12 +40,14 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
 
         // Step 2: If we have username, fetch Modash analytics (same as discovery)
         if (username) {
-          console.log(`🔍 Roster Analytics: Fetching Modash data for username "${username}" on ${selectedPlatform}`)
+          // Clean username: remove @ symbol and trim whitespace (same as discovery)
+          const cleanUsername = username.replace('@', '').trim()
+          console.log(`🔍 Roster Analytics: Fetching Modash data for username "${cleanUsername}" (original: "${username}") on ${selectedPlatform}`)
           const modashResponse = await fetch('/api/discovery/profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              username: username,
+              username: cleanUsername,
               platform: selectedPlatform
             })
           })
