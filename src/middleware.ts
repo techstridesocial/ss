@@ -151,9 +151,24 @@ export default clerkMiddleware(async (auth, request) => {
   // CSRF protection for state-changing operations
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     const origin = request.headers.get('origin')
+    const host = request.headers.get('host')
     
     // Allow requests without origin (same-origin) - these are always safe
     if (!origin) {
+      return response
+    }
+    
+    // Allow same-origin requests (origin matches host)
+    // Extract domain from origin (remove protocol)
+    const originDomain = origin.replace(/^https?:\/\//, '').split('/')[0]
+    const hostDomain = host?.split(':')[0] // Remove port if present
+    
+    // Normalize domains by removing 'www.' prefix for comparison
+    const normalizeDomain = (domain: string) => domain.replace(/^www\./, '')
+    const normalizedOrigin = normalizeDomain(originDomain)
+    const normalizedHost = normalizeDomain(hostDomain || '')
+    
+    if (normalizedOrigin === normalizedHost) {
       return response
     }
     
