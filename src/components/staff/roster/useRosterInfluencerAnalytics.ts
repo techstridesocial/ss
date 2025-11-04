@@ -25,7 +25,63 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
       try {
         console.log(`🔍 Roster Analytics: Fetching for influencer ${influencer.id}, platform ${selectedPlatform}`)
         
-        // Step 1: Get platform username from database (same as discovery)
+        // CRITICAL FIX: Check for stored Modash userId in notes FIRST (like discovery uses userId)
+        // This avoids username search which can fail even when userId exists
+        let modashUserId: string | null = null
+        if (influencer.notes) {
+          try {
+            const notesData = JSON.parse(influencer.notes)
+            const storedData = notesData.modash_data
+            if (storedData?.userId || storedData?.modash_user_id) {
+              modashUserId = storedData.userId || storedData.modash_user_id
+              console.log(`✅ Roster Analytics: Found stored Modash userId: ${modashUserId}`)
+            }
+          } catch (e) {
+            console.log(`⚠️ Roster Analytics: Could not parse notes, will use username search`)
+          }
+        }
+
+        // Step 1: If we have userId, use it directly (same as discovery - no username search needed!)
+        if (modashUserId) {
+          console.log(`🔍 Roster Analytics: Using stored userId ${modashUserId} (skipping username search)`)
+          const modashResponse = await fetch('/api/discovery/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: modashUserId,
+              platform: selectedPlatform
+            })
+          })
+
+          if (modashResponse.ok) {
+            const modashData = await modashResponse.json()
+            
+            if (modashData.success && modashData.data) {
+              console.log(`✅ Roster Analytics: Successfully fetched Modash data using userId`)
+              // Merge Modash data with roster influencer data (same structure as discovery)
+              setDetailData({
+                ...modashData.data,
+                // Preserve roster-specific fields
+                id: influencer.id,
+                display_name: influencer.display_name,
+                assigned_to: influencer.assigned_to,
+                labels: influencer.labels || [],
+                notes: influencer.notes,
+                // Mark as roster influencer
+                isRosterInfluencer: true,
+                rosterId: influencer.id,
+                hasPreservedAnalytics: true
+              })
+              return // Success - exit early
+            }
+          }
+          
+          // If userId failed, fall through to username search
+          console.log(`⚠️ Roster Analytics: userId lookup failed, falling back to username search`)
+        }
+
+        // Step 2: Fallback to username search (if no userId or userId failed)
+        console.log(`🔍 Roster Analytics: Attempting username search fallback`)
         const platformResponse = await fetch(`/api/influencers/${influencer.id}/platform-username?platform=${selectedPlatform}`)
         
         let username: string | null = null
@@ -38,7 +94,7 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
           console.error(`❌ Roster Analytics: Failed to get username:`, errorData)
         }
 
-        // Step 2: If we have username, fetch Modash analytics (same as discovery)
+        // Step 3: If we have username, fetch Modash analytics using username
         if (username) {
           // Clean username: remove @ symbol and trim whitespace (same as discovery)
           const cleanUsername = username.replace('@', '').trim()
@@ -56,7 +112,7 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
             const modashData = await modashResponse.json()
             
             if (modashData.success && modashData.data) {
-              console.log(`✅ Roster Analytics: Successfully fetched Modash data`)
+              console.log(`✅ Roster Analytics: Successfully fetched Modash data using username`)
               // Merge Modash data with roster influencer data (same structure as discovery)
               setDetailData({
                 ...modashData.data,
