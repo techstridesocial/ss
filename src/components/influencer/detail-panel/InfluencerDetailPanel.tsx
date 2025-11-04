@@ -582,7 +582,9 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   // FIXED: Use stable references to prevent infinite re-renders
   // IMPORTANT: This hook must be called BEFORE any conditional returns
   const pictureSrc = useMemo(() => {
-    if (!enrichedInfluencer) return ''
+    // Use influencer directly if enrichedInfluencer is null
+    const source = enrichedInfluencer || influencer
+    if (!source) return ''
     
     // PRIORITY 1: Fresh API data picture (from Modash)
     if (apiData?.picture) {
@@ -590,17 +592,18 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     }
     
     // PRIORITY 2: Platform-specific picture from connected accounts
-    const platformData = selectedPlatform ? enrichedInfluencer.platforms?.[selectedPlatform] : null
+    const platformData = selectedPlatform ? source.platforms?.[selectedPlatform] : null
     const platformProfilePicture = platformData?.profile_picture || platformData?.profilePicture
     
     // PRIORITY 3: General influencer picture fallbacks
     return platformProfilePicture ||
-      enrichedInfluencer.picture ||
-      enrichedInfluencer.profilePicture ||
-      enrichedInfluencer.profile_picture || ''
+      source.picture ||
+      source.profilePicture ||
+      source.profile_picture || ''
   }, [
     selectedPlatform, 
     enrichedInfluencer,
+    influencer,
     apiData?.picture || null
   ])
 
