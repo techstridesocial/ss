@@ -13,17 +13,33 @@ export async function POST(_request: Request) {
       console.log(`🔍 Looking up userId for username: ${username} on ${platform}`)
       try {
         const { listUsers } = await import('../../../../lib/services/modash')
-        const searchResult = await listUsers(platform as 'instagram' | 'tiktok' | 'youtube', {
-          query: username.replace('@', ''),
-          limit: 1
+        
+        // Clean username: remove @ and any whitespace
+        const cleanUsername = username.replace('@', '').trim()
+        
+        // Try exact search first
+        let searchResult = await listUsers(platform as 'instagram' | 'tiktok' | 'youtube', {
+          query: cleanUsername,
+          limit: 10 // Increase limit to find exact match in results
         }) as any
         
-        const users = searchResult?.users || searchResult?.data || []
-        if (users.length > 0 && users[0].id) {
+        let users = searchResult?.users || searchResult?.data || []
+        
+        // Look for exact match (case-insensitive)
+        const exactMatch = users.find((user: any) => 
+          user.username?.toLowerCase() === cleanUsername.toLowerCase()
+        )
+        
+        if (exactMatch?.id) {
+          actualUserId = exactMatch.id
+          console.log(`✅ Found exact match userId: ${actualUserId} for username: ${username}`)
+        } else if (users.length > 0 && users[0].id) {
+          // If no exact match, use first result (might be close match)
           actualUserId = users[0].id
-          console.log(`✅ Found userId: ${actualUserId} for username: ${username}`)
+          console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for username: ${username}`)
+          console.log(`   Available usernames: ${users.map((u: any) => u.username).join(', ')}`)
         } else {
-          throw new Error(`No user found with username: ${username}`)
+          throw new Error(`No user found with username: ${username}. Searched for: ${cleanUsername}`)
         }
       } catch (searchError) {
         console.error('❌ Error searching for userId:', searchError)
