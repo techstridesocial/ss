@@ -62,7 +62,6 @@ export const PremiumContentCard = ({
             src={imageUrl}
             alt={title || 'Content preview'}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            crossOrigin="anonymous"
             referrerPolicy="no-referrer-when-downgrade"
             loading="lazy"
             onError={() => {
