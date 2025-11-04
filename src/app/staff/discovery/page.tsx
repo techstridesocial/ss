@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import MinMaxSelector from '../../../components/filters/MinMaxSelector'
@@ -2187,20 +2187,9 @@ function DiscoveryPageClient() {
   
   // Current filters state
   const [currentFilters, setCurrentFilters] = useState<any>({})
-  
 
-  
-  // Auto-search when platform changes (only if there are existing results or search query)
-  useEffect(() => {
-    // Only trigger auto-search if we have existing search results or a search query
-    if ((searchResults.length > 0 || searchQuery.trim()) && !isSearching) {
-      handleSearch()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPlatform])
-  
-  // Enhanced search function with full API integration
-  const handleSearch = async () => {
+  // Enhanced search function with full API integration - wrapped in useCallback to fix React hooks error
+  const handleSearch = useCallback(async () => {
     setIsSearching(true)
     setSearchError(null)
     setApiWarning(null)
@@ -2385,10 +2374,16 @@ function DiscoveryPageClient() {
           throw new Error(result.error || 'Advanced search failed')
         }
       } else {
-        // Legacy API format
+        // Legacy API format - handle both array and object formats
         if (result.success && result.data) {
-          searchResults = result.data.results || []
-          creditsUsed = result.data.creditsUsed || 0
+          // Check if data is an array (List Users API) or object with results (Search API)
+          if (Array.isArray(result.data)) {
+            searchResults = result.data
+            creditsUsed = result.creditsUsed || 0
+          } else {
+            searchResults = result.data.results || []
+            creditsUsed = result.data.creditsUsed || 0
+          }
           
           // Check if using mock data
           if (result.warning) {
@@ -2433,7 +2428,15 @@ function DiscoveryPageClient() {
     } finally {
       setIsSearching(false)
     }
-  }
+  }, [selectedPlatform, searchQuery, currentFilters, isSearching])
+  
+  // Auto-search when platform changes (only if there are existing results or search query)
+  useEffect(() => {
+    // Only trigger auto-search if we have existing search results or a search query
+    if ((searchResults.length > 0 || searchQuery.trim()) && !isSearching) {
+      handleSearch()
+    }
+  }, [selectedPlatform, handleSearch, searchResults.length, searchQuery, isSearching])
   
   // Credits are now managed by CreditCardComponent hooks
 
