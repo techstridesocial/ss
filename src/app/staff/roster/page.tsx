@@ -22,6 +22,7 @@ import {
   RosterFilterPanel,
   useRosterData,
   useRosterActions,
+  useRosterInfluencerAnalytics,
   transformInfluencerForDetailPanel,
   formatNumber,
   getInfluencerTier,
@@ -103,10 +104,18 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedInfluencer, setSelectedInfluencer] = useState<StaffInfluencer | null>(null)
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
-  const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
+  const [selectedInfluencerForAnalytics, setSelectedInfluencerForAnalytics] = useState<StaffInfluencer | null>(null)
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<StaffInfluencer | null>(null)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
+
+  // Fetch complete influencer analytics when panel opens
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+    retry: retryAnalytics
+  } = useRosterInfluencerAnalytics(selectedInfluencerForAnalytics, detailPanelOpen, selectedPlatform)
 
   // Filter and search state
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
@@ -135,60 +144,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     key: null,
     direction: 'asc'
   })
-
-  // Memoized influencer for detail panel
-  const memoizedInfluencer = useMemo(() => {
-    if (!selectedInfluencerDetail) return null
-    
-    try {
-      const platforms = selectedInfluencerDetail.platforms?.reduce((acc: any, platform: any) => {
-        if (platform.is_connected) {
-          acc[platform.platform.toLowerCase()] = {
-            followers: platform.followers,
-            engagement_rate: platform.engagement_rate,
-            avgViews: platform.avg_views,
-            username: platform.username
-          }
-        }
-        return acc
-      }, {}) || {}
-
-      return {
-        id: selectedInfluencerDetail.id,
-        username: selectedInfluencerDetail.display_name,
-        displayName: selectedInfluencerDetail.display_name,
-        name: selectedInfluencerDetail.display_name,
-        handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-        picture: selectedInfluencerDetail.avatar_url || undefined,
-        profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-        platforms,
-        isRosterInfluencer: true,
-        rosterId: selectedInfluencerDetail.id,
-        hasPreservedAnalytics: false,
-        followers: selectedInfluencerDetail.total_followers || 0,
-        engagement_rate: selectedInfluencerDetail.total_engagement_rate || 0,
-        engagementRate: selectedInfluencerDetail.total_engagement_rate || 0,
-        avgViews: selectedInfluencerDetail.total_avg_views || 0,
-      }
-    } catch {
-      return {
-        id: selectedInfluencerDetail.id,
-        displayName: selectedInfluencerDetail.display_name,
-        name: selectedInfluencerDetail.display_name,
-        handle: (selectedInfluencerDetail.display_name || 'creator').toLowerCase().replace(/\s+/g, ''),
-        picture: selectedInfluencerDetail.avatar_url || undefined,
-        profilePicture: selectedInfluencerDetail.avatar_url || undefined,
-        platforms: {},
-        isRosterInfluencer: true,
-        rosterId: selectedInfluencerDetail.id,
-        hasPreservedAnalytics: false,
-        followers: 0,
-        engagement_rate: 0,
-        engagementRate: 0,
-        avgViews: 0,
-      }
-    }
-  }, [selectedInfluencerDetail])
 
   // URL state management
   const updateUrl = (influencerId: string | null, platform?: string) => {
@@ -442,9 +397,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Panel handlers
   const handleViewInfluencer = (influencer: StaffInfluencer) => {
-    // Use centralized helper to transform data
-    const detailedData: any = transformInfluencerForDetailPanel(influencer)
-    setSelectedInfluencerDetail(detailedData)
+    // Set the influencer to fetch analytics for
+    setSelectedInfluencerForAnalytics(influencer)
     setDetailPanelOpen(true)
     onPanelStateChange?.(true)
   }
@@ -461,7 +415,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handleClosePanels = () => {
     router.replace(pathname, { scroll: false })
     setDetailPanelOpen(false)
-    setSelectedInfluencerDetail(null)
+    setSelectedInfluencerForAnalytics(null)
     setSelectedInfluencer(null)
     setDashboardPanelOpen(false)
     setSelectedDashboardInfluencer(null)
@@ -470,8 +424,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
-    if (selectedInfluencerDetail?.id) {
-      updateUrl(selectedInfluencerDetail.id, platform)
+    if (selectedInfluencerForAnalytics?.id) {
+      updateUrl(selectedInfluencerForAnalytics.id, platform)
     }
   }
 
@@ -558,19 +512,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const onSaveManagement = async (data: any) => {
-    if (!selectedInfluencerDetail) return
+    if (!selectedInfluencerForAnalytics) return
     
     try {
-      await handleSaveManagement(selectedInfluencerDetail.id, data)
+      await handleSaveManagement(selectedInfluencerForAnalytics.id, data)
       
-      if (selectedInfluencerDetail) {
-        setSelectedInfluencerDetail({
-          ...selectedInfluencerDetail,
-          assigned_to: data.assigned_to || null,
-          labels: data.labels || [],
-          notes: data.notes || null
-        })
-      }
+      // Refresh the analytics data to show updated management info
+      retryAnalytics()
     } catch (error) {
       alert(`❌ Error saving management data: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -1015,18 +963,63 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </div>
       )}
 
-      {/* Side Panels */}
-      {selectedInfluencerDetail && memoizedInfluencer && (
+      {/* Analytics Panel */}
+      {analyticsData && (
         <div>
           <ErrorBoundary>
             <InfluencerDetailPanel
               isOpen={detailPanelOpen}
-              onClose={() => setDetailPanelOpen(false)}
-              influencer={memoizedInfluencer}
+              onClose={() => {
+                setDetailPanelOpen(false)
+                setSelectedInfluencerForAnalytics(null)
+              }}
+              influencer={analyticsData}
               selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
               onPlatformSwitch={handlePlatformSwitch}
+              loading={analyticsLoading}
             />
           </ErrorBoundary>
+        </div>
+      )}
+      
+      {/* Show loading state while fetching analytics */}
+      {detailPanelOpen && analyticsLoading && !analyticsData && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-sm font-medium text-gray-700">Loading analytics...</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Show error state if analytics fetch failed */}
+      {detailPanelOpen && analyticsError && !analyticsData && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md">
+            <div className="flex flex-col items-center space-y-4 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Failed to Load Analytics</h3>
+              <p className="text-sm text-gray-600">{analyticsError}</p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setDetailPanelOpen(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => retryAnalytics()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
