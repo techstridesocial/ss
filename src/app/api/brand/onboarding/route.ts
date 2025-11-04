@@ -33,7 +33,7 @@ interface OnboardingRequest {
   stride_contact_phone?: string
 }
 
-export async function POST(request: _NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {

@@ -6,7 +6,7 @@ import { getBrandQuotations, createQuotationRequest } from '@/lib/db/queries/quo
 import { notifyQuoteSubmitted } from '@/lib/services/notifications'
 
 // GET - Fetch all quotations for the brand
-export async function GET(_request: _NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
@@ -54,7 +54,7 @@ export async function GET(_request: _NextRequest) {
 }
 
 // POST - Create a new quotation request
-export async function POST(_request: _NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     
