@@ -270,6 +270,8 @@ const PanelHeader = ({
                       } ring-opacity-80` 
                     : 'ring-1 ring-gray-200'
                 }`}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer-when-downgrade"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
                 }}

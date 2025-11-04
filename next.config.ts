@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'imgigp.modash.io',
+      },
+      {
+        protocol: 'https',
         hostname: 'ui-avatars.com',
       },
       {
@@ -50,6 +54,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'scontent.cdninstagram.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fna.fbcdn.net',
       },
     ],
     formats: ['image/avif', 'image/webp'],

@@ -83,7 +83,7 @@ const SECURITY_HEADERS = {
     "script-src-elem 'self' 'unsafe-inline' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://www.googletagmanager.com https://va.vercel-scripts.com https://vercel.live https://www.google-analytics.com https://challenges.cloudflare.com https://*.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "img-src 'self' data: https: blob:",
+    "img-src 'self' data: https: blob: https://*.modash.io https://*.cdninstagram.com https://*.fna.fbcdn.net",
     "connect-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://api.clerk.dev https://clerk-telemetry.com https://api.modash.io https://www.google-analytics.com https://va.vercel-scripts.com https://vercel.live https://analytics.google.com https://challenges.cloudflare.com https://*.cloudflare.com",
     "frame-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://challenges.cloudflare.com https://*.cloudflare.com",
     "worker-src 'self' blob:",
