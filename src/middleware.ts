@@ -160,15 +160,15 @@ export default clerkMiddleware(async (auth, request) => {
     
     // Allow same-origin requests (origin matches host)
     // Extract domain from origin (remove protocol)
-    const originDomain = origin.replace(/^https?:\/\//, '').split('/')[0]
-    const hostDomain = host?.split(':')[0] // Remove port if present
+    const originDomain = origin.replace(/^https?:\/\//, '').split('/')[0] || ''
+    const hostDomain = host?.split(':')[0] || '' // Remove port if present
     
     // Normalize domains by removing 'www.' prefix for comparison
     const normalizeDomain = (domain: string) => domain.replace(/^www\./, '')
     const normalizedOrigin = normalizeDomain(originDomain)
-    const normalizedHost = normalizeDomain(hostDomain || '')
+    const normalizedHost = normalizeDomain(hostDomain)
     
-    if (normalizedOrigin === normalizedHost) {
+    if (normalizedOrigin === normalizedHost && normalizedOrigin !== '') {
       return response
     }
     
