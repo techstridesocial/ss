@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getUserInfo } from '@/lib/services/modash'
 
 // GET - Test Raw API with a sample Instagram post

@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, queryOne } from '@/lib/db/connection'
@@ -6,7 +6,7 @@ import { query, queryOne } from '@/lib/db/connection'
 // GET - Get specific invoice details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -22,7 +22,9 @@ export async function GET(
       )
     }
 
-    const invoiceId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const invoiceId = id
 
     // Get invoice with all related data
     const invoice = await queryOne(`
@@ -87,7 +89,7 @@ export async function GET(
 // PUT - Update invoice status
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()

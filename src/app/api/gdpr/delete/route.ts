@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { transaction as _transaction } from '@/lib/db/connection'
 import { logAuditEvent } from '@/lib/db/queries/audit'

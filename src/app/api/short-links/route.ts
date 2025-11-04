@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db/connection'
 
 export async function POST(req: NextRequest) {

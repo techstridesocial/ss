@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { updateExpiredProfiles, getCacheStats } from '@/lib/services/modash-cache'
 
 // POST - Manually trigger cache updates (for admin/scheduler)

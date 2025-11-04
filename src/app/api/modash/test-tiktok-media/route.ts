@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getTikTokMediaInfo } from '@/lib/services/modash'
 
 // GET /api/modash/test-tiktok-media - Test TikTok RAW API media info endpoint

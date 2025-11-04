@@ -1,10 +1,10 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '../../../../lib/db/connection'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -12,7 +12,9 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const influencerId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const influencerId = id
     if (!influencerId) {
       return NextResponse.json({ success: false, error: 'Influencer ID is required' }, { status: 400 })
     }

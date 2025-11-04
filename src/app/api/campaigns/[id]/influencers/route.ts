@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { addInfluencerToCampaign, updateCampaignInfluencerStatus } from '@/lib/db/queries/campaigns'
@@ -15,11 +15,7 @@ import {
 
 // No mock data - using real database queries
 
-interface RouteParams {
-  params: {
-    id: string
-  }
-}
+// RouteParams removed - params now Promise in Next.js 15
 
 // GET - Get campaign influencers with enhanced details
 export async function GET(request: NextRequest, { params }: RouteParams) {

@@ -1,10 +1,10 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { updateAllInfluencerAnalytics } from '@/lib/services/analytics-updater'
 
 // POST /api/analytics/update-all - Update analytics for all influencers
-export async function POST(_request: _NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { userId } = await auth()
     

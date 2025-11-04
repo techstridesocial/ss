@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { queryOne as _queryOne } from '@/lib/db/connection'
@@ -9,7 +9,7 @@ import React from 'react'
 // GET - Generate PDF for invoice
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -25,7 +25,9 @@ export async function GET(
       )
     }
 
-    const invoiceId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const invoiceId = id
 
     // Get invoice details
     const invoice = await queryOne(`

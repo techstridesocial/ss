@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { addDiscoveredInfluencerToRoster, getDiscoveredInfluencers, addDiscoveredInfluencerToRosterWithCompleteData } from '../../../../lib/db/queries/discovery'
 import { getProfileReport } from '../../../../lib/services/modash'

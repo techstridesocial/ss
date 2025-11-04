@@ -1,13 +1,16 @@
 import { SignUp } from '@clerk/nextjs'
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
-  searchParams: { role?: string }
+  searchParams: Promise<{ role?: string }>
 }) {
+  // Await searchParams in Next.js 15
+  const params = await searchParams
+  
   // Determine redirect URLs based on role
   const getAfterSignUpUrl = () => {
-    const role = searchParams.role
+    const role = params.role
     switch (role) {
       case 'brand':
         return '/brand/onboarding'
@@ -21,7 +24,7 @@ export default function Page({
   }
 
   const getAfterSignInUrl = () => {
-    const role = searchParams.role
+    const role = params.role
     switch (role) {
       case 'brand':
         return '/brand/influencers'
@@ -36,7 +39,7 @@ export default function Page({
 
   // Get background style based on role
   const getBackgroundStyle = () => {
-    const role = searchParams.role
+    const role = params.role
     switch (role) {
       case 'brand':
         return {
@@ -68,7 +71,7 @@ export default function Page({
 
   // Get text colors based on role
   const getTextColors = () => {
-    const role = searchParams.role
+    const role = params.role
     switch (role) {
       case 'brand':
         return {

@@ -1,11 +1,11 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getDatabase } from '@/lib/db/connection'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { influencerId: string } }
+  { params }: { params: Promise<{ influencerId: string }> }
 ) {
   try {
     // Authenticate
@@ -20,7 +20,8 @@ export async function GET(
       )
     }
 
-    const { influencerId } = params
+    // Await params in Next.js 15
+    const { influencerId } = await params
 
     if (!influencerId) {
       return NextResponse.json(

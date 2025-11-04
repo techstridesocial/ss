@@ -1,11 +1,11 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getBrandIdFromUserId, getBrandCampaignDetail, getBrandCampaignAnalytics } from '@/lib/db/queries/brand-campaigns'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -20,7 +20,9 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden - Brand access required' }, { status: 403 })
     }
 
-    const _campaignId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const campaignId = id
     
     // Get brand ID for this user
     let brandId: string

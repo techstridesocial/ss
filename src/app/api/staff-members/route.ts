@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   try {

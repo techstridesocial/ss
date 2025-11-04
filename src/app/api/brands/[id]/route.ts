@@ -6,7 +6,7 @@ import { getBrandById, updateBrand } from '../../../../lib/db/queries/brands'
 // GET - Fetch brand by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -21,7 +21,9 @@ export async function GET(
       }, { status: 403 })
     }
 
-    const brandId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const brandId = id
     const brand = await getBrandById(brandId)
 
     if (!brand) {
@@ -45,7 +47,7 @@ export async function GET(
 // PATCH - Update brand
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -60,7 +62,9 @@ export async function PATCH(
       }, { status: 403 })
     }
 
-    const brandId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const brandId = id
     const body = await request.json()
     
     // Update brand

@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { 
@@ -12,7 +12,7 @@ import {
 // GET - Get all content submissions for a campaign with analytics
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -20,8 +20,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await params in Next.js 15
+    const { id } = await params
+    const campaignId = id
     const userRole = await getCurrentUserRole()
-    const _campaignId = params.id
     const { searchParams } = new URL(request.url)
     const includeStats = searchParams.get('stats') === 'true'
     const includeQualityScores = searchParams.get('quality') === 'true'
@@ -99,7 +101,7 @@ export async function GET(
 // PATCH - Update content submission status (approve/reject/request revision)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -115,7 +117,9 @@ export async function PATCH(
       )
     }
 
-    const _campaignId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const campaignId = id
     const { submissionId, status, reviewNotes } = await request.json()
 
     if (!submissionId || !status) {

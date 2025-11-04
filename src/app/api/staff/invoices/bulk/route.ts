@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDatabase } from '@/lib/db/connection'
 
 export async function PUT(request: NextRequest) {

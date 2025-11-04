@@ -9,7 +9,7 @@ import { query } from '@/lib/db/connection'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -27,7 +27,9 @@ export async function GET(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const influencerId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const influencerId = id
 
     // Fetch complete influencer data with platforms
     const result = await query(`

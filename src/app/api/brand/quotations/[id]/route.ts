@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { getBrandIdFromUserId } from '@/lib/db/queries/brand-campaigns'
@@ -8,7 +8,7 @@ import { query } from '@/lib/db/connection'
 // PATCH - Update quotation status (approve/reject)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -31,7 +31,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
     }
 
-    const quotationId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const quotationId = id
     const data = await request.json()
 
     // Verify quotation belongs to this brand

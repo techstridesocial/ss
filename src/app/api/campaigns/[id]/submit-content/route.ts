@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, queryOne } from '@/lib/db/connection'
@@ -20,7 +20,7 @@ interface ContentSubmission {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -36,7 +36,9 @@ export async function POST(
       )
     }
 
-    const _campaignId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const _campaignId = id
     const submissionData: ContentSubmission = await request.json()
 
     // Validate required fields
@@ -158,7 +160,7 @@ export async function POST(
 // GET - Get content submissions for a campaign
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()

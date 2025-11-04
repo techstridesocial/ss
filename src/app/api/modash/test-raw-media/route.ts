@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getMediaInfo, detectPlatformFromUrl } from '@/lib/services/modash'
 
 // GET /api/modash/test-raw-media - Test RAW API media info endpoint (auto-detects platform)

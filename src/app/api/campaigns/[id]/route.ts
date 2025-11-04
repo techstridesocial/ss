@@ -1,12 +1,8 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCampaignById, updateCampaign, deleteCampaign, getCampaignInfluencers } from '@/lib/db/queries/campaigns'
 
-interface RouteParams {
-  params: {
-    id: string
-  }
-}
+// RouteParams removed - params now Promise in Next.js 15
 
 // GET - Get single campaign
 export async function GET(request: NextRequest, { params }: RouteParams) {

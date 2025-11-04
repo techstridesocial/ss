@@ -3,7 +3,8 @@
  * Provides sorting functionality for staff tables
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import React from 'react'
 import { SortConfig } from '@/types/staff'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 
@@ -44,12 +45,18 @@ function compareValues(a: any, b: any, key: string): number {
   if (aValue == null) return 1
   if (bValue == null) return -1
 
-  // Handle dates
+  // Handle dates - validate dates before comparing to avoid NaN
   if (aValue instanceof Date || bValue instanceof Date ||
       (typeof aValue === 'string' && typeof bValue === 'string' && 
        (aValue.match(/^\d{4}-\d{2}-\d{2}/) || bValue.match(/^\d{4}-\d{2}-\d{2}/)))) {
     const dateA = new Date(aValue).getTime()
     const dateB = new Date(bValue).getTime()
+    
+    // Validate dates - if invalid, treat as null
+    if (isNaN(dateA) && isNaN(dateB)) return 0
+    if (isNaN(dateA)) return 1
+    if (isNaN(dateB)) return -1
+    
     return dateA - dateB
   }
 
@@ -91,46 +98,52 @@ export function useStaffSorting<T>(
     })
   }, [data, sortConfig])
 
-  // Toggle sort direction or set new sort key
-  const handleSort = (key: string) => {
+  // Toggle sort direction or set new sort key - memoized to prevent unnecessary re-renders
+  const handleSort = useCallback((key: string) => {
     const newConfig: SortConfig = {
       key,
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
     }
     setSortConfig(newConfig)
     onSortChange?.(newConfig)
-  }
+  }, [sortConfig, onSortChange])
 
-  // Sortable Header Component
-  const SortableHeader: React.FC<SortableHeaderProps> = ({ 
-    children, 
-    sortKey, 
-    className = "" 
-  }) => {
-    const isActive = sortConfig.key === sortKey
-    const direction = sortConfig.direction
-    
-    return (
-      <th 
-        className={`px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100/40 transition-colors select-none ${className}`}
-        onClick={() => handleSort(sortKey)}
-      >
-        <div className="flex items-center space-x-1">
-          <span>{children}</span>
-          <div className="flex flex-col">
-            <ChevronUp 
-              size={12} 
-              className={`${isActive && direction === 'asc' ? 'text-black' : 'text-gray-300'} transition-colors`} 
-            />
-            <ChevronDown 
-              size={12} 
-              className={`${isActive && direction === 'desc' ? 'text-black' : 'text-gray-300'} transition-colors -mt-1`} 
-            />
+  // Sortable Header Component - memoized to prevent recreation on every render
+  // Create a stable component reference that only updates when sortConfig or handleSort changes
+  const SortableHeader = useMemo(() => {
+    const SortableHeaderComponent: React.FC<SortableHeaderProps> = ({ 
+      children, 
+      sortKey, 
+      className = "" 
+    }) => {
+      const isActive = sortConfig.key === sortKey
+      const direction = sortConfig.direction
+      
+      return (
+        <th 
+          className={`px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100/40 transition-colors select-none ${className}`}
+          onClick={() => handleSort(sortKey)}
+        >
+          <div className="flex items-center space-x-1">
+            <span>{children}</span>
+            <div className="flex flex-col">
+              <ChevronUp 
+                size={12} 
+                className={`${isActive && direction === 'asc' ? 'text-black' : 'text-gray-300'} transition-colors`} 
+              />
+              <ChevronDown 
+                size={12} 
+                className={`${isActive && direction === 'desc' ? 'text-black' : 'text-gray-300'} transition-colors -mt-1`} 
+              />
+            </div>
           </div>
-        </div>
-      </th>
-    )
-  }
+        </th>
+      )
+    }
+    
+    // Wrap with React.memo to prevent unnecessary re-renders
+    return React.memo(SortableHeaderComponent)
+  }, [sortConfig, handleSort])
 
   return {
     sortedData,

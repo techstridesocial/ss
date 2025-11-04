@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getUserFromClerkId as _getUserFromClerkId } from '@/lib/db/queries/users'
 
@@ -11,7 +11,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await getUserFromClerkId(clerkId)
+    const user = await _getUserFromClerkId(clerkId)
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }

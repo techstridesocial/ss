@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
@@ -6,7 +6,7 @@ import { updateInvitationStatus, getInvitationByClerkId } from '@/lib/db/queries
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authenticate and check permissions
@@ -21,7 +21,9 @@ export async function DELETE(
       )
     }
 
-    const invitationId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const invitationId = id
 
     if (!invitationId) {
       return NextResponse.json(
@@ -55,7 +57,7 @@ export async function DELETE(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authenticate and check permissions

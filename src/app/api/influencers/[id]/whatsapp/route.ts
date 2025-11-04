@@ -1,11 +1,11 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 
 // PATCH - Update WhatsApp URL for influencer
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -28,7 +28,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const influencerId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const influencerId = id
     const body = await request.json()
     const { whatsapp_url } = body
 
@@ -72,7 +74,7 @@ export async function PATCH(
 // DELETE - Remove WhatsApp URL for influencer
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()

@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getRecentAuditLogs, getAuditTrailForUser, getAuditTrailForAction } from '@/lib/db/queries/audit'
 import { getCurrentUserRole } from '@/lib/auth/roles'

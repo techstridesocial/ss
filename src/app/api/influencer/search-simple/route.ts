@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { listUsers } from '../../../../lib/services/modash'
 
 export async function POST(request: NextRequest) {

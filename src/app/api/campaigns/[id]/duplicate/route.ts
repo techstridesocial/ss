@@ -1,21 +1,20 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { duplicateCampaign } from '@/lib/db/queries/campaigns'
 
-interface RouteParams {
-  params: {
-    id: string
-  }
-}
-
 // POST - Duplicate campaign
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { userId } = await auth()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Await params in Next.js 15
+    const { id } = await params
     const { newName } = await request.json()
     
     if (!newName) {
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }, { status: 400 })
     }
 
-    const duplicatedCampaign = await duplicateCampaign(params.id, newName)
+    const duplicatedCampaign = await duplicateCampaign(id, newName)
     
     if (!duplicatedCampaign) {
       return NextResponse.json({ 

@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
 import { clerkClient as _clerkClient } from '@clerk/nextjs/server'
 

@@ -1,14 +1,11 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db/connection'
-import { requireAuth } from '@/lib/auth/roles'
+import { requireAdminAccess } from '@/lib/auth/roles'
 
 export async function POST() {
   try {
     // Require admin authentication
-    const user = await requireAuth()
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireAdminAccess()
 
     console.log('🗑️  Starting to clear all content links...')
     

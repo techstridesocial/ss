@@ -1,4 +1,4 @@
-import { NextRequest as _NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
@@ -6,7 +6,7 @@ import { query } from '@/lib/db/connection'
 // PATCH - Assign staff member to brand
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -21,7 +21,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const brandId = params.id
+    // Await params in Next.js 15
+    const { id } = await params
+    const brandId = id
     const body = await request.json()
     const { assigned_staff_id } = body
 
