@@ -1,7 +1,6 @@
 /**
  * useRosterInfluencerAnalytics Hook
- * Fetches complete influencer data from database including platforms
- * Then fetches Modash analytics
+ * SIMPLIFIED: Get platform username from database, then fetch Modash analytics directly
  */
 
 import { useState, useEffect } from 'react'
@@ -24,84 +23,71 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
       setError(null)
 
       try {
-        // Step 1: Fetch complete influencer data from our database including platforms
-        const dbResponse = await fetch(`/api/influencers/${influencer.id}/complete`)
+        // Step 1: Get platform username from database (simple query)
+        const platformResponse = await fetch(`/api/influencers/${influencer.id}/platform-username?platform=${selectedPlatform}`)
         
-        if (!dbResponse.ok) {
-          throw new Error('Failed to fetch influencer details')
+        let username: string | null = null
+        if (platformResponse.ok) {
+          const platformData = await platformResponse.json()
+          username = platformData.success ? platformData.username : null
         }
 
-        const dbData = await dbResponse.json()
-        
-        if (!dbData.success || !dbData.data) {
-          throw new Error(dbData.error || 'No influencer data returned')
-        }
-
-        const completeInfluencer = dbData.data
-
-        // Step 2: Find the platform to fetch Modash data for
-        const platformData = completeInfluencer.platforms?.find((p: any) => 
-          p.platform?.toLowerCase() === selectedPlatform.toLowerCase() && p.username
-        )
-
-        if (!platformData || !platformData.username) {
-          // No platform data, just use database data
-          setDetailData({
-            ...completeInfluencer,
-            isRosterInfluencer: true,
-            rosterId: influencer.id
-          })
-          setIsLoading(false)
-          return
-        }
-
-        // Step 3: Fetch Modash analytics using the platform username
-        const modashResponse = await fetch('/api/discovery/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: platformData.username,
-            platform: selectedPlatform
-          })
-        })
-
-        if (modashResponse.ok) {
-          const modashData = await modashResponse.json()
-          
-          if (modashData.success && modashData.data) {
-            // Merge database data with Modash data
-            setDetailData({
-              ...completeInfluencer,
-              ...modashData.data,
-              // Preserve database fields
-              id: completeInfluencer.id,
-              display_name: completeInfluencer.display_name,
-              assigned_to: completeInfluencer.assigned_to,
-              labels: completeInfluencer.labels,
-              notes: completeInfluencer.notes,
-              // Mark as roster influencer
-              isRosterInfluencer: true,
-              rosterId: influencer.id,
-              hasPreservedAnalytics: true
+        // Step 2: If we have username, fetch Modash analytics
+        if (username) {
+          const modashResponse = await fetch('/api/discovery/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: username,
+              platform: selectedPlatform
             })
+          })
+
+          if (modashResponse.ok) {
+            const modashData = await modashResponse.json()
+            
+            if (modashData.success && modashData.data) {
+              // Merge Modash data with roster influencer data we already have
+              setDetailData({
+                ...modashData.data,
+                // Preserve roster-specific fields
+                id: influencer.id,
+                display_name: influencer.display_name,
+                assigned_to: influencer.assigned_to,
+                labels: influencer.labels || [],
+                notes: influencer.notes,
+                // Mark as roster influencer
+                isRosterInfluencer: true,
+                rosterId: influencer.id,
+                hasPreservedAnalytics: true
+              })
+            } else {
+              // Modash failed, use roster data as fallback
+              setDetailData({
+                ...influencer,
+                isRosterInfluencer: true,
+                rosterId: influencer.id
+              })
+            }
           } else {
-            // Modash failed, use DB data only
+            // Modash API error, use roster data as fallback
             setDetailData({
-              ...completeInfluencer,
+              ...influencer,
               isRosterInfluencer: true,
               rosterId: influencer.id
             })
           }
         } else {
-          // Modash API error, use DB data
+          // No username found, use roster data only
           setDetailData({
-            ...completeInfluencer,
+            ...influencer,
             isRosterInfluencer: true,
             rosterId: influencer.id
           })
         }
 
       } catch (err) {
+        console.error('Error loading analytics:', err)
         setError(err instanceof Error ? err.message : 'Failed to load influencer analytics')
         setDetailData(null)
       } finally {

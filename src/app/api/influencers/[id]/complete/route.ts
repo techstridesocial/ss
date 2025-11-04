@@ -69,12 +69,12 @@ export async function GET(
               'followers', ip.followers,
               'engagement_rate', ip.engagement_rate,
               'avg_views', ip.avg_views,
-              'avg_likes', ip.avg_likes,
-              'avg_comments', ip.avg_comments,
+              'avg_likes', NULL::INTEGER, -- Column doesn't exist yet, use NULL
+              'avg_comments', NULL::INTEGER, -- Column doesn't exist yet, use NULL
               'is_connected', ip.is_connected,
-              'is_verified', ip.is_verified,
+              'is_verified', FALSE, -- Column doesn't exist yet, default to FALSE
               'profile_url', ip.profile_url,
-              'last_post_date', ip.last_post_date
+              'last_post_date', NULL::TIMESTAMP WITH TIME ZONE -- Column doesn't exist yet, use NULL
             )
           ) FILTER (WHERE ip.id IS NOT NULL),
           '[]'::json
@@ -118,8 +118,20 @@ export async function GET(
     })
 
   } catch (error) {
+    console.error('❌ Error fetching complete influencer data:', error)
+    
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch complete influencer data' },
+      { 
+        success: false,
+        error: 'Failed to fetch complete influencer data',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
+      },
       { status: 500 }
     )
   }
