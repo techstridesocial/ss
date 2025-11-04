@@ -605,10 +605,14 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   ])
 
   // Early return AFTER all hooks are called
-  if (!mounted || !isOpen || !influencer || !enrichedInfluencer) return null
+  // Only check mounted, isOpen, and influencer - enrichedInfluencer can be null initially
+  if (!mounted || !isOpen || !influencer) return null
+
+  // Ensure enrichedInfluencer is never null - default to influencer if enrichment failed
+  const finalInfluencer = enrichedInfluencer || influencer
 
   // Get platform-specific data if available (guard against missing platforms type)
-  const platforms = enrichedInfluencer.platforms
+  const platforms = finalInfluencer.platforms
   const currentPlatformData = selectedPlatform && platforms?.[selectedPlatform]
     ? platforms[selectedPlatform]
     : null
@@ -641,7 +645,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
             onClick={(e) => e.stopPropagation()}
           >
             <PanelHeader 
-              influencer={enrichedInfluencer} 
+              influencer={finalInfluencer} 
               onClose={onClose} 
               selectedPlatform={selectedPlatform}
               onPlatformSwitch={onPlatformSwitch}
@@ -675,7 +679,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   {/* Core Profile Section - Always visible */}
                   <div className="bg-gradient-to-b from-gray-50 to-white">
                     <PremiumOverviewSection 
-                      influencer={enrichedInfluencer} 
+                      influencer={finalInfluencer} 
                       currentPlatformData={currentPlatformData}
                       selectedPlatform={selectedPlatform}
                     />
@@ -683,29 +687,29 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   
                   {/* Creator Profile Information */}
                   <PremiumProfileSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Content Performance Sections */}
                   <div>
                     <PremiumContentSection
-                      influencer={enrichedInfluencer}
+                      influencer={finalInfluencer}
                       selectedPlatform={selectedPlatform}
                       contentType="popular"
                     />
                     {/* Platform-specific paid/organic analysis */}
                     {selectedPlatform === 'tiktok' ? (
                       <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
-                        <TikTokPaidOrganicSection influencer={enrichedInfluencer} />
+                        <TikTokPaidOrganicSection influencer={finalInfluencer} />
                       </PremiumSectionWrapper>
                     ) : selectedPlatform === 'youtube' ? (
                       <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
-                        <YouTubePaidOrganicSection influencer={enrichedInfluencer} />
+                        <YouTubePaidOrganicSection influencer={finalInfluencer} />
                       </PremiumSectionWrapper>
                     ) : (
                       <PremiumSectionWrapper title="Paid vs Organic Performance" defaultOpen={false}>
-                        <PaidOrganicSection influencer={enrichedInfluencer} />
+                        <PaidOrganicSection influencer={finalInfluencer} />
                       </PremiumSectionWrapper>
                     )}
                     
@@ -715,12 +719,12 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       <>
                         {/* TikTok Premium Content Sections */}
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="videos"
                         />
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="recent"
                         />
@@ -729,17 +733,17 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       <>
                         {/* YouTube Premium Content Sections */}
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="videos"
                         />
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="popular"
                         />
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="recent"
                         />
@@ -748,12 +752,12 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                       <>
                         {/* Instagram Premium Content Sections */}
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="recent"
                         />
                         <PremiumContentSection
-                          influencer={enrichedInfluencer}
+                          influencer={finalInfluencer}
                           selectedPlatform={selectedPlatform}
                           contentType="popular"
                         />
@@ -763,80 +767,80 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
                   
                   {/* Instagram-Specific Performance Metrics */}
                   <PremiumInstagramMetricsSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Creator Profile Insights - New Enhanced Section */}
                   <CreatorProfileInsightsSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Audience Intelligence Section */}
-                  <PremiumAudienceSection influencer={enrichedInfluencer} />
+                  <PremiumAudienceSection influencer={finalInfluencer} />
                   
                   {/* Advanced Audience Intelligence */}
-                  <PremiumAdvancedAudienceSection influencer={enrichedInfluencer} />
+                  <PremiumAdvancedAudienceSection influencer={finalInfluencer} />
                   
                   {/* Advanced Audience Matrix - New Enhanced Section */}
                   <AdvancedAudienceMatrixSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Follower Quality Score - New Enhanced Section */}
                   <FollowerQualityScoreSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Audience Reachability */}
                   <AudienceReachabilitySection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Geographic Reach */}
                   <GeographicReachSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Brand Partnerships & Strategy Sections */}
-                  <PremiumBrandPartnershipsSection influencer={enrichedInfluencer} />
+                  <PremiumBrandPartnershipsSection influencer={finalInfluencer} />
                   
                   {/* Brand Affinity */}
                   <BrandAffinitySection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Content Strategy Optimizer - Replaces old Content Strategy */}
                   <ContentStrategyOptimizerSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Keep existing hashtag and topics sections */}
                   <PremiumSectionWrapper title="Hashtag Strategy" defaultOpen={false}>
-                    <HashtagStrategySection influencer={enrichedInfluencer} />
+                    <HashtagStrategySection influencer={finalInfluencer} />
                   </PremiumSectionWrapper>
                   <PremiumSectionWrapper title="Content Topics" defaultOpen={false}>
-                    <ContentTopicsSection influencer={enrichedInfluencer} />
+                    <ContentTopicsSection influencer={finalInfluencer} />
                   </PremiumSectionWrapper>
                   
                   {/* Competitive Benchmarking - New Enhanced Section */}
                   <CompetitiveBenchmarkingSection 
-                    influencer={enrichedInfluencer}
+                    influencer={finalInfluencer}
                     selectedPlatform={selectedPlatform}
                   />
                   
                   {/* Analytics & Growth Sections */}
-                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="performance" />
-                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="analytics" />
-                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="growth" />
-                  <PremiumAnalyticsSection influencer={enrichedInfluencer} sectionType="insights" />
+                  <PremiumAnalyticsSection influencer={finalInfluencer} sectionType="performance" />
+                  <PremiumAnalyticsSection influencer={finalInfluencer} sectionType="analytics" />
+                  <PremiumAnalyticsSection influencer={finalInfluencer} sectionType="growth" />
+                  <PremiumAnalyticsSection influencer={finalInfluencer} sectionType="insights" />
                   
                   
 
@@ -853,17 +857,9 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     </AnimatePresence>
   )
 
-  // 🔍 [DEBUG] Portal rendering debug
-
-  if (!mounted) {
-    return null
-  }
-
-  if (!isOpen) {
-    return null
-  }
-
-  if (!influencer) {
+  // Portal rendering - always render when mounted, open, and influencer exists
+  // The panel JSX already handles the isOpen check inside AnimatePresence
+  if (!mounted || !isOpen || !influencer) {
     return null
   }
 
