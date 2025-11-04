@@ -25,7 +25,7 @@ export function useInfluencerAnalytics({
         throw new Error('No influencer ID provided')
       }
 
-      const response = await fetch('/api/modash/profile', {
+      const response = await fetch('/api/discovery/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

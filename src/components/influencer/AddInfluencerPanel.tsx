@@ -194,17 +194,17 @@ export default function AddInfluencerPanel({
       const _profile = discoveryData.profile
       setFormData({
         ...formData,
-        display_name: profile.display_name,
-        first_name: profile.display_name.split(' ')[0] || '',
-        last_name: profile.display_name.split(' ').slice(1).join(' ') || '',
-        email: profile.email || '',
-        bio: profile.bio || '',
-        location_country: profile.location_country || '',
-        location_city: profile.location_city || '',
-        niches: profile.niches_detected || [],
-        average_views: profile.average_views,
-        estimated_followers: profile.followers,
-        [selectedPlatform.toLowerCase() + '_username']: profile.username
+        display_name: _profile.display_name,
+        first_name: _profile.display_name.split(' ')[0] || '',
+        last_name: _profile.display_name.split(' ').slice(1).join(' ') || '',
+        email: _profile.email || '',
+        bio: _profile.bio || '',
+        location_country: _profile.location_country || '',
+        location_city: _profile.location_city || '',
+        niches: _profile.niches_detected || [],
+        average_views: _profile.average_views,
+        estimated_followers: _profile.followers,
+        [selectedPlatform.toLowerCase() + '_username']: _profile.username
       })
       setMode('manual')
     }
