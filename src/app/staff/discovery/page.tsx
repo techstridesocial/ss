@@ -2187,7 +2187,7 @@ function DiscoveryPageClient() {
   
   // Current filters state
   const [currentFilters, setCurrentFilters] = useState<any>({})
-
+  
   // Enhanced search function with full API integration - wrapped in useCallback to fix React hooks error
   const handleSearch = useCallback(async () => {
     setIsSearching(true)
@@ -2381,8 +2381,8 @@ function DiscoveryPageClient() {
             searchResults = result.data
             creditsUsed = result.creditsUsed || 0
           } else {
-            searchResults = result.data.results || []
-            creditsUsed = result.data.creditsUsed || 0
+          searchResults = result.data.results || []
+          creditsUsed = result.data.creditsUsed || 0
           }
           
           // Check if using mock data
@@ -2428,15 +2428,17 @@ function DiscoveryPageClient() {
     } finally {
       setIsSearching(false)
     }
-  }, [selectedPlatform, searchQuery, currentFilters, isSearching])
+  }, [selectedPlatform, searchQuery, currentFilters])
   
   // Auto-search when platform changes (only if there are existing results or search query)
   useEffect(() => {
     // Only trigger auto-search if we have existing search results or a search query
+    // Don't trigger if already searching to avoid infinite loops
     if ((searchResults.length > 0 || searchQuery.trim()) && !isSearching) {
       handleSearch()
     }
-  }, [selectedPlatform, handleSearch, searchResults.length, searchQuery, isSearching])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlatform])
   
   // Credits are now managed by CreditCardComponent hooks
 
