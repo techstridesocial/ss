@@ -230,17 +230,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const applyFilters = (influencers: StaffInfluencer[]) => {
     return influencers.filter(influencer => {
       // Tab filter
-      if (activeTab === 'ALL') {
+  if (activeTab === 'ALL') {
         if (!(influencer.influencer_type === 'SIGNED' || influencer.influencer_type === 'PARTNERED')) return false
-      } else if (activeTab === 'SIGNED') {
+  } else if (activeTab === 'SIGNED') {
         if (!(influencer.influencer_type === 'SIGNED')) return false
-      } else if (activeTab === 'PARTNERED') {
+  } else if (activeTab === 'PARTNERED') {
         if (influencer.influencer_type !== 'PARTNERED') return false
-      } else if (activeTab === 'MY_CREATORS') {
+  } else if (activeTab === 'MY_CREATORS') {
         if (!influencer.assigned_to || !currentUserId || influencer.assigned_to !== currentUserId) return false
-      } else if (activeTab === 'PENDING_ASSIGNMENT') {
+  } else if (activeTab === 'PENDING_ASSIGNMENT') {
         if (!needsAssignment(influencer)) return false
-      } else {
+  } else {
         if (influencer.influencer_type !== activeTab) return false
       }
 
@@ -388,7 +388,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       return 0
     })
   }, [filteredInfluencers, sortConfig])
-
+  
   const totalInfluencers = sortedInfluencers.length
   const totalPages = Math.ceil(totalInfluencers / pageSize)
   const startIndex = (currentPage - 1) * pageSize
@@ -399,8 +399,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handleViewInfluencer = (influencer: StaffInfluencer) => {
     // Set the influencer to fetch analytics for
     setSelectedInfluencerForAnalytics(influencer)
-    setDetailPanelOpen(true)
-    onPanelStateChange?.(true)
+      setDetailPanelOpen(true)
+      onPanelStateChange?.(true)
   }
 
   const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
@@ -426,7 +426,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setSelectedPlatform(platform)
     if (selectedInfluencerForAnalytics?.id) {
       updateUrl(selectedInfluencerForAnalytics.id, platform)
-    }
+      }
   }
 
   // CRUD handlers with extracted actions
@@ -557,7 +557,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
           }`}
         >
-          <FilterIcon size={16} />
+                                <FilterIcon size={16} />
           <span>Filters</span>
           {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
             <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
@@ -974,14 +974,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 setSelectedInfluencerForAnalytics(null)
               }}
               influencer={analyticsData}
-              selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
+          selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
               onPlatformSwitch={handlePlatformSwitch}
               loading={analyticsLoading}
-            />
+        />
           </ErrorBoundary>
         </div>
       )}
-      
+
       {/* Show loading state while fetching analytics */}
       {detailPanelOpen && analyticsLoading && !analyticsData && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
@@ -1057,5 +1057,5 @@ export default function StaffRosterPage() {
       </div>
     </StaffProtectedRoute>
   )
-}
+} 
 
