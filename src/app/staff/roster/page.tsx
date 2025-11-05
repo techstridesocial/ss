@@ -433,8 +433,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
     if (selectedInfluencerForAnalytics?.id) {
-      updateUrl(selectedInfluencerForAnalytics.id, platform)
-      }
+      // Only set platform param if it's not the default (instagram)
+      // This keeps the URL clean for the default platform
+      const platformParam = platform === 'instagram' ? undefined : platform
+      updateUrl(selectedInfluencerForAnalytics.id, platformParam)
+    }
   }
 
   // CRUD handlers with extracted actions

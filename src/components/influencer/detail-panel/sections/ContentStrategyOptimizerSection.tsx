@@ -23,7 +23,10 @@ export const ContentStrategyOptimizerSection = ({
   // Extract content strategy data
   const postsCount = getMetricValue((influencer as any).postsCount)
   const statsByContentType = getMetricValue((influencer as any).statsByContentType, (influencer as any).stats_by_content_type)
-  const recentPosts = getMetricValue((influencer as any).recentPosts, (influencer as any).recent_posts) || []
+  const recentPostsRaw = getMetricValue((influencer as any).recentPosts, (influencer as any).recent_posts)
+  
+  // Ensure recentPosts is always an array
+  const recentPosts = Array.isArray(recentPostsRaw) ? recentPostsRaw : []
 
   // Build content strategy metrics
   const contentMetrics = []
@@ -39,13 +42,13 @@ export const ContentStrategyOptimizerSection = ({
   }
 
   // Posting Frequency Analysis
-  if (recentPosts && recentPosts.length >= 5) {
+  if (Array.isArray(recentPosts) && recentPosts.length >= 5) {
     const timestamps = recentPosts
       .map((post: any) => {
         const date = post.created_time || post.timestamp || post.date
         return date ? new Date(date).getTime() : null
       })
-      .filter(Boolean)
+      .filter((ts: any) => Boolean(ts))
       .sort((a: any, b: any) => b - a)
 
     if (timestamps.length >= 2) {
