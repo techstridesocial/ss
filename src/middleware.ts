@@ -120,26 +120,47 @@ export default clerkMiddleware(async (auth, request) => {
     return response
   }
 
-  // Rate limiting for API routes (enabled in production with Redis)
+  // Rate limiting for API routes - ONLY for write operations and expensive endpoints
+  // Exclude lightweight read endpoints that are called on every page load
   if (pathname.startsWith('/api/')) {
-    const clientIP = getClientIP(request)
-    const allowed = await checkRateLimit(clientIP)
+    // List of lightweight read endpoints that should NOT be rate limited
+    // These are called frequently on page loads and are fast/cached
+    const excludedFromRateLimit = [
+      '/api/auth/current-user',
+      '/api/influencers/light',
+      '/api/notifications',
+      '/api/health',
+      '/api/webhooks',
+      '/api/modash/credits',
+      '/api/campaigns', // GET requests are cached
+    ]
     
-    if (!allowed) {
-      return new NextResponse(
-        JSON.stringify({ 
-          error: 'Rate limit exceeded',
-          retryAfter: Math.ceil(RATE_LIMIT_CONFIG.window / 1000)
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': Math.ceil(RATE_LIMIT_CONFIG.window / 1000).toString(),
-            ...SECURITY_HEADERS
+    // Check if this is a lightweight GET endpoint that should be excluded
+    const isExcluded = excludedFromRateLimit.some(path => pathname === path || pathname.startsWith(path + '/'))
+    const isGetRequest = request.method === 'GET'
+    
+    // Only rate limit write operations (POST, PUT, DELETE, PATCH) and expensive endpoints
+    if (!isExcluded || (!isGetRequest && !isExcluded)) {
+      const clientIP = getClientIP(request)
+      const allowed = await checkRateLimit(clientIP)
+      
+      if (!allowed) {
+        console.warn(`⚠️ Rate limit exceeded for ${pathname} from IP: ${clientIP}`)
+        return new NextResponse(
+          JSON.stringify({ 
+            error: 'Rate limit exceeded',
+            retryAfter: Math.ceil(RATE_LIMIT_CONFIG.window / 1000)
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': Math.ceil(RATE_LIMIT_CONFIG.window / 1000).toString(),
+              ...SECURITY_HEADERS
+            }
           }
-        }
-      )
+        )
+      }
     }
   }
 

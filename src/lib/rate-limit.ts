@@ -25,6 +25,7 @@ export async function checkRateLimit(ip: string): Promise<boolean> {
       const count = await redis.get<number>(key) || 0
       
       if (count >= RATE_LIMIT_MAX_REQUESTS) {
+        console.warn(`⚠️ Rate limit exceeded for IP ${ip}: ${count}/${RATE_LIMIT_MAX_REQUESTS} requests`)
         return false
       }
       
@@ -39,7 +40,9 @@ export async function checkRateLimit(ip: string): Promise<boolean> {
       return true
     } catch (error) {
       console.error('Redis rate limit error, falling back to memory:', error)
-      // Fall through to memory store
+      // If Redis fails, DON'T block requests - allow them through
+      // This prevents Redis issues from breaking the entire app
+      return true
     }
   }
   
