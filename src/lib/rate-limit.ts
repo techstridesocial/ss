@@ -2,9 +2,10 @@ import { redis } from './cache/redis'
 
 /**
  * Rate limiting configuration
+ * Increased limits to prevent legitimate users from hitting limits
  */
 const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100 // 100 requests per minute
+const RATE_LIMIT_MAX_REQUESTS = 300 // 300 requests per minute (was 100 - too restrictive)
 
 /**
  * In-memory rate limit store for development/fallback
