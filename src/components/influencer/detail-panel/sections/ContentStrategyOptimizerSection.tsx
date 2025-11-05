@@ -48,14 +48,18 @@ export const ContentStrategyOptimizerSection = ({
         const date = post.created_time || post.timestamp || post.date
         return date ? new Date(date).getTime() : null
       })
-      .filter((ts: any) => Boolean(ts))
-      .sort((a: any, b: any) => b - a)
+      .filter((ts: any): ts is number => ts !== null && ts !== undefined && typeof ts === 'number')
+      .sort((a: number, b: number) => b - a)
 
     if (timestamps.length >= 2) {
-      const intervals = []
+      const intervals: number[] = []
       for (let i = 0; i < timestamps.length - 1; i++) {
-        const daysDiff = (timestamps[i] - timestamps[i + 1]) / (1000 * 60 * 60 * 24)
-        intervals.push(daysDiff)
+        const current = timestamps[i]
+        const next = timestamps[i + 1]
+        if (current !== null && current !== undefined && next !== null && next !== undefined) {
+          const daysDiff = (current - next) / (1000 * 60 * 60 * 24)
+          intervals.push(daysDiff)
+        }
       }
 
       const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
