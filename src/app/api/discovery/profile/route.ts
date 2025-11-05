@@ -38,38 +38,45 @@ export async function POST(_request: Request) {
           users = searchResult?.users || searchResult?.data || []
         }
         
-        console.log(`🔍 Search results:`, {
+        console.log(`🔍 Search results (${platform}):`, {
           usersCount: users.length,
+          platform,
           firstUser: users[0] ? {
             username: users[0].username,
             userId: users[0].userId,
             id: users[0].id,
+            handle: users[0].handle,
             allKeys: Object.keys(users[0] || {})
           } : null
         })
         
         // Look for exact match (case-insensitive)
-        const exactMatch = users.find((user: any) => 
-          user.username?.toLowerCase() === cleanUsername.toLowerCase()
-        )
+        // YouTube might use 'handle' field instead of 'username'
+        const exactMatch = users.find((user: any) => {
+          const userIdentifier = user.username || user.handle || ''
+          return userIdentifier.toLowerCase() === cleanUsername.toLowerCase()
+        })
         
         // Try both userId and id fields (Modash API uses different field names)
+        // Also check for YouTube-specific field names
         const userId = exactMatch?.userId || exactMatch?.id
         if (userId) {
           actualUserId = userId
-          console.log(`✅ Found exact match userId: ${actualUserId} for username: ${username}`)
+          const matchedIdentifier = exactMatch.username || exactMatch.handle || 'unknown'
+          console.log(`✅ Found exact match userId: ${actualUserId} for ${platform} username: ${matchedIdentifier}`)
         } else if (users.length > 0) {
           // If no exact match, use first result (might be close match)
           const firstUserId = users[0].userId || users[0].id
           if (firstUserId) {
             actualUserId = firstUserId
-            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for username: ${username}`)
-            console.log(`   Available usernames: ${users.map((u: any) => u.username).join(', ')}`)
+            const firstIdentifier = users[0].username || users[0].handle || 'unknown'
+            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${platform} username: ${firstIdentifier}`)
+            console.log(`   Available identifiers: ${users.map((u: any) => u.username || u.handle || 'unknown').join(', ')}`)
           } else {
-            throw new Error(`No userId found in search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
+            throw new Error(`No userId found in ${platform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
           }
         } else {
-          throw new Error(`No user found with username: ${username}. Searched for: ${cleanUsername}`)
+          throw new Error(`No user found with username: ${username} on ${platform}. Searched for: ${cleanUsername}`)
         }
       } catch (searchError) {
         console.error('❌ Error searching for userId:', searchError)
