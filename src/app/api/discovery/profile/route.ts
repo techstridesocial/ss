@@ -242,7 +242,7 @@ export async function POST(_request: Request) {
         estimated_impressions: null, // Not calculated
         
         // 🆕 NEW: Missing core profile data - FIXED PATHS
-        mentions: modashResponse.profile?.mentions || [],
+        mentions: Array.isArray(modashResponse.profile?.mentions) ? modashResponse.profile.mentions : [],
         statsByContentType: {
           all: modashResponse.profile?.statsByContentType?.all || {},
           reels: modashResponse.profile?.statsByContentType?.reels || {},
@@ -257,7 +257,7 @@ export async function POST(_request: Request) {
         ageGroup: modashResponse.profile?.ageGroup || null,
         gender: modashResponse.profile?.gender || null,
         language: modashResponse.profile?.language || null,
-        contacts: modashResponse.profile?.contacts || [],
+        contacts: Array.isArray(modashResponse.profile?.contacts) ? modashResponse.profile.contacts : [],
         isPrivate: modashResponse.profile?.isPrivate || false,
         accountType: modashResponse.profile?.accountType || null,
         bio: modashResponse.profile?.bio || null,
@@ -341,9 +341,9 @@ export async function POST(_request: Request) {
         nonSponsoredPostsMedianLikes: modashResponse.profile?.nonSponsoredPostsMedianLikes || 0,
         
         // 🆕 NEW: Creator-level data
-        creator_interests: modashResponse.profile?.interests || [],
-        creator_brand_affinity: modashResponse.profile?.brandAffinity || [],
-        lookalikes: modashResponse.profile?.lookalikes || [],
+        creator_interests: Array.isArray(modashResponse.profile?.interests) ? modashResponse.profile.interests : [],
+        creator_brand_affinity: Array.isArray(modashResponse.profile?.brandAffinity) ? modashResponse.profile.brandAffinity : [],
+        lookalikes: Array.isArray(modashResponse.profile?.lookalikes) ? modashResponse.profile.lookalikes : [],
         
         // 🎯 YOUTUBE-SPECIFIC: Advanced audience fields from YouTube API
         audienceCommenters: modashResponse.profile?.audienceCommenters || {
@@ -356,14 +356,14 @@ export async function POST(_request: Request) {
           notableUsers: modashResponse.profile?.audience?.notableUsers || [],
           audienceLookalikes: modashResponse.profile?.audience?.audienceLookalikes || []
         },
-        lookalikesByTopics: modashResponse.profile?.lookalikesByTopics || [],
-        sponsoredPosts: (modashResponse.profile?.sponsoredPosts || []).map((post: any) => ({
+        lookalikesByTopics: Array.isArray(modashResponse.profile?.lookalikesByTopics) ? modashResponse.profile.lookalikesByTopics : [],
+        sponsoredPosts: (Array.isArray(modashResponse.profile?.sponsoredPosts) ? modashResponse.profile.sponsoredPosts : []).map((post: any) => ({
           ...post,
           sponsors: post.sponsors || []
         })),
         
         // 🆕 NEW: Missing historical and profile data - FIXED PATHS
-        statHistory: modashResponse.profile?.statHistory || [],
+        statHistory: Array.isArray(modashResponse.profile?.statHistory) ? modashResponse.profile.statHistory : [],
         postsCount: modashResponse.profile?.postsCount || modashResponse.profile?.postsCounts || 0,
         
         // Performance data for reels/stories sections (if requested)
