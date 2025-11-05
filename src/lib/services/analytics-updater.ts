@@ -489,6 +489,10 @@ async function updateInfluencerAnalytics(
       parseFloat(analytics.avg_engagement_rate.toFixed(4))
     ])
 
+    // Update aggregated stats in influencers table
+    const { updateInfluencerAggregatedStats } = await import('@/lib/db/queries/influencer-stats-aggregator')
+    await updateInfluencerAggregatedStats(influencerId)
+
     console.log(`✅ Database updated successfully for influencer ${influencerId}`)
 
   } catch (error) {

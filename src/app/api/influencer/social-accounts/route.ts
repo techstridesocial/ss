@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query, queryOne } from '@/lib/db/connection'
 import { cacheModashProfile } from '@/lib/services/modash-cache'
+import { updateInfluencerAggregatedStats } from '@/lib/db/queries/influencer-stats-aggregator'
 
 // GET - Get all social accounts for the current influencer
 export async function GET(_request: NextRequest) {
@@ -206,6 +207,9 @@ export async function POST(_request: NextRequest) {
       }, { status: 500 })
     }
 
+    // Update aggregated stats in influencers table
+    await updateInfluencerAggregatedStats(influencerResult.id)
+
     // Cache Modash data for rich analytics
     try {
       console.log('🔄 Caching Modash data for new connection...')
@@ -289,6 +293,9 @@ export async function DELETE(_request: NextRequest) {
         { status: 404 }
       )
     }
+
+    // Update aggregated stats in influencers table (recalculate after deletion)
+    await updateInfluencerAggregatedStats(influencerResult.id)
 
     // Also clean up any cached Modash data for this platform
     try {
