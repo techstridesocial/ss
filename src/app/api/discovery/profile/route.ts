@@ -12,18 +12,31 @@ export async function POST(_request: Request) {
     if (!actualUserId && username) {
       console.log(`🔍 Looking up userId for username: ${username} on ${platform}`)
       try {
-        const { listUsers } = await import('../../../../lib/services/modash')
-        
         // Clean username: remove @ and any whitespace
         const cleanUsername = username.replace('@', '').trim()
         
-        // Try exact search first
-        let searchResult = await listUsers(platform as 'instagram' | 'tiktok' | 'youtube', {
-          query: cleanUsername,
-          limit: 10 // Increase limit to find exact match in results
-        }) as any
+        // YouTube doesn't have /users endpoint, use /search instead
+        let searchResult: any
+        let users: any[] = []
         
-        let users = searchResult?.users || searchResult?.data || []
+        if (platform === 'youtube') {
+          // YouTube: Use search endpoint (POST)
+          const { searchDiscovery } = await import('../../../../lib/services/modash')
+          searchResult = await searchDiscovery('youtube', {
+            query: cleanUsername,
+            limit: 10
+          }) as any
+          // YouTube search returns different structure
+          users = searchResult?.results || searchResult?.data || searchResult?.directs || []
+        } else {
+          // Instagram & TikTok: Use /users endpoint (GET)
+          const { listUsers } = await import('../../../../lib/services/modash')
+          searchResult = await listUsers(platform as 'instagram' | 'tiktok', {
+            query: cleanUsername,
+            limit: 10 // Increase limit to find exact match in results
+          }) as any
+          users = searchResult?.users || searchResult?.data || []
+        }
         
         console.log(`🔍 Search results:`, {
           usersCount: users.length,
