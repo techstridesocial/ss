@@ -174,38 +174,38 @@ export async function POST(_request: Request) {
         // Audience demographics - structured for UI
         audience: {
           // Gender breakdown (convert Modash format to UI format)
-          gender: audience.genders ? audience.genders.reduce((acc: any, g: any) => {
+          gender: Array.isArray(audience.genders) ? audience.genders.reduce((acc: any, g: any) => {
             acc[g.code.toLowerCase()] = g.weight * 100
             return acc
           }, {}) : null,
           
           // Age ranges (convert Modash format to UI format)
-          age_ranges: audience.ages ? audience.ages.reduce((acc: any, age: any) => {
+          age_ranges: Array.isArray(audience.ages) ? audience.ages.reduce((acc: any, age: any) => {
             acc[age.code] = age.weight * 100
             return acc
           }, {}) : null,
           
           // Location breakdown (convert Modash format to UI format)
-          locations: audience.geoCountries ? audience.geoCountries.map((loc: any) => ({
+          locations: Array.isArray(audience.geoCountries) ? audience.geoCountries.map((loc: any) => ({
             country: loc.name,
             percentage: loc.weight * 100
           })) : null,
           
           // Languages (convert Modash format to UI format)
-          languages: audience.languages ? audience.languages.map((lang: any) => ({
+          languages: Array.isArray(audience.languages) ? audience.languages.map((lang: any) => ({
             language: lang.name,
             percentage: lang.weight * 100
           })) : null
         },
         
         // Audience interests for specific UI sections
-        audience_interests: audience.interests ? audience.interests.map((interest: any) => ({
+        audience_interests: Array.isArray(audience.interests) ? audience.interests.map((interest: any) => ({
           name: interest.name,
           percentage: interest.weight * 100
         })) : [],
         
         // Audience languages for specific UI sections
-        audience_languages: audience.languages ? audience.languages.map((lang: any) => ({
+        audience_languages: Array.isArray(audience.languages) ? audience.languages.map((lang: any) => ({
           name: lang.name,
           percentage: lang.weight * 100
         })) : [],
