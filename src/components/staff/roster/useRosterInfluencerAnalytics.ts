@@ -26,13 +26,27 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
         console.log(`🔍 Roster Analytics: Fetching for influencer ${influencer.id}, platform ${selectedPlatform}`)
         
         // Step 1: Check if we have stored Modash userId in notes (FAST PATH - like discovery)
+        // CRITICAL: userId must be platform-specific - check if it matches the requested platform
         let modashUserId: string | null = null
         if (influencer.notes) {
           try {
             const notes = typeof influencer.notes === 'string' ? JSON.parse(influencer.notes) : influencer.notes
-            modashUserId = notes.modash_data?.userId || notes.modash_data?.modash_user_id || null
-            if (modashUserId) {
-              console.log(`✅ Roster Analytics: Found stored Modash userId: ${modashUserId}`)
+            const storedUserId = notes.modash_data?.userId || notes.modash_data?.modash_user_id || null
+            const storedPlatform = notes.modash_data?.platform || null
+            
+            // CRITICAL: Only use stored userId if it's for the requested platform
+            // Modash userIds are platform-specific - using TikTok userId for Instagram will fail
+            if (storedUserId) {
+              const normalizedStoredPlatform = storedPlatform?.toLowerCase() || null
+              const normalizedSelectedPlatform = selectedPlatform?.toLowerCase() || 'instagram'
+              
+              if (normalizedStoredPlatform === normalizedSelectedPlatform) {
+                modashUserId = storedUserId
+                console.log(`✅ Roster Analytics: Found stored Modash userId ${modashUserId} for platform ${normalizedSelectedPlatform}`)
+              } else {
+                console.log(`⚠️ Roster Analytics: Stored userId ${storedUserId} is for platform ${normalizedStoredPlatform}, but requesting ${normalizedSelectedPlatform} - will use username search instead`)
+                modashUserId = null // Clear to trigger username search
+              }
             }
           } catch (e) {
             console.warn('⚠️ Could not parse notes for userId:', e)

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink, Download, Copy, FileText } from 'lucide-react'
+import { X, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Types
@@ -10,8 +10,7 @@ import { InfluencerDetailPanelProps, SocialContact, InfluencerData } from './typ
 import SocialMediaIcons from '../SocialMediaIcons'
 import { InstagramLogo, YouTubeLogo, TikTokLogo } from '../../icons/BrandLogos'
 
-// Export utilities
-import { exportAsJSON, exportAsCSV, copyToClipboard } from './utils/exportAnalytics'
+// Export utilities removed
 
 // Custom hooks
 import { useInfluencerAnalytics } from './hooks/useInfluencerAnalytics'
@@ -412,46 +411,15 @@ const PanelHeader = ({
         </div>
 
         {/* Close Button */}
-        {/* Export Actions */}
+        {/* Close Button */}
         <div className="flex items-center space-x-2 ml-4">
           <button
-            onClick={async () => {
-              const success = await copyToClipboard(influencer, selectedPlatform || 'instagram')
-              if (success) {
-                alert('✅ Analytics copied to clipboard!')
-              } else {
-                alert('❌ Failed to copy to clipboard')
-              }
-            }}
+            onClick={onClose}
             className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
-            title="Copy analytics summary"
+            aria-label="Close panel"
           >
-            <Copy className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+            <X className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
           </button>
-          
-          <button
-            onClick={() => exportAsCSV(influencer, selectedPlatform || 'instagram')}
-            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
-            title="Export as CSV"
-          >
-            <FileText className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-          </button>
-          
-          <button
-            onClick={() => exportAsJSON(influencer, selectedPlatform || 'instagram')}
-            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
-            title="Export as JSON"
-          >
-            <Download className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-          </button>
-          
-        <button
-          onClick={onClose}
-            className="flex-shrink-0 w-10 h-10 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center group"
-          aria-label="Close panel"
-        >
-          <X className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
-        </button>
         </div>
       </div>
 

@@ -16,7 +16,7 @@ if (redisUrl && redisToken) {
     console.error('   Received:', redisUrl)
   } else {
     try {
-      redis = new Redis({
+  redis = new Redis({
         url: redisUrl,
         token: redisToken,
       })
