@@ -153,36 +153,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     direction: 'asc'
   })
 
-  // URL state management
-  const updateUrl = (influencerId: string | null, platform?: string) => {
-    const params = new URLSearchParams(urlSearchParams)
-    
-    if (influencerId) {
-      params.set('influencer', influencerId)
-      // Remove platform param - don't include it in URL
-      params.delete('platform')
-    } else {
-      params.delete('influencer')
-      params.delete('platform')
-    }
-    
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  // URL state management - always keep URL clean, just staff/roster
+  const updateUrl = () => {
+    router.replace(pathname, { scroll: false })
   }
 
-  // Handle URL parameters (no longer reading platform from URL)
-  // Platform is now only in component state, not in URL
-
-  useEffect(() => {
-    const influencerId = urlSearchParams.get('influencer')
-    if (influencerId && influencers.length > 0) {
-      const influencer = influencers.find(inf => inf.id === influencerId)
-      if (influencer) {
-        setSelectedDashboardInfluencer(influencer)
-        setDashboardPanelOpen(true)
-        onPanelStateChange?.(true)
-      }
-    }
-  }, [urlSearchParams, influencers])
+  // No longer reading any URL parameters - URL stays clean as staff/roster
 
   // Filter handlers
   const handleRosterFilterChange = (key: string, value: string) => {
@@ -407,12 +383,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setSelectedInfluencerForAnalytics(influencer)
     setDetailPanelOpen(true)
     onPanelStateChange?.(true)
-    // Update URL with influencer (no platform parameter)
-    updateUrl(influencer.id)
+    // Keep URL clean - just staff/roster
+    updateUrl()
   }
 
   const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
-    router.push(`${pathname}?influencer=${influencer.id}`, { scroll: false })
+    router.replace(pathname, { scroll: false })
     setDetailPanelOpen(false)
     setSelectedInfluencerForAnalytics(null)
     setSelectedDashboardInfluencer(influencer)
@@ -432,10 +408,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
-    // Don't update URL - platform is only in component state, not in URL
-    if (selectedInfluencerForAnalytics?.id) {
-      updateUrl(selectedInfluencerForAnalytics.id)
-    }
+    // Don't update URL - keep it clean
   }
 
   // CRUD handlers with extracted actions
