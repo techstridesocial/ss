@@ -139,8 +139,12 @@ export default clerkMiddleware(async (auth, request) => {
     const isExcluded = excludedFromRateLimit.some(path => pathname === path || pathname.startsWith(path + '/'))
     const isGetRequest = request.method === 'GET'
     
-    // Only rate limit write operations (POST, PUT, DELETE, PATCH) and expensive endpoints
-    if (!isExcluded || (!isGetRequest && !isExcluded)) {
+    // Only rate limit if:
+    // 1. NOT excluded (expensive endpoints)
+    // 2. OR excluded but NOT a GET request (write operations on excluded endpoints)
+    const shouldRateLimit = !isExcluded || (isExcluded && !isGetRequest)
+    
+    if (shouldRateLimit) {
       const clientIP = getClientIP(request)
       const allowed = await checkRateLimit(clientIP)
       
