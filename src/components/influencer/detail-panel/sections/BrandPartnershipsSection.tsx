@@ -10,8 +10,12 @@ interface BrandPartnershipsSectionProps {
 }
 
 export const BrandPartnershipsSection = ({ influencer }: BrandPartnershipsSectionProps) => {
-  // Get sponsored posts with actual sponsor data
-  const allSponsoredPosts = influencer.brand_partnerships || influencer.sponsoredPosts || []
+  // Get sponsored posts with actual sponsor data - ensure it's always an array
+  const allSponsoredPosts = Array.isArray(influencer.brand_partnerships) 
+    ? influencer.brand_partnerships 
+    : Array.isArray(influencer.sponsoredPosts)
+    ? influencer.sponsoredPosts
+    : []
   const sponsoredPostsWithSponsors = allSponsoredPosts.filter((post: any) => post.sponsors && post.sponsors.length > 0)
   
   // Extract all unique brands from sponsored posts

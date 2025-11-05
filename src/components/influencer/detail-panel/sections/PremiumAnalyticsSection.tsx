@@ -125,6 +125,11 @@ export const PremiumAnalyticsSection = ({ influencer, sectionType }: PremiumAnal
 
   const { title, metrics } = getSectionData()
   
+  // Ensure metrics is an array before filtering
+  if (!Array.isArray(metrics)) {
+    return null
+  }
+  
   // Filter out metrics with no values
   const validMetrics = metrics.filter(metric => 
     metric.value && 

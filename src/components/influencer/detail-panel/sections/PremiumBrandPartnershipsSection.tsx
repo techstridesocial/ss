@@ -107,7 +107,7 @@ export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPart
               }
               return typeof category === 'string' ? category : null
             })
-            .filter(Boolean)
+            .filter((cat: any) => Boolean(cat))
             .reduce((acc: any, cat: any) => {
               acc[cat] = (acc[cat] || 0) + 1
               return acc
