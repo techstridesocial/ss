@@ -89,9 +89,34 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
             }
           } else {
             const errorData = await modashResponse.json().catch(() => ({}))
-            console.error(`❌ Roster Analytics: Modash API error with userId:`, errorData)
-            // Fallback to username search
-            modashUserId = null // Clear to trigger username search
+            const statusCode = modashResponse.status
+            console.error(`❌ Roster Analytics: Modash API error with userId (${statusCode}):`, errorData)
+            
+            // CRITICAL: If rate limited (429), DO NOT retry or fallback - stop immediately
+            if (statusCode === 429) {
+              setError('Rate limit exceeded. Please wait a few minutes before trying again.')
+              setDetailData({
+                ...influencer,
+                isRosterInfluencer: true,
+                rosterId: influencer.id
+              })
+              return // Exit early - don't cascade more API calls
+            }
+            
+            // For 400/404 errors, fallback to username search (userId might be wrong platform)
+            if (statusCode === 400 || statusCode === 404) {
+              console.log(`🔄 Roster Analytics: Falling back to username search (userId lookup failed with ${statusCode})`)
+              modashUserId = null // Clear to trigger username search
+            } else {
+              // For other errors (500, etc.), don't retry - use roster data only
+              console.warn(`⚠️ Roster Analytics: Unexpected error (${statusCode}), using roster data only`)
+              setDetailData({
+                ...influencer,
+                isRosterInfluencer: true,
+                rosterId: influencer.id
+              })
+              return
+            }
           }
         }
 
@@ -168,13 +193,26 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
             }
           } else {
               const errorData = await modashResponse.json().catch(() => ({}))
-              console.error(`❌ Roster Analytics: Modash API error with username:`, errorData)
-            // Modash API error, use roster data as fallback
-            setDetailData({
-              ...influencer,
-              isRosterInfluencer: true,
-              rosterId: influencer.id
-            })
+              const statusCode = modashResponse.status
+              console.error(`❌ Roster Analytics: Modash API error with username (${statusCode}):`, errorData)
+              
+              // CRITICAL: If rate limited (429), stop immediately
+              if (statusCode === 429) {
+                setError('Rate limit exceeded. Please wait a few minutes before trying again.')
+                setDetailData({
+                  ...influencer,
+                  isRosterInfluencer: true,
+                  rosterId: influencer.id
+                })
+                return
+              }
+              
+              // For other errors, use roster data as fallback
+              setDetailData({
+                ...influencer,
+                isRosterInfluencer: true,
+                rosterId: influencer.id
+              })
           }
         } else {
             console.warn(`⚠️ Roster Analytics: No username found for platform ${selectedPlatform} - using roster data only`)
