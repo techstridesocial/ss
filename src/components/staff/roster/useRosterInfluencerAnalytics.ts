@@ -56,42 +56,31 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
             
             if (modashData.success && modashData.data) {
               console.log(`✅ Roster Analytics: Successfully fetched Modash data using userId`)
-              // CRITICAL: Database is KING - start with roster influencer data
-              // Modash data only ENRICHES analytics fields, doesn't override database fields
+              // CRITICAL: Database is KING ONLY for username and linked platforms
+              // Modash is KING for ALL analytics (followers, engagement, posts, audience, etc.)
               setDetailData({
-                // Start with roster influencer (DATABASE IS KING)
-                ...influencer,
-                // Mark as roster influencer
-                isRosterInfluencer: true,
+                // Start with Modash data (MODASH IS KING for analytics)
+                ...modashData.data,
+                // Preserve ONLY database fields: username and linked platforms + CRM fields
+                id: influencer.id,
                 rosterId: influencer.id,
+                isRosterInfluencer: true,
                 hasPreservedAnalytics: true,
-                // ENRICH with Modash analytics (only analytics fields, not core data)
-                // Analytics fields from Modash (enrichment):
-                engagementRate: modashData.data.engagementRate || modashData.data.engagement_rate,
-                engagement_rate: modashData.data.engagement_rate || modashData.data.engagementRate,
-                avgLikes: modashData.data.avgLikes,
-                avgComments: modashData.data.avgComments,
-                avgViews: modashData.data.avgViews,
-                recentPosts: modashData.data.recentPosts,
-                popularPosts: modashData.data.popularPosts,
-                audience: modashData.data.audience,
-                statsByContentType: modashData.data.statsByContentType,
-                brand_partnerships: modashData.data.brand_partnerships,
-                brand_mentions: modashData.data.brand_mentions,
-                brand_affinity: modashData.data.brand_affinity,
-                audience_interests: modashData.data.audience_interests,
-                audience_languages: modashData.data.audience_languages,
-                content_performance: modashData.data.content_performance,
-                // Profile picture from Modash (can be fresher)
-                picture: modashData.data.picture || influencer.avatar_url,
-                // Keep database fields as KING (these should NOT be overridden):
-                // - id: influencer.id (already from spread)
-                // - display_name: influencer.display_name (already from spread)
-                // - platforms: influencer.platforms (already from spread - database platforms)
-                // - total_followers: influencer.total_followers (already from spread - database)
-                // - assigned_to: influencer.assigned_to (already from spread)
-                // - labels: influencer.labels (already from spread)
-                // - notes: influencer.notes (already from spread)
+                // Database is KING for: which platforms this influencer has accounts on
+                platforms: influencer.platforms, // Database platforms array (INSTAGRAM, TIKTOK, YOUTUBE)
+                platform_count: influencer.platform_count,
+                // Database is KING for: CRM/workflow fields
+                assigned_to: influencer.assigned_to,
+                labels: influencer.labels || [],
+                notes: influencer.notes,
+                // Database is KING for: basic identity (display_name)
+                display_name: influencer.display_name,
+                // Modash is KING for: ALL analytics (already spread from modashData.data above)
+                // - followers, engagement_rate, avgLikes, avgComments, avgViews
+                // - recentPosts, popularPosts, audience, statsByContentType
+                // - brand_partnerships, brand_mentions, brand_affinity
+                // - audience_interests, audience_languages, content_performance
+                // - picture, bio, url, etc. (all from Modash)
               })
             } else {
               console.warn(`⚠️ Roster Analytics: Modash returned no data with userId:`, modashData)
@@ -142,42 +131,31 @@ export function useRosterInfluencerAnalytics(influencer: StaffInfluencer | null,
               
               if (modashData.success && modashData.data) {
                 console.log(`✅ Roster Analytics: Successfully fetched Modash data using username`)
-                // CRITICAL: Database is KING - start with roster influencer data
-                // Modash data only ENRICHES analytics fields, doesn't override database fields
+                // CRITICAL: Database is KING ONLY for username and linked platforms
+                // Modash is KING for ALL analytics (followers, engagement, posts, audience, etc.)
                 setDetailData({
-                  // Start with roster influencer (DATABASE IS KING)
-                  ...influencer,
-                  // Mark as roster influencer
-                  isRosterInfluencer: true,
+                  // Start with Modash data (MODASH IS KING for analytics)
+                  ...modashData.data,
+                  // Preserve ONLY database fields: username and linked platforms + CRM fields
+                  id: influencer.id,
                   rosterId: influencer.id,
+                  isRosterInfluencer: true,
                   hasPreservedAnalytics: true,
-                  // ENRICH with Modash analytics (only analytics fields, not core data)
-                  // Analytics fields from Modash (enrichment):
-                  engagementRate: modashData.data.engagementRate || modashData.data.engagement_rate,
-                  engagement_rate: modashData.data.engagement_rate || modashData.data.engagementRate,
-                  avgLikes: modashData.data.avgLikes,
-                  avgComments: modashData.data.avgComments,
-                  avgViews: modashData.data.avgViews,
-                  recentPosts: modashData.data.recentPosts,
-                  popularPosts: modashData.data.popularPosts,
-                  audience: modashData.data.audience,
-                  statsByContentType: modashData.data.statsByContentType,
-                  brand_partnerships: modashData.data.brand_partnerships,
-                  brand_mentions: modashData.data.brand_mentions,
-                  brand_affinity: modashData.data.brand_affinity,
-                  audience_interests: modashData.data.audience_interests,
-                  audience_languages: modashData.data.audience_languages,
-                  content_performance: modashData.data.content_performance,
-                  // Profile picture from Modash (can be fresher)
-                  picture: modashData.data.picture || influencer.avatar_url,
-                  // Keep database fields as KING (these should NOT be overridden):
-                  // - id: influencer.id (already from spread)
-                  // - display_name: influencer.display_name (already from spread)
-                  // - platforms: influencer.platforms (already from spread - database platforms)
-                  // - total_followers: influencer.total_followers (already from spread - database)
-                  // - assigned_to: influencer.assigned_to (already from spread)
-                  // - labels: influencer.labels (already from spread)
-                  // - notes: influencer.notes (already from spread)
+                  // Database is KING for: which platforms this influencer has accounts on
+                  platforms: influencer.platforms, // Database platforms array (INSTAGRAM, TIKTOK, YOUTUBE)
+                  platform_count: influencer.platform_count,
+                  // Database is KING for: CRM/workflow fields
+                  assigned_to: influencer.assigned_to,
+                  labels: influencer.labels || [],
+                  notes: influencer.notes,
+                  // Database is KING for: basic identity (display_name)
+                  display_name: influencer.display_name,
+                  // Modash is KING for: ALL analytics (already spread from modashData.data above)
+                  // - followers, engagement_rate, avgLikes, avgComments, avgViews
+                  // - recentPosts, popularPosts, audience, statsByContentType
+                  // - brand_partnerships, brand_mentions, brand_affinity
+                  // - audience_interests, audience_languages, content_performance
+                  // - picture, bio, url, etc. (all from Modash)
                 })
               } else {
                 console.warn(`⚠️ Roster Analytics: Modash returned no data with username:`, modashData)
