@@ -5,12 +5,15 @@ export async function POST(_request: Request) {
   try {
     const { userId, username, platform, includePerformanceData } = await _request.json()
     
-    console.log('🔍 Modash Profile Request:', { userId, username, platform, includePerformanceData })
+    // CRITICAL: Normalize platform to lowercase (Modash API requires lowercase)
+    const normalizedPlatform = platform?.toLowerCase() || 'instagram'
+    
+    console.log('🔍 Modash Profile Request:', { userId, username, platform, normalizedPlatform, includePerformanceData })
     
     // If username is provided but userId is not, search for userId first
     let actualUserId = userId
     if (!actualUserId && username) {
-      console.log(`🔍 Looking up userId for username: ${username} on ${platform}`)
+      console.log(`🔍 Looking up userId for username: ${username} on ${normalizedPlatform}`)
       try {
         // Clean username: remove @ and any whitespace
         const cleanUsername = username.replace('@', '').trim()
@@ -19,7 +22,7 @@ export async function POST(_request: Request) {
         let searchResult: any
         let users: any[] = []
         
-        if (platform === 'youtube') {
+        if (normalizedPlatform === 'youtube') {
           // YouTube: Use search endpoint (POST)
           const { searchDiscovery } = await import('../../../../lib/services/modash')
           searchResult = await searchDiscovery('youtube', {
@@ -31,16 +34,16 @@ export async function POST(_request: Request) {
         } else {
           // Instagram & TikTok: Use /users endpoint (GET)
         const { listUsers } = await import('../../../../lib/services/modash')
-          searchResult = await listUsers(platform as 'instagram' | 'tiktok', {
+          searchResult = await listUsers(normalizedPlatform as 'instagram' | 'tiktok', {
             query: cleanUsername,
             limit: 10 // Increase limit to find exact match in results
         }) as any
           users = searchResult?.users || searchResult?.data || []
         }
         
-        console.log(`🔍 Search results (${platform}):`, {
+        console.log(`🔍 Search results (${normalizedPlatform}):`, {
           usersCount: users.length,
-          platform,
+          platform: normalizedPlatform,
           firstUser: users[0] ? {
             username: users[0].username,
             userId: users[0].userId,
@@ -63,20 +66,20 @@ export async function POST(_request: Request) {
         if (userId) {
           actualUserId = userId
           const matchedIdentifier = exactMatch.username || exactMatch.handle || 'unknown'
-          console.log(`✅ Found exact match userId: ${actualUserId} for ${platform} username: ${matchedIdentifier}`)
+          console.log(`✅ Found exact match userId: ${actualUserId} for ${normalizedPlatform} username: ${matchedIdentifier}`)
         } else if (users.length > 0) {
           // If no exact match, use first result (might be close match)
           const firstUserId = users[0].userId || users[0].id
           if (firstUserId) {
             actualUserId = firstUserId
             const firstIdentifier = users[0].username || users[0].handle || 'unknown'
-            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${platform} username: ${firstIdentifier}`)
+            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${normalizedPlatform} username: ${firstIdentifier}`)
             console.log(`   Available identifiers: ${users.map((u: any) => u.username || u.handle || 'unknown').join(', ')}`)
           } else {
-            throw new Error(`No userId found in ${platform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
+            throw new Error(`No userId found in ${normalizedPlatform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
           }
         } else {
-          throw new Error(`No user found with username: ${username} on ${platform}. Searched for: ${cleanUsername}`)
+          throw new Error(`No user found with username: ${username} on ${normalizedPlatform}. Searched for: ${cleanUsername}`)
         }
       } catch (searchError) {
         console.error('❌ Error searching for userId:', searchError)
@@ -94,8 +97,49 @@ export async function POST(_request: Request) {
       }, { status: 400 })
     }
     
-    // Get raw Modash data
-    const modashResponse = await getProfileReport(actualUserId, platform) as any
+    // CRITICAL: Validate userId format before calling Modash API
+    if (typeof actualUserId !== 'string' || actualUserId.trim() === '') {
+      console.error('❌ Invalid userId format:', { actualUserId, type: typeof actualUserId })
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid userId format',
+        debug: { actualUserId, platform: normalizedPlatform }
+      }, { status: 400 })
+    }
+    
+    // CRITICAL: Validate platform is one of the supported values
+    if (!['instagram', 'tiktok', 'youtube'].includes(normalizedPlatform)) {
+      console.error('❌ Invalid platform:', { normalizedPlatform, originalPlatform: platform })
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid platform. Must be instagram, tiktok, or youtube',
+        debug: { normalizedPlatform, originalPlatform: platform }
+      }, { status: 400 })
+    }
+    
+    console.log('🔍 Calling Modash API:', {
+      userId: actualUserId,
+      platform: normalizedPlatform,
+      userIdLength: actualUserId.length,
+      userIdType: typeof actualUserId
+    })
+    
+    // Get raw Modash data - use normalized platform (lowercase required by Modash API)
+    let modashResponse: any
+    try {
+      modashResponse = await getProfileReport(actualUserId.trim(), normalizedPlatform) as any
+      console.log('✅ Modash API call successful')
+    } catch (modashError: any) {
+      console.error('❌ Modash API call failed:', {
+        error: modashError,
+        message: modashError?.message,
+        userId: actualUserId,
+        platform: normalizedPlatform,
+        stack: modashError?.stack
+      })
+      // Re-throw to be caught by outer catch
+      throw modashError
+    }
     
     if (!modashResponse?.profile) {
       throw new Error('No profile data returned from Modash')
@@ -114,7 +158,7 @@ export async function POST(_request: Request) {
     })
 
     // 🚨 DEBUG: Log the FULL raw Modash response structure for TikTok
-    if (platform === 'tiktok') {
+    if (normalizedPlatform === 'tiktok') {
       console.log('🚨 FULL TIKTOK MODASH RESPONSE:', JSON.stringify(modashResponse, null, 2))
       console.log('🚨 TikTok profile keys:', Object.keys(modashResponse.profile || {}))
       console.log('🚨 Looking for TikTok fields:', {
@@ -133,10 +177,10 @@ export async function POST(_request: Request) {
     
     // Fetch performance data for enhanced post information (especially important for TikTok thumbnails)
     let performanceData = null
-    if ((includePerformanceData || platform === 'tiktok') && profile.username) {
+    if ((includePerformanceData || normalizedPlatform === 'tiktok') && profile.username) {
       try {
         console.log('📊 Fetching performance data for enhanced metrics and thumbnails...')
-        const perfResult = await _getPerformanceData(platform as 'instagram' | 'tiktok' | 'youtube', profile.username, 10) as any // Get more posts for better thumbnails
+        const perfResult = await _getPerformanceData(normalizedPlatform as 'instagram' | 'tiktok' | 'youtube', profile.username, 10) as any // Get more posts for better thumbnails
         if (perfResult && (perfResult.posts || perfResult.reels)) {
           performanceData = perfResult
           console.log('✅ Performance data fetched:', {

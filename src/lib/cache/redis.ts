@@ -4,13 +4,33 @@ import { Redis } from '@upstash/redis'
 // Falls back to null if Redis is not configured (development)
 let redis: Redis | null = null
 
-if (process.env.UPSTASH_REDIS_URL && process.env.UPSTASH_REDIS_TOKEN) {
-  redis = new Redis({
-    url: process.env.UPSTASH_REDIS_URL,
-    token: process.env.UPSTASH_REDIS_TOKEN,
-  })
+// CRITICAL: Trim whitespace and quotes from environment variables
+// This fixes build errors where URL has trailing quotes or whitespace
+const redisUrl = process.env.UPSTASH_REDIS_URL?.trim().replace(/^["']|["']$/g, '') || ''
+const redisToken = process.env.UPSTASH_REDIS_TOKEN?.trim().replace(/^["']|["']$/g, '') || ''
+
+if (redisUrl && redisToken) {
+  // Validate URL format
+  if (!redisUrl.startsWith('https://')) {
+    console.error('❌ Invalid UPSTASH_REDIS_URL: Must start with https://')
+    console.error('   Received:', redisUrl)
+  } else {
+    try {
+      redis = new Redis({
+        url: redisUrl,
+        token: redisToken,
+      })
+      console.log('✅ Redis client initialized successfully')
+    } catch (error) {
+      console.error('❌ Failed to initialize Redis client:', error)
+      console.error('   URL:', redisUrl.substring(0, 50) + '...')
+      console.error('   Token:', redisToken ? 'Present' : 'Missing')
+    }
+  }
 } else {
   console.warn('⚠️  Redis not configured. Caching will be disabled.')
+  if (!redisUrl) console.warn('   Missing: UPSTASH_REDIS_URL')
+  if (!redisToken) console.warn('   Missing: UPSTASH_REDIS_TOKEN')
 }
 
 export { redis }
