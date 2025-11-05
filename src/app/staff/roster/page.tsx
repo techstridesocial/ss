@@ -159,12 +159,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     
     if (influencerId) {
       params.set('influencer', influencerId)
-      if (platform) {
-        params.set('platform', platform)
-      } else {
-        // If no platform specified, default to instagram
-        params.set('platform', 'instagram')
-      }
+      // Remove platform param - don't include it in URL
+      params.delete('platform')
     } else {
       params.delete('influencer')
       params.delete('platform')
@@ -173,11 +169,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  // Handle URL parameters
-  useEffect(() => {
-    const platform = urlSearchParams.get('platform')
-    if (platform) setSelectedPlatform(platform)
-  }, [urlSearchParams])
+  // Handle URL parameters (no longer reading platform from URL)
+  // Platform is now only in component state, not in URL
 
   useEffect(() => {
     const influencerId = urlSearchParams.get('influencer')
@@ -414,8 +407,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setSelectedInfluencerForAnalytics(influencer)
     setDetailPanelOpen(true)
     onPanelStateChange?.(true)
-    // Update URL with influencer and current platform (default to instagram)
-    updateUrl(influencer.id, selectedPlatform)
+    // Update URL with influencer (no platform parameter)
+    updateUrl(influencer.id)
   }
 
   const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
@@ -439,9 +432,9 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
+    // Don't update URL - platform is only in component state, not in URL
     if (selectedInfluencerForAnalytics?.id) {
-      // Always include platform param for consistency
-      updateUrl(selectedInfluencerForAnalytics.id, platform)
+      updateUrl(selectedInfluencerForAnalytics.id)
     }
   }
 
