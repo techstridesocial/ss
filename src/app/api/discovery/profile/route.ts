@@ -278,13 +278,13 @@ export async function POST(_request: Request) {
         // 🆕 NEW: Content data - Enhanced with performance data for better thumbnails
         recentPosts: (() => {
           // Try performance data first (has thumbnails), fallback to profile data
-          const perfPosts = performanceData?.posts?.data?.slice(0, 10) || []
-          const profilePosts = modashResponse.profile?.recentPosts || []
+          const perfPosts = Array.isArray(performanceData?.posts?.data) ? performanceData.posts.data.slice(0, 10) : []
+          const profilePosts = Array.isArray(modashResponse.profile?.recentPosts) ? modashResponse.profile.recentPosts : []
           
           // If performance data has posts, use it; otherwise use profile data
           return perfPosts.length > 0 ? perfPosts : profilePosts
         })(),
-        popularPosts: modashResponse.profile?.popularPosts || [],
+        popularPosts: Array.isArray(modashResponse.profile?.popularPosts) ? modashResponse.profile.popularPosts : [],
         
         // 🆕 NEW: Enhanced audience data
         audience_notable: audience.notable || 0,

@@ -21,29 +21,46 @@ export const PremiumContentSection = ({
 
   // Get content based on platform and type
   const getContent = () => {
+    // Helper to ensure array
+    const ensureArray = (value: any): any[] => {
+      if (Array.isArray(value)) return value
+      if (!value) return []
+      // If it's an object, try to extract array from common properties
+      if (typeof value === 'object') {
+        return value.data || value.posts || value.videos || value.results || []
+      }
+      return []
+    }
+
     switch (contentType) {
       case 'recent':
-        return (influencer as any).recentPosts || (influencer as any).recentVideos || []
+        return ensureArray((influencer as any).recentPosts) || ensureArray((influencer as any).recentVideos) || []
       case 'popular':
-        return (influencer as any).popularPosts || (influencer as any).topContent || []
+        return ensureArray((influencer as any).popularPosts) || ensureArray((influencer as any).topContent) || []
       case 'videos':
         if (selectedPlatform === 'tiktok') {
           // TikTok videos are usually in recentPosts
-          return (influencer as any).recentPosts || []
+          return ensureArray((influencer as any).recentPosts) || []
         }
         if (selectedPlatform === 'youtube') {
           // YouTube videos could be in recentVideos or recentPosts
-          return (influencer as any).recentVideos || (influencer as any).recentPosts || []
+          return ensureArray((influencer as any).recentVideos) || ensureArray((influencer as any).recentPosts) || []
         }
-        return (influencer as any).recentPosts || []
+        return ensureArray((influencer as any).recentPosts) || []
       case 'posts':
-        return (influencer as any).recentPosts || []
+        return ensureArray((influencer as any).recentPosts) || []
       default:
-        return (influencer as any).recentPosts || []
+        return ensureArray((influencer as any).recentPosts) || []
     }
   }
 
   const content = getContent()
+  
+  // Ensure content is always an array before using array methods
+  if (!Array.isArray(content)) {
+    return null
+  }
+  
   const displayContent = showAll ? content : content.slice(0, 6)
 
   if (!content || content.length === 0) {
