@@ -162,8 +162,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       if (platform) {
         params.set('platform', platform)
       } else {
-        // Remove platform param if it's the default (instagram) or undefined
-        params.delete('platform')
+        // If no platform specified, default to instagram
+        params.set('platform', 'instagram')
       }
     } else {
       params.delete('influencer')
@@ -412,8 +412,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handleViewInfluencer = (influencer: StaffInfluencer) => {
     // Set the influencer to fetch analytics for
     setSelectedInfluencerForAnalytics(influencer)
-      setDetailPanelOpen(true)
-      onPanelStateChange?.(true)
+    setDetailPanelOpen(true)
+    onPanelStateChange?.(true)
+    // Update URL with influencer and current platform (default to instagram)
+    updateUrl(influencer.id, selectedPlatform)
   }
 
   const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
@@ -438,10 +440,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const handlePlatformSwitch = (platform: string) => {
     setSelectedPlatform(platform)
     if (selectedInfluencerForAnalytics?.id) {
-      // Only set platform param if it's not the default (instagram)
-      // This keeps the URL clean for the default platform
-      const platformParam = platform === 'instagram' ? undefined : platform
-      updateUrl(selectedInfluencerForAnalytics.id, platformParam)
+      // Always include platform param for consistency
+      updateUrl(selectedInfluencerForAnalytics.id, platform)
     }
   }
 
@@ -979,8 +979,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </div>
       )}
 
-      {/* Analytics Panel */}
-      {analyticsData && (
+      {/* Analytics Panel - Always render when open, use fallback data if analytics not loaded yet */}
+      {detailPanelOpen && selectedInfluencerForAnalytics && (
         <div>
           <ErrorBoundary>
             <InfluencerDetailPanel
@@ -989,7 +989,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 setDetailPanelOpen(false)
                 setSelectedInfluencerForAnalytics(null)
               }}
-              influencer={analyticsData}
+              influencer={analyticsData || selectedInfluencerForAnalytics}
           selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
               onPlatformSwitch={handlePlatformSwitch}
               loading={analyticsLoading}

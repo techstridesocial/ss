@@ -30,11 +30,11 @@ export async function POST(_request: Request) {
           users = searchResult?.results || searchResult?.data || searchResult?.directs || []
         } else {
           // Instagram & TikTok: Use /users endpoint (GET)
-          const { listUsers } = await import('../../../../lib/services/modash')
+        const { listUsers } = await import('../../../../lib/services/modash')
           searchResult = await listUsers(platform as 'instagram' | 'tiktok', {
             query: cleanUsername,
             limit: 10 // Increase limit to find exact match in results
-          }) as any
+        }) as any
           users = searchResult?.users || searchResult?.data || []
         }
         
