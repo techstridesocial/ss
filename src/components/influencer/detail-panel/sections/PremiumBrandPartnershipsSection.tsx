@@ -9,10 +9,13 @@ interface PremiumBrandPartnershipsSectionProps {
 }
 
 export const PremiumBrandPartnershipsSection = ({ influencer }: PremiumBrandPartnershipsSectionProps) => {
-  const partnerships = influencer.brand_partnerships || influencer.sponsoredPosts || []
-  const brandMentions = influencer.mentions || []
+  // Ensure partnerships is always an array
+  const partnershipsRaw = influencer.brand_partnerships || influencer.sponsoredPosts
+  const partnerships = Array.isArray(partnershipsRaw) ? partnershipsRaw : []
+  const brandMentionsRaw = influencer.mentions
+  const brandMentions = Array.isArray(brandMentionsRaw) ? brandMentionsRaw : []
   
-  if (!partnerships || !Array.isArray(partnerships) || partnerships.length === 0) {
+  if (!partnerships || partnerships.length === 0) {
     return null
   }
 
