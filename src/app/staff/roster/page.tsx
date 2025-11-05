@@ -159,7 +159,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     
     if (influencerId) {
       params.set('influencer', influencerId)
-      if (platform) params.set('platform', platform)
+      if (platform) {
+        params.set('platform', platform)
+      } else {
+        // Remove platform param if it's the default (instagram) or undefined
+        params.delete('platform')
+      }
     } else {
       params.delete('influencer')
       params.delete('platform')
