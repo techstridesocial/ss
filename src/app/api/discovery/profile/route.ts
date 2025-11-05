@@ -211,9 +211,9 @@ export async function POST(_request: Request) {
         })) : [],
         
         // Additional sections extracted from profile data
-        relevant_hashtags: modashResponse.profile?.hashtags || [], // Extract hashtags from profile report
-        brand_partnerships: modashResponse.profile?.sponsoredPosts || [], // Extract sponsored posts
-        content_topics: audience.interests ? audience.interests.slice(0, 10).map((interest: any) => interest.name) : [], // Simple string array of topic names
+        relevant_hashtags: Array.isArray(modashResponse.profile?.hashtags) ? modashResponse.profile.hashtags : [], // Extract hashtags from profile report
+        brand_partnerships: Array.isArray(modashResponse.profile?.sponsoredPosts) ? modashResponse.profile.sponsoredPosts : [], // Extract sponsored posts
+        content_topics: Array.isArray(audience.interests) ? audience.interests.slice(0, 10).map((interest: any) => interest.name) : [], // Simple string array of topic names
         
         // Rich performance data (sponsored vs organic)
         sponsored_performance: {
@@ -225,8 +225,8 @@ export async function POST(_request: Request) {
         },
         
         // Brand mentions and affinity
-        brand_mentions: modashResponse.profile?.mentions || [],
-        brand_affinity: modashResponse.profile?.brandAffinity || [],
+        brand_mentions: Array.isArray(modashResponse.profile?.mentions) ? modashResponse.profile.mentions : [],
+        brand_affinity: Array.isArray(modashResponse.profile?.brandAffinity) ? modashResponse.profile.brandAffinity : [],
         
         // Raw audience data for debugging
         genders: audience.genders,
@@ -289,14 +289,14 @@ export async function POST(_request: Request) {
         // 🆕 NEW: Enhanced audience data
         audience_notable: audience.notable || 0,
         audience_credibility: audience.credibility || 0,
-        audience_notable_users: audience.notableUsers || [],
-        audience_lookalikes: audience.audienceLookalikes || [],
-        audience_ethnicities: audience.ethnicities || [],
-        audience_reachability: audience.audienceReachability || [],
-        audience_types: audience.audienceTypes || [],
-        audience_genders_per_age: audience.gendersPerAge || [],
-        audience_geo_cities: audience.geoCities || [],
-        audience_geo_states: audience.geoStates || [],
+        audience_notable_users: Array.isArray(audience.notableUsers) ? audience.notableUsers : [],
+        audience_lookalikes: Array.isArray(audience.audienceLookalikes) ? audience.audienceLookalikes : [],
+        audience_ethnicities: Array.isArray(audience.ethnicities) ? audience.ethnicities : [],
+        audience_reachability: Array.isArray(audience.audienceReachability) ? audience.audienceReachability : [],
+        audience_types: Array.isArray(audience.audienceTypes) ? audience.audienceTypes : [],
+        audience_genders_per_age: Array.isArray(audience.gendersPerAge) ? audience.gendersPerAge : [],
+        audience_geo_cities: Array.isArray(audience.geoCities) ? audience.geoCities : [],
+        audience_geo_states: Array.isArray(audience.geoStates) ? audience.geoStates : [],
         
         // 🆕 NEW: Performance comparison data
         stats_compared: {
