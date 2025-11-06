@@ -77,11 +77,27 @@ export async function GET(_request: NextRequest) {
 
     console.log(`✅ [OPTIMIZED] Loaded ${influencers.length} influencers`)
     
-    // Minimal transformation - just ensure arrays
+    // Helper function to parse Postgres array strings into JavaScript arrays
+    const parsePostgresArray = (value: any): string[] => {
+      if (!value) return []
+      if (Array.isArray(value)) return value
+      if (typeof value === 'string') {
+        // Handle Postgres array format: "{INSTAGRAM,TIKTOK}" or "{NULL}"
+        const trimmed = value.trim()
+        if (trimmed === '{NULL}' || trimmed === '{}' || trimmed === 'null') return []
+        // Remove curly braces and split by comma
+        const cleaned = trimmed.replace(/^{|}$/g, '')
+        if (!cleaned) return []
+        return cleaned.split(',').map(item => item.trim()).filter(Boolean)
+      }
+      return []
+    }
+    
+    // Minimal transformation - properly parse Postgres arrays
     const transformedInfluencers = influencers.map(inf => ({
       ...inf,
-      platforms: inf.platforms || [],
-      niches: inf.niches || [],
+      platforms: parsePostgresArray(inf.platforms),
+      niches: Array.isArray(inf.niches) ? inf.niches : (inf.niches || []),
       platform_count: inf.platform_count || 0,
       is_active: inf.user_status === 'ACTIVE',
       estimated_promotion_views: inf.estimated_promotion_views || Math.floor((inf.total_avg_views || 0) * 0.85)
