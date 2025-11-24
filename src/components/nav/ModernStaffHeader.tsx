@@ -72,6 +72,7 @@ export default function ModernStaffHeader() {
       { href: '/staff/roster', label: 'Roster' },
       { href: '/staff/brands', label: 'Brands' },
       { href: '/staff/campaigns', label: 'Campaigns' },
+      { href: '/staff/submissions', label: 'Submissions' },
       { href: '/staff/discovery', label: 'Discovery' },
       { href: '/staff/finances', label: 'Finances' }
     ]

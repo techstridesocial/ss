@@ -218,6 +218,53 @@ export async function PATCH(
       return NextResponse.json({ error: 'Influencer not found' }, { status: 404 })
     }
 
+    // If influencer_type changed, update Clerk metadata role
+    if (influencer_type !== undefined) {
+      try {
+        // Get user's Clerk ID
+        const userResult = await query<{ clerk_id: string }>(
+          'SELECT clerk_id FROM users WHERE id = (SELECT user_id FROM influencers WHERE id = $1)',
+          [influencerId]
+        )
+
+        if (userResult.length > 0 && userResult[0]?.clerk_id) {
+          const clerkId = userResult[0].clerk_id
+          
+          // Map influencer_type to Clerk role
+          let clerkRole: string
+          if (influencer_type === 'SIGNED') {
+            clerkRole = 'INFLUENCER_SIGNED'
+          } else if (influencer_type === 'PARTNERED' || influencer_type === 'AGENCY_PARTNER') {
+            clerkRole = 'INFLUENCER_PARTNERED'
+          } else {
+            clerkRole = 'INFLUENCER_PARTNERED' // Default
+          }
+
+          // Update Clerk metadata
+          const client = await clerkClient()
+          const clerkUser = await client.users.getUser(clerkId)
+          
+          await client.users.updateUserMetadata(clerkId, {
+            publicMetadata: {
+              ...clerkUser.publicMetadata,
+              role: clerkRole
+            }
+          })
+
+          // Also update database users table
+          await query(
+            'UPDATE users SET role = $1, updated_at = NOW() WHERE clerk_id = $2',
+            [clerkRole, clerkId]
+          )
+
+          console.log(`✅ Updated Clerk role to ${clerkRole} for influencer ${influencerId}`)
+        }
+      } catch (clerkError) {
+        console.error('⚠️ Error updating Clerk metadata (non-fatal):', clerkError)
+        // Don't fail the request if Clerk update fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: updateResult[0]

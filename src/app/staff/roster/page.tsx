@@ -9,6 +9,7 @@ import { useCurrentUserId } from '@/lib/auth/current-user'
 import ErrorBoundary from '../../../components/debug/ErrorBoundary'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { StaffInfluencer, RosterFilters } from '../../../types/staff'
+import { ANALYTICS_CACHE_TTL_MS } from '@/constants/analytics'
 import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle } from 'lucide-react'
 
 // Import from separate files to avoid circular dependency issues during bundling
@@ -36,6 +37,53 @@ import {
   checkEngagementRange,
   needsAssignment
 } from '../../../components/staff/roster/utils'
+
+function parseNotes(rawNotes: unknown): any {
+  if (!rawNotes) return null
+  if (typeof rawNotes === 'string') {
+    try {
+      return JSON.parse(rawNotes)
+    } catch (error) {
+      console.warn('⚠️ Failed to parse roster influencer notes:', error)
+      return null
+    }
+  }
+  if (typeof rawNotes === 'object') {
+    return rawNotes
+  }
+  return null
+}
+
+function getAnalyticsProgress(influencer: StaffInfluencer) {
+  const totalPlatforms = Array.isArray(influencer.platforms)
+    ? influencer.platforms.filter(Boolean).length
+    : 0
+
+  if (totalPlatforms === 0) {
+    return { total: 0, synced: 0 }
+  }
+
+  const notesObject = parseNotes(influencer.notes)
+  const platformsData = notesObject?.modash_data?.platforms
+  if (!platformsData) {
+    return { total: totalPlatforms, synced: 0 }
+  }
+
+  const synced = influencer.platforms.reduce((count, platform) => {
+    if (!platform) return count
+    const key = platform.toLowerCase()
+    const record = platformsData[key]
+    if (!record?.last_refreshed) return count
+    const lastRefreshedTime = new Date(record.last_refreshed).getTime()
+    if (Number.isNaN(lastRefreshedTime)) return count
+    if (Date.now() - lastRefreshedTime <= ANALYTICS_CACHE_TTL_MS) {
+      return count + 1
+    }
+    return count
+  }, 0)
+
+  return { total: totalPlatforms, synced }
+}
 
 // Lazy load heavy modal components
 const EditInfluencerModal = dynamic(() => import('../../../components/modals/EditInfluencerModal'), {
@@ -118,13 +166,38 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   // Filter and search state - MUST be declared before hooks that use them
   const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram')
 
+  const handleAnalyticsNotesUpdate = useCallback((influencerId: string, newNotes: string) => {
+    setInfluencers(prev => prev.map(inf =>
+      inf.id === influencerId ? { ...inf, notes: newNotes } : inf
+    ))
+
+    setSelectedInfluencerForAnalytics(prev => {
+      if (prev && prev.id === influencerId) {
+        return { ...prev, notes: newNotes }
+      }
+      return prev
+    })
+
+    setSelectedDashboardInfluencer(prev => {
+      if (prev && prev.id === influencerId) {
+        return { ...prev, notes: newNotes }
+      }
+      return prev
+    })
+  }, [setInfluencers, setSelectedInfluencerForAnalytics, setSelectedDashboardInfluencer])
+
   // Fetch complete influencer analytics when panel opens
   const {
     data: analyticsData,
     isLoading: analyticsLoading,
     error: analyticsError,
     retry: retryAnalytics
-  } = useRosterInfluencerAnalytics(selectedInfluencerForAnalytics, detailPanelOpen, selectedPlatform)
+  } = useRosterInfluencerAnalytics(
+    selectedInfluencerForAnalytics,
+    detailPanelOpen,
+    selectedPlatform,
+    { onNotesUpdate: handleAnalyticsNotesUpdate }
+  )
 
   // Additional filter and search state
   const [activeTab, setActiveTab] = useState<'ALL' | 'SIGNED' | 'PARTNERED' | 'AGENCY_PARTNER' | 'PENDING_ASSIGNMENT' | 'MY_CREATORS'>('ALL')
@@ -637,7 +710,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             <tbody className="bg-white/50 divide-y divide-gray-100/60">
               {isInitialLoading ? (
                 <RosterLoadingSkeleton />
-              ) : paginatedInfluencers.map((influencer) => (
+              ) : paginatedInfluencers.map((influencer) => {
+                const analyticsProgress = getAnalyticsProgress(influencer)
+                const progressLabel = `${analyticsProgress.synced}/${analyticsProgress.total}`
+                const allSynced = analyticsProgress.total > 0 && analyticsProgress.synced >= analyticsProgress.total
+
+                return (
                 <tr key={influencer.id} className={`${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-white/70 transition-colors duration-150'} ${
                   needsAssignment(influencer) ? 'bg-orange-50 border-l-4 border-orange-400' : ''
                 }`}>
@@ -721,12 +799,24 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
                   {/* Platforms */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-2">
-                      {(Array.isArray(influencer.platforms) ? influencer.platforms : []).filter(Boolean).map((platform: Platform, index: number) => (
-                        <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
-                          <PlatformIcon platform={platform} size={24} />
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap gap-2">
+                        {(Array.isArray(influencer.platforms) ? influencer.platforms : []).filter(Boolean).map((platform: Platform, index: number) => (
+                          <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
+                            <PlatformIcon platform={platform} size={24} />
+                          </div>
+                        ))}
+                      </div>
+                      {analyticsProgress.total > 0 && (
+                        <div
+                          className={`w-9 h-9 rounded-full border text-xs font-semibold flex items-center justify-center ${
+                            allSynced ? 'border-green-500 text-green-600' : 'border-gray-300 text-gray-600'
+                          }`}
+                          title={`Analytics synced for ${progressLabel} connected platform${analyticsProgress.total === 1 ? '' : 's'}`}
+                        >
+                          {progressLabel}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </td>
 
@@ -841,7 +931,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

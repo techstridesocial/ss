@@ -44,6 +44,7 @@ export async function GET(_request: NextRequest) {
         i.total_avg_views,
         i.estimated_promotion_views,
         i.assigned_to,
+        i.notes,
         i.niches,
         i.created_at,
         i.updated_at,
@@ -99,6 +100,7 @@ export async function GET(_request: NextRequest) {
       platforms: parsePostgresArray(inf.platforms),
       niches: Array.isArray(inf.niches) ? inf.niches : (inf.niches || []),
       platform_count: inf.platform_count || 0,
+      notes: inf.notes || null,
       is_active: inf.user_status === 'ACTIVE',
       estimated_promotion_views: inf.estimated_promotion_views || Math.floor((inf.total_avg_views || 0) * 0.85)
     }))

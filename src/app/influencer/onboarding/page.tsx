@@ -96,6 +96,17 @@ function InfluencerOnboardingPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
 
+  // Check if user is signed talent and redirect to signed onboarding
+  useEffect(() => {
+    if (user) {
+      const role = user.publicMetadata?.role as string
+      if (role === 'INFLUENCER_SIGNED') {
+        // Redirect to signed talent onboarding
+        router.replace('/influencer/onboarding/signed')
+      }
+    }
+  }, [user, router])
+
   const [formData, setFormData] = useState<OnboardingData>({
     first_name: user?.firstName || '',
     last_name: user?.lastName || '',

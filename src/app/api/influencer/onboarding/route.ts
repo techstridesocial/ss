@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         const client = await clerkClient()
         const clerkUser = await client.users.getUser(userId)
         const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
-        const userRole = clerkUser.publicMetadata?.role as string || 'INFLUENCER_SIGNED'
+        const userRole = clerkUser.publicMetadata?.role as string || 'INFLUENCER_PARTNERED'
         
         console.log('📝 Creating user with email:', userEmail, 'role:', userRole)
         
