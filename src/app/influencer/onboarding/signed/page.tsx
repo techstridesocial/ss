@@ -404,12 +404,12 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 max-h-[400px] overflow-y-auto">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 max-h-[400px] overflow-y-auto">
               <div className="space-y-3">
                 {brands.map(brand => (
                   <label
                     key={brand.id}
-                    className="flex items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                    className="flex items-center p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -450,35 +450,35 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 space-y-4">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
                   placeholder="Brand name"
                   value={collaborationForm.brand_name}
                   onChange={(e) => setCollaborationForm(prev => ({ ...prev, brand_name: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
                 <input
                   type="text"
                   placeholder="Collaboration type"
                   value={collaborationForm.collaboration_type}
                   onChange={(e) => setCollaborationForm(prev => ({ ...prev, collaboration_type: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
                 <input
                   type="text"
                   placeholder="Date range"
                   value={collaborationForm.date_range}
                   onChange={(e) => setCollaborationForm(prev => ({ ...prev, date_range: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
                 <input
                   type="text"
                   placeholder="Notes"
                   value={collaborationForm.notes}
                   onChange={(e) => setCollaborationForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
               </div>
               <button
@@ -508,7 +508,7 @@ function SignedOnboardingPageContent() {
                 {formData.collaborations.map((collab, index) => (
                   <div
                     key={index}
-                    className="bg-white/10 rounded-xl p-4 flex items-center justify-between"
+                    className="bg-white/10 rounded-2xl p-4 flex items-center justify-between"
                   >
                     <div>
                       <p className="text-white font-medium">{collab.brand_name}</p>
@@ -545,37 +545,37 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 space-y-4">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
                   placeholder="Previous payment amount"
                   value={formData.previous_payment_amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, previous_payment_amount: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
                 <select
                   value={formData.currency}
                   onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm appearance-none"
                 >
-                  <option value="GBP" className="bg-gray-800">GBP</option>
-                  <option value="USD" className="bg-gray-800">USD</option>
-                  <option value="EUR" className="bg-gray-800">EUR</option>
+                  <option value="GBP" className="bg-gray-800 text-white">GBP</option>
+                  <option value="USD" className="bg-gray-800 text-white">USD</option>
+                  <option value="EUR" className="bg-gray-800 text-white">EUR</option>
                 </select>
                 <input
                   type="text"
                   placeholder="Payment method"
                   value={formData.payment_method}
                   onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
-                  className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
               </div>
               <textarea
                 placeholder="Notes (optional)"
                 value={formData.payment_notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, payment_notes: e.target.value }))}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200 min-h-[100px]"
+                className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm min-h-[100px]"
               />
             </div>
             <p className="text-cyan-200 text-sm text-center">
@@ -591,8 +591,8 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 space-y-4">
-              <label className="flex items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 space-y-4">
+              <label className="flex items-center p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer">
                 <input
                   type="radio"
                   name="email_setup"
@@ -601,9 +601,9 @@ function SignedOnboardingPageContent() {
                   onChange={(e) => setFormData(prev => ({ ...prev, email_setup_type: e.target.value as 'email_forwarding' }))}
                   className="w-5 h-5 text-cyan-600"
                 />
-                <span className="ml-3 text-white font-medium">Email forwarding</span>
+                <span className="ml-3 text-white font-medium text-lg">Email forwarding</span>
               </label>
-              <label className="flex items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
+              <label className="flex items-center p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer">
                 <input
                   type="radio"
                   name="email_setup"
@@ -612,7 +612,7 @@ function SignedOnboardingPageContent() {
                   onChange={(e) => setFormData(prev => ({ ...prev, email_setup_type: e.target.value as 'manager_email' }))}
                   className="w-5 h-5 text-cyan-600"
                 />
-                <span className="ml-3 text-white font-medium">Manager email</span>
+                <span className="ml-3 text-white font-medium text-lg">Manager email</span>
               </label>
               {formData.email_setup_type === 'manager_email' && (
                 <input
@@ -620,7 +620,7 @@ function SignedOnboardingPageContent() {
                   placeholder="Manager email address"
                   value={formData.manager_email}
                   onChange={(e) => setFormData(prev => ({ ...prev, manager_email: e.target.value }))}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-cyan-200"
+                  className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 />
               )}
             </div>
@@ -634,8 +634,8 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 space-y-4">
-              <label className="flex items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 space-y-4">
+              <label className="flex items-center p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer">
                 <input
                   type="radio"
                   name="instagram_bio"
@@ -644,9 +644,9 @@ function SignedOnboardingPageContent() {
                   onChange={(e) => setFormData(prev => ({ ...prev, instagram_bio_setup: e.target.value as 'done' }))}
                   className="w-5 h-5 text-cyan-600"
                 />
-                <span className="ml-3 text-white font-medium">I've already done this</span>
+                <span className="ml-3 text-white font-medium text-lg">I've already done this</span>
               </label>
-              <label className="flex items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
+              <label className="flex items-center p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer">
                 <input
                   type="radio"
                   name="instagram_bio"
@@ -655,7 +655,7 @@ function SignedOnboardingPageContent() {
                   onChange={(e) => setFormData(prev => ({ ...prev, instagram_bio_setup: e.target.value as 'will_do' }))}
                   className="w-5 h-5 text-cyan-600"
                 />
-                <span className="ml-3 text-white font-medium">I'll do this now</span>
+                <span className="ml-3 text-white font-medium text-lg">I'll do this now</span>
               </label>
             </div>
           </motion.div>
@@ -668,7 +668,7 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 text-center">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 text-center">
               <MessageCircle className="w-16 h-16 text-cyan-300 mx-auto mb-4" />
               <p className="text-white text-lg mb-4">Join our UK events WhatsApp group</p>
               <a
@@ -694,7 +694,7 @@ function SignedOnboardingPageContent() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 space-y-6">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border-2 border-white/20 space-y-6">
               <h3 className="text-2xl font-bold text-white mb-4">{EXPECTATIONS_CONTENT.title}</h3>
               {EXPECTATIONS_CONTENT.sections.map((section, index) => (
                 <div key={index} className="border-l-4 border-cyan-400 pl-4">

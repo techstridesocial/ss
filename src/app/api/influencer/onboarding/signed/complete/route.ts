@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query, transaction } from '@/lib/db/connection'
 import {
@@ -129,6 +129,68 @@ export async function POST(_request: NextRequest) {
         }
       })
     }
+
+    // Ensure user profile and influencer record exist (create if missing)
+    // This handles the case where signed talent is redirected directly without doing regular onboarding
+    await transaction(async (client) => {
+      // Get Clerk user data for profile creation
+      const clientClerk = await clerkClient()
+      const clerkUser = await clientClerk.users.getUser(userId)
+      const firstName = clerkUser.firstName || ''
+      const lastName = clerkUser.lastName || ''
+      const displayName = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || 'Signed Talent'
+
+      // Check if user profile exists
+      const profileCheck = await client.query(
+        'SELECT id FROM user_profiles WHERE user_id = $1',
+        [user_id]
+      )
+
+      if (profileCheck.rows.length === 0) {
+        // Create basic user profile from Clerk data
+        await client.query(`
+          INSERT INTO user_profiles (
+            user_id, first_name, last_name, is_onboarded
+          ) VALUES ($1, $2, $3, $4)
+        `, [
+          user_id,
+          firstName || null,
+          lastName || null,
+          true
+        ])
+      }
+
+      // Check if influencer record exists
+      const influencerCheck = await client.query(
+        'SELECT id FROM influencers WHERE user_id = $1',
+        [user_id]
+      )
+
+      if (influencerCheck.rows.length === 0) {
+        // Create basic influencer record
+        await client.query(`
+          INSERT INTO influencers (
+            user_id, display_name, onboarding_completed, ready_for_campaigns, influencer_type
+          ) VALUES ($1, $2, $3, $4, $5)
+        `, [
+          user_id,
+          displayName,
+          true,
+          false, // Not ready until staff approval
+          'SIGNED'
+        ])
+      } else {
+        // Update existing influencer to ensure type is SIGNED and onboarding is complete
+        await client.query(`
+          UPDATE influencers 
+          SET influencer_type = 'SIGNED', 
+              onboarding_completed = true, 
+              display_name = COALESCE(display_name, $2),
+              updated_at = NOW()
+          WHERE user_id = $1
+        `, [user_id, displayName])
+      }
+    })
 
     // Mark onboarding as complete
     await markOnboardingComplete(user_id)

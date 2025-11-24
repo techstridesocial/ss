@@ -15,7 +15,7 @@ export default async function Page({
       case 'brand':
         return '/brand/onboarding'
       case 'influencer':
-        return '/influencer/onboarding'
+        return '/influencer/signed-check' // Ask if they're signed first
       case 'staff':
         return '/staff/roster'
       default:

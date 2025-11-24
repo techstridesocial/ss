@@ -97,6 +97,7 @@ function InfluencerOnboardingPageContent() {
   const [isCompleted, setIsCompleted] = useState(false)
 
   // Check if user is signed talent and redirect to signed onboarding
+  // (This is a fallback in case they navigate directly - normally handled at signup)
   useEffect(() => {
     if (user) {
       const role = user.publicMetadata?.role as string
