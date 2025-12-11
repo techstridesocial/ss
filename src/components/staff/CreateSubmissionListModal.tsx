@@ -31,12 +31,21 @@ export default function CreateSubmissionListModal({
   const [influencers, setInfluencers] = useState<Influencer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedInfluencers, setSelectedInfluencers] = useState<Map<string, { influencer: Influencer; price?: number }>>(new Map())
+  const [currency, setCurrency] = useState<string>('GBP')
   
   const [formData, setFormData] = useState({
     name: '',
     brand_id: '',
     notes: ''
   })
+
+  const CURRENCIES = [
+    { value: 'GBP', label: '£ GBP', symbol: '£' },
+    { value: 'USD', label: '$ USD', symbol: '$' },
+    { value: 'EUR', label: '€ EUR', symbol: '€' },
+    { value: 'CAD', label: 'C$ CAD', symbol: 'C$' },
+    { value: 'AUD', label: 'A$ AUD', symbol: 'A$' }
+  ]
 
   useEffect(() => {
     if (isOpen) {
@@ -133,7 +142,8 @@ export default function CreateSubmissionListModal({
           brand_id: formData.brand_id,
           notes: formData.notes,
           influencer_ids: influencerIds,
-          initial_pricing: initialPricing
+          initial_pricing: initialPricing,
+          currency: currency
         })
       })
 
@@ -146,6 +156,7 @@ export default function CreateSubmissionListModal({
       setFormData({ name: '', brand_id: '', notes: '' })
       setSelectedInfluencers(new Map())
       setSearchQuery('')
+      setCurrency('GBP')
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create submission list')
@@ -249,38 +260,65 @@ export default function CreateSubmissionListModal({
               {/* Selected Influencers */}
               {selectedInfluencers.size > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selected Influencers ({selectedInfluencers.size})
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Selected Influencers ({selectedInfluencers.size})
+                    </label>
+                    {/* Currency Picker */}
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-600 font-medium">Currency:</label>
+                      <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white"
+                      >
+                        {CURRENCIES.map(curr => (
+                          <option key={curr.value} value={curr.value}>
+                            {curr.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    {Array.from(selectedInfluencers.entries()).map(([id, { influencer, price }]) => (
-                      <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{influencer.display_name}</p>
-                          {influencer.total_followers && (
-                            <p className="text-sm text-gray-600">
-                              {influencer.total_followers.toLocaleString()} followers
-                            </p>
-                          )}
+                    {Array.from(selectedInfluencers.entries()).map(([id, { influencer, price }]) => {
+                      const currencySymbol = CURRENCIES.find(c => c.value === currency)?.symbol || '$'
+                      return (
+                        <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{influencer.display_name}</p>
+                            {influencer.total_followers && (
+                              <p className="text-sm text-gray-600">
+                                {influencer.total_followers.toLocaleString()} followers
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 text-sm font-medium">
+                                {currencySymbol}
+                              </span>
+                              <input
+                                type="number"
+                                placeholder="0.00"
+                                value={price || ''}
+                                onChange={(e) => handlePriceChange(id, parseFloat(e.target.value) || 0)}
+                                className="w-28 pl-7 pr-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInfluencer(id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            placeholder="Price"
-                            value={price || ''}
-                            onChange={(e) => handlePriceChange(id, parseFloat(e.target.value) || 0)}
-                            className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveInfluencer(id)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}

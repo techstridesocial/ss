@@ -424,7 +424,7 @@ function SignedOnboardingPageContent() {
               <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20">
                 <div className="aspect-video rounded-lg overflow-hidden bg-black/20">
                   <iframe
-                    src={`${ONBOARDING_VIDEOS.WELCOME_VIDEO}?rel=0&modestbranding=1&enablejsapi=1${origin ? `&origin=${origin}` : ''}`}
+                    src={`${ONBOARDING_VIDEOS.WELCOME_VIDEO}?rel=0&modestbranding=1&enablejsapi=1&playsinline=1${origin ? `&origin=${origin}` : ''}`}
                     title="Welcome to Stride Talent"
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -455,7 +455,7 @@ function SignedOnboardingPageContent() {
               <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20">
                 <div className="aspect-video rounded-lg overflow-hidden bg-black/20">
                   <iframe
-                    src={`${ONBOARDING_VIDEOS.EMAIL_FORWARDING_VIDEO}?rel=0&modestbranding=1&enablejsapi=1${origin ? `&origin=${origin}` : ''}`}
+                    src={`${ONBOARDING_VIDEOS.EMAIL_FORWARDING_VIDEO}?rel=0&modestbranding=1&enablejsapi=1&playsinline=1${origin ? `&origin=${origin}` : ''}`}
                     title="Email Forwarding Setup"
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
