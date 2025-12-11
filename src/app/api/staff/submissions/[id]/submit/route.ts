@@ -38,7 +38,7 @@ export async function POST(
       [userId]
     )
 
-    if (userResult.length === 0 || userResult[0].id !== list.createdBy) {
+    if (userResult.length === 0 || !userResult[0] || userResult[0].id !== list.createdBy) {
       return NextResponse.json({ error: 'Forbidden - You can only submit your own lists' }, { status: 403 })
     }
 
