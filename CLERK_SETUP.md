@@ -79,12 +79,15 @@ NEXT_PUBLIC_APP_URL=https://stride-suite.com
 
 ## Important Notes
 
-- ✅ **Development keys** (`pk_test_`, `sk_test_`) work on `localhost` and any domain
+- ✅ **Development keys** (`pk_test_`, `sk_test_`) work on `localhost` AND `stride-suite.com` (any domain)
 - ✅ **Test mode** allows email verification testing without sending real emails
 - ✅ Use verification code **`424242`** in test mode (always works)
+- ✅ Development keys can be used for both local development and staging/production if needed
 - ❌ **Production keys** (`pk_live_`, `sk_live_`) only work on your configured production domain
 - 🔒 Never commit `.env.local` to Git (it's already in `.gitignore`)
-- 🌐 Production keys should only be in Vercel environment variables
+- 🌐 For production, you can either:
+  - Use development keys (works on any domain, including stride-suite.com)
+  - OR use production keys in Vercel environment variables (restricted to stride-suite.com)
 
 ## Testing Email Verification
 

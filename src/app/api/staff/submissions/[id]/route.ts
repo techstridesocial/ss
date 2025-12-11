@@ -78,7 +78,7 @@ export async function PATCH(
       [userId]
     )
 
-    if (userResult.length === 0 || userResult[0].id !== list.createdBy) {
+    if (userResult.length === 0 || !userResult[0] || userResult[0].id !== list.createdBy) {
       return NextResponse.json({ error: 'Forbidden - You can only edit your own lists' }, { status: 403 })
     }
 
@@ -133,7 +133,7 @@ export async function DELETE(
       [userId]
     )
 
-    if (userResult.length === 0 || userResult[0].id !== list.createdBy) {
+    if (userResult.length === 0 || !userResult[0] || userResult[0].id !== list.createdBy) {
       return NextResponse.json({ error: 'Forbidden - You can only delete your own lists' }, { status: 403 })
     }
 
