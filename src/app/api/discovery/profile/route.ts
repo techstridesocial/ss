@@ -117,6 +117,7 @@ export async function POST(_request: Request) {
         return NextResponse.json({
           success: false,
           error: 'Invalid userId: Appears to be an internal database ID (UUID), not a Modash userId. Please use username lookup instead.',
+          errorCode: 'INVALID_UUID_AS_USERID',
           debug: { actualUserId, platform: normalizedPlatform, detectedAs: 'UUID' }
         }, { status: 400 })
       } else {

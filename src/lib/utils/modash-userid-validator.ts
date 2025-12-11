@@ -67,3 +67,29 @@ export function validateModashUserId(userId: string | null | undefined): string 
 
   return trimmed
 }
+
+/**
+ * Resolve Modash userId from multiple sources with priority order
+ * Returns the first valid userId found, or null if none are valid
+ * 
+ * @param sources - Array of userId sources to check in priority order
+ * @returns Object with userId and source name, or null if no valid userId found
+ */
+export function resolveModashUserId(sources: Array<{
+  value: string | null | undefined
+  name: string
+  platformCheck?: () => boolean
+}>): { userId: string; source: string } | null {
+  for (const source of sources) {
+    if (!source.value) continue
+    if (source.platformCheck && !source.platformCheck()) continue
+    
+    const validated = validateModashUserId(source.value)
+    if (validated) {
+      console.log(`✅ Using userId from ${source.name}`)
+      return { userId: validated, source: source.name }
+    }
+    console.warn(`⚠️ Invalid userId from ${source.name}: ${source.value}${isUUID(source.value) ? ' (detected as UUID)' : ''}`)
+  }
+  return null
+}

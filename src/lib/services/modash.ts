@@ -1,6 +1,7 @@
 // modashService.ts — Cleaned Production Grade
 
 import qs from 'query-string'
+import { modashRateLimiter } from '@/lib/utils/rate-limiter'
 
 const BASE_URL = 'https://api.modash.io/v1'
 const API_KEY = process.env.MODASH_API_KEY
@@ -9,6 +10,9 @@ if (!API_KEY) throw new Error('❌ Missing MODASH_API_KEY in env')
 
 // Reusable fetcher
 async function modashApiRequest<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
+  // Wait for rate limit token before making request
+  await modashRateLimiter.removeTokens(1)
+  
   const url = `${BASE_URL}${endpoint}?${qs.stringify(params)}`
 
   const res = await fetch(url, {
@@ -18,6 +22,15 @@ async function modashApiRequest<T>(endpoint: string, params: Record<string, any>
     }
   })
 
+  // Check rate limit headers
+  const rateLimitRemaining = res.headers.get('X-RateLimit-Remaining')
+  if (rateLimitRemaining && parseInt(rateLimitRemaining) < 2) {
+    console.warn('⚠️ Modash API rate limit low:', {
+      remaining: rateLimitRemaining,
+      endpoint: url.split('?')[0]
+    })
+  }
+
   if (!res.ok) {
     const err = await res.text()
     console.error(`❌ Modash API Request Failed:`, {
@@ -25,13 +38,16 @@ async function modashApiRequest<T>(endpoint: string, params: Record<string, any>
       statusText: res.statusText,
       endpoint,
       error: err,
-      url: url.split('?')[0] // Log URL without sensitive params
+      url: url.split('?')[0], // Log URL without sensitive params
+      rateLimitRemaining: res.headers.get('X-RateLimit-Remaining'),
+      retryAfter: res.headers.get('Retry-After')
     })
     
     if (res.status === 401) {
       throw new Error(`Modash API authentication failed (${res.status}): Check API key validity`)
     } else if (res.status === 429) {
-      throw new Error(`Modash API rate limit exceeded (${res.status}): Too many requests`)
+      const retryAfter = res.headers.get('Retry-After')
+      throw new Error(`Modash API rate limit exceeded (${res.status}): Too many requests. Retry after ${retryAfter || 'some time'} seconds`)
     } else if (res.status >= 500) {
       throw new Error(`Modash API server error (${res.status}): ${err}`)
     } else {
@@ -44,6 +60,9 @@ async function modashApiRequest<T>(endpoint: string, params: Record<string, any>
 
 // POST fetcher
 async function modashApiPost<T>(endpoint: string, body: Record<string, any> = {}): Promise<T> {
+  // Wait for rate limit token before making request
+  await modashRateLimiter.removeTokens(1)
+  
   const url = `${BASE_URL}${endpoint}`
 
   const res = await fetch(url, {
@@ -55,6 +74,15 @@ async function modashApiPost<T>(endpoint: string, body: Record<string, any> = {}
     body: JSON.stringify(body)
   })
 
+  // Check rate limit headers
+  const rateLimitRemaining = res.headers.get('X-RateLimit-Remaining')
+  if (rateLimitRemaining && parseInt(rateLimitRemaining) < 2) {
+    console.warn('⚠️ Modash API rate limit low:', {
+      remaining: rateLimitRemaining,
+      endpoint: url.split('?')[0]
+    })
+  }
+
   if (!res.ok) {
     const err = await res.text()
     console.error(`❌ Modash API Request Failed:`, {
@@ -62,13 +90,16 @@ async function modashApiPost<T>(endpoint: string, body: Record<string, any> = {}
       statusText: res.statusText,
       endpoint,
       error: err,
-      url: url.split('?')[0] // Log URL without sensitive params
+      url: url.split('?')[0], // Log URL without sensitive params
+      rateLimitRemaining: res.headers.get('X-RateLimit-Remaining'),
+      retryAfter: res.headers.get('Retry-After')
     })
     
     if (res.status === 401) {
       throw new Error(`Modash API authentication failed (${res.status}): Check API key validity`)
     } else if (res.status === 429) {
-      throw new Error(`Modash API rate limit exceeded (${res.status}): Too many requests`)
+      const retryAfter = res.headers.get('Retry-After')
+      throw new Error(`Modash API rate limit exceeded (${res.status}): Too many requests. Retry after ${retryAfter || 'some time'} seconds`)
     } else if (res.status >= 500) {
       throw new Error(`Modash API server error (${res.status}): ${err}`)
     } else {

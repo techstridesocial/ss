@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { StaffInfluencer } from '@/types/staff'
 import { ANALYTICS_CACHE_TTL_MS } from '@/constants/analytics'
-import { validateModashUserId, isUUID } from '@/lib/utils/modash-userid-validator'
+import { enrichWithRosterData, createRosterOnlyData } from './utils/enrichmentHelpers'
 
 interface UseRosterAnalyticsOptions {
   onNotesUpdate?: (influencerId: string, notes: string) => void
@@ -58,62 +58,74 @@ export function useRosterInfluencerAnalytics(
   const [detailData, setDetailData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const syncKeyRef = useRef<string | null>(null)
+  const syncInProgressRef = useRef<Set<string>>(new Set())
   const { onNotesUpdate } = options || {}
 
-  const syncAnalyticsToServer = async (payload: any) => {
+  const syncAnalyticsToServer = async (payload: any, platform?: string) => {
     if (!influencer || !payload) return
 
-    const normalizedPlatform = selectedPlatform?.toLowerCase?.() || 'instagram'
-    const keyParts = [
-      influencer.id,
-      normalizedPlatform,
-      payload.userId || payload.username || '',
-      String(payload.followers ?? ''),
-      String(payload.engagementRate ?? ''),
-      String(payload.averageViews ?? payload.avgViews ?? '')
-    ]
-    const syncKey = keyParts.join('|')
+    const normalizedPlatform = platform || selectedPlatform?.toLowerCase?.() || 'instagram'
+    const syncId = `${influencer.id}:${normalizedPlatform}`
 
-    if (syncKeyRef.current === syncKey) return
-    syncKeyRef.current = syncKey
+    // Check if already syncing (prevent race conditions)
+    if (syncInProgressRef.current.has(syncId)) {
+      console.log('⏳ Sync already in progress, skipping duplicate request')
+      return
+    }
+
+    // Mark as in-progress
+    syncInProgressRef.current.add(syncId)
 
     try {
+      // Use metrics normalizer to ensure consistent format
+      const { normalizeModashMetrics } = await import('@/lib/utils/metrics-normalizer')
+      
+      // Normalize the payload metrics to ensure consistent format
+      const normalizedMetrics = normalizeModashMetrics({
+        username: payload.username,
+        followers: payload.followers,
+        engagementRate: payload.engagementRate,
+        avgViews: payload.averageViews ?? payload.avgViews,
+        avgLikes: payload.avgLikes,
+        avgComments: payload.avgComments,
+        url: payload.url || payload.channelUrl,
+        picture: payload.picture
+      })
+
       const response = await fetch(`/api/roster/${influencer.id}/refresh-analytics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           platform: normalizedPlatform,
           modashUserId: payload.userId,
-          metrics: {
-            username: payload.username,
-            followers: payload.followers,
-            engagementRate: payload.engagementRate,
-            avgViews: payload.averageViews ?? payload.avgViews,
-            avgLikes: payload.avgLikes,
-            avgComments: payload.avgComments,
-            url: payload.url || payload.channelUrl,
-            picture: payload.picture
-          },
+          metrics: normalizedMetrics,
           profile: payload
         })
       })
 
       if (!response.ok) {
-        throw new Error(`Sync failed with status ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Sync failed with status ${response.status}`)
       }
 
       const result = await response.json().catch(() => null)
-      const updatedNotes = result?.data?.notes
-      const lastRefreshed = result?.data?.last_refreshed
-      if (updatedNotes && onNotesUpdate) {
-        onNotesUpdate(influencer.id, updatedNotes)
+      
+      // New service structure doesn't return notes in response
+      // The notes are updated in the database, but we don't need to sync them back
+      // The next fetch will get the updated data from cache
+      if (result?.success) {
+        console.log('✅ Analytics synced successfully', {
+          platform: result.data?.platform,
+          lastRefreshed: result.data?.last_refreshed
+        })
       }
-      if (lastRefreshed) {
-        syncKeyRef.current = ['server', influencer.id, normalizedPlatform, lastRefreshed].join('|')
-      }
+
     } catch (syncError) {
       console.error('⚠️ Failed to sync roster analytics to server:', syncError)
+      // Don't throw - sync is non-critical
+    } finally {
+      // Always remove from in-progress Set (allows retry on error)
+      syncInProgressRef.current.delete(syncId)
     }
   }
 
@@ -121,9 +133,12 @@ export function useRosterInfluencerAnalytics(
     if (!isOpen || !influencer) {
       setDetailData(null)
       setError(null)
-      syncKeyRef.current = null
+      setIsLoading(false)
       return
     }
+
+    // Create AbortController for cleanup
+    const abortController = new AbortController()
 
     const fetchCompleteData = async () => {
       setIsLoading(true)
@@ -132,8 +147,44 @@ export function useRosterInfluencerAnalytics(
       try {
         console.log(`🔍 Roster Analytics: Fetching for influencer ${influencer.id}, platform ${selectedPlatform}`)
 
+        // CRITICAL: Validate that the influencer actually has this platform
+        // If not, use the first available platform or show error
+        const availablePlatforms = Array.isArray(influencer.platforms) 
+          ? influencer.platforms.map(p => p?.toLowerCase()).filter(Boolean)
+          : []
+        
+        const normalizedSelectedPlatform = selectedPlatform?.toLowerCase() || 'instagram'
+        const hasSelectedPlatform = availablePlatforms.includes(normalizedSelectedPlatform)
+        
+        // Determine which platform to actually use
+        let platformToUse: string
+        
+        if (!hasSelectedPlatform) {
+          if (availablePlatforms.length > 0) {
+            // Platform doesn't exist for this influencer, but they have other platforms
+            // Auto-select the first available platform
+            const firstPlatform = availablePlatforms[0]
+            if (!firstPlatform) {
+              setError('Unable to determine platform for this influencer.')
+              setDetailData(createRosterOnlyData(influencer))
+              return
+            }
+            platformToUse = firstPlatform
+            console.warn(`⚠️ Roster Analytics: Requested platform "${selectedPlatform}" not available. Influencer has: ${availablePlatforms.join(', ')}. Auto-switching to: ${platformToUse}`)
+            setError(`This influencer doesn't have ${selectedPlatform} connected. Showing analytics for ${platformToUse} instead.`)
+          } else {
+            // No platforms at all
+            setError('This influencer has no social media platforms connected. Please add a platform in influencer settings.')
+            setDetailData(createRosterOnlyData(influencer))
+            return
+          }
+        } else {
+          // Requested platform exists, use it
+          platformToUse = normalizedSelectedPlatform
+        }
+
         const notesObject = parseNotes(influencer.notes)
-        const cachedEntry = getCachedAnalyticsEntry(notesObject, selectedPlatform)
+        const cachedEntry = getCachedAnalyticsEntry(notesObject, platformToUse)
         if (cachedEntry && cachedEntry.payload) {
           const cachedPayload = cachedEntry.payload
           const enrichedPayload = {
@@ -149,67 +200,43 @@ export function useRosterInfluencerAnalytics(
             last_refreshed: cachedEntry.record.last_refreshed ?? cachedEntry.lastRefreshed
           }
 
-          setDetailData({
-            ...enrichedPayload,
-            id: influencer.id,
-            rosterId: influencer.id,
-            isRosterInfluencer: true,
-            hasPreservedAnalytics: true,
-            platforms: influencer.platforms,
-            platform_count: influencer.platform_count,
-            assigned_to: influencer.assigned_to,
-            labels: influencer.labels || [],
-            notes: influencer.notes,
-            display_name: influencer.display_name
-          })
+          setDetailData(enrichWithRosterData(enrichedPayload, influencer))
 
-          syncKeyRef.current = ['cache', influencer.id, selectedPlatform.toLowerCase(), cachedEntry.lastRefreshed].join('|')
-          setIsLoading(false)
           return
         }
         
         // Step 1: Check if we have stored Modash userId in notes (FAST PATH - like discovery)
-        // CRITICAL: userId must be platform-specific - check if it matches the requested platform
+        // CRITICAL: Use shared resolver utility (same logic as refresh-analytics route)
+        const { resolveModashUserId } = await import('@/lib/utils/modash-userid-validator')
+        
         let modashUserId: string | null = null
         if (notesObject) {
           const storedPlatforms = notesObject.modash_data?.platforms
-          const storedUserId = storedPlatforms?.[selectedPlatform?.toLowerCase?.() || 'instagram']?.userId
-          const storedPlatform = storedPlatforms?.[selectedPlatform?.toLowerCase?.() || 'instagram'] ? selectedPlatform : notesObject.modash_data?.platform
-          // Backwards compatibility: fall back to legacy top-level fields
+          const storedUserId = storedPlatforms?.[platformToUse]?.userId
           const legacyUserId = notesObject.modash_data?.userId || notesObject.modash_data?.modash_user_id
+          const storedPlatform = notesObject.modash_data?.platform
 
-          const normalizedSelectedPlatform = selectedPlatform?.toLowerCase() || 'instagram'
-          
-          // Validate and use platform-specific userId
-          if (storedUserId) {
-            const validatedUserId = validateModashUserId(storedUserId)
-            if (validatedUserId) {
-              modashUserId = validatedUserId
-              console.log(`✅ Roster Analytics: Found valid stored Modash userId ${modashUserId} for platform ${normalizedSelectedPlatform}`)
-            } else {
-              console.warn(`⚠️ Roster Analytics: Invalid stored userId format (looks like internal UUID or invalid): ${storedUserId}. Will fallback to username search.`)
-              // Clear invalid userId from notes? (Could add cleanup logic here)
-            }
-          }
-          
-          // Validate and use legacy userId if platform-specific not available
-          if (!modashUserId && legacyUserId) {
-            const validatedLegacyUserId = validateModashUserId(legacyUserId)
-            if (validatedLegacyUserId) {
-              const normalizedStoredPlatform = (storedPlatform || notesObject.modash_data?.platform || '').toLowerCase()
-              if (!normalizedStoredPlatform || normalizedStoredPlatform === normalizedSelectedPlatform) {
-                modashUserId = validatedLegacyUserId
-                console.log(`✅ Roster Analytics: Using validated legacy stored userId ${modashUserId}`)
-              } else {
-                console.warn(`⚠️ Roster Analytics: Legacy userId exists but platform mismatch (${normalizedStoredPlatform} vs ${normalizedSelectedPlatform}). Will fallback to username search.`)
-              }
-            } else {
-              if (isUUID(legacyUserId)) {
-                console.warn(`⚠️ Roster Analytics: Legacy userId is an internal UUID (${legacyUserId}), not a Modash userId. Will fallback to username search.`)
-              } else {
-                console.warn(`⚠️ Roster Analytics: Invalid legacy userId format: ${legacyUserId}. Will fallback to username search.`)
+          // Use shared resolver (DRY - same as refresh-analytics route)
+          const resolution = resolveModashUserId([
+            { 
+              value: storedUserId, 
+              name: 'platform-specific' 
+            },
+            { 
+              value: legacyUserId, 
+              name: 'legacy',
+              platformCheck: () => {
+                const legacyPlatform = (storedPlatform || '').toLowerCase()
+                return !legacyPlatform || legacyPlatform === platformToUse
               }
             }
+          ])
+
+          if (resolution) {
+            modashUserId = resolution.userId
+            console.log(`✅ Roster Analytics: Found valid userId from ${resolution.source}: ${modashUserId}`)
+          } else {
+            console.log(`📭 Roster Analytics: No valid stored userId found, will try username search`)
           }
         }
 
@@ -219,9 +246,10 @@ export function useRosterInfluencerAnalytics(
           const modashResponse = await fetch('/api/discovery/profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: abortController.signal,
             body: JSON.stringify({
               userId: modashUserId,
-              platform: selectedPlatform
+              platform: platformToUse
             })
           })
 
@@ -232,32 +260,8 @@ export function useRosterInfluencerAnalytics(
               console.log(`✅ Roster Analytics: Successfully fetched Modash data using userId`)
               // CRITICAL: Database is KING ONLY for username and linked platforms
               // Modash is KING for ALL analytics (followers, engagement, posts, audience, etc.)
-              setDetailData({
-                // Start with Modash data (MODASH IS KING for analytics)
-                ...modashData.data,
-                // Preserve ONLY database fields: username and linked platforms + CRM fields
-                id: influencer.id,
-                rosterId: influencer.id,
-                isRosterInfluencer: true,
-                hasPreservedAnalytics: true,
-                // Database is KING for: which platforms this influencer has accounts on
-                platforms: influencer.platforms, // Database platforms array (INSTAGRAM, TIKTOK, YOUTUBE)
-                platform_count: influencer.platform_count,
-                // Database is KING for: CRM/workflow fields
-                assigned_to: influencer.assigned_to,
-                labels: influencer.labels || [],
-                notes: influencer.notes,
-                // Database is KING for: basic identity (display_name)
-                display_name: influencer.display_name,
-                // Modash is KING for: ALL analytics (already spread from modashData.data above)
-                // - followers, engagement_rate, avgLikes, avgComments, avgViews
-                // - recentPosts, popularPosts, audience, statsByContentType
-                // - brand_partnerships, brand_mentions, brand_affinity
-                // - audience_interests, audience_languages, content_performance
-                // - picture, bio, url, etc. (all from Modash)
-              })
-              await syncAnalyticsToServer(modashData.data)
-              setIsLoading(false)
+              setDetailData(enrichWithRosterData(modashData.data, influencer))
+              await syncAnalyticsToServer(modashData.data, platformToUse)
               return
             } else {
               console.warn(`⚠️ Roster Analytics: Modash returned no data with userId:`, modashData)
@@ -272,26 +276,29 @@ export function useRosterInfluencerAnalytics(
             // CRITICAL: If rate limited (429), DO NOT retry or fallback - stop immediately
             if (statusCode === 429) {
               setError('Rate limit exceeded. Please wait a few minutes before trying again.')
-              setDetailData({
-                ...influencer,
-                isRosterInfluencer: true,
-                rosterId: influencer.id
-              })
+              setDetailData(createRosterOnlyData(influencer))
               return // Exit early - don't cascade more API calls
             }
             
-            // For 400/404 errors, fallback to username search (userId might be wrong platform)
-            if (statusCode === 400 || statusCode === 404) {
-              console.log(`🔄 Roster Analytics: Falling back to username search (userId lookup failed with ${statusCode})`)
+            // For 400 errors with UUID, skip username search if no username exists (will fail anyway)
+            // For 404 errors or other 400 errors, try username search as fallback
+            if (statusCode === 400) {
+              // Check if this is a UUID error
+              if (errorData.errorCode === 'INVALID_UUID_AS_USERID') {
+                console.warn(`⚠️ Roster Analytics: UUID detected as userId, will try username search as fallback`)
+                modashUserId = null // Clear to trigger username search
+              } else {
+                console.log(`🔄 Roster Analytics: Falling back to username search (userId lookup failed with 400: ${errorData.error || 'unknown error'})`)
+                modashUserId = null // Clear to trigger username search
+              }
+            } else if (statusCode === 404) {
+              console.log(`🔄 Roster Analytics: Falling back to username search (userId not found - 404)`)
               modashUserId = null // Clear to trigger username search
             } else {
               // For other errors (500, etc.), don't retry - use roster data only
               console.warn(`⚠️ Roster Analytics: Unexpected error (${statusCode}), using roster data only`)
-              setDetailData({
-                ...influencer,
-                isRosterInfluencer: true,
-                rosterId: influencer.id
-              })
+              setError(errorData.error || `Failed to fetch analytics (${statusCode})`)
+              setDetailData(createRosterOnlyData(influencer))
               return
             }
           }
@@ -302,13 +309,15 @@ export function useRosterInfluencerAnalytics(
           console.log(`🔍 Roster Analytics: No stored userId, trying username search...`)
           
           // Get platform username from database
-          const platformResponse = await fetch(`/api/influencers/${influencer.id}/platform-username?platform=${selectedPlatform}`)
+          const platformResponse = await fetch(`/api/influencers/${influencer.id}/platform-username?platform=${platformToUse}`, {
+            signal: abortController.signal
+          })
           
           let username: string | null = null
           if (platformResponse.ok) {
             const platformData = await platformResponse.json()
             username = platformData.success ? platformData.username : null
-            console.log(`✅ Roster Analytics: Found username "${username}" for platform ${selectedPlatform}`)
+            console.log(`✅ Roster Analytics: Found username "${username}" for platform ${platformToUse}`)
           } else {
             const errorData = await platformResponse.json().catch(() => ({}))
             console.error(`❌ Roster Analytics: Failed to get username:`, errorData)
@@ -318,13 +327,14 @@ export function useRosterInfluencerAnalytics(
           if (username) {
             // Clean username: remove @ symbol and trim whitespace
             const cleanUsername = username.replace('@', '').trim()
-            console.log(`🔍 Roster Analytics: Fetching Modash data for username "${cleanUsername}" (original: "${username}") on ${selectedPlatform}`)
+            console.log(`🔍 Roster Analytics: Fetching Modash data for username "${cleanUsername}" (original: "${username}") on ${platformToUse}`)
             const modashResponse = await fetch('/api/discovery/profile', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              signal: abortController.signal,
               body: JSON.stringify({
                 username: cleanUsername,
-                platform: selectedPlatform
+                platform: platformToUse
               })
             })
 
@@ -335,30 +345,14 @@ export function useRosterInfluencerAnalytics(
                 console.log(`✅ Roster Analytics: Successfully fetched Modash data using username`)
                 // CRITICAL: Database is KING ONLY for username and linked platforms
                 // Modash is KING for ALL analytics (followers, engagement, posts, audience, etc.)
-                setDetailData({
-                  ...modashData.data,
-                  id: influencer.id,
-                  rosterId: influencer.id,
-                  isRosterInfluencer: true,
-                  hasPreservedAnalytics: true,
-                  platforms: influencer.platforms,
-                  platform_count: influencer.platform_count,
-                  assigned_to: influencer.assigned_to,
-                  labels: influencer.labels || [],
-                  notes: influencer.notes,
-                  display_name: influencer.display_name
-                })
-                await syncAnalyticsToServer(modashData.data)
+              setDetailData(enrichWithRosterData(modashData.data, influencer))
+                await syncAnalyticsToServer(modashData.data, platformToUse)
                 setIsLoading(false)
                 return
               } else {
                 console.warn(`⚠️ Roster Analytics: Modash returned no data with username:`, modashData)
                 // Modash failed, use roster data as fallback
-                setDetailData({
-                  ...influencer,
-                  isRosterInfluencer: true,
-                  rosterId: influencer.id
-                })
+                setDetailData(createRosterOnlyData(influencer))
               }
             } else {
               const errorData = await modashResponse.json().catch(() => ({}))
@@ -368,43 +362,53 @@ export function useRosterInfluencerAnalytics(
               // CRITICAL: If rate limited (429), stop immediately
               if (statusCode === 429) {
                 setError('Rate limit exceeded. Please wait a few minutes before trying again.')
-                setDetailData({
-                  ...influencer,
-                  isRosterInfluencer: true,
-                  rosterId: influencer.id
-                })
+                setDetailData(createRosterOnlyData(influencer))
                 return
               }
 
               // For other errors, use roster data as fallback
-              setDetailData({
-                ...influencer,
-                isRosterInfluencer: true,
-                rosterId: influencer.id
-              })
+              setDetailData(createRosterOnlyData(influencer))
             }
           } else {
-            console.warn(`⚠️ Roster Analytics: No username found for platform ${selectedPlatform} - using roster data only`)
-            // No username found, use roster data only
-            setDetailData({
-              ...influencer,
-              isRosterInfluencer: true,
-              rosterId: influencer.id
-            })
+            // No username found for the requested platform
+            // Check if influencer has the platform at all
+            const hasPlatform = availablePlatforms.includes(platformToUse)
+            
+            if (!hasPlatform) {
+              console.warn(`⚠️ Roster Analytics: Influencer doesn't have platform ${platformToUse}. Available: ${availablePlatforms.join(', ') || 'none'}`)
+              setError(`This influencer doesn't have ${platformToUse} connected. Available platforms: ${availablePlatforms.join(', ') || 'none'}. Please add ${platformToUse} in influencer settings.`)
+            } else {
+              console.warn(`⚠️ Roster Analytics: No username found for platform ${platformToUse} - cannot fetch Modash analytics`)
+              setError(`No username found for ${platformToUse}. Please add the platform username in the influencer settings to fetch analytics.`)
+            }
+            
+            setDetailData(createRosterOnlyData(influencer))
+            return // Stop here - cannot proceed without username
           }
         }
 
       } catch (err) {
+        // Check if request was aborted
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('📭 Analytics fetch cancelled (component unmounted or dependencies changed)')
+          return
+        }
+        
         console.error('Error loading analytics:', err)
         setError(err instanceof Error ? err.message : 'Failed to load influencer analytics')
-        setDetailData(null)
+        setDetailData(createRosterOnlyData(influencer))
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchCompleteData()
-  }, [influencer?.id, isOpen, selectedPlatform])
+
+    // Cleanup: abort in-flight requests on unmount or dependency change
+    return () => {
+      abortController.abort()
+    }
+  }, [influencer?.id, isOpen, selectedPlatform, influencer])
 
   const retry = () => {
     if (influencer && isOpen) {
