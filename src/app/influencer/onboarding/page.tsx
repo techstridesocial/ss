@@ -222,7 +222,7 @@ function InfluencerOnboardingPageContent() {
     const field = currentStepData.id as keyof OnboardingData
     
     // Skip validation for optional fields
-    if (['website', 'profile_picture'].includes(field)) {
+    if (['website', 'profile_picture', 'instagram_handle', 'tiktok_handle', 'youtube_handle'].includes(field)) {
       return true
     }
     
@@ -267,7 +267,7 @@ function InfluencerOnboardingPageContent() {
                   text-white placeholder-cyan-200 text-lg focus:outline-none focus:border-white/50 
                   focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                 autoFocus
-                required={!['website'].includes(field)}
+                required={!['website', 'instagram_handle', 'tiktok_handle', 'youtube_handle'].includes(field)}
               />
             </div>
             
