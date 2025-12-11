@@ -148,6 +148,8 @@ export default async function Page({
             appearance={appearance} 
             afterSignInUrl={getAfterSignInUrl()}
             afterSignUpUrl={getAfterSignUpUrl()}
+            forceRedirectUrl={getAfterSignUpUrl()}
+            signInUrl="/sign-in"
           />
         </div>
       </div>
