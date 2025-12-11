@@ -29,7 +29,7 @@ export async function PATCH(
     const { role } = await request.json()
 
     // Validate role
-    const validRoles: UserRole[] = ['BRAND', 'INFLUENCER_SIGNED', 'INFLUENCER_PARTNERED', 'STAFF', 'ADMIN']
+    const validRoles: UserRole[] = [UserRole.BRAND, UserRole.INFLUENCER_SIGNED, UserRole.INFLUENCER_PARTNERED, UserRole.STAFF, UserRole.ADMIN]
     if (!role || !validRoles.includes(role as UserRole)) {
       return NextResponse.json(
         { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },

@@ -188,6 +188,7 @@ function SignedOnboardingPageContent() {
   }
 
   const saveStep = async () => {
+    if (!currentStepData) return
     const stepKey = currentStepData.id
     const stepData: any = {}
 
@@ -282,6 +283,7 @@ function SignedOnboardingPageContent() {
   }
 
   const canProceed = () => {
+    if (!currentStepData) return false
     const stepKey = currentStepData.id
     
     switch (stepKey) {

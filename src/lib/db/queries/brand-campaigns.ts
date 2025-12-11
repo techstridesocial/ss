@@ -8,7 +8,7 @@ export async function getBrandIdFromUserId(clerkUserId: string): Promise<string>
     SELECT id FROM users WHERE clerk_id = $1
   `, [clerkUserId])
   
-  if (userResult.length === 0) {
+  if (userResult.length === 0 || !userResult[0]) {
     throw new Error('User not found')
   }
   

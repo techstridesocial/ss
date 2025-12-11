@@ -15,7 +15,7 @@ export async function POST(_request: NextRequest) {
       SELECT id FROM users WHERE clerk_id = $1
     `, [userId])
 
-    if (userResult.length === 0) {
+    if (userResult.length === 0 || !userResult[0]) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 

@@ -55,7 +55,7 @@ export async function GET(
         [userId]
       )
 
-      if (userResult.length === 0 || userResult[0].id !== list.createdBy) {
+      if (userResult.length === 0 || !userResult[0] || userResult[0].id !== list.createdBy) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
