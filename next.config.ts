@@ -1,9 +1,15 @@
 import type { NextConfig } from "next";
 
-// Import bundle analyzer
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
+// Import bundle analyzer (optional - only if installed)
+let withBundleAnalyzer: any = (config: NextConfig) => config;
+try {
+  withBundleAnalyzer = require('@next/bundle-analyzer')({
+    enabled: process.env.ANALYZE === 'true',
+  });
+} catch (e) {
+  // Bundle analyzer not installed, skip it
+  console.log('Bundle analyzer not available, skipping...');
+}
 
 const nextConfig: NextConfig = {
   eslint: {

@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
-import { Calendar, Clock, CheckCircle, DollarSign, AlertCircle, Plus, X, ExternalLink, Upload, FileText, Link as LinkIcon } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, DollarSign, AlertCircle, Plus, X, ExternalLink, Upload, FileText, Link as LinkIcon, TrendingUp, Award, Sparkles } from 'lucide-react'
 
 interface ContentSubmission {
   content_url: string
@@ -44,10 +45,10 @@ export default function InfluencerCampaigns() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-blue-100 text-blue-800'
-      case 'completed': return 'bg-green-100 text-green-800'
-      case 'pending_content': return 'bg-orange-100 text-orange-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'active': return 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50'
+      case 'completed': return 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/50'
+      case 'pending_content': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/50'
+      default: return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
     }
   }
 
@@ -188,100 +189,166 @@ export default function InfluencerCampaigns() {
     const campaignSubmissions = submittedContent[campaign.id] || []
     
     return (
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{campaign.name}</h3>
-            <p className="text-gray-600 mb-2">{campaign.description}</p>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                {getStatusText(campaign.status)}
-              </span>
-              <span className="flex items-center gap-1">
-                <DollarSign className="h-4 w-4" />
-                ${campaign.amount || 0}
-              </span>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        whileHover={{ y: -2 }}
+        className="group relative bg-white/90 backdrop-blur-md rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100/80 overflow-hidden"
+      >
+        {/* Gradient accent bar */}
+        <div className={`h-1.5 ${campaign.status === 'active' ? 'bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-600' : campaign.status === 'completed' ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600' : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600'}`}></div>
+        
+        {/* Subtle background gradient */}
+        <div className={`absolute inset-0 opacity-5 ${campaign.status === 'active' ? 'bg-gradient-to-br from-cyan-500 to-blue-500' : campaign.status === 'completed' ? 'bg-gradient-to-br from-emerald-500 to-green-500' : 'bg-gradient-to-br from-amber-500 to-orange-500'}`}></div>
+        
+        <div className="relative p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <div className="flex items-start gap-4 mb-4">
+                <div className={`p-3 rounded-2xl shadow-lg ${campaign.status === 'active' ? 'bg-gradient-to-br from-cyan-500 to-blue-500 shadow-cyan-500/30' : campaign.status === 'completed' ? 'bg-gradient-to-br from-emerald-500 to-green-500 shadow-emerald-500/30' : 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/30'}`}>
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">{campaign.name}</h3>
+                  <p className="text-gray-500 text-sm font-medium">{campaign.brand_name || campaign.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide ${getStatusColor(campaign.status)}`}>
+                  {getStatusText(campaign.status)}
+                </span>
+                <span className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl text-emerald-700 font-bold shadow-sm border border-emerald-100">
+                  <DollarSign className="h-4 w-4" />
+                  ${(campaign.amount || 0).toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Calendar className="h-4 w-4" />
-            <span>Deadline: {formatDeadline(campaign.deadline)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Clock className="h-4 w-4" />
-            <span>Duration: {campaign.duration} days</span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Requirements</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              {campaign.requirements?.map((req: string, index: number) => (
-                <li key={index} className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  {req}
-                </li>
-              ))}
-            </ul>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 rounded-2xl border border-blue-100/50 shadow-sm backdrop-blur-sm">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25">
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Deadline</p>
+                <p className="text-base font-bold text-gray-900">{formatDeadline(campaign.deadline)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-purple-50/80 to-pink-50/80 rounded-2xl border border-purple-100/50 shadow-sm backdrop-blur-sm">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Duration</p>
+                <p className="text-base font-bold text-gray-900">{campaign.duration || 'N/A'} days</p>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Deliverables</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              {campaign.deliverables?.map((del: string, index: number) => (
-                <li key={index} className="flex items-center gap-2">
-                  <FileText className="h-3 w-3 text-blue-500" />
-                  {del}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Submitted Content</h4>
-              {campaignSubmissions.length > 0 ? (
-                <div className="space-y-2">
-                  {campaignSubmissions.map((submission: any, index: number) => (
-                    <div key={index} className="flex items-center gap-2 text-sm">
-                      <ExternalLink className="h-4 w-4 text-blue-500" />
-                      <a 
-                        href={submission.content_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {submission.content_type} on {submission.platform}
-                      </a>
-                      <span className={`px-2 py-1 rounded-full text-xs ${submission.status === 'APPROVED' ? 'bg-green-100 text-green-800' : submission.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {submission.status}
-                      </span>
+          {(campaign.requirements?.length > 0 || campaign.deliverables?.length > 0) && (
+            <div className="space-y-4 mb-6">
+              {campaign.requirements?.length > 0 && (
+                <div className="p-5 bg-gradient-to-br from-emerald-50/80 to-green-50/80 rounded-2xl border border-emerald-100/50 shadow-sm backdrop-blur-sm">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="p-1.5 bg-gradient-to-br from-emerald-500 to-green-500 rounded-lg">
+                      <CheckCircle className="h-4 w-4 text-white" />
                     </div>
-                  ))}
+                    Requirements
+                  </h4>
+                  <ul className="text-sm text-gray-700 space-y-2.5">
+                    {campaign.requirements.map((req: string, index: number) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                        <span className="leading-relaxed">{req}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500">No content submitted yet</p>
+              )}
+
+              {campaign.deliverables?.length > 0 && (
+                <div className="p-5 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 rounded-2xl border border-blue-100/50 shadow-sm backdrop-blur-sm">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="p-1.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
+                      <FileText className="h-4 w-4 text-white" />
+                    </div>
+                    Deliverables
+                  </h4>
+                  <ul className="text-sm text-gray-700 space-y-2.5">
+                    {campaign.deliverables.map((del: string, index: number) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <FileText className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="leading-relaxed">{del}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
-            
-            {campaign.status === 'active' && (
-              <button
-                onClick={() => setSubmissionModal(campaign.id)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Submit Content
-              </button>
-            )}
+          )}
+
+          <div className="mt-6 pt-6 border-t border-gray-200/60">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
+              <div className="flex-1">
+                <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-gray-600" />
+                  Submitted Content
+                </h4>
+                {campaignSubmissions.length > 0 ? (
+                  <div className="space-y-3">
+                    {campaignSubmissions.map((submission: any, index: number) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50/80 to-gray-50/40 rounded-xl hover:from-gray-100/80 hover:to-gray-100/40 transition-all duration-300 border border-gray-100/50 shadow-sm"
+                      >
+                        <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg shadow-md">
+                          <ExternalLink className="h-4 w-4 text-white" />
+                        </div>
+                        <a 
+                          href={submission.content_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-cyan-600 hover:text-cyan-700 font-semibold flex-1 transition-colors"
+                        >
+                          {submission.content_type} on {submission.platform}
+                        </a>
+                        <span className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
+                          submission.status === 'APPROVED' 
+                            ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30' 
+                            : submission.status === 'REJECTED' 
+                            ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30' 
+                            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                        }`}>
+                          {submission.status}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No content submitted yet</p>
+                )}
+              </div>
+              
+              {campaign.status === 'active' && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSubmissionModal(campaign.id)}
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-cyan-500/40 hover:shadow-xl hover:shadow-cyan-500/50 flex items-center gap-2 font-bold"
+                >
+                  <Plus className="h-5 w-5" />
+                  Submit Content
+                </motion.button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -300,80 +367,113 @@ export default function InfluencerCampaigns() {
 
   return (
     <InfluencerProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30">
         <ModernInfluencerHeader />
         
-        <div className="px-4 lg:px-6 pb-8">
+        <div className="px-4 lg:px-8 pb-12 pt-8 max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Campaigns</h1>
-            <p className="text-gray-600">Manage your active campaigns and track your earnings</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10"
+          >
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-3">
+              My Campaigns
+            </h1>
+            <p className="text-gray-500 text-lg">Manage your active campaigns and track your earnings</p>
+          </motion.div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Calendar className="h-6 w-6 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 rounded-full -mr-16 -mt-16"></div>
+              <div className="relative">
+                <div className="inline-flex p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25 mb-4">
+                  <Calendar className="h-5 w-5 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-                  <p className="text-2xl font-bold text-gray-900">{activeCampaigns.length}</p>
-                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Active Campaigns</p>
+                <p className="text-3xl font-bold text-gray-900">{activeCampaigns.length}</p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-green-500/5 rounded-full -mr-16 -mt-16"></div>
+              <div className="relative">
+                <div className="inline-flex p-3 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/25 mb-4">
+                  <CheckCircle className="h-5 w-5 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">{completedCampaigns.length}</p>
-                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Completed</p>
+                <p className="text-3xl font-bold text-gray-900">{completedCampaigns.length}</p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-yellow-600" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-full -mr-16 -mt-16"></div>
+              <div className="relative">
+                <div className="inline-flex p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/25 mb-4">
+                  <DollarSign className="h-5 w-5 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Earned</p>
-                  <p className="text-2xl font-bold text-gray-900">${totalEarned}</p>
-                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Earned</p>
+                <p className="text-3xl font-bold text-gray-900">${totalEarned.toLocaleString()}</p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <AlertCircle className="h-6 w-6 text-purple-600" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full -mr-16 -mt-16"></div>
+              <div className="relative">
+                <div className="inline-flex p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25 mb-4">
+                  <TrendingUp className="h-5 w-5 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending Payment</p>
-                  <p className="text-2xl font-bold text-gray-900">${pendingPayment}</p>
-                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pending Payment</p>
+                <p className="text-3xl font-bold text-gray-900">${pendingPayment.toLocaleString()}</p>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Campaigns */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             {campaigns.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto h-12 w-12 text-gray-400">
-                  <Calendar className="h-12 w-12" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-20"
+              >
+                <div className="mx-auto h-20 w-20 text-gray-300 mb-6">
+                  <Calendar className="h-20 w-20" />
                 </div>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No campaigns</h3>
-                <p className="mt-1 text-sm text-gray-500">You haven't been assigned to any campaigns yet.</p>
-              </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No campaigns yet</h3>
+                <p className="text-gray-500 max-w-md mx-auto">You haven't been assigned to any campaigns yet. Check back soon!</p>
+              </motion.div>
             ) : (
-              campaigns.map((campaign) => (
-                <CampaignCard key={campaign.id} campaign={campaign} />
+              campaigns.map((campaign, index) => (
+                <motion.div
+                  key={campaign.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <CampaignCard campaign={campaign} />
+                </motion.div>
               ))
             )}
           </div>
@@ -381,21 +481,33 @@ export default function InfluencerCampaigns() {
 
         {/* Content Submission Modal */}
         {submissionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => setSubmissionModal(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100/50"
+            >
+              <div className="p-6 border-b border-gray-200/60 bg-gradient-to-r from-gray-50/50 to-white">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-gray-900">Submit Content</h2>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Submit Content</h2>
                   <button
                     onClick={() => setSubmissionModal(null)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    <X className="h-6 w-6" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-8 space-y-6">
                 {/* Required Fields */}
                 <div className="space-y-4">
                   <div>
@@ -406,7 +518,7 @@ export default function InfluencerCampaigns() {
                       type="url"
                       value={submissionForm.content_url}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, content_url: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                       placeholder="https://instagram.com/p/..."
                       required
                     />
@@ -420,7 +532,7 @@ export default function InfluencerCampaigns() {
                       <select
                         value={submissionForm.content_type}
                         onChange={(e) => setSubmissionForm(prev => ({ ...prev, content_type: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                         required
                       >
                         <option value="post">Post</option>
@@ -438,7 +550,7 @@ export default function InfluencerCampaigns() {
                       <select
                         value={submissionForm.platform}
                         onChange={(e) => setSubmissionForm(prev => ({ ...prev, platform: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                         required
                       >
                         <option value="instagram">Instagram</option>
@@ -461,7 +573,7 @@ export default function InfluencerCampaigns() {
                       type="text"
                       value={submissionForm.title || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                       placeholder="Content title or brief description"
                     />
                   </div>
@@ -473,7 +585,7 @@ export default function InfluencerCampaigns() {
                     <textarea
                       value={submissionForm.caption || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, caption: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80 resize-none"
                       rows={3}
                       placeholder="Caption or post text"
                     />
@@ -491,51 +603,55 @@ export default function InfluencerCampaigns() {
                       placeholder="Views"
                       value={submissionForm.views || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, views: e.target.value ? parseInt(e.target.value) : undefined }))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                     />
                     <input
                       type="number"
                       placeholder="Likes"
                       value={submissionForm.likes || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, likes: e.target.value ? parseInt(e.target.value) : undefined }))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                     />
                     <input
                       type="number"
                       placeholder="Comments"
                       value={submissionForm.comments || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, comments: e.target.value ? parseInt(e.target.value) : undefined }))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                     />
                     <input
                       type="number"
                       placeholder="Shares"
                       value={submissionForm.shares || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, shares: e.target.value ? parseInt(e.target.value) : undefined }))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                     />
                     <input
                       type="number"
                       placeholder="Saves"
                       value={submissionForm.saves || ''}
                       onChange={(e) => setSubmissionForm(prev => ({ ...prev, saves: e.target.value ? parseInt(e.target.value) : undefined }))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all bg-white/80"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button
+              <div className="p-6 border-t border-gray-200/60 bg-gradient-to-r from-gray-50/50 to-white flex justify-end space-x-3">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setSubmissionModal(null)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm font-semibold"
                 >
                   Cancel
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleSubmitContent(submissionModal)}
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:opacity-60 transition-colors flex items-center"
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:opacity-60 transition-all shadow-lg shadow-cyan-500/40 hover:shadow-xl hover:shadow-cyan-500/50 flex items-center font-bold"
                 >
                   {isSubmitting ? (
                     <>
@@ -548,10 +664,10 @@ export default function InfluencerCampaigns() {
                       Submit Content
                     </>
                   )}
-                </button>
+                </motion.button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
       </div>
     </InfluencerProtectedRoute>
