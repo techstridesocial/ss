@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { BrandProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernBrandHeader from '../../../components/nav/ModernBrandHeader'
 import InfluencerDetailPanel from '../../../components/influencer/InfluencerDetailPanel'
+import { useToast } from '@/components/ui/use-toast'
 import { useHeartedInfluencers, Shortlist } from '../../../lib/context/HeartedInfluencersContext'
 import { 
   Heart, 
@@ -118,6 +119,7 @@ const PlatformIcon = ({ platform, size = 20 }: { platform: string, size?: number
 }
 
 export default function BrandShortlistsPage() {
+  const { toast } = useToast()
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
@@ -230,7 +232,11 @@ export default function BrandShortlistsPage() {
       })
       
       if (response.ok) {
-        alert(`Campaign "${campaignData.name}" created successfully!`)
+        toast({
+          title: 'Success',
+          description: `Campaign "${campaignData.name}" created successfully!`,
+          variant: 'default'
+        })
         setCreateCampaignModalOpen(false)
         setSelectedShortlistsForCampaign([])
       } else {
@@ -238,7 +244,11 @@ export default function BrandShortlistsPage() {
       }
     } catch (error) {
       console.error('Error creating campaign:', error)
-      alert('Failed to create campaign. Please try again.')
+      toast({
+        title: 'Error',
+        description: 'Failed to create campaign. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 

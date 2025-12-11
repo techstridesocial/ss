@@ -47,7 +47,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const user_id = userResult[0].id
+    const user_id = userResult[0]!.id
 
     // If no campaigns found, verify influencer exists for proper error messages
     if (campaigns.length === 0) {
@@ -70,7 +70,7 @@ export async function GET(_request: NextRequest) {
       [user_id]
     )
 
-    const currency = currencyResult.length > 0 ? currencyResult[0].currency : 'GBP'
+    const currency = currencyResult.length > 0 ? currencyResult[0]!.currency : 'GBP'
 
     return NextResponse.json({ campaigns, currency })
   } catch (error) {

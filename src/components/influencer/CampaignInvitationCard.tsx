@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useToast } from '@/components/ui/use-toast'
 import { 
   Calendar, 
   DollarSign, 
@@ -36,6 +37,7 @@ export default function CampaignInvitationCard({
   onAcceptAction, 
   onDeclineAction 
 }: CampaignInvitationCardProps) {
+  const { toast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
   const [showDeclineForm, setShowDeclineForm] = useState(false)
   const [declineReason, setDeclineReason] = useState('')
@@ -51,7 +53,11 @@ export default function CampaignInvitationCard({
 
   const handleDecline = async () => {
     if (!declineReason.trim()) {
-      alert('Please provide a reason for declining')
+      toast({
+        title: 'Validation Error',
+        description: 'Please provide a reason for declining.',
+        variant: 'destructive'
+      })
       return
     }
     

@@ -1,10 +1,8 @@
+import React from 'react'
+
 /**
  * Utility functions for brands page
  */
-
-'use client'
-
-import React from 'react'
 
 /**
  * Format number with K/M suffixes
@@ -22,7 +20,7 @@ export function formatNumber(num: number): string {
 /**
  * Get brand status badge JSX
  */
-export function getBrandStatusBadge(status: string): JSX.Element {
+export function getBrandStatusBadge(status: string): React.ReactElement {
   if (status === 'active') {
     return (
       <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
@@ -40,7 +38,7 @@ export function getBrandStatusBadge(status: string): JSX.Element {
 /**
  * Get quotation status badge JSX
  */
-export function getQuotationStatusBadge(status: string): JSX.Element {
+export function getQuotationStatusBadge(status: string): React.ReactElement {
   switch (status) {
     case 'pending_review':
       return (

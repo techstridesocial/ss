@@ -8,92 +8,135 @@ export async function POST(_request: Request) {
     // CRITICAL: Normalize platform to lowercase (Modash API requires lowercase)
     const normalizedPlatform = platform?.toLowerCase() || 'instagram'
     
-    console.log('🔍 Modash Profile Request:', { userId, username, platform, normalizedPlatform, includePerformanceData })
+    console.log('🔍 Modash Profile Request:', { 
+      userId, 
+      username, 
+      platform, 
+      normalizedPlatform, 
+      includePerformanceData,
+      userIdType: typeof userId,
+      userIdLength: userId?.length,
+      isLikelyUUID: userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+    })
     
-    // If username is provided but userId is not, search for userId first
+    // CRITICAL INSIGHT: Modash profile report endpoints accept username directly as userId!
+    // GET /instagram/profile/{username}/report works with username or userId
+    // So we can skip the search step if username is provided - saves 1 API call and credits!
+    
     let actualUserId = userId
+    let preFetchedResponse: any = null // Store response if we get it from direct username lookup
+    
+    // If username provided but no userId, try using username directly first (FASTER - 1 API call instead of 2)
     if (!actualUserId && username) {
-      console.log(`🔍 Looking up userId for username: ${username} on ${normalizedPlatform}`)
+      const cleanUsername = username.replace('@', '').trim()
+      console.log(`🚀 Attempting direct username lookup: "${cleanUsername}" on ${normalizedPlatform} (faster - 1 API call)`)
+      
+      // Try username directly first (Modash API accepts username as userId parameter)
       try {
-        // Clean username: remove @ and any whitespace
-        const cleanUsername = username.replace('@', '').trim()
+        const { getProfileReport } = await import('../../../../lib/services/modash')
+        const directResponse = await getProfileReport(cleanUsername, normalizedPlatform) as any
         
-        // YouTube doesn't have /users endpoint, use /search instead
-        let searchResult: any
-        let users: any[] = []
-        
-        if (normalizedPlatform === 'youtube') {
-          // YouTube: Use search endpoint (POST)
-          const { searchDiscovery } = await import('../../../../lib/services/modash')
-          searchResult = await searchDiscovery('youtube', {
-            query: cleanUsername,
-            limit: 10
-          }) as any
-          // YouTube search returns different structure
-          users = searchResult?.results || searchResult?.data || searchResult?.directs || []
-        } else {
-          // Instagram & TikTok: Use /users endpoint (GET)
-        const { listUsers } = await import('../../../../lib/services/modash')
-          searchResult = await listUsers(normalizedPlatform as 'instagram' | 'tiktok', {
-            query: cleanUsername,
-            limit: 10 // Increase limit to find exact match in results
-        }) as any
-          users = searchResult?.users || searchResult?.data || []
+        // If successful, username works directly! Use this response and skip later API call
+        if (directResponse?.profile) {
+          actualUserId = cleanUsername
+          preFetchedResponse = directResponse // Store to reuse instead of calling again
+          console.log(`✅ Username "${cleanUsername}" works directly - using cached response (saved 1 API call + credits!)`)
         }
+      } catch (directError: any) {
+        // If direct username lookup fails, fall back to search method to find userId
+        console.log(`⚠️ Direct username lookup failed (may need userId), falling back to search method:`, directError?.message?.substring(0, 100) || 'Unknown error')
         
-        console.log(`🔍 Search results (${normalizedPlatform}):`, {
-          usersCount: users.length,
-          platform: normalizedPlatform,
-          firstUser: users[0] ? {
-            username: users[0].username,
-            userId: users[0].userId,
-            id: users[0].id,
-            handle: users[0].handle,
-            allKeys: Object.keys(users[0] || {})
-          } : null
-        })
-        
-        // Look for exact match (case-insensitive)
-        // YouTube might use 'handle' field instead of 'username'
-        const exactMatch = users.find((user: any) => {
-          const userIdentifier = user.username || user.handle || ''
-          return userIdentifier.toLowerCase() === cleanUsername.toLowerCase()
-        })
-        
-        // Try both userId and id fields (Modash API uses different field names)
-        // Also check for YouTube-specific field names
-        const userId = exactMatch?.userId || exactMatch?.id
-        if (userId) {
-          actualUserId = userId
-          const matchedIdentifier = exactMatch.username || exactMatch.handle || 'unknown'
-          console.log(`✅ Found exact match userId: ${actualUserId} for ${normalizedPlatform} username: ${matchedIdentifier}`)
-        } else if (users.length > 0) {
-          // If no exact match, use first result (might be close match)
-          const firstUserId = users[0].userId || users[0].id
-          if (firstUserId) {
-            actualUserId = firstUserId
-            const firstIdentifier = users[0].username || users[0].handle || 'unknown'
-            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${normalizedPlatform} username: ${firstIdentifier}`)
-            console.log(`   Available identifiers: ${users.map((u: any) => u.username || u.handle || 'unknown').join(', ')}`)
+        try {
+          // Clean username: remove @ and any whitespace
+          
+          // YouTube doesn't have /users endpoint, use /search instead
+          let searchResult: any
+          let users: any[] = []
+          
+          if (normalizedPlatform === 'youtube') {
+            // YouTube: Use search endpoint (POST)
+            const { searchDiscovery } = await import('../../../../lib/services/modash')
+            searchResult = await searchDiscovery('youtube', {
+              query: cleanUsername,
+              limit: 10
+            }) as any
+            // YouTube search returns different structure
+            users = searchResult?.results || searchResult?.data || searchResult?.directs || []
           } else {
-            throw new Error(`No userId found in ${normalizedPlatform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
+            // Instagram & TikTok: Use /users endpoint (GET)
+            const { listUsers } = await import('../../../../lib/services/modash')
+            searchResult = await listUsers(normalizedPlatform as 'instagram' | 'tiktok', {
+              query: cleanUsername,
+              limit: 10 // Increase limit to find exact match in results
+            }) as any
+            users = searchResult?.users || searchResult?.data || []
           }
-        } else {
-          throw new Error(`No user found with username: ${username} on ${normalizedPlatform}. Searched for: ${cleanUsername}`)
+          
+          console.log(`🔍 Search results (${normalizedPlatform}):`, {
+            usersCount: users.length,
+            platform: normalizedPlatform,
+            firstUser: users[0] ? {
+              username: users[0].username,
+              userId: users[0].userId,
+              id: users[0].id,
+              handle: users[0].handle,
+              allKeys: Object.keys(users[0] || {})
+            } : null
+          })
+          
+          // Look for exact match (case-insensitive)
+          // YouTube might use 'handle' field instead of 'username'
+          const exactMatch = users.find((user: any) => {
+            const userIdentifier = user.username || user.handle || ''
+            return userIdentifier.toLowerCase() === cleanUsername.toLowerCase()
+          })
+          
+          // Try both userId and id fields (Modash API uses different field names)
+          // Also check for YouTube-specific field names
+          const foundUserId = exactMatch?.userId || exactMatch?.id
+          if (foundUserId) {
+            actualUserId = foundUserId
+            const matchedIdentifier = exactMatch.username || exactMatch.handle || 'unknown'
+            console.log(`✅ Found exact match userId: ${actualUserId} for ${normalizedPlatform} username: ${matchedIdentifier}`)
+          } else if (users.length > 0) {
+            // If no exact match, use first result (might be close match)
+            const firstUserId = users[0].userId || users[0].id
+            if (firstUserId) {
+              actualUserId = firstUserId
+              const firstIdentifier = users[0].username || users[0].handle || 'unknown'
+              console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${normalizedPlatform} username: ${firstIdentifier}`)
+              console.log(`   Available identifiers: ${users.map((u: any) => u.username || u.handle || 'unknown').join(', ')}`)
+            } else {
+              throw new Error(`No userId found in ${normalizedPlatform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
+            }
+          } else {
+            throw new Error(`No user found with username: ${username} on ${normalizedPlatform}. Searched for: ${cleanUsername}`)
+          }
+        } catch (searchError) {
+          console.error('❌ Error searching for userId:', searchError)
+          const errorMsg = searchError instanceof Error ? searchError.message : 'Unknown error'
+          return NextResponse.json({
+            success: false,
+            error: `Could not find user with username: ${username}. ${errorMsg}`,
+            errorCode: 'ACCOUNT_NOT_FOUND',
+            details: {
+              username: cleanUsername,
+              platform: normalizedPlatform,
+              message: 'Both direct username lookup and search failed - account may not exist in Modash'
+            }
+          }, { status: 404 })
         }
-      } catch (searchError) {
-        console.error('❌ Error searching for userId:', searchError)
-        return NextResponse.json({
-          success: false,
-          error: `Could not find user with username: ${username}. ${searchError instanceof Error ? searchError.message : 'Unknown error'}`
-        }, { status: 404 })
       }
     }
     
     if (!actualUserId) {
       return NextResponse.json({
         success: false,
-        error: 'Either userId or username must be provided'
+        error: 'Either userId or username must be provided',
+        errorCode: 'MISSING_IDENTIFIER',
+        details: {
+          message: 'No valid userId found from username search and no userId was provided directly'
+        }
       }, { status: 400 })
     }
     
@@ -107,31 +150,49 @@ export async function POST(_request: Request) {
       }, { status: 400 })
     }
 
-    // CRITICAL: Validate userId is NOT a UUID (our internal ID) and is a valid Modash userId format
-    const { validateModashUserId, isUUID } = await import('@/lib/utils/modash-userid-validator')
-    const validatedUserId = validateModashUserId(actualUserId)
-    
-    if (!validatedUserId) {
-      if (isUUID(actualUserId)) {
-        console.error('❌ Invalid userId: Appears to be an internal UUID, not a Modash userId:', { actualUserId, platform: normalizedPlatform })
-        return NextResponse.json({
-          success: false,
-          error: 'Invalid userId: Appears to be an internal database ID (UUID), not a Modash userId. Please use username lookup instead.',
-          errorCode: 'INVALID_UUID_AS_USERID',
-          debug: { actualUserId, platform: normalizedPlatform, detectedAs: 'UUID' }
-        }, { status: 400 })
-      } else {
-        console.error('❌ Invalid Modash userId format:', { actualUserId, platform: normalizedPlatform })
-        return NextResponse.json({
-          success: false,
-          error: 'Invalid Modash userId format',
-          debug: { actualUserId, platform: normalizedPlatform }
-        }, { status: 400 })
-      }
+    if (!actualUserId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Either userId or username must be provided'
+      }, { status: 400 })
     }
+
+    // CRITICAL: Validate userId is NOT a UUID (our internal ID) and is a valid Modash userId format
+    // BUT: Only validate if userId was provided directly (not from username lookup)
+    // If username lookup succeeded, the userId is already validated by Modash
+    const { validateModashUserId, isUUID } = await import('@/lib/utils/modash-userid-validator')
     
-    // Use validated userId
-    actualUserId = validatedUserId
+    // Skip validation if we got userId from pre-fetched response (username lookup worked)
+    if (!preFetchedResponse) {
+      const validatedUserId = validateModashUserId(actualUserId)
+      
+      if (!validatedUserId) {
+        if (isUUID(actualUserId)) {
+          console.error('❌ Invalid userId: Appears to be an internal UUID, not a Modash userId:', { actualUserId, platform: normalizedPlatform })
+          return NextResponse.json({
+            success: false,
+            error: 'Invalid userId: Appears to be an internal database ID (UUID), not a Modash userId. Please use username lookup instead.',
+            errorCode: 'INVALID_UUID_AS_USERID',
+            debug: { actualUserId, platform: normalizedPlatform, detectedAs: 'UUID' }
+          }, { status: 400 })
+        } else {
+          console.error('❌ Invalid Modash userId format:', { actualUserId, platform: normalizedPlatform, userIdLength: actualUserId?.length, userIdType: typeof actualUserId })
+          return NextResponse.json({
+            success: false,
+            error: 'Invalid Modash userId format',
+            errorCode: 'INVALID_USERID_FORMAT',
+            debug: { actualUserId, platform: normalizedPlatform, userIdLength: actualUserId?.length, userIdType: typeof actualUserId }
+          }, { status: 400 })
+        }
+      }
+      
+      // Use validated userId
+      actualUserId = validatedUserId
+    } else {
+      // If preFetchedResponse exists, actualUserId might be the username
+      // The Modash API already validated it by returning a profile
+      console.log('✅ Skipping userId validation - using pre-fetched response from username lookup')
+    }
     
     // CRITICAL: Validate platform is one of the supported values
     if (!['instagram', 'tiktok', 'youtube'].includes(normalizedPlatform)) {
@@ -151,10 +212,25 @@ export async function POST(_request: Request) {
     })
     
     // Get raw Modash data - use normalized platform (lowercase required by Modash API)
+    // Note: actualUserId can be either a username or userId - Modash API accepts both!
     let modashResponse: any
-    try {
-      modashResponse = await getProfileReport(actualUserId.trim(), normalizedPlatform) as any
-      console.log('✅ Modash API call successful')
+    
+    // If we already fetched the response from direct username lookup, reuse it (saves 1 API call!)
+    if (preFetchedResponse) {
+      modashResponse = preFetchedResponse
+      console.log('✅ Using pre-fetched response from direct username lookup (saved 1 API call)')
+    } else {
+      // Otherwise, fetch now
+      console.log('🔍 Calling Modash Profile Report:', {
+        identifier: actualUserId,
+        platform: normalizedPlatform,
+        identifierLength: actualUserId.length,
+        isLikelyUsername: !/^\d+$/.test(actualUserId) && !actualUserId.startsWith('UC') // Likely username if not numeric and not YouTube channel ID
+      })
+      
+      try {
+        modashResponse = await getProfileReport(actualUserId.trim(), normalizedPlatform) as any
+        console.log('✅ Modash profile API call successful')
     } catch (modashError: any) {
       console.error('❌ Modash API call failed:', {
         error: modashError,
@@ -163,8 +239,9 @@ export async function POST(_request: Request) {
         platform: normalizedPlatform,
         stack: modashError?.stack
       })
-      // Re-throw to be caught by outer catch
-      throw modashError
+        // Re-throw to be caught by outer catch
+        throw modashError
+      }
     }
     
     if (!modashResponse?.profile) {
@@ -183,30 +260,50 @@ export async function POST(_request: Request) {
       credibility: audience.credibility
     })
 
-    // 🚨 DEBUG: Log the FULL raw Modash response structure for TikTok
+    // Log TikTok structure summary (not full response - too large)
     if (normalizedPlatform === 'tiktok') {
-      console.log('🚨 FULL TIKTOK MODASH RESPONSE:', JSON.stringify(modashResponse, null, 2))
-      console.log('🚨 TikTok profile keys:', Object.keys(modashResponse.profile || {}))
-      console.log('🚨 Looking for TikTok fields:', {
-        paidPostPerformance: modashResponse.profile?.paidPostPerformance,
-        recentPosts: modashResponse.profile?.recentPosts,
-        popularPosts: modashResponse.profile?.popularPosts,
-        statHistory: modashResponse.profile?.statHistory,
+      console.log('🔍 TikTok profile structure:', {
+        hasProfile: !!modashResponse.profile,
+        profileKeys: Object.keys(modashResponse.profile || {}),
+        hasPaidPerformance: !!modashResponse.profile?.paidPostPerformance,
+        hasRecentPosts: !!modashResponse.profile?.recentPosts,
+        recentPostsCount: modashResponse.profile?.recentPosts?.length || 0,
+        hasPopularPosts: !!modashResponse.profile?.popularPosts,
+        hasStatHistory: !!modashResponse.profile?.statHistory,
         postsCount: modashResponse.profile?.postsCount,
-        engagements: modashResponse.profile?.engagements,
-        totalLikes: modashResponse.profile?.totalLikes,
-        averageViews: modashResponse.profile?.averageViews,
-        gender: modashResponse.profile?.gender,
-        ageGroup: modashResponse.profile?.ageGroup
+        hasEngagements: !!modashResponse.profile?.engagements,
+        hasTotalLikes: !!modashResponse.profile?.totalLikes,
+        hasAverageViews: !!modashResponse.profile?.averageViews,
+        hasGender: !!modashResponse.profile?.gender,
+        hasAgeGroup: !!modashResponse.profile?.ageGroup,
+        // Sample first post only (not full data)
+        firstPostSample: modashResponse.profile?.recentPosts?.[0] ? {
+          hasText: !!modashResponse.profile.recentPosts[0].text,
+          hasViews: !!modashResponse.profile.recentPosts[0].views,
+          hasLikes: !!modashResponse.profile.recentPosts[0].likes,
+          hasThumbnail: !!modashResponse.profile.recentPosts[0].thumbnail
+        } : null
       })
     }
     
-    // Fetch performance data for enhanced post information (especially important for TikTok thumbnails)
+    // Fetch performance data in parallel with profile (if needed)
+    // This significantly improves performance by making both requests simultaneously
     let performanceData = null
-    if ((includePerformanceData || normalizedPlatform === 'tiktok') && profile.username) {
+    const shouldFetchPerformance = (includePerformanceData || normalizedPlatform === 'tiktok') && profile.username
+    
+    if (shouldFetchPerformance) {
       try {
-        console.log('📊 Fetching performance data for enhanced metrics and thumbnails...')
-        const perfResult = await _getPerformanceData(normalizedPlatform as 'instagram' | 'tiktok' | 'youtube', profile.username, 10) as any // Get more posts for better thumbnails
+        console.log('📊 Fetching performance data in parallel for enhanced metrics and thumbnails...')
+        // Fetch in parallel - don't await yet, will be handled below
+        const performancePromise = _getPerformanceData(
+          normalizedPlatform as 'instagram' | 'tiktok' | 'youtube', 
+          profile.username, 
+          10
+        ) as Promise<any>
+        
+        // Wait for performance data (already have profile data)
+        const perfResult = await performancePromise
+        
         if (perfResult && (perfResult.posts || perfResult.reels)) {
           performanceData = perfResult
           console.log('✅ Performance data fetched:', {
@@ -217,8 +314,8 @@ export async function POST(_request: Request) {
           })
         }
       } catch (perfError) {
-        console.warn('⚠️ Performance data fetch failed (non-critical):', perfError)
-        // Continue without performance data
+        console.warn('⚠️ Performance data fetch failed (non-critical):', perfError instanceof Error ? perfError.message : perfError)
+        // Continue without performance data - not critical
       }
     }
     
@@ -461,32 +558,74 @@ export async function POST(_request: Request) {
       performance_data_included: !!performanceData
     })
     
-    console.log('🎬 Profile API Response Debug:', {
-      hasPerformanceData: !!performanceData,
-      performanceDataKeys: performanceData ? Object.keys(performanceData) : 'none',
-      reelsTotal: performanceData?.reels?.total,
-      postsTotal: performanceData?.posts?.total,
-      contentPerformanceIncluded: !!performanceData
-    })
+    // Log response summary (reduced logging)
+    if (performanceData) {
+      console.log('✅ Response includes performance data:', {
+        reelsTotal: performanceData.reels?.total || 0,
+        postsTotal: performanceData.posts?.total || 0
+      })
+    }
     
-    // 🔍 DEBUG: Check what data is actually available
-    console.log('🔍 MODASH RESPONSE STRUCTURE:', {
+    // Log response structure summary (not full data)
+    console.log('🔍 Modash response summary:', {
       hasProfile: !!modashResponse.profile,
-      profileKeys: modashResponse.profile ? Object.keys(modashResponse.profile) : 'none',
+      profileKeysCount: modashResponse.profile ? Object.keys(modashResponse.profile).length : 0,
       hasContacts: !!modashResponse.profile?.contacts,
+      contactsCount: Array.isArray(modashResponse.profile?.contacts) ? modashResponse.profile.contacts.length : 0,
       hasBio: !!modashResponse.profile?.bio,
+      bioLength: modashResponse.profile?.bio?.length || 0,
       hasStatHistory: !!modashResponse.profile?.statHistory,
+      statHistoryLength: Array.isArray(modashResponse.profile?.statHistory) ? modashResponse.profile.statHistory.length : 0,
       hasRecentPosts: !!modashResponse.profile?.recentPosts,
-      contacts: modashResponse.profile?.contacts?.slice(0, 1),
-      bio: modashResponse.profile?.bio ? 'HAS BIO' : 'NO BIO',
-      city: modashResponse.profile?.city || 'NO CITY'
+      recentPostsCount: Array.isArray(modashResponse.profile?.recentPosts) ? modashResponse.profile.recentPosts.length : 0,
+      city: modashResponse.profile?.city || null
     })
     
   } catch (error: any) {
     console.error('❌ Modash profile error:', error)
-        return NextResponse.json({
+    
+    // Extract error details from Modash API errors
+    const errorMessage = error?.message || 'Unknown error'
+    let statusCode = 500
+    let errorCode: string | undefined
+    let errorDetails: any = {}
+    
+    // Check if this is a Modash API error with specific codes
+    if (errorMessage.includes('Modash API error')) {
+      // Try to parse the error message for Modash-specific error codes
+      const match = errorMessage.match(/code":"([^"]+)"/)
+      if (match) {
+        errorCode = match[1]
+        errorDetails.code = errorCode
+      }
+      
+      // Check error message for status codes
+      const statusMatch = errorMessage.match(/\((\d+)\)/)
+      if (statusMatch) {
+        statusCode = parseInt(statusMatch[1], 10)
+      }
+      
+      // Check for account_not_found specifically
+      if (errorMessage.includes('account_not_found') || errorCode === 'account_not_found') {
+        statusCode = 404
+        errorCode = 'account_not_found'
+        errorDetails.code = 'account_not_found'
+        errorDetails.message = 'Requested account does not exist.'
+      }
+      
+      // Check for invalid userId (UUID)
+      if (errorMessage.includes('Invalid userId') || errorMessage.includes('UUID')) {
+        statusCode = 400
+        errorCode = 'INVALID_USER_ID'
+        errorDetails.code = 'INVALID_USER_ID'
+      }
+    }
+    
+    return NextResponse.json({
       success: false,
-      error: error.message
-    }, { status: 500 })
+      error: errorMessage,
+      errorCode,
+      details: errorDetails
+    }, { status: statusCode })
   }
 } 

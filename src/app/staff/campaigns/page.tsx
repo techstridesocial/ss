@@ -1287,7 +1287,7 @@ function CampaignsPageClient() {
           <CampaignDetailPanel
             isOpen={showDetailPanel}
             campaign={selectedCampaign}
-            onClose={() => {
+            onCloseAction={() => {
               setShowDetailPanel(false)
             }}
             onPauseCampaign={handlePauseCampaign}

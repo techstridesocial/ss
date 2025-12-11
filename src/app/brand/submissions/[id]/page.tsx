@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import ModernBrandHeader from '../../../../components/nav/ModernBrandHeader'
 import { BrandProtectedRoute } from '../../../../components/auth/ProtectedRoute'
+import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft, MessageSquare, Plus, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react'
 
 type SubmissionListStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED'
@@ -37,6 +38,7 @@ function BrandSubmissionDetailPageContent() {
   const params = useParams()
   const id = params.id as string
 
+  const { toast } = useToast()
   const [list, setList] = useState<SubmissionList | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -87,9 +89,18 @@ function BrandSubmissionDetailPageContent() {
         throw new Error(result.error || 'Failed to update status')
       }
 
+      toast({
+        title: 'Success',
+        description: 'Status updated successfully.',
+        variant: 'default'
+      })
       await loadList()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update status')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to update status. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsUpdatingStatus(false)
     }
@@ -109,10 +120,19 @@ function BrandSubmissionDetailPageContent() {
 
       if (!response.ok) throw new Error('Failed to add comment')
       
+      toast({
+        title: 'Success',
+        description: 'Comment added successfully.',
+        variant: 'default'
+      })
       setNewComment('')
       await loadList()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add comment')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to add comment. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsSubmittingComment(false)
     }

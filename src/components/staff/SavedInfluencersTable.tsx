@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useStaffSavedInfluencers, StaffSavedInfluencer } from '../../lib/hooks/useStaffSavedInfluencers'
 import { formatNumber } from '../../components/influencer/detail-panel/utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface SavedInfluencersTableProps {
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
@@ -25,6 +26,7 @@ function SavedInfluencersTable({
   selectedPlatform, 
   onViewProfile 
 }: SavedInfluencersTableProps) {
+  const { toast } = useToast()
   const {
     savedInfluencers,
     isLoading,
@@ -105,9 +107,18 @@ function SavedInfluencersTable({
     
     try {
       await removeSavedInfluencer(influencer.username, influencer.platform)
+      toast({
+        title: 'Success',
+        description: `@${influencer.username} has been removed from saved influencers.`,
+        variant: 'default'
+      })
     } catch (error) {
       console.error('Failed to remove influencer:', error)
-      alert(error instanceof Error ? error.message : 'Failed to remove influencer')
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to remove influencer. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setRemovingInfluencer(null)
     }

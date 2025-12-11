@@ -45,3 +45,35 @@ export const STEP_IDS = {
 } as const
 
 export type StepId = typeof STEP_IDS[keyof typeof STEP_IDS]
+
+/**
+ * Constants for influencer onboarding flow
+ */
+
+// Onboarding video URLs
+export const ONBOARDING_VIDEOS = {
+  WELCOME_VIDEO: 'https://www.youtube.com/embed/your-welcome-video-id',
+  EMAIL_FORWARDING_VIDEO: 'https://www.youtube.com/embed/your-email-forwarding-video-id'
+} as const
+
+// UK Events WhatsApp link
+export const UK_EVENTS_WHATSAPP_LINK = 'https://wa.me/your-whatsapp-number'
+
+// Expectations content for influencer onboarding
+export const EXPECTATIONS_CONTENT = {
+  title: 'What to Expect',
+  sections: [
+    {
+      title: 'Campaign Opportunities',
+      content: 'You will receive campaign invitations that match your profile and audience.'
+    },
+    {
+      title: 'Communication',
+      content: 'We will keep you updated on campaign details and requirements via email and our platform.'
+    },
+    {
+      title: 'Payment',
+      content: 'Payment will be processed according to the terms agreed upon for each campaign.'
+    }
+  ]
+} as const

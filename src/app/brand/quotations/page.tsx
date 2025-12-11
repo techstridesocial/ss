@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { BrandProtectedRoute } from '@/components/auth/ProtectedRoute'
 import ModernBrandHeader from '@/components/nav/ModernBrandHeader'
+import { useToast } from '@/components/ui/use-toast'
 import { FileText, Clock, CheckCircle, XCircle, Calendar, DollarSign, Users, ChevronRight, Plus, Send } from 'lucide-react'
 
 interface Quotation {
@@ -25,6 +26,7 @@ interface Quotation {
 
 function QuotationsPageClient() {
   const router = useRouter()
+  const { toast } = useToast()
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState<'ALL' | 'PENDING_REVIEW' | 'SENT' | 'APPROVED' | 'REJECTED'>('ALL')
@@ -64,14 +66,25 @@ function QuotationsPageClient() {
 
       if (response.ok) {
         loadQuotations()
-        // TODO: Navigate to campaign creation with quotation data
-        alert('Quotation approved! You can now create a campaign.')
+        toast({
+          title: 'Success',
+          description: 'Quotation approved! You can now create a campaign.',
+          variant: 'default'
+        })
       } else {
-        alert('Failed to approve quotation')
+        toast({
+          title: 'Error',
+          description: 'Failed to approve quotation. Please try again.',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('Error approving quotation:', error)
-      alert('Error approving quotation')
+      toast({
+        title: 'Error',
+        description: 'Failed to approve quotation. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -87,12 +100,25 @@ function QuotationsPageClient() {
 
       if (response.ok) {
         loadQuotations()
+        toast({
+          title: 'Success',
+          description: 'Quotation rejected successfully.',
+          variant: 'default'
+        })
       } else {
-        alert('Failed to reject quotation')
+        toast({
+          title: 'Error',
+          description: 'Failed to reject quotation. Please try again.',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('Error rejecting quotation:', error)
-      alert('Error rejecting quotation')
+      toast({
+        title: 'Error',
+        description: 'Failed to reject quotation. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 

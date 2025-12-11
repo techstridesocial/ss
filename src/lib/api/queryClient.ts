@@ -45,7 +45,7 @@ export const queryKeys = {
     all: ['influencers'] as const,
     light: () => ['influencers', 'light'] as const,
     detail: (id: string) => ['influencers', 'detail', id] as const,
-    analytics: (id: string, platform: string) => ['influencers', 'analytics', id, platform] as const,
+    analytics: (id: string, platform: string, username?: string) => ['influencers', 'analytics', id, platform, username || ''] as const,
   },
   
   // Brands

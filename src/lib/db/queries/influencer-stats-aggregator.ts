@@ -68,14 +68,17 @@ export async function updateInfluencerAggregatedStats(influencerId: string): Pro
     const avgViewsArray = platformStats
       .map(platform => Number(platform.avg_views) || 0)
       .filter(views => views > 0)
-    const totalAvgViews = avgViewsArray.length > 0
+    const totalAvgViewsRaw = avgViewsArray.length > 0
       ? avgViewsArray.reduce((sum, views) => sum + views, 0) / avgViewsArray.length
       : 0
+    
+    // CRITICAL: Round to integer - database column is integer type
+    const totalAvgViews = Math.round(totalAvgViewsRaw)
     
     console.log(`✅ Calculated aggregated stats:`, {
       totalFollowers,
       totalEngagementRate: (totalEngagementRate * 100).toFixed(2) + '%',
-      totalAvgViews: Math.round(totalAvgViews)
+      totalAvgViews: totalAvgViews
     })
     
     // Update influencers table with aggregated stats

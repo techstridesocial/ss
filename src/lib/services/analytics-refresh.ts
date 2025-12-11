@@ -83,7 +83,7 @@ function resolveUserId(
   const storedPlatforms = existingNotes.modash_data?.platforms || {}
   const storedPlatformUserId = storedPlatforms[normalizedPlatform]?.userId
   const legacyUserId = existingNotes.modash_data?.userId || existingNotes.modash_data?.modash_user_id
-  const payloadModashUserId = payload?.modashUserId || payload?.metrics?.modashUserId
+  const payloadModashUserId = payload?.modashUserId
 
   const resolution = resolveModashUserId([
     { value: payloadModashUserId, name: 'payload' },

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { isValidEmail } from '../../lib/utils/validation'
+import { isValidEmail } from '../lib/utils/validation'
 
 export interface OnboardingData {
   company_name: string

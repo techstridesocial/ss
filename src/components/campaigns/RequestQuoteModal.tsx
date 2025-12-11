@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, Send, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/components/ui/use-toast'
 
 interface RequestQuoteModalProps {
   isOpen: boolean
@@ -15,6 +16,7 @@ export default function RequestQuoteModal({
   onClose,
   selectedInfluencers = []
 }: RequestQuoteModalProps) {
+  const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [staffMembers, setStaffMembers] = useState<any[]>([])
@@ -156,7 +158,11 @@ export default function RequestQuoteModal({
       })
 
       if (response.ok) {
-        alert('Quotation request submitted successfully! Our team will review and get back to you.')
+        toast({
+          title: 'Success',
+          description: 'Quotation request submitted successfully! Our team will review and get back to you.',
+          variant: 'default'
+        })
         onClose()
         // Reset form
         setFormData({

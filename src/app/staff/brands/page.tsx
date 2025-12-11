@@ -636,7 +636,7 @@ function BrandsPageClient() {
         {viewBrandPanelOpen && selectedBrand && (
           <ViewBrandPanel
             isOpen={viewBrandPanelOpen}
-            onClose={closePanels}
+            onCloseAction={closePanels}
             brand={selectedBrand}
           />
         )}
@@ -644,9 +644,9 @@ function BrandsPageClient() {
         {quotationDetailPanelOpen && selectedQuotation && (
           <QuotationDetailPanel
             isOpen={quotationDetailPanelOpen}
-            onClose={closePanels}
+            onCloseAction={closePanels}
             quotation={selectedQuotation}
-            onSendQuote={handleSendQuote}
+            onSendQuoteAction={handleSendQuote}
             onCreateCampaign={() => handleOpenCampaignModal(selectedQuotation)}
           />
         )}

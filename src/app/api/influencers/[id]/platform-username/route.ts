@@ -45,9 +45,10 @@ export async function GET(
 
     console.log(`🔍 Platform Username Lookup: influencer_id=${influencerId}, platform=${platform}, normalized=${normalizedPlatform}`)
 
-    // Query: get username for this platform (platform is stored as enum/uppercase in DB)
+    // Query: get username AND modash_user_id for this platform (platform is stored as enum/uppercase in DB)
+    // CRITICAL: Flow 2 (Sign-up) saves modash_user_id in influencer_platforms table!
     const result = await query(`
-      SELECT username, platform as db_platform
+      SELECT username, modash_user_id, platform as db_platform
       FROM influencer_platforms
       WHERE influencer_id = $1 
         AND (LOWER(platform::text) = LOWER($2) OR platform::text = $3)
@@ -60,13 +61,15 @@ export async function GET(
       return NextResponse.json({ 
         success: false, 
         username: null,
+        modash_user_id: null,
         error: 'Platform username not found'
       })
     }
 
     return NextResponse.json({
       success: true,
-      username: result[0].username
+      username: result[0].username,
+      modash_user_id: result[0].modash_user_id || null  // CRITICAL: Return modash_user_id if available (Flow 2)
     })
 
   } catch (error) {

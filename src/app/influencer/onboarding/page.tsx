@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
+import { useToast } from '@/components/ui/use-toast'
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -92,6 +93,7 @@ const STEPS = [
 function InfluencerOnboardingPageContent() {
   const { user } = useUser()
   const router = useRouter()
+  const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
@@ -192,7 +194,11 @@ function InfluencerOnboardingPageContent() {
       }, 3000)
     } catch (error) {
       console.error('Onboarding submission failed:', error)
-      alert('Failed to complete onboarding. Please try again.')
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to complete onboarding. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsLoading(false)
     }

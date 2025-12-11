@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X, Building2, Mail, Globe, User, MapPin, Phone, Tag, CheckCircle, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/components/ui/use-toast'
 
 interface AddBrandPanelProps {
   isOpen: boolean
@@ -163,6 +164,7 @@ export default function AddBrandPanel({ isOpen, onClose, onSave }: AddBrandPanel
   
   const [errors, setErrors] = useState<Record<string, boolean>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState(1)
 
   const industryOptions = [
@@ -233,7 +235,11 @@ export default function AddBrandPanel({ isOpen, onClose, onSave }: AddBrandPanel
     
     for (const user of validUsers) {
       if (!emailRegex.test(user.email)) {
-        alert(`Please enter a valid email address for ${user.email}`)
+        toast({
+          title: 'Validation Error',
+          description: `Please enter a valid email address for ${user.email}`,
+          variant: 'destructive'
+        })
         return false
       }
     }
@@ -242,7 +248,11 @@ export default function AddBrandPanel({ isOpen, onClose, onSave }: AddBrandPanel
     const emails = validUsers.map(user => user.email.toLowerCase())
     const uniqueEmails = new Set(emails)
     if (emails.length !== uniqueEmails.size) {
-      alert('Please ensure all user email addresses are unique.')
+      toast({
+        title: 'Validation Error',
+        description: 'Please ensure all user email addresses are unique.',
+        variant: 'destructive'
+      })
       return false
     }
     

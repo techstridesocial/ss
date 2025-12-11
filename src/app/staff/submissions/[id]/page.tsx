@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import ModernStaffHeader from '../../../../components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '../../../../components/auth/ProtectedRoute'
+import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft, Send, MessageSquare, Plus, Trash2, Edit2, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react'
 
 type SubmissionListStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED'
@@ -36,6 +37,7 @@ function SubmissionDetailPageContent() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { toast } = useToast()
 
   const [list, setList] = useState<SubmissionList | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -83,9 +85,18 @@ function SubmissionDetailPageContent() {
         throw new Error(result.error || 'Failed to submit list')
       }
 
+      toast({
+        title: 'Success',
+        description: 'Submission list submitted successfully.',
+        variant: 'default'
+      })
       await loadList()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to submit list')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to submit list. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -103,10 +114,19 @@ function SubmissionDetailPageContent() {
 
       if (!response.ok) throw new Error('Failed to add comment')
       
+      toast({
+        title: 'Success',
+        description: 'Comment added successfully.',
+        variant: 'default'
+      })
       setNewComment('')
       await loadList()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add comment')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to add comment. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsSubmittingComment(false)
     }

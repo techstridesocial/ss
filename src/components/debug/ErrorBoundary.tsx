@@ -40,7 +40,12 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      console.error('🔍 [DEBUG] ErrorBoundary rendering error fallback')
+      console.error('🔍 [DEBUG] ErrorBoundary rendering error fallback', {
+        error: this.state.error,
+        errorMessage: this.state.error?.message,
+        errorStack: this.state.error?.stack,
+        errorInfo: this.state.errorInfo
+      })
       
       if (this.props.fallback) {
         return this.props.fallback

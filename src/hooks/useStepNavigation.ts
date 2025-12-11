@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { OnboardingData } from './useOnboardingForm'
-import { isValidEmail } from '../../lib/utils/validation'
+import { isValidEmail } from '../lib/utils/validation'
 
 export interface Step {
   id: string

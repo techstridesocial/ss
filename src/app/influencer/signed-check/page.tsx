@@ -4,11 +4,13 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
+import { useToast } from '@/components/ui/use-toast'
 import { CheckCircle, XCircle, ArrowRight } from 'lucide-react'
 
 function SignedCheckPageContent() {
   const { user } = useUser()
   const router = useRouter()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [selected, setSelected] = useState<'yes' | 'no' | null>(null)
 
@@ -40,7 +42,11 @@ function SignedCheckPageContent() {
       }
     } catch (error) {
       console.error('Error updating role:', error)
-      alert('Failed to save your selection. Please try again.')
+      toast({
+        title: 'Error',
+        description: 'Failed to save your selection. Please try again.',
+        variant: 'destructive'
+      })
       setIsLoading(false)
     }
   }

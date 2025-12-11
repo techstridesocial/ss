@@ -515,16 +515,28 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       
       if (oldType && newType && oldType !== newType) {
         const targetTab = newType === 'SIGNED' ? 'SIGNED' : newType === 'PARTNERED' ? 'PARTNERED' : newType === 'AGENCY_PARTNER' ? 'AGENCY_PARTNER' : 'ALL'
-        alert(`✅ Influencer ${data.display_name} updated successfully!\n\n📋 Type changed from ${oldType} to ${newType}.\n🔄 The influencer now appears in the ${targetTab} tab.`)
+        toast({
+          title: 'Influencer Updated',
+          description: `Type changed from ${oldType} to ${newType}. The influencer now appears in the ${targetTab} tab.`,
+          variant: 'default'
+        })
         setActiveTab(targetTab)
       } else {
-        alert(`✅ Influencer ${data.display_name} updated successfully!`)
+        toast({
+          title: 'Success',
+          description: `${data.display_name} has been updated successfully.`,
+          variant: 'default'
+        })
       }
       
       setEditModalOpen(false)
       setSelectedInfluencer(null)
     } catch (error) {
-      alert(`❌ Error updating influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update influencer. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -575,9 +587,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     
     try {
       await handleDeleteInfluencer(selectedInfluencer)
-      alert(`✅ ${selectedInfluencer.display_name} has been deleted successfully.`)
+      toast({
+        title: 'Success',
+        description: `${selectedInfluencer.display_name} has been deleted successfully.`,
+        variant: 'default'
+      })
     } catch (error) {
-      alert(`❌ Error deleting influencer: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete influencer. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setDeleteModalOpen(false)
       setSelectedInfluencer(null)
@@ -594,9 +614,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     setIsRefreshingAnalytics(true)
     try {
       await handleBulkRefreshAnalytics()
-      alert('✅ Analytics refreshed successfully!')
+      toast({
+        title: 'Success',
+        description: 'Analytics refreshed successfully!',
+        variant: 'default'
+      })
     } catch (error) {
-      alert(`Failed to refresh analytics: ${error instanceof Error ? error.message : 'Please try again.'}`)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to refresh analytics. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsRefreshingAnalytics(false)
     }
@@ -757,7 +785,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             <table className="w-full">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                 <tr>
-                  <RosterSortableHeader sortKey="display_name" sortConfig={sortConfig} onSort={handleSort}>Influencer</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="display_name" sortConfig={sortConfig} onSort={handleSort} className="sticky left-0 z-10 bg-gradient-to-r from-gray-50 to-gray-100/50 border-r-2 border-gray-200/60">Influencer</RosterSortableHeader>
                   <RosterSortableHeader sortKey="influencer_type" sortConfig={sortConfig} onSort={handleSort}>Type/Agency</RosterSortableHeader>
                   <RosterSortableHeader sortKey="content_type" sortConfig={sortConfig} onSort={handleSort}>Content Type</RosterSortableHeader>
                   <RosterSortableHeader sortKey="platforms" sortConfig={sortConfig} onSort={handleSort} className="min-w-[180px]">Platforms</RosterSortableHeader>
@@ -782,33 +810,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 <tr key={influencer.id} className={`${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-blue-50/30 transition-colors'} ${
                   needsAssignment(influencer) ? 'bg-orange-50 border-l-4 border-orange-400' : ''
                 }`}>
-                  {/* Influencer Info */}
-                  <td className="px-6 py-5 whitespace-nowrap">
+                  {/* Influencer Info - Sticky Column */}
+                  <td className={`px-6 py-5 whitespace-nowrap sticky left-0 z-10 border-r-2 border-gray-200/60 ${
+                    needsAssignment(influencer) ? 'bg-orange-50' : 'bg-white'
+                  } ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-blue-50/30'}`}>
                     <div 
                       className={`flex items-center cursor-pointer rounded-lg p-2 -m-2 ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-gray-50 transition-colors duration-200'}`}
                       onClick={() => handleViewDashboardInfo(influencer)}
                       title="Click to view dashboard info"
                     >
-                      <div className="flex-shrink-0 h-12 w-12">
-                        {influencer.avatar_url ? (
-                          <img 
-                            className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" 
-                            src={influencer.avatar_url} 
-                            alt={influencer.display_name}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none'
-                              e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex')
-                            }}
-                          />
-                        ) : null}
-                        <div 
-                          className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center border-2 border-white shadow-sm text-white font-bold text-lg" 
-                          style={influencer.avatar_url ? { display: 'none' } : { display: 'flex' }}
-                        >
-                          {influencer.display_name?.charAt(0)?.toUpperCase() || 'U'}
-                        </div>
-                      </div>
-                      <div className="ml-4">
+                      <div>
                         <div className="flex items-center space-x-2">
                           <div className="text-sm font-semibold text-slate-900">
                             {influencer.display_name}
@@ -1059,8 +1070,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       {addModalOpen && (
         <AddInfluencerPanel
           isOpen={addModalOpen}
-          onClose={() => setAddModalOpen(false)}
-          onSave={onAddInfluencer}
+          onCloseAction={() => setAddModalOpen(false)}
+          onSaveAction={onAddInfluencer}
         />
       )}
 
@@ -1122,10 +1133,10 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 setSelectedInfluencerForAnalytics(null)
               }}
               influencer={analyticsData || selectedInfluencerForAnalytics}
-          selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
+              selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
               onPlatformSwitch={handlePlatformSwitch}
               loading={analyticsLoading}
-        />
+            />
           </ErrorBoundary>
         </div>
       )}

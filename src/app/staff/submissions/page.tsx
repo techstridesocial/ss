@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
+import { useToast } from '@/components/ui/use-toast'
 import { Plus, FileText, Building2, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Eye, Trash2, Send, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
@@ -38,6 +39,7 @@ interface SubmissionList {
 
 function SubmissionsPageContent() {
   const router = useRouter()
+  const { toast } = useToast()
   const [lists, setLists] = useState<SubmissionList[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -79,9 +81,18 @@ function SubmissionsPageContent() {
 
       if (!response.ok) throw new Error('Failed to delete list')
       
+      toast({
+        title: 'Success',
+        description: 'Submission list deleted successfully.',
+        variant: 'default'
+      })
       await loadLists()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete list')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to delete list. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -96,9 +107,18 @@ function SubmissionsPageContent() {
         throw new Error(result.error || 'Failed to submit list')
       }
 
+      toast({
+        title: 'Success',
+        description: 'Submission list submitted successfully.',
+        variant: 'default'
+      })
       await loadLists()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to submit list')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to submit list. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
