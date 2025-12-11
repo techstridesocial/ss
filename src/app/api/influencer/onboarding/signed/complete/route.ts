@@ -24,17 +24,52 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Signed influencer access required' }, { status: 403 })
     }
 
-    // Get user_id from users table
-    const userResult = await query<{ id: string }>(
+    // Get user_id from users table, create if doesn't exist
+    let userResult = await query<{ id: string }>(
       'SELECT id FROM users WHERE clerk_id = $1',
       [userId]
     )
 
-    if (userResult.length === 0 || !userResult[0]) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+    let user_id: string
 
-    const user_id = userResult[0].id
+    if (userResult.length === 0 || !userResult[0]) {
+      // User doesn't exist, create one automatically
+      console.log('User not found, creating new user record for clerk_id:', userId)
+      
+      try {
+        // Get user details from Clerk
+        const clientClerk = await clerkClient()
+        const clerkUser = await clientClerk.users.getUser(userId)
+        const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`
+        const userRole = clerkUser.publicMetadata?.role as string || 'INFLUENCER_SIGNED'
+        
+        console.log('Creating user with email:', userEmail, 'role:', userRole)
+        
+        const newUserResult = await query<{ id: string }>(
+          `INSERT INTO users (clerk_id, email, status, role) 
+           VALUES ($1, $2, $3, $4) 
+           RETURNING id`,
+          [userId, userEmail, 'ACTIVE', userRole]
+        )
+        
+        if (newUserResult.length === 0 || !newUserResult[0]) {
+          throw new Error('INSERT returned no results')
+        }
+        
+        user_id = newUserResult[0].id
+        console.log('✅ Created new user with ID:', user_id)
+        
+      } catch (createUserError: any) {
+        console.error('Error creating user:', createUserError)
+        return NextResponse.json(
+          { error: 'Database error: ' + (createUserError?.message || 'Could not create user record') }, 
+          { status: 500 }
+        )
+      }
+    } else {
+      user_id = userResult[0].id
+      console.log('👤 Using existing user ID:', user_id)
+    }
 
     // Check if all steps are completed
     const progress = await getOnboardingProgress(user_id)
@@ -199,10 +234,15 @@ export async function POST(_request: NextRequest) {
       success: true,
       message: 'Onboarding completed successfully'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error completing onboarding:', error)
+    const errorMessage = error?.message || 'Failed to complete onboarding'
     return NextResponse.json(
-      { success: false, error: 'Failed to complete onboarding' },
+      { 
+        success: false, 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      },
       { status: 500 }
     )
   }

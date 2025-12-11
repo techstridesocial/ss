@@ -177,10 +177,28 @@ export default function LoginSelection() {
                 afterSignUpUrl={
                   mode === 'staff' ? '/staff/roster' : 
                   mode === 'brand' ? '/brand/onboarding' : 
-                  mode === 'influencer' ? '/influencer/onboarding' : 
+                  mode === 'influencer' ? '/influencer/signed-check' : 
                   '/'
                 }
               />
+              {mode === 'influencer' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-6 text-center"
+                >
+                  <p className={`text-sm mb-2 ${textColors.description}`}>
+                    Don't have an account?
+                  </p>
+                  <a 
+                    href="/sign-up?role=influencer" 
+                    className={`text-sm font-medium ${textColors.title} hover:underline transition-colors`}
+                  >
+                    Sign up as Influencer →
+                  </a>
+                </motion.div>
+              )}
               {mode === 'staff' && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}

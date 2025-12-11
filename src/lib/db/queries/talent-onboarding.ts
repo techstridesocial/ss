@@ -348,12 +348,26 @@ export async function saveBrandCollaboration(
 export async function markOnboardingComplete(userId: string): Promise<boolean> {
   try {
     return await transaction(async (client) => {
-      // Update user profile
-      await client.query(`
-        UPDATE user_profiles 
-        SET is_onboarded = true, updated_at = NOW()
-        WHERE user_id = $1
-      `, [userId])
+      // Check if user profile exists
+      const profileCheck = await client.query(
+        'SELECT id FROM user_profiles WHERE user_id = $1',
+        [userId]
+      )
+
+      if (profileCheck.rows.length === 0) {
+        // Create profile if it doesn't exist
+        await client.query(`
+          INSERT INTO user_profiles (user_id, is_onboarded)
+          VALUES ($1, true)
+        `, [userId])
+      } else {
+        // Update existing profile
+        await client.query(`
+          UPDATE user_profiles 
+          SET is_onboarded = true, updated_at = NOW()
+          WHERE user_id = $1
+        `, [userId])
+      }
 
       // Update user status
       await client.query(`

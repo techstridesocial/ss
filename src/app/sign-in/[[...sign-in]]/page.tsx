@@ -22,16 +22,27 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
-      <div className="w-full max-w-md flex flex-col items-center text-center">
+    <div 
+      className="min-h-screen w-full flex items-center justify-center relative"
+      style={{
+        backgroundImage: 'url(https://i3adm1jlnkqtxoen.public.blob.vercel-storage.com/header/header-bg-cyan-DCLBrf9zXPufk7mvNq7d9hASFRCTQt.webp)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Background overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+      
+      <div className="w-full max-w-md flex flex-col items-center text-center relative z-10">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-white mb-2">
             Stride Social
           </h1>
-          <div className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-3">
+          <div className="text-xs uppercase tracking-wider text-white/80 font-medium mb-3">
             Dashboard
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-white">
             Sign in to your account
           </p>
         </div>
@@ -41,9 +52,18 @@ export default function Page() {
             afterSignInUrl="/"
             afterSignUpUrl="/"
             routing="hash"
-            signUpUrl="/sign-up"
+            signUpUrl="/sign-up?role=influencer"
             redirectUrl="/"
           />
+        </div>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-white mb-2">Don't have an account?</p>
+          <a 
+            href="/sign-up?role=influencer" 
+            className="text-sm font-medium text-white hover:text-white/80 hover:underline transition-colors"
+          >
+            Sign up as Influencer →
+          </a>
         </div>
       </div>
     </div>
