@@ -125,7 +125,7 @@ function CampaignsPageClient() {
     endDate: '',
     timelineStatus: 'all', // New filter for timeline-based status
     performance: '',
-    assignment: '' // New filter for assignment
+    assignment: 'all' // New filter for assignment
   })
   
   // Applied filters state (what's actually being used for filtering)
@@ -139,7 +139,7 @@ function CampaignsPageClient() {
     endDate: '',
     timelineStatus: 'all',
     performance: '',
-    assignment: ''
+    assignment: 'all'
   })
   
   // Assignment state
@@ -170,7 +170,7 @@ function CampaignsPageClient() {
       if (appliedFilters.platform && appliedFilters.platform !== 'all' && !campaign.requirements.platforms.includes(appliedFilters.platform)) return false
       
       // Assignment filter
-      if (appliedFilters.assignment) {
+      if (appliedFilters.assignment && appliedFilters.assignment !== 'all') {
         switch (appliedFilters.assignment) {
           case 'assigned_to_me':
             if (!campaign.assignedStaff || !currentUserId || campaign.assignedStaff.id !== currentUserId) return false
@@ -512,7 +512,7 @@ function CampaignsPageClient() {
       endDate: '',
       timelineStatus: 'all',
       performance: '',
-      assignment: ''
+      assignment: 'all'
     })
     setAppliedFilters({
       status: 'all',
@@ -524,7 +524,7 @@ function CampaignsPageClient() {
       endDate: '',
       timelineStatus: 'all',
       performance: '',
-      assignment: ''
+      assignment: 'all'
     })
     setSearchTerm('')
     setCurrentPage(1)
@@ -542,7 +542,7 @@ function CampaignsPageClient() {
       appliedFilters.endDate !== '' ||
       appliedFilters.timelineStatus !== 'all' ||
       appliedFilters.performance !== '' ||
-      appliedFilters.assignment !== '' ||
+      appliedFilters.assignment !== 'all' ||
       searchTerm !== ''
     )
   }
@@ -559,7 +559,7 @@ function CampaignsPageClient() {
     if (appliedFilters.endDate !== '') count++
     if (appliedFilters.timelineStatus !== 'all') count++
     if (appliedFilters.performance !== '') count++
-    if (appliedFilters.assignment !== '') count++
+    if (appliedFilters.assignment !== 'all') count++
     if (searchTerm !== '') count++
     return count
   }
@@ -624,77 +624,116 @@ function CampaignsPageClient() {
       <main className="px-4 lg:px-8 pb-8">
         {/* Stats Cards with Create Button - All on same row */}
         <div className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {/* Stat Card 1 */}
-            <Card className="border-slate-200">
-              <CardContent className="p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="group relative bg-blue-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-blue-100/50 overflow-hidden"
+            >
+              <div className="relative p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
-                    <p className="text-2xl font-bold">{totalCampaignsCount}</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Campaigns</p>
+                    <p className="text-3xl font-bold text-gray-900">{totalCampaignsCount}</p>
                   </div>
-                  <Megaphone className="h-8 w-8 text-blue-500" />
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25">
+                    <Megaphone className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
             
             {/* Stat Card 2 */}
-            <Card className="border-slate-200">
-              <CardContent className="p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="group relative bg-emerald-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-emerald-100/50 overflow-hidden"
+            >
+              <div className="relative p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Active</p>
-                    <p className="text-2xl font-bold">{activeCampaigns}</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Active</p>
+                    <p className="text-3xl font-bold text-gray-900">{activeCampaigns}</p>
                   </div>
-                  <Play className="h-8 w-8 text-green-500" />
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/25">
+                    <Play className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
             
             {/* Stat Card 3 */}
-            <Card className="border-slate-200">
-              <CardContent className="p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="group relative bg-purple-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-100/50 overflow-hidden"
+            >
+              <div className="relative p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Budget</p>
-                    <p className="text-2xl font-bold">£{totalBudget.toLocaleString()}</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Budget</p>
+                    <p className="text-3xl font-bold text-gray-900">£{totalBudget.toLocaleString()}</p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-purple-500" />
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
             
             {/* Stat Card 4 */}
-            <Card className="border-slate-200">
-              <CardContent className="p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="group relative bg-amber-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-amber-100/50 overflow-hidden"
+            >
+              <div className="relative p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Influencers</p>
-                    <p className="text-2xl font-bold">{totalInfluencers}</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Influencers</p>
+                    <p className="text-3xl font-bold text-gray-900">{totalInfluencers}</p>
                   </div>
-                  <Users className="h-8 w-8 text-yellow-500" />
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/25">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
 
             {/* Create Campaign Button Card */}
-            <Card className="border-slate-200 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all cursor-pointer group">
-              <CardContent 
-                className="p-6 h-full flex items-center justify-center"
-                onClick={() => setShowCreateModal(true)}
-              >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowCreateModal(true)}
+              className="group relative bg-gradient-to-br from-cyan-600 to-blue-600 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-cyan-500/30"
+            >
+              <div className="relative p-6 h-full flex items-center justify-center">
                 <div className="text-center text-white">
-                  <Plus className="h-8 w-8 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="p-3 bg-white/20 rounded-xl mb-3 mx-auto w-fit backdrop-blur-sm">
+                    <Plus className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                  </div>
                   <p className="text-sm font-semibold">Create Campaign</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Filters and Search - Same as Finances Page */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+        >
+          <div className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
@@ -741,7 +780,7 @@ function CampaignsPageClient() {
                     <SelectValue placeholder="Filter by assignment" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Assignments</SelectItem>
+                    <SelectItem value="all">All Assignments</SelectItem>
                     <SelectItem value="assigned_to_me">Assigned to Me</SelectItem>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     <SelectItem value="assigned_to_others">Assigned to Others</SelectItem>
@@ -770,13 +809,17 @@ function CampaignsPageClient() {
                 Refresh
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         {/* Active Filters Display */}
         {hasActiveFilters() && (
-          <Card className="mb-6 border-slate-200 shadow-sm">
-            <CardContent className="p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+          >
+            <div className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100">
@@ -832,7 +875,7 @@ function CampaignsPageClient() {
                     Timeline: <span className="ml-1 font-semibold capitalize">{appliedFilters.timelineStatus.replace(/_/g, ' ')}</span>
                   </span>
                 )}
-                {appliedFilters.assignment && (
+                {appliedFilters.assignment && appliedFilters.assignment !== 'all' && (
                   <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
                     Assignment: <span className="ml-1 font-semibold capitalize">{appliedFilters.assignment.replace(/_/g, ' ')}</span>
                   </span>
@@ -843,14 +886,19 @@ function CampaignsPageClient() {
                   </span>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         )}
 
         {/* Advanced Filters */}
         {showFilters && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+          >
+            <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Brand Filter</label>
@@ -921,24 +969,33 @@ function CampaignsPageClient() {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         )}
 
         {/* Campaigns Table - Same as Finances Page */}
-        <Card>
-          <CardHeader>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+        >
+          <div className="p-6 border-b border-gray-200/60">
             <div className="flex items-center justify-between">
-              <CardTitle>Campaigns</CardTitle>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg shadow-cyan-500/25">
+                  <Megaphone className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Campaigns</h3>
+              </div>
               <div className="text-sm text-gray-500">
                 {totalCampaigns} campaign{totalCampaigns !== 1 ? 's' : ''} found
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
+          </div>
+          <div className="p-6">
+            <div className="overflow-x-auto rounded-xl border border-gray-100/50">
               <table className="w-full">
-                <thead className="bg-slate-50">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                   <tr>
                     <th 
                       className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
@@ -1023,9 +1080,9 @@ function CampaignsPageClient() {
                     </th>
                   </tr>
                 </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {paginatedCampaigns.map((campaign) => (
-                  <tr key={campaign.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={campaign.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="px-6 py-5">
                       <div>
                         <div className="text-sm font-semibold text-slate-900 mb-1">{campaign.name}</div>
@@ -1221,8 +1278,8 @@ function CampaignsPageClient() {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
       {/* Campaign Detail Panel */}
       <AnimatePresence>

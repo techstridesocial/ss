@@ -64,7 +64,7 @@ export async function getBrands(
     const countResult = await query(countQuery, params)
     const total = parseInt(countResult[0]?.total || '0')
 
-    // Get paginated data
+    // Get paginated data with aggregated counts and staff assignment
     const offset = (page - 1) * limit
     const dataQuery = `
       SELECT 
@@ -75,17 +75,35 @@ export async function getBrands(
         b.website_url,
         b.created_at,
         b.updated_at,
+        b.assigned_staff_id,
         u.email,
         u.role,
         up.first_name,
         up.last_name,
         up.avatar_url,
         up.location_country,
-        up.location_city
+        up.location_city,
+        -- Aggregated counts and totals
+        COALESCE(COUNT(DISTINCT s.id), 0) as shortlists_count,
+        COALESCE(COUNT(DISTINCT c.id) FILTER (WHERE c.status = 'ACTIVE'), 0) as active_campaigns,
+        COALESCE(SUM(c.budget) FILTER (WHERE c.budget IS NOT NULL), 0) as total_spend,
+        -- Assigned staff name
+        assigned_staff.first_name as assigned_staff_first_name,
+        assigned_staff.last_name as assigned_staff_last_name
       FROM brands b
       LEFT JOIN users u ON b.user_id = u.id
       LEFT JOIN user_profiles up ON u.id = up.user_id
+      LEFT JOIN shortlists s ON s.brand_id = b.id
+      LEFT JOIN campaigns c ON c.brand_id = b.id
+      LEFT JOIN users assigned_staff_user ON b.assigned_staff_id = assigned_staff_user.id
+      LEFT JOIN user_profiles assigned_staff ON assigned_staff_user.id = assigned_staff.user_id
       WHERE ${whereClause}
+      GROUP BY 
+        b.id, b.user_id, b.company_name, b.industry, b.website_url, 
+        b.created_at, b.updated_at, b.assigned_staff_id,
+        u.email, u.role, up.first_name, up.last_name, up.avatar_url,
+        up.location_country, up.location_city,
+        assigned_staff.first_name, assigned_staff.last_name
       ORDER BY b.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
@@ -94,38 +112,51 @@ export async function getBrands(
     const brandsResult = await query(dataQuery, params)
 
     // Transform the data to match the expected interface
-    const brands: BrandWithUser[] = brandsResult.map((row: any) => ({
-      id: row.id,
-      user_id: row.user_id,
-      company_name: row.company_name,
-      industry: row.industry,
-      website_url: row.website_url,
-      description: null, // Brand interface requires this
-      logo_url: null, // Not available in current schema
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      user: {
-        id: row.user_id,
-        email: row.email,
-        role: row.role,
+    const brands: BrandWithUser[] = brandsResult.map((row: any) => {
+      // Build assigned staff name
+      const assignedStaffName = row.assigned_staff_first_name || row.assigned_staff_last_name
+        ? `${row.assigned_staff_first_name || ''} ${row.assigned_staff_last_name || ''}`.trim()
+        : null
+
+      return {
+        id: row.id,
+        user_id: row.user_id,
+        company_name: row.company_name,
+        industry: row.industry,
+        website_url: row.website_url,
+        description: null, // Brand interface requires this
+        logo_url: null, // Not available in current schema
         created_at: row.created_at,
         updated_at: row.updated_at,
-        profile: {
-          user_id: row.user_id,
-          first_name: row.first_name,
-          last_name: row.last_name,
-          avatar_url: row.avatar_url,
-          phone: null,
-          location_country: row.location_country,
-          location_city: row.location_city,
-          bio: null,
-          website_url: null,
-          is_onboarded: true,
+        // Add extended fields for staff brands page
+        shortlists_count: parseInt(row.shortlists_count || '0'),
+        active_campaigns: parseInt(row.active_campaigns || '0'),
+        total_spend: parseFloat(row.total_spend || '0'),
+        assigned_staff_id: row.assigned_staff_id || null,
+        assigned_staff_name: assignedStaffName,
+        user: {
+          id: row.user_id,
+          email: row.email,
+          role: row.role,
           created_at: row.created_at,
-          updated_at: row.updated_at
+          updated_at: row.updated_at,
+          profile: {
+            user_id: row.user_id,
+            first_name: row.first_name,
+            last_name: row.last_name,
+            avatar_url: row.avatar_url,
+            phone: null,
+            location_country: row.location_country,
+            location_city: row.location_city,
+            bio: null,
+            website_url: null,
+            is_onboarded: true,
+            created_at: row.created_at,
+            updated_at: row.updated_at
+          }
         }
       }
-    }))
+    })
 
     return {
       data: brands,

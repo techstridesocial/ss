@@ -10,7 +10,12 @@ import ErrorBoundary from '../../../components/debug/ErrorBoundary'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { StaffInfluencer, RosterFilters } from '../../../types/staff'
 import { ANALYTICS_CACHE_TTL_MS } from '@/constants/analytics'
-import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle } from 'lucide-react'
+import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle, Search } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/use-toast'
+import { Toaster } from '@/components/ui/toaster'
 
 // Import from separate files to avoid circular dependency issues during bundling
 import {
@@ -128,6 +133,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const router = useRouter()
   const urlSearchParams = useSearchParams()
   const pathname = usePathname()
+  const { toast } = useToast()
 
   // Use extracted hooks
   const { 
@@ -523,14 +529,44 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   }
 
   const onSaveAssignment = async (assignmentData: any) => {
-    if (!selectedInfluencer) throw new Error('No influencer selected')
+    if (!selectedInfluencer) {
+      toast({
+        title: 'Error',
+        description: 'No influencer selected',
+        variant: 'destructive'
+      })
+      return
+    }
     
     try {
       await handleSaveAssignment(selectedInfluencer.id, assignmentData)
+      
+      // Determine target tab based on assigned type
+      const targetTab = assignmentData.influencer_type === 'SIGNED' 
+        ? 'SIGNED' 
+        : assignmentData.influencer_type === 'PARTNERED' 
+        ? 'PARTNERED' 
+        : assignmentData.influencer_type === 'AGENCY_PARTNER'
+        ? 'AGENCY_PARTNER'
+        : 'ALL'
+      
+      toast({
+        title: 'Assignment Successful',
+        description: `${selectedInfluencer.display_name} has been assigned as ${assignmentData.influencer_type} with ${assignmentData.content_type} content type.`,
+        variant: 'default'
+      })
+      
       setAssignModalOpen(false)
       setSelectedInfluencer(null)
+      
+      // Switch to appropriate tab after assignment
+      setActiveTab(targetTab)
     } catch (error) {
-      throw error
+      toast({
+        title: 'Assignment Failed',
+        description: error instanceof Error ? error.message : 'Failed to assign influencer. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -588,58 +624,67 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   return (
     <div className="space-y-6">
       {/* Search Bar and Actions */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder="Search influencers by name, niche, or location..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className={`w-full px-6 py-4 text-sm bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:bg-white/80 placeholder:text-gray-400 font-medium ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'transition-all duration-300'}`}
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+      >
+        <div className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search influencers by name, niche, or location..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setRosterFilterOpen(!rosterFilterOpen)}
+              className={`px-6 py-3 rounded-xl transition-all duration-300 shadow-sm font-semibold md:w-auto flex items-center gap-2 ${
+                Object.values(rosterFilters).filter(value => value !== '').length > 0
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/40'
+                  : 'bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              <FilterIcon className="h-4 w-4" />
+              Filters
+              {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
+                <span className="px-2 py-0.5 text-xs bg-white/20 text-white rounded-full font-bold">
+                  {Object.values(rosterFilters).filter(value => value !== '').length}
+                </span>
+              )}
+              <ChevronDown size={14} className={`transition-transform ${rosterFilterOpen ? 'rotate-180' : ''}`} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setAddModalOpen(true)}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-cyan-500/40 hover:shadow-xl hover:shadow-cyan-500/50 flex items-center gap-2 font-bold md:w-auto"
+            >
+              <Plus size={16} />
+              Add Influencer
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onBulkRefresh}
+              disabled={isRefreshingAnalytics}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 disabled:opacity-60 transition-all duration-300 shadow-lg shadow-emerald-500/40 hover:shadow-xl hover:shadow-emerald-500/50 flex items-center gap-2 font-bold md:w-auto"
+              title="Refresh Analytics for All Influencers"
+            >
+              <RefreshCw size={16} className={isRefreshingAnalytics ? 'animate-spin' : ''} />
+              {isRefreshingAnalytics ? 'Refreshing...' : 'Refresh Analytics'}
+            </motion.button>
           </div>
         </div>
-
-        <button
-          onClick={() => setRosterFilterOpen(!rosterFilterOpen)}
-          className={`flex items-center space-x-2 px-4 py-3 rounded-2xl border transition-all duration-300 font-medium ${
-            Object.values(rosterFilters).filter(value => value !== '').length > 0
-              ? 'bg-black text-white border-black'
-              : 'bg-white/60 backdrop-blur-md border-gray-200 hover:bg-white/80 text-gray-700'
-          }`}
-        >
-                                <FilterIcon size={16} />
-          <span>Filters</span>
-          {Object.values(rosterFilters).filter(value => value !== '').length > 0 && (
-            <span className="bg-white text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
-              {Object.values(rosterFilters).filter(value => value !== '').length}
-            </span>
-          )}
-          <ChevronDown size={14} className={`transition-transform ${rosterFilterOpen ? 'rotate-180' : ''}`} />
-        </button>
-
-        <button
-          onClick={() => setAddModalOpen(true)}
-          className="flex items-center px-6 py-3 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all duration-300 font-medium shadow-lg whitespace-nowrap"
-        >
-          <Plus size={16} className="mr-2" />
-          Add Influencer
-        </button>
-        
-        <button
-          onClick={onBulkRefresh}
-          disabled={isRefreshingAnalytics}
-          className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-300 font-medium disabled:opacity-50"
-          title="Refresh Analytics for All Influencers"
-        >
-          <RefreshCw size={16} className={`mr-2 ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
-          {isRefreshingAnalytics ? 'Refreshing...' : 'Refresh Analytics'}
-        </button>
-      </div>
+      </motion.div>
 
       {/* Filter Panel */}
       <RosterFilterPanel
@@ -689,25 +734,43 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       </div>
 
       {/* Influencer Table */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50/60 border-b border-gray-100/60">
-              <tr>
-                <RosterSortableHeader sortKey="display_name" sortConfig={sortConfig} onSort={handleSort}>Influencer</RosterSortableHeader>
-                <RosterSortableHeader sortKey="influencer_type" sortConfig={sortConfig} onSort={handleSort}>Type/Agency</RosterSortableHeader>
-                <RosterSortableHeader sortKey="content_type" sortConfig={sortConfig} onSort={handleSort}>Content Type</RosterSortableHeader>
-                <RosterSortableHeader sortKey="platforms" sortConfig={sortConfig} onSort={handleSort}>Platforms</RosterSortableHeader>
-                <RosterSortableHeader sortKey="niches" sortConfig={sortConfig} onSort={handleSort}>Niches</RosterSortableHeader>
-                <RosterSortableHeader sortKey="total_followers" sortConfig={sortConfig} onSort={handleSort}>Followers</RosterSortableHeader>
-                <RosterSortableHeader sortKey="total_engagement_rate" sortConfig={sortConfig} onSort={handleSort}>Engagement</RosterSortableHeader>
-                <RosterSortableHeader sortKey="total_avg_views" sortConfig={sortConfig} onSort={handleSort}>Avg Views</RosterSortableHeader>
-                <RosterSortableHeader sortKey="location_city" sortConfig={sortConfig} onSort={handleSort}>Location</RosterSortableHeader>
-                <RosterSortableHeader sortKey="is_active" sortConfig={sortConfig} onSort={handleSort}>Status</RosterSortableHeader>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white/50 divide-y divide-gray-100/60">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+      >
+        <div className="p-6 border-b border-gray-200/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg shadow-cyan-500/25">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Influencers</h3>
+            </div>
+            <div className="text-sm text-gray-500">
+              {totalInfluencers} influencer{totalInfluencers !== 1 ? 's' : ''} found
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="overflow-x-auto rounded-xl border border-gray-100/50">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
+                <tr>
+                  <RosterSortableHeader sortKey="display_name" sortConfig={sortConfig} onSort={handleSort}>Influencer</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="influencer_type" sortConfig={sortConfig} onSort={handleSort}>Type/Agency</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="content_type" sortConfig={sortConfig} onSort={handleSort}>Content Type</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="platforms" sortConfig={sortConfig} onSort={handleSort} className="min-w-[180px]">Platforms</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="niches" sortConfig={sortConfig} onSort={handleSort}>Niches</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="total_followers" sortConfig={sortConfig} onSort={handleSort}>Followers</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="total_engagement_rate" sortConfig={sortConfig} onSort={handleSort}>Engagement</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="total_avg_views" sortConfig={sortConfig} onSort={handleSort}>Avg Views</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="location_city" sortConfig={sortConfig} onSort={handleSort}>Location</RosterSortableHeader>
+                  <RosterSortableHeader sortKey="is_active" sortConfig={sortConfig} onSort={handleSort}>Status</RosterSortableHeader>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
               {isInitialLoading ? (
                 <RosterLoadingSkeleton />
               ) : paginatedInfluencers.map((influencer) => {
@@ -716,11 +779,11 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 const allSynced = analyticsProgress.total > 0 && analyticsProgress.synced >= analyticsProgress.total
 
                 return (
-                <tr key={influencer.id} className={`${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-white/70 transition-colors duration-150'} ${
+                <tr key={influencer.id} className={`${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-blue-50/30 transition-colors'} ${
                   needsAssignment(influencer) ? 'bg-orange-50 border-l-4 border-orange-400' : ''
                 }`}>
                   {/* Influencer Info */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <div 
                       className={`flex items-center cursor-pointer rounded-lg p-2 -m-2 ${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-gray-50 transition-colors duration-200'}`}
                       onClick={() => handleViewDashboardInfo(influencer)}
@@ -747,7 +810,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                       </div>
                       <div className="ml-4">
                         <div className="flex items-center space-x-2">
-                          <div className="text-sm font-semibold text-gray-900">
+                          <div className="text-sm font-semibold text-slate-900">
                             {influencer.display_name}
                           </div>
                           {needsAssignment(influencer) && (
@@ -765,7 +828,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Tier/Agency */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     {(influencer.influencer_type === 'SIGNED' || influencer.influencer_type === 'PARTNERED') ? (
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                         influencer.influencer_type === 'SIGNED' 
@@ -777,14 +840,14 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                         {influencer.influencer_type === 'SIGNED' ? 'Signed' : 'Partnered'}
                       </span>
                     ) : influencer.influencer_type === 'AGENCY_PARTNER' ? (
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-slate-900">
                         {influencer.agency_name || 'Unknown Agency'}
                       </span>
                     ) : null}
                   </td>
 
                   {/* Content Type */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                       influencer.content_type === 'UGC' 
                         ? 'bg-purple-100 text-purple-800'
@@ -798,7 +861,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Platforms */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-5 whitespace-nowrap min-w-[180px]">
                     <div className="flex items-center gap-3">
                       <div className="flex flex-wrap gap-2">
                         {(Array.isArray(influencer.platforms) ? influencer.platforms : []).filter(Boolean).map((platform: Platform, index: number) => (
@@ -821,7 +884,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Niches */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-5">
                     <div className="flex flex-wrap gap-1">
                       {(influencer.niches || []).slice(0, 2).map((niche: string) => (
                         <span key={niche} className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg">
@@ -837,16 +900,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Followers */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm font-semibold text-gray-900">
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center text-sm font-semibold text-slate-900">
                       <Users size={14} className="mr-1 text-gray-400" />
                       {formatNumber(influencer.total_followers)}
                     </div>
                   </td>
 
                   {/* Engagement */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm font-semibold text-gray-900">
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center text-sm font-semibold text-slate-900">
                       <TrendingUp size={14} className="mr-1 text-gray-400" />
                       {influencer.total_engagement_rate && Number(influencer.total_engagement_rate) > 0 
                         ? (Number(influencer.total_engagement_rate) * 100).toFixed(1) 
@@ -855,16 +918,16 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Average Views */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm font-semibold text-gray-900">
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center text-sm font-semibold text-slate-900">
                       <Eye size={14} className="mr-1 text-gray-400" />
                       {formatNumber(influencer.total_avg_views)}
                     </div>
                   </td>
 
                   {/* Location */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-600">
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-slate-600">
                       <MapPin size={14} className="mr-1 text-gray-400" />
                       <div>
                         <div className="font-medium">{influencer.location_city}</div>
@@ -874,7 +937,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Status */}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                       influencer.is_active 
                         ? 'bg-green-100 text-green-700'
@@ -885,49 +948,57 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   </td>
 
                   {/* Actions */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-1">
+                  <td className="px-6 py-5 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-1">
                       {needsAssignment(influencer) && (
-                        <button
+                        <Button
                           onClick={() => onAssignInfluencer(influencer)}
                           disabled={actionLoading}
-                          className="p-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-600 hover:text-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
+                          variant="ghost"
+                          size="icon"
+                          className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
                           title="Assign Influencer Type & Staff Member"
                         >
                           <User size={16} />
-                        </button>
+                        </Button>
                       )}
                       
-                      <button
+                      <Button
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
                           handleViewInfluencer(influencer)
                         }}
                         disabled={actionLoading}
-                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-600 hover:text-blue-600 hover:bg-blue-50"
                         title="View Analytics & Performance"
                       >
                         <BarChart3 size={16} />
-                      </button>
+                      </Button>
                       
-                      <button
+                      <Button
                         onClick={() => handleViewDashboardInfo(influencer)}
                         disabled={actionLoading}
-                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
                         title="View Dashboard Info & Account Status"
                       >
-                        <User size={16} />
-                      </button>
+                        <Eye size={16} />
+                      </Button>
                       
-                      <button
+                      <Button
                         onClick={() => onDeleteInfluencer(influencer)}
                         disabled={actionLoading}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm"
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         title="Delete Influencer"
                       >
                         <Trash2 size={16} />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -935,6 +1006,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             </tbody>
           </table>
         </div>
+        </div>
+      </motion.div>
 
         {/* Empty State */}
         {paginatedInfluencers.length === 0 && !isInitialLoading && (
@@ -945,7 +1018,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             onAddClick={() => setAddModalOpen(true)}
           />
         )}
-      </div>
 
       {/* Pagination */}
       <RosterPagination
@@ -1012,23 +1084,27 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               </div>
               
               <div className="flex space-x-4">
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setDeleteModalOpen(false)
                     setSelectedInfluencer(null)
                   }}
                   disabled={actionLoading}
-                  className="flex-1 px-6 py-3 bg-white/60 backdrop-blur-md border-0 rounded-2xl shadow-sm text-gray-700 hover:bg-white/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium"
+                  className="flex-1 px-6 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={onConfirmDelete}
                   disabled={actionLoading}
-                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-2xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium shadow-lg"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 disabled:from-gray-400 disabled:to-gray-500 disabled:opacity-60 transition-all shadow-lg shadow-red-500/40 hover:shadow-xl hover:shadow-red-500/50 font-bold"
                 >
                   {actionLoading ? 'Deleting...' : 'Delete'}
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>
@@ -1077,18 +1153,22 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
               <h3 className="text-lg font-semibold text-gray-900">Failed to Load Analytics</h3>
               <p className="text-sm text-gray-600">{analyticsError}</p>
               <div className="flex space-x-3">
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setDetailPanelOpen(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-6 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm font-semibold"
                 >
                   Close
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => retryAnalytics()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-cyan-500/40 hover:shadow-xl hover:shadow-cyan-500/50 font-bold"
                 >
                   Try Again
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>
@@ -1100,6 +1180,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         isOpen={dashboardPanelOpen}
         onClose={handleClosePanels}
       />
+      
+      <Toaster />
     </div>
   )
 }

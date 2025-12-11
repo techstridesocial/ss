@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { StaffInfluencer } from '@/types/staff'
 import { ANALYTICS_CACHE_TTL_MS } from '@/constants/analytics'
+import { validateModashUserId, isUUID } from '@/lib/utils/modash-userid-validator'
 
 interface UseRosterAnalyticsOptions {
   onNotesUpdate?: (influencerId: string, notes: string) => void
@@ -178,14 +179,36 @@ export function useRosterInfluencerAnalytics(
           const legacyUserId = notesObject.modash_data?.userId || notesObject.modash_data?.modash_user_id
 
           const normalizedSelectedPlatform = selectedPlatform?.toLowerCase() || 'instagram'
+          
+          // Validate and use platform-specific userId
           if (storedUserId) {
-            modashUserId = storedUserId
-            console.log(`✅ Roster Analytics: Found stored Modash userId ${modashUserId} for platform ${normalizedSelectedPlatform}`)
-          } else if (legacyUserId) {
-            const normalizedStoredPlatform = (storedPlatform || notesObject.modash_data?.platform || '').toLowerCase()
-            if (!normalizedStoredPlatform || normalizedStoredPlatform === normalizedSelectedPlatform) {
-              modashUserId = legacyUserId
-              console.log(`✅ Roster Analytics: Using legacy stored userId ${modashUserId}`)
+            const validatedUserId = validateModashUserId(storedUserId)
+            if (validatedUserId) {
+              modashUserId = validatedUserId
+              console.log(`✅ Roster Analytics: Found valid stored Modash userId ${modashUserId} for platform ${normalizedSelectedPlatform}`)
+            } else {
+              console.warn(`⚠️ Roster Analytics: Invalid stored userId format (looks like internal UUID or invalid): ${storedUserId}. Will fallback to username search.`)
+              // Clear invalid userId from notes? (Could add cleanup logic here)
+            }
+          }
+          
+          // Validate and use legacy userId if platform-specific not available
+          if (!modashUserId && legacyUserId) {
+            const validatedLegacyUserId = validateModashUserId(legacyUserId)
+            if (validatedLegacyUserId) {
+              const normalizedStoredPlatform = (storedPlatform || notesObject.modash_data?.platform || '').toLowerCase()
+              if (!normalizedStoredPlatform || normalizedStoredPlatform === normalizedSelectedPlatform) {
+                modashUserId = validatedLegacyUserId
+                console.log(`✅ Roster Analytics: Using validated legacy stored userId ${modashUserId}`)
+              } else {
+                console.warn(`⚠️ Roster Analytics: Legacy userId exists but platform mismatch (${normalizedStoredPlatform} vs ${normalizedSelectedPlatform}). Will fallback to username search.`)
+              }
+            } else {
+              if (isUUID(legacyUserId)) {
+                console.warn(`⚠️ Roster Analytics: Legacy userId is an internal UUID (${legacyUserId}), not a Modash userId. Will fallback to username search.`)
+              } else {
+                console.warn(`⚠️ Roster Analytics: Invalid legacy userId format: ${legacyUserId}. Will fallback to username search.`)
+              }
             }
           }
         }

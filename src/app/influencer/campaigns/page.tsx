@@ -24,6 +24,7 @@ interface ContentSubmission {
 export default function InfluencerCampaigns() {
   // Campaigns will be loaded from API
   const [campaigns, setCampaigns] = useState<any[]>([])
+  const [currency, setCurrency] = useState<string>('GBP')
   const [isLoading, setIsLoading] = useState(true)
   const [submissionModal, setSubmissionModal] = useState<string | null>(null)
   const [submissionForm, setSubmissionForm] = useState<ContentSubmission>({
@@ -75,6 +76,16 @@ export default function InfluencerCampaigns() {
   const totalEarned = campaigns.filter((c: any) => c.status === 'completed').reduce((sum: number, c: any) => sum + (c.amount || 0), 0)
   const pendingPayment = campaigns.filter((c: any) => c.status === 'active').reduce((sum: number, c: any) => sum + (c.amount || 0), 0)
 
+  // Format currency helper
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+
   // Load campaigns from API
   useEffect(() => {
     const loadCampaigns = async () => {
@@ -83,8 +94,11 @@ export default function InfluencerCampaigns() {
         const response = await fetch('/api/influencer/campaigns')
         if (response.ok) {
           const data = await response.json()
-          if (data.success) {
-            setCampaigns(data.data.campaigns || [])
+          if (data.campaigns) {
+            setCampaigns(data.campaigns || [])
+          }
+          if (data.currency) {
+            setCurrency(data.currency)
           }
         }
       } catch (error) {
@@ -220,7 +234,7 @@ export default function InfluencerCampaigns() {
                 </span>
                 <span className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl text-emerald-700 font-bold shadow-sm border border-emerald-100">
                   <DollarSign className="h-4 w-4" />
-                  ${(campaign.amount || 0).toLocaleString()}
+                  {formatCurrency(campaign.amount || 0)}
                 </span>
               </div>
             </div>
@@ -370,18 +384,7 @@ export default function InfluencerCampaigns() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30">
         <ModernInfluencerHeader />
         
-        <div className="px-4 lg:px-8 pb-12 pt-8 max-w-7xl mx-auto">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-10"
-          >
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-3">
-              My Campaigns
-            </h1>
-            <p className="text-gray-500 text-lg">Manage your active campaigns and track your earnings</p>
-          </motion.div>
+        <div className="px-4 lg:px-8 pb-12 pt-8">
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
@@ -389,9 +392,8 @@ export default function InfluencerCampaigns() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+              className="group relative bg-blue-50/50 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-blue-100/50 overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 rounded-full -mr-16 -mt-16"></div>
               <div className="relative">
                 <div className="inline-flex p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25 mb-4">
                   <Calendar className="h-5 w-5 text-white" />
@@ -405,9 +407,8 @@ export default function InfluencerCampaigns() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+              className="group relative bg-emerald-50/50 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-emerald-100/50 overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-green-500/5 rounded-full -mr-16 -mt-16"></div>
               <div className="relative">
                 <div className="inline-flex p-3 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/25 mb-4">
                   <CheckCircle className="h-5 w-5 text-white" />
@@ -421,15 +422,14 @@ export default function InfluencerCampaigns() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+              className="group relative bg-amber-50/50 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-amber-100/50 overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-full -mr-16 -mt-16"></div>
               <div className="relative">
                 <div className="inline-flex p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/25 mb-4">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Earned</p>
-                <p className="text-3xl font-bold text-gray-900">${totalEarned.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalEarned)}</p>
               </div>
             </motion.div>
 
@@ -437,15 +437,14 @@ export default function InfluencerCampaigns() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100/50 overflow-hidden"
+              className="group relative bg-purple-50/50 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-purple-100/50 overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full -mr-16 -mt-16"></div>
               <div className="relative">
                 <div className="inline-flex p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25 mb-4">
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pending Payment</p>
-                <p className="text-3xl font-bold text-gray-900">${pendingPayment.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">{formatCurrency(pendingPayment)}</p>
               </div>
             </motion.div>
           </div>

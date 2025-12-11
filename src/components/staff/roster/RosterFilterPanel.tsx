@@ -24,7 +24,7 @@ export function RosterFilterPanel({
   const activeFilterCount = Object.values(filters).filter(value => value !== '').length
 
   return (
-    <div className="w-full bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/40 mb-4 animate-in slide-in-from-top-2 duration-300">
+    <div className="w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 mb-4 overflow-hidden">
       <div className="p-4">
         {/* Active Filters Chips */}
         {activeFilterCount > 0 && (

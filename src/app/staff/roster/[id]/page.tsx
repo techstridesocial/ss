@@ -1,8 +1,17 @@
 import React from 'react'
+import Link from 'next/link'
 import { requireStaffAccess } from '../../../../lib/auth/roles'
 import ModernStaffHeader from '../../../../components/nav/ModernStaffHeader'
 import { notFound } from 'next/navigation'
 import { getInfluencerById } from '../../../../lib/db/queries/influencers'
+import { formatNumber } from '../../../../lib/utils/formatters'
+import type { 
+  InfluencerPlatform, 
+  InfluencerContent, 
+  AudienceLocation, 
+  AudienceLanguage,
+  InfluencerDetailView
+} from '../../../../types/database'
 import { 
   ArrowLeft, 
   Users, 
@@ -23,6 +32,31 @@ import {
   Cake,
   User2
 } from 'lucide-react'
+
+// Constants
+const PROMOTION_VIEW_PERCENTAGE = 0.85
+
+// Type aliases for cleaner code
+type PlatformType = 'all' | 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE'
+type PlatformData = InfluencerDetailPageData['platforms'][0]
+type Content = InfluencerDetailPageData['recent_content'][0]
+type Location = InfluencerDetailPageData['audience_locations'][0]
+type Language = InfluencerDetailPageData['audience_languages'][0]
+
+// Helper functions
+const isValidUrl = (url: string | null | undefined): boolean => {
+  if (!url) return false
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const isPlatformType = (value: string): value is PlatformType => {
+  return ['all', 'INSTAGRAM', 'TIKTOK', 'YOUTUBE'].includes(value)
+}
 
 // Type definition for influencer detail page
 type InfluencerDetailPageData = {
@@ -98,12 +132,6 @@ interface PageProps {
 }
 
 function InfluencerHeader({ influencer }: { influencer: InfluencerDetailPageData }) {
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toString()
-  }
-
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
       <div className="flex items-start space-x-6">
@@ -174,7 +202,7 @@ function InfluencerHeader({ influencer }: { influencer: InfluencerDetailPageData
                 {influencer.location_city}, {influencer.location_country}
               </div>
             )}
-            {influencer.website_url && (
+            {influencer.website_url && isValidUrl(influencer.website_url) && (
               <div className="flex items-center">
                 <Globe size={14} className="mr-1" />
                 <a href={influencer.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
@@ -201,11 +229,24 @@ function InfluencerHeader({ influencer }: { influencer: InfluencerDetailPageData
 
         {/* Actions */}
         <div className="flex-shrink-0 flex space-x-2">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2">
+          <button 
+            onClick={() => {
+              // TODO: Implement edit profile functionality
+              console.log('Edit profile clicked')
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
             <Edit size={16} />
             <span>Edit Profile</span>
           </button>
-          <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+          <button 
+            onClick={() => {
+              // TODO: Implement settings functionality
+              console.log('Settings clicked')
+            }}
+            aria-label="Influencer settings"
+            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
             <Settings size={16} />
           </button>
         </div>
@@ -215,13 +256,7 @@ function InfluencerHeader({ influencer }: { influencer: InfluencerDetailPageData
 }
 
 function PlatformTabs({ influencer }: { influencer: InfluencerDetailPageData }) {
-  const [activeTab, setActiveTab] = React.useState<'all' | 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE'>('all')
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toString()
-  }
+  const [activeTab, setActiveTab] = React.useState<PlatformType>('all')
 
   const getPlatformData = () => {
     if (activeTab === 'all') {
@@ -233,18 +268,24 @@ function PlatformTabs({ influencer }: { influencer: InfluencerDetailPageData }) 
       }
     }
     
-    const platform = influencer.platforms.find((p: InfluencerDetailPageData['platforms'][0]) => p.platform === activeTab)
+    const platform = influencer.platforms.find((p: PlatformData) => p.platform === activeTab)
     if (!platform) return null
     
     return {
       followers: platform.followers,
       engagement_rate: platform.engagement_rate,
       avg_views: platform.avg_views,
-      content: influencer.recent_content.filter((c: InfluencerDetailPageData['recent_content'][0]) => c.platform === activeTab)
+      content: influencer.recent_content.filter((c: Content) => c.platform === activeTab)
     }
   }
 
   const platformData = getPlatformData()
+
+  const handleTabClick = (platformValue: string) => {
+    if (isPlatformType(platformValue)) {
+      setActiveTab(platformValue)
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -261,10 +302,10 @@ function PlatformTabs({ influencer }: { influencer: InfluencerDetailPageData }) 
           >
             All Platforms
           </button>
-          {influencer.platforms.map((platform: InfluencerDetailPageData['platforms'][0]) => (
+          {influencer.platforms.map((platform: PlatformData) => (
             <button
               key={platform.platform}
-              onClick={() => setActiveTab(platform.platform as any)}
+              onClick={() => handleTabClick(platform.platform)}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                 activeTab === platform.platform
                   ? 'border-blue-500 text-blue-600'
@@ -311,7 +352,7 @@ function PlatformTabs({ influencer }: { influencer: InfluencerDetailPageData }) 
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Platform Details</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {influencer.platforms.filter((p: InfluencerDetailPageData['platforms'][0]) => p.platform === activeTab).map((platform: InfluencerDetailPageData['platforms'][0]) => (
+                {influencer.platforms.filter((p: PlatformData) => p.platform === activeTab).map((platform: PlatformData) => (
                   <React.Fragment key={platform.id}>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <div className="text-lg font-bold text-gray-900">{formatNumber(platform.following)}</div>
@@ -340,43 +381,51 @@ function PlatformTabs({ influencer }: { influencer: InfluencerDetailPageData }) 
           {/* Recent Content */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Content</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {platformData.content.map((content: InfluencerDetailPageData['recent_content'][0]) => (
-                <div key={content.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800">
-                      {content.platform}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(content.posted_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  <p className="text-sm text-gray-700 mb-3">{content.caption}</p>
-                  
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Eye size={14} className="mr-1" />
-                      {formatNumber(content.views || 0)}
+            {platformData.content.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Eye size={48} className="mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium">No recent content available</p>
+                <p className="text-sm mt-2">Content will appear here once the influencer posts new content.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {platformData.content.map((content: Content) => (
+                  <div key={content.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800">
+                        {content.platform}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {new Date(content.posted_at).toLocaleDateString()}
+                      </span>
                     </div>
-                    <div className="flex items-center">
-                      <Heart size={14} className="mr-1" />
-                      {formatNumber(content.likes || 0)}
-                    </div>
-                    <div className="flex items-center">
-                      <MessageCircle size={14} className="mr-1" />
-                      {formatNumber(content.comments || 0)}
-                    </div>
-                    {content.shares && (
+                    
+                    <p className="text-sm text-gray-700 mb-3">{content.caption}</p>
+                    
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <div className="flex items-center">
-                        <Share size={14} className="mr-1" />
-                        {formatNumber(content.shares)}
+                        <Eye size={14} className="mr-1" />
+                        {formatNumber(content.views || 0)}
                       </div>
-                    )}
+                      <div className="flex items-center">
+                        <Heart size={14} className="mr-1" />
+                        {formatNumber(content.likes || 0)}
+                      </div>
+                      <div className="flex items-center">
+                        <MessageCircle size={14} className="mr-1" />
+                        {formatNumber(content.comments || 0)}
+                      </div>
+                      {content.shares && (
+                        <div className="flex items-center">
+                          <Share size={14} className="mr-1" />
+                          {formatNumber(content.shares)}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -453,7 +502,7 @@ function DemographicsSection({ influencer }: { influencer: InfluencerDetailPageD
             Top Locations
           </h3>
           <div className="space-y-3">
-            {influencer.audience_locations.slice(0, 5).map((location: InfluencerDetailPageData['audience_locations'][0]) => (
+            {(influencer.audience_locations || []).slice(0, 5).map((location: Location) => (
               <div key={location.country_code} className="flex items-center">
                 <div className="w-20 text-sm text-gray-600">{location.country_name}</div>
                 <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
@@ -475,7 +524,7 @@ function DemographicsSection({ influencer }: { influencer: InfluencerDetailPageD
             Top Languages
           </h3>
           <div className="space-y-3">
-            {influencer.audience_languages.slice(0, 4).map((language: InfluencerDetailPageData['audience_languages'][0]) => (
+            {(influencer.audience_languages || []).slice(0, 4).map((language: Language) => (
               <div key={language.language_code} className="flex items-center">
                 <div className="w-20 text-sm text-gray-600">{language.language_name}</div>
                 <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
@@ -495,11 +544,8 @@ function DemographicsSection({ influencer }: { influencer: InfluencerDetailPageD
 }
 
 function EstimatedReach({ influencer }: { influencer: InfluencerDetailPageData }) {
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toString()
-  }
+  const estimatedViewsPercentage = Math.round(PROMOTION_VIEW_PERCENTAGE * 100)
+  const expectedEngagements = Math.floor(influencer.estimated_promotion_views * (influencer.total_engagement_rate / 100))
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -512,10 +558,10 @@ function EstimatedReach({ influencer }: { influencer: InfluencerDetailPageData }
         <div className="text-center p-4 bg-blue-50 rounded-lg">
           <div className="text-2xl font-bold text-blue-600">{formatNumber(influencer.estimated_promotion_views)}</div>
           <div className="text-sm text-gray-600">Estimated Views</div>
-          <div className="text-xs text-gray-500 mt-1">85% of avg views</div>
+          <div className="text-xs text-gray-500 mt-1">{estimatedViewsPercentage}% of avg views</div>
         </div>
         <div className="text-center p-4 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">{formatNumber(Math.floor(influencer.estimated_promotion_views * (influencer.total_engagement_rate / 100)))}</div>
+          <div className="text-2xl font-bold text-green-600">{formatNumber(expectedEngagements)}</div>
           <div className="text-sm text-gray-600">Expected Engagements</div>
           <div className="text-xs text-gray-500 mt-1">Based on {influencer.total_engagement_rate.toFixed(1)}% rate</div>
         </div>
@@ -548,7 +594,7 @@ export default async function InfluencerDetailPage({ params }: PageProps) {
   // Fetch influencer data from database
   const influencerDetail = await getInfluencerById(id)
 
-  if (!influencerDetail) {
+  if (!influencerDetail || !influencerDetail.id) {
     notFound()
   }
 
@@ -570,8 +616,11 @@ export default async function InfluencerDetailPage({ params }: PageProps) {
     estimated_promotion_views: influencerDetail.estimated_promotion_views || 0,
     price_per_post: influencerDetail.price_per_post || 0,
     is_active: influencerDetail.is_active || false,
-    last_synced_at: (influencerDetail as any).updated_at ? new Date((influencerDetail as any).updated_at).toISOString() : new Date().toISOString(),
-    platforms: (influencerDetail.platform_details || []).map((p: any, idx: number) => ({
+    last_synced_at: (() => {
+      const updatedAt = (influencerDetail as InfluencerDetailView & { updated_at?: Date | string }).updated_at
+      return updatedAt ? new Date(updatedAt).toISOString() : new Date().toISOString()
+    })(),
+    platforms: (influencerDetail.platform_details || []).map((p: InfluencerPlatform, idx: number) => ({
       id: p.id || `platform_${idx}`,
       platform: p.platform || 'INSTAGRAM',
       username: p.username || '',
@@ -586,18 +635,28 @@ export default async function InfluencerDetailPage({ params }: PageProps) {
       is_verified: p.is_verified || false,
       is_connected: p.is_connected || false
     })),
-    recent_content: (influencerDetail.recent_content || []).map((c: any) => ({
-      id: c.id,
-      platform: c.platform || 'INSTAGRAM',
-      post_url: c.post_url || '',
-      thumbnail_url: c.thumbnail_url,
-      caption: c.caption || '',
-      views: c.views || 0,
-      likes: c.likes || 0,
-      comments: c.comments || 0,
-      shares: c.shares || 0,
-      posted_at: c.posted_at?.toISOString() || new Date().toISOString()
-    })),
+    recent_content: (() => {
+      // Create a lookup map for platform by influencer_platform_id
+      const platformMap = new Map<string, string>()
+      influencerDetail.platform_details?.forEach((p: InfluencerPlatform) => {
+        if (p.id) {
+          platformMap.set(p.id, p.platform)
+        }
+      })
+      
+      return (influencerDetail.recent_content || []).map((c: InfluencerContent) => ({
+        id: c.id,
+        platform: platformMap.get(c.influencer_platform_id) || 'INSTAGRAM',
+        post_url: c.post_url || '',
+        thumbnail_url: c.thumbnail_url,
+        caption: c.caption || '',
+        views: c.views || 0,
+        likes: c.likes || 0,
+        comments: c.comments || 0,
+        shares: c.shares || 0,
+        posted_at: c.posted_at?.toISOString() || new Date().toISOString()
+      }))
+    })(),
     demographics: influencerDetail.demographics ? {
       age_13_17: influencerDetail.demographics.age_13_17 || 0,
       age_18_24: influencerDetail.demographics.age_18_24 || 0,
@@ -619,12 +678,12 @@ export default async function InfluencerDetailPage({ params }: PageProps) {
       gender_female: 0,
       gender_other: 0
     },
-    audience_locations: (influencerDetail.audience_locations || []).map((l: any) => ({
+    audience_locations: (influencerDetail.audience_locations || []).map((l: AudienceLocation) => ({
       country_name: l.country_name || '',
       country_code: l.country_code || '',
       percentage: l.percentage || 0
     })),
-    audience_languages: (influencerDetail.audience_languages || []).map((l: any) => ({
+    audience_languages: (influencerDetail.audience_languages || []).map((l: AudienceLanguage) => ({
       language_name: l.language_name || '',
       language_code: l.language_code || '',
       percentage: l.percentage || 0
@@ -639,10 +698,10 @@ export default async function InfluencerDetailPage({ params }: PageProps) {
         {/* Breadcrumb */}
         <div className="mb-6">
           <nav className="flex items-center space-x-2 text-sm text-gray-500">
-            <a href="/staff/roster" className="hover:text-gray-700 flex items-center">
+            <Link href="/staff/roster" className="hover:text-gray-700 flex items-center">
               <ArrowLeft size={16} className="mr-1" />
               Back to Influencer Roster
-            </a>
+            </Link>
           </nav>
         </div>
 

@@ -74,9 +74,24 @@ export async function POST(_request: NextRequest) {
     // Check if all steps are completed
     const progress = await getOnboardingProgress(user_id)
     
+    console.log('Onboarding progress check:', {
+      completedSteps: progress.completedSteps,
+      totalSteps: progress.totalSteps,
+      isComplete: progress.isComplete,
+      steps: progress.steps.map(s => ({ stepKey: s.stepKey, completed: s.completed }))
+    })
+    
     if (!progress.isComplete) {
       return NextResponse.json(
-        { success: false, error: 'All onboarding steps must be completed first' },
+        { 
+          success: false, 
+          error: 'All onboarding steps must be completed first',
+          details: {
+            completedSteps: progress.completedSteps,
+            totalSteps: progress.totalSteps,
+            missingSteps: progress.steps.filter(s => !s.completed).map(s => s.stepKey)
+          }
+        },
         { status: 400 }
       )
     }

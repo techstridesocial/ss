@@ -442,7 +442,7 @@ export default function EnhancedInfluencerStats() {
       <div className="min-h-screen bg-slate-50">
         <ModernInfluencerHeader />
         
-        <div className="px-4 lg:px-6 pb-8">
+        <div className="px-4 lg:px-8 pb-8">
           {/* Success Message */}
           {successMessage && (
             <div className="mb-8 bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
@@ -496,8 +496,22 @@ export default function EnhancedInfluencerStats() {
                 const platformData = statsData?.platforms?.find((p: any) => p.platform === platform)
                 const isConnected = platformData?.is_connected || false
                 
+                // Get card background color based on platform
+                const getCardBgColor = (platform: string) => {
+                  switch (platform) {
+                    case 'instagram':
+                      return 'bg-pink-50/50 border-pink-100/50'
+                    case 'tiktok':
+                      return 'bg-slate-50/50 border-slate-100/50'
+                    case 'youtube':
+                      return 'bg-red-50/50 border-red-100/50'
+                    default:
+                      return 'bg-white border-slate-200'
+                  }
+                }
+                
                 return (
-                  <div key={platform} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+                  <div key={platform} className={`${getCardBgColor(platform)} rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200`}>
                     {/* Platform Header */}
                     <div className="p-6 border-b border-slate-100">
                       <div className="flex items-center justify-between">

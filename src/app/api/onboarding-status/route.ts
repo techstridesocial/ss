@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { query } from '@/lib/db/connection'
 
+// OPTIMIZED: Single query with conditional JOINs based on role
 export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -9,51 +10,46 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // First check if user exists in users table
-    const userResult = await query<{ id: string, role: string }>(
-      `SELECT id, role FROM users WHERE clerk_id = $1`,
-      [userId]
-    )
+    // Single optimized query that checks user, role, and onboarding status
+    const result = await query<{ 
+      id: string, 
+      role: string, 
+      brand_id: string | null,
+      is_onboarded: boolean | null 
+    }>(`
+      SELECT 
+        u.id,
+        u.role,
+        b.id as brand_id,
+        up.is_onboarded
+      FROM users u
+      LEFT JOIN brands b ON b.user_id = u.id AND u.role = 'BRAND'
+      LEFT JOIN user_profiles up ON up.user_id = u.id 
+        AND (u.role = 'INFLUENCER_SIGNED' OR u.role = 'INFLUENCER_PARTNERED')
+      WHERE u.clerk_id = $1
+      LIMIT 1
+    `, [userId])
 
-    if (userResult.length === 0) {
+    if (result.length === 0) {
       // User doesn't exist in database yet - needs onboarding
       return NextResponse.json({ is_onboarded: false })
     }
 
-    const user = userResult[0]
+    const user = result[0]
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
-    const userRole = user.role
 
-    // For BRAND users, check if they have completed brand onboarding
-    if (userRole === 'BRAND') {
-      const brandResult = await query<{ id: string }>(
-        `SELECT id FROM brands WHERE user_id = $1`,
-        [user.id]
-      )
-      
-      // If no brand record exists, they haven't completed onboarding
-      if (brandResult.length === 0) {
-        return NextResponse.json({ is_onboarded: false })
-      }
-      
-      return NextResponse.json({ is_onboarded: true })
+    // Determine onboarding status based on role
+    if (user.role === 'BRAND') {
+      return NextResponse.json({ 
+        is_onboarded: user.brand_id !== null 
+      })
     }
 
-    // For INFLUENCER users, check user_profiles table
-    if (userRole === 'INFLUENCER_SIGNED' || userRole === 'INFLUENCER_PARTNERED') {
-      const profileResult = await query<{ is_onboarded: boolean }>(
-        `SELECT is_onboarded FROM user_profiles WHERE user_id = $1`,
-        [user.id]
-      )
-
-      if (profileResult.length === 0) {
-        return NextResponse.json({ is_onboarded: false })
-      }
-
+    if (user.role === 'INFLUENCER_SIGNED' || user.role === 'INFLUENCER_PARTNERED') {
       return NextResponse.json({ 
-        is_onboarded: profileResult[0]?.is_onboarded || false 
+        is_onboarded: user.is_onboarded === true 
       })
     }
 

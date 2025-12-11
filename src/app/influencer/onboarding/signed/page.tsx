@@ -178,12 +178,13 @@ function SignedOnboardingPageContent() {
   const progress = ((currentStep + 1) / STEPS.length) * 100
 
   const handleNext = async () => {
+    // Always save current step before moving
+    await saveStep()
+    
     if (currentStep === STEPS.length - 1) {
       // Last step - complete onboarding
       await handleComplete()
     } else {
-      // Save current step
-      await saveStep()
       setCurrentStep(prev => prev + 1)
     }
   }
@@ -232,10 +233,15 @@ function SignedOnboardingPageContent() {
       case 'uk_events_chat':
         stepData.uk_events_chat_joined = formData.uk_events_chat_joined
         break
+      case 'expectations':
+        // Expectations is read-only, just mark as viewed/completed
+        stepData.viewed = true
+        break
     }
 
     try {
-      await fetch('/api/influencer/onboarding/signed', {
+      console.log('Saving step to API:', { stepKey, stepData })
+      const response = await fetch('/api/influencer/onboarding/signed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -243,6 +249,19 @@ function SignedOnboardingPageContent() {
           data: stepData
         })
       })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Failed to save step:', {
+          stepKey,
+          status: response.status,
+          error: errorText
+        })
+        return
+      }
+      
+      const result = await response.json()
+      console.log('Step save response:', { stepKey, success: result.success, data: result.data })
     } catch (error) {
       console.error('Error saving step:', error)
     }
@@ -252,8 +271,69 @@ function SignedOnboardingPageContent() {
     setIsLoading(true)
     
     try {
-      // Save final step
-      await saveStep()
+      // Save ALL steps that haven't been saved yet
+      // This ensures all steps are in the database even if some weren't saved during navigation
+      const stepsToSave = STEPS.map(step => {
+        const stepKey = step.id
+        let stepData: any = {}
+        
+        // Collect data for each step
+        switch (stepKey) {
+          case 'welcome_video':
+            stepData.welcome_video_watched = formData.welcome_video_watched
+            break
+          case 'social_goals':
+            stepData.social_goals = formData.social_goals
+            break
+          case 'brand_selection':
+            stepData.selected_brands = formData.selected_brands
+            break
+          case 'previous_collaborations':
+            stepData.collaborations = formData.collaborations
+            break
+          case 'payment_information':
+            stepData.previous_payment_amount = formData.previous_payment_amount
+            stepData.currency = formData.currency
+            stepData.payment_method = formData.payment_method
+            stepData.payment_notes = formData.payment_notes
+            break
+          case 'brand_inbound_setup':
+            stepData.email_setup_type = formData.email_setup_type
+            stepData.manager_email = formData.manager_email
+            break
+          case 'email_forwarding_video':
+            stepData.email_forwarding_video_watched = formData.email_forwarding_video_watched
+            break
+          case 'instagram_bio_setup':
+            stepData.instagram_bio_setup = formData.instagram_bio_setup
+            break
+          case 'uk_events_chat':
+            stepData.uk_events_chat_joined = formData.uk_events_chat_joined
+            break
+          case 'expectations':
+            stepData.viewed = true
+            break
+        }
+        
+        return { stepKey, stepData }
+      })
+      
+      // Save all steps in parallel
+      await Promise.all(
+        stepsToSave.map(({ stepKey, stepData }) =>
+          fetch('/api/influencer/onboarding/signed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step_key: stepKey,
+              data: stepData
+            })
+          }).catch(err => {
+            console.error(`Failed to save step ${stepKey}:`, err)
+            // Don't throw - continue saving other steps
+          })
+        )
+      )
 
       // Save brand preferences if selected
       if (formData.selected_brands.length > 0) {

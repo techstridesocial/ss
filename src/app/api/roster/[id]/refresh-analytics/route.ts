@@ -54,14 +54,58 @@ export async function POST(
     
     // Parse existing notes to get modash data
     const existingNotes = influencer.notes ? JSON.parse(influencer.notes) : {}
-    const storedModashUserId = existingNotes.modash_data?.userId || existingNotes.modash_data?.modash_user_id
+    
+    // Get userId from platform-specific structure first, then legacy
+    const normalizedPlatform = (requestPayload?.platform || existingNotes.modash_data?.platform || 'instagram').toString().toLowerCase()
+    const storedPlatforms = existingNotes.modash_data?.platforms || {}
+    const storedPlatformUserId = storedPlatforms[normalizedPlatform]?.userId
+    const legacyUserId = existingNotes.modash_data?.userId || existingNotes.modash_data?.modash_user_id
 
     const payloadModashUserId = requestPayload?.modashUserId || requestPayload?.metrics?.modashUserId
-    const modashUserId = payloadModashUserId || storedModashUserId
+    
+    // Validate userId format - reject UUIDs and invalid formats
+    const { validateModashUserId, isUUID } = await import('@/lib/utils/modash-userid-validator')
+    
+    let modashUserId: string | null = null
+    
+    // Priority 1: Use payload userId (if valid)
+    if (payloadModashUserId) {
+      const validated = validateModashUserId(payloadModashUserId)
+      if (validated) {
+        modashUserId = validated
+      } else {
+        console.warn(`⚠️ Invalid payload userId format: ${payloadModashUserId}${isUUID(payloadModashUserId) ? ' (detected as UUID)' : ''}`)
+      }
+    }
+    
+    // Priority 2: Use platform-specific userId (if valid)
+    if (!modashUserId && storedPlatformUserId) {
+      const validated = validateModashUserId(storedPlatformUserId)
+      if (validated) {
+        modashUserId = validated
+      } else {
+        console.warn(`⚠️ Invalid platform-specific userId format for ${normalizedPlatform}: ${storedPlatformUserId}${isUUID(storedPlatformUserId) ? ' (detected as UUID)' : ''}`)
+      }
+    }
+    
+    // Priority 3: Use legacy userId (if valid and platform matches)
+    if (!modashUserId && legacyUserId) {
+      const validated = validateModashUserId(legacyUserId)
+      if (validated) {
+        const legacyPlatform = (existingNotes.modash_data?.platform || '').toLowerCase()
+        if (!legacyPlatform || legacyPlatform === normalizedPlatform) {
+          modashUserId = validated
+        } else {
+          console.warn(`⚠️ Legacy userId platform mismatch (${legacyPlatform} vs ${normalizedPlatform})`)
+        }
+      } else {
+        console.warn(`⚠️ Invalid legacy userId format: ${legacyUserId}${isUUID(legacyUserId) ? ' (detected as UUID)' : ''}`)
+      }
+    }
 
     if (!modashUserId) {
       return NextResponse.json({ 
-        error: 'No Modash user ID found - cannot refresh analytics' 
+        error: 'No valid Modash user ID found - cannot refresh analytics. Please ensure userId is a valid Modash identifier (not an internal UUID).' 
       }, { status: 400 })
     }
 
@@ -99,7 +143,7 @@ export async function POST(
       }
 
       profilePayload = {
-        userId: modashUserId,
+          userId: finalValidatedUserId,
         username: profile.username,
         fullname: profile.fullname,
         followers: profile.followers,
@@ -132,9 +176,19 @@ export async function POST(
     const existingModashData = (existingNotes.modash_data ?? {}) as Record<string, any>
     const existingPlatformsData = (existingModashData.platforms ?? {}) as Record<string, any>
 
+    // CRITICAL: Double-check userId is valid before saving (should already be validated above)
+    // This ensures we never save UUIDs or invalid formats to the database
+    const finalValidatedUserId = validateModashUserId(modashUserId)
+    if (!finalValidatedUserId) {
+      console.error(`❌ Attempted to save invalid userId to notes: ${modashUserId}`)
+      return NextResponse.json({
+        error: 'Invalid Modash userId - cannot save to database'
+      }, { status: 400 })
+    }
+
     const updatedPlatformData = {
       ...(existingPlatformsData[platform] || {}),
-      userId: modashUserId,
+      userId: finalValidatedUserId, // Always use validated userId
       username,
       fullname: profilePayload?.fullname || existingPlatformsData[platform]?.fullname || influencer.display_name,
       followers,
@@ -175,7 +229,7 @@ export async function POST(
          WHERE influencer_id = $7 AND platform = $8`,
         [
           username,
-          modashUserId,
+          finalValidatedUserId, // Use validated userId
           profileUrl,
           followers,
           engagementRate,
@@ -204,7 +258,7 @@ export async function POST(
           id,
           platformUpper,
           username,
-          modashUserId,
+          finalValidatedUserId, // Use validated userId
           profileUrl,
           followers,
           engagementRate,
@@ -214,14 +268,17 @@ export async function POST(
     }
 
     // Update influencer notes with latest Modash snapshot
+    // CRITICAL: Use validated userId, and clean up any invalid legacy userIds
     const updatedNotes = {
       ...existingNotes,
       modash_data: {
         ...existingModashData,
         platform,
         latest_platform: platform,
-        userId: modashUserId,
-        modash_user_id: modashUserId,
+        // Only set top-level userId if it's valid (for backwards compatibility during migration)
+        // Prefer platform-specific structure going forward
+        userId: validatedUserId,
+        modash_user_id: validatedUserId,
         username,
         url: profileUrl,
         picture,

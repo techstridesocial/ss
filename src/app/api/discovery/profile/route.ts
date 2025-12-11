@@ -106,6 +106,31 @@ export async function POST(_request: Request) {
         debug: { actualUserId, platform: normalizedPlatform }
       }, { status: 400 })
     }
+
+    // CRITICAL: Validate userId is NOT a UUID (our internal ID) and is a valid Modash userId format
+    const { validateModashUserId, isUUID } = await import('@/lib/utils/modash-userid-validator')
+    const validatedUserId = validateModashUserId(actualUserId)
+    
+    if (!validatedUserId) {
+      if (isUUID(actualUserId)) {
+        console.error('❌ Invalid userId: Appears to be an internal UUID, not a Modash userId:', { actualUserId, platform: normalizedPlatform })
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid userId: Appears to be an internal database ID (UUID), not a Modash userId. Please use username lookup instead.',
+          debug: { actualUserId, platform: normalizedPlatform, detectedAs: 'UUID' }
+        }, { status: 400 })
+      } else {
+        console.error('❌ Invalid Modash userId format:', { actualUserId, platform: normalizedPlatform })
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid Modash userId format',
+          debug: { actualUserId, platform: normalizedPlatform }
+        }, { status: 400 })
+      }
+    }
+    
+    // Use validated userId
+    actualUserId = validatedUserId
     
     // CRITICAL: Validate platform is one of the supported values
     if (!['instagram', 'tiktok', 'youtube'].includes(normalizedPlatform)) {

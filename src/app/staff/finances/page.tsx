@@ -20,6 +20,7 @@ import {
   Calendar,
   Settings
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -231,59 +232,91 @@ export default function StaffFinancePage() {
           {/* Summary Cards */}
           {summary && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="group relative bg-blue-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-blue-100/50 overflow-hidden"
+              >
+                <div className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-                      <p className="text-2xl font-bold">{summary?.total_invoices || 0}</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Invoices</p>
+                      <p className="text-3xl font-bold text-gray-900">{summary?.total_invoices || 0}</p>
                     </div>
-                    <FileText className="h-8 w-8 text-blue-500" />
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </motion.div>
               
-              <Card>
-                <CardContent className="p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="group relative bg-amber-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-amber-100/50 overflow-hidden"
+              >
+                <div className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Pending Amount</p>
-                      <p className="text-2xl font-bold text-orange-600">£{summary?.pending_amount ? Number(summary.pending_amount).toFixed(2) : '0.00'}</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pending Amount</p>
+                      <p className="text-3xl font-bold text-gray-900">£{summary?.pending_amount ? Number(summary.pending_amount).toFixed(2) : '0.00'}</p>
                     </div>
-                    <Clock className="h-8 w-8 text-orange-500" />
+                    <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/25">
+                      <Clock className="h-6 w-6 text-white" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </motion.div>
               
-              <Card>
-                <CardContent className="p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="group relative bg-emerald-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-emerald-100/50 overflow-hidden"
+              >
+                <div className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Paid Amount</p>
-                      <p className="text-2xl font-bold text-green-600">£{summary?.total_paid ? Number(summary.total_paid).toFixed(2) : '0.00'}</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Paid Amount</p>
+                      <p className="text-3xl font-bold text-gray-900">£{summary?.total_paid ? Number(summary.total_paid).toFixed(2) : '0.00'}</p>
                     </div>
-                    <CheckCircle className="h-8 w-8 text-green-500" />
+                    <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/25">
+                      <CheckCircle className="h-6 w-6 text-white" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </motion.div>
               
-              <Card>
-                <CardContent className="p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="group relative bg-purple-50/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-100/50 overflow-hidden"
+              >
+                <div className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Paid Invoices</p>
-                      <p className="text-2xl font-bold">{summary?.paid_count || 0}</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Paid Invoices</p>
+                      <p className="text-3xl font-bold text-gray-900">{summary?.paid_count || 0}</p>
                     </div>
-                    <TrendingUp className="h-8 w-8 text-green-500" />
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25">
+                      <TrendingUp className="h-6 w-6 text-white" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </motion.div>
             </div>
           )}
 
           {/* Filters and Search */}
-          <Card className="mb-6">
-            <CardContent className="p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+          >
+            <div className="p-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
@@ -328,13 +361,18 @@ export default function StaffFinancePage() {
                   Refresh
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
           {/* Advanced Filters */}
           {showAdvancedFilters && (
-            <Card className="mb-6">
-              <CardContent className="p-6">
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-6 bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+            >
+              <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
@@ -392,18 +430,24 @@ export default function StaffFinancePage() {
                     Clear Filters
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           )}
 
           {/* Invoices Table */}
-          <Card>
-            <CardHeader>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-gray-100/80 overflow-hidden"
+          >
+            <div className="p-6 border-b border-gray-200/60">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <FileText className="h-5 w-5 mr-2" />
-                  Invoice Management
-                </CardTitle>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg shadow-indigo-500/25">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Invoice Management</h3>
+                </div>
                 {selectedInvoices.size > 0 && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">
@@ -427,27 +471,33 @@ export default function StaffFinancePage() {
                   </div>
                 )}
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-6">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : filteredInvoices.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Invoices Found</h3>
-                  <p className="text-gray-600">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-16"
+                >
+                  <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl w-16 h-16 mx-auto mb-6 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <FileText className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Invoices Found</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
                     {searchTerm || statusFilter 
                       ? 'No invoices match your current filters.' 
                       : 'No invoices have been submitted yet.'
                     }
                   </p>
-                </div>
+                </motion.div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl border border-gray-100/50">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           <input
@@ -480,9 +530,9 @@ export default function StaffFinancePage() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-100">
                       {filteredInvoices.map((invoice) => (
-                        <tr key={invoice.id} className="hover:bg-gray-50">
+                        <tr key={invoice.id} className="hover:bg-blue-50/30 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <input
                               type="checkbox"
@@ -561,8 +611,8 @@ export default function StaffFinancePage() {
                   </table>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
           {/* Invoice Detail Modal */}
           <InvoiceDetailModal

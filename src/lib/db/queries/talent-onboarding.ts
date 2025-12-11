@@ -159,17 +159,30 @@ export async function completeOnboardingStep(
   data: any
 ): Promise<OnboardingStep> {
   try {
+    console.log('completeOnboardingStep called:', { userId, stepKey, data })
+    
+    // Since we're always setting completed = true, we can simplify the query
     const result = await query(`
       INSERT INTO talent_onboarding_steps (user_id, step_key, completed, data, completed_at)
       VALUES ($1, $2, $3, $4, NOW())
       ON CONFLICT (user_id, step_key)
       DO UPDATE SET
-        completed = $3,
-        data = $4,
-        completed_at = CASE WHEN $3 = true THEN NOW() ELSE completed_at END,
+        completed = EXCLUDED.completed,
+        data = EXCLUDED.data,
+        completed_at = NOW(),
         updated_at = NOW()
       RETURNING *
     `, [userId, stepKey, true, JSON.stringify(data)])
+
+    console.log('Database query result:', {
+      rowsReturned: result.length,
+      stepKey: result[0]?.step_key,
+      completed: result[0]?.completed
+    })
+
+    if (!result || result.length === 0) {
+      throw new Error('No rows returned from database insert')
+    }
 
     const row = result[0] as any
     return {

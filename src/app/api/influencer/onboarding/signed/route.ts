@@ -85,11 +85,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Complete the step
+    console.log('Saving onboarding step:', {
+      user_id,
+      step_key: data.step_key,
+      data: data.data || {}
+    })
+    
     const step = await completeOnboardingStep(
       user_id,
       data.step_key,
       data.data || {}
     )
+
+    console.log('Step saved successfully:', {
+      stepKey: step.stepKey,
+      completed: step.completed,
+      completedAt: step.completedAt
+    })
 
     return NextResponse.json({
       success: true,

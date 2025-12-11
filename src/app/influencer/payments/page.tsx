@@ -369,10 +369,10 @@ export default function InfluencerPayments() {
       <div className="min-h-screen bg-gray-50">
         <ModernInfluencerHeader />
         
-        <div className="px-4 lg:px-6 pb-8">
+        <div className="px-4 lg:px-8 pb-8">
           {/* Payment Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-emerald-50/50 p-6 rounded-lg shadow border border-emerald-100/50">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Total Earned</h3>
@@ -389,7 +389,7 @@ export default function InfluencerPayments() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-amber-50/50 p-6 rounded-lg shadow border border-amber-100/50">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Pending</h3>
@@ -406,7 +406,7 @@ export default function InfluencerPayments() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-blue-50/50 p-6 rounded-lg shadow border border-blue-100/50">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Paid Out</h3>
@@ -423,7 +423,7 @@ export default function InfluencerPayments() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-purple-50/50 p-6 rounded-lg shadow border border-purple-100/50">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">This Month</h3>
@@ -444,9 +444,14 @@ export default function InfluencerPayments() {
           </div>
 
           {/* Payment Method Section */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100/80 p-8 mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Payment Method</h3>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Payment Method</h3>
+              </div>
               {paymentMethod && !isEditing && (
                 <button 
                   onClick={handleEdit}
@@ -473,14 +478,14 @@ export default function InfluencerPayments() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button 
                     onClick={() => setShowPayPalForm(true)}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 flex items-center justify-center font-semibold"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add PayPal
                   </button>
                   <button 
                     onClick={() => setShowBankForm(true)}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center font-semibold shadow-sm"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Bank Account
@@ -488,15 +493,17 @@ export default function InfluencerPayments() {
                 </div>
               </div>
             ) : (
-              <div className="border border-gray-200 rounded-lg p-4">
+              <div className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 border border-blue-100/50 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CreditCard className="h-8 w-8 text-blue-600 mr-3" />
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/25">
+                      <CreditCard className="h-6 w-6 text-white" />
+                    </div>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-semibold text-gray-900 text-lg">
                         {paymentInfo.payment_method === 'PAYPAL' ? 'PayPal Account' : 'Bank Account'}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 mt-1">
                         {paymentInfo.payment_method === 'PAYPAL' 
                           ? paymentInfo.masked_details.email
                           : paymentInfo.masked_details.accountNumber
@@ -504,14 +511,17 @@ export default function InfluencerPayments() {
                       </p>
                     </div>
                   </div>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-6 w-6 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-700">Verified</span>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* PayPal Form */}
             {showPayPalForm && (
-              <div className="mt-6 border border-gray-200 rounded-lg p-6 bg-gray-50">
+              <div className="mt-6 border-2 border-blue-100/50 rounded-2xl p-6 bg-gradient-to-br from-blue-50/50 to-white backdrop-blur-sm shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-medium text-gray-900">PayPal Details</h4>
                   <button 
@@ -532,7 +542,7 @@ export default function InfluencerPayments() {
                       required
                       value={paypalDetails.email}
                       onChange={(e) => setPaypalDetails(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="your-email@example.com"
                     />
                   </div>
@@ -547,7 +557,7 @@ export default function InfluencerPayments() {
                         required
                         value={paypalDetails.firstName}
                         onChange={(e) => setPaypalDetails(prev => ({ ...prev, firstName: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       />
                     </div>
                     
@@ -560,7 +570,7 @@ export default function InfluencerPayments() {
                         required
                         value={paypalDetails.lastName}
                         onChange={(e) => setPaypalDetails(prev => ({ ...prev, lastName: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       />
                     </div>
                   </div>
@@ -579,7 +589,7 @@ export default function InfluencerPayments() {
                     <button
                       type="submit"
                       disabled={isSaving}
-                      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                     >
                       {isSaving ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -592,7 +602,7 @@ export default function InfluencerPayments() {
                       type="button"
                       onClick={cancelEdit}
                       disabled={isSaving}
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm"
                     >
                       Cancel
                     </button>
@@ -603,7 +613,7 @@ export default function InfluencerPayments() {
 
             {/* Bank Account Form */}
             {showBankForm && (
-              <div className="mt-6 border border-gray-200 rounded-lg p-6 bg-gray-50">
+              <div className="mt-6 border-2 border-blue-100/50 rounded-2xl p-6 bg-gradient-to-br from-blue-50/50 to-white backdrop-blur-sm shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-medium text-gray-900">Bank Account Details</h4>
                   <button 
@@ -624,7 +634,7 @@ export default function InfluencerPayments() {
                       required
                       value={bankDetails.accountType}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, accountType: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                     >
                       <option value="">Select Account Type</option>
                       <option value="Personal">Personal Account</option>
@@ -641,7 +651,7 @@ export default function InfluencerPayments() {
                       required
                       value={bankDetails.accountHolderName}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, accountHolderName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="Full name as shown on account"
                     />
                   </div>
@@ -656,7 +666,7 @@ export default function InfluencerPayments() {
                           required
                           value={bankDetails.accountNumber}
                           onChange={(e) => setBankDetails(prev => ({ ...prev, accountNumber: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                           placeholder="Account number (varies by country)"
                         />
                     </div>
@@ -669,7 +679,7 @@ export default function InfluencerPayments() {
                         type="text"
                         value={bankDetails.routingNumber}
                         onChange={(e) => setBankDetails(prev => ({ ...prev, routingNumber: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                         placeholder="Wire Routing Number/Sort Code (varies by country)"
                       />
                     </div>
@@ -684,7 +694,7 @@ export default function InfluencerPayments() {
                       type="text"
                       value={bankDetails.abaCode}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, abaCode: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="ABA Code (for Australians)"
                     />
                   </div>
@@ -697,7 +707,7 @@ export default function InfluencerPayments() {
                       type="text"
                       value={bankDetails.bankName}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, bankName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="e.g., Barclays, HSBC, Lloyds"
                     />
                   </div>
@@ -710,7 +720,7 @@ export default function InfluencerPayments() {
                       type="text"
                       value={bankDetails.swiftCode}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, swiftCode: e.target.value.toUpperCase() }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="BARCGB22"
                     />
                   </div>
@@ -723,7 +733,7 @@ export default function InfluencerPayments() {
                       type="text"
                       value={bankDetails.iban}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, iban: e.target.value.toUpperCase() }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="GB33BUKB20201555555555"
                     />
                   </div>
@@ -736,7 +746,7 @@ export default function InfluencerPayments() {
                       type="text"
                       value={bankDetails.address}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                       placeholder="Your address"
                     />
                   </div>
@@ -750,7 +760,7 @@ export default function InfluencerPayments() {
                         type="text"
                         value={bankDetails.city}
                         onChange={(e) => setBankDetails(prev => ({ ...prev, city: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                         placeholder="London"
                       />
                     </div>
@@ -763,7 +773,7 @@ export default function InfluencerPayments() {
                         type="text"
                         value={bankDetails.country}
                         onChange={(e) => setBankDetails(prev => ({ ...prev, country: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                         placeholder="United Kingdom"
                       />
                     </div>
@@ -776,7 +786,7 @@ export default function InfluencerPayments() {
                                          <select
                        value={bankDetails.currency}
                        onChange={(e) => setBankDetails(prev => ({ ...prev, currency: e.target.value }))}
-                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                      >
                        <option value="GBP">GBP - British Pound Sterling</option>
                        <option value="USD">USD - United States Dollar</option>
@@ -819,7 +829,7 @@ export default function InfluencerPayments() {
                       required
                       value={bankDetails.vatRegistered}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, vatRegistered: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all"
                     >
                       <option value="">Select VAT Status</option>
                       <option value="Yes">Yes</option>
@@ -831,7 +841,7 @@ export default function InfluencerPayments() {
                     <button
                       type="submit"
                       disabled={isSaving}
-                      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                     >
                       {isSaving ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -844,7 +854,7 @@ export default function InfluencerPayments() {
                       type="button"
                       onClick={cancelEdit}
                       disabled={isSaving}
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm"
                     >
                       Cancel
                     </button>
@@ -855,8 +865,13 @@ export default function InfluencerPayments() {
           </div>
 
           {/* Payment History */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Payment History</h3>
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100/80 p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/25">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Payment History</h3>
+            </div>
             
             {isLoading ? (
               <div className="text-center py-12">
@@ -872,9 +887,9 @@ export default function InfluencerPayments() {
               </p>
             </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-gray-100/50">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Campaign
@@ -890,9 +905,9 @@ export default function InfluencerPayments() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {paymentHistory.map((payment) => (
-                      <tr key={payment.id}>
+                      <tr key={payment.id} className="hover:bg-blue-50/30 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">{payment.campaign_name}</div>
@@ -929,19 +944,21 @@ export default function InfluencerPayments() {
           </div>
 
           {/* Invoice Management Section */}
-          <div className="bg-white rounded-lg shadow p-6 mt-8">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100/80 p-8 mt-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <FileText className="h-6 w-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Invoice Management</h3>
+                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg shadow-indigo-500/25">
+                  <FileText className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Invoice Management</h3>
               </div>
-              <Button
+              <button
                 onClick={() => setShowInvoiceModal(true)}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 flex items-center font-semibold"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Invoice
-              </Button>
+              </button>
             </div>
 
             {invoices.length === 0 ? (
@@ -951,18 +968,18 @@ export default function InfluencerPayments() {
                 <p className="text-gray-600 mb-4">
                   Create your first invoice to get paid for your campaigns.
                 </p>
-                <Button
+                <button
                   onClick={() => setShowInvoiceModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 flex items-center font-semibold mx-auto"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Invoice
-                </Button>
+                </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-gray-100/50">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Invoice #
@@ -984,9 +1001,9 @@ export default function InfluencerPayments() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {invoices.map((invoice) => (
-                      <tr key={invoice.id}>
+                      <tr key={invoice.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {invoice.invoice_number}
@@ -1048,18 +1065,37 @@ export default function InfluencerPayments() {
             )}
           </div>
 
-          {/* Important Notice */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mt-8">
-            <div className="flex items-start">
-              <AlertTriangle className="h-6 w-6 text-amber-600 mr-3 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-lg font-medium text-amber-800 mb-2">Payment Information</h4>
-                <ul className="text-sm text-amber-700 space-y-1">
-                  <li>• Payments are processed weekly on Mondays</li>
-                  <li>• Minimum payout amount is £50</li>
-                  <li>• Tax forms may be required for payments over £600 annually</li>
-                  <li>• Payment method must be verified before first payout</li>
-                  <li>• All payment details are encrypted and securely stored</li>
+          {/* Payment Information Section */}
+          <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/50 border-2 border-amber-200/50 rounded-2xl p-8 mt-8 shadow-lg backdrop-blur-sm">
+            <div className="flex items-start space-x-4">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/25 flex-shrink-0">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-4">
+                  <h4 className="text-xl font-semibold text-amber-900">Payment Information</h4>
+                </div>
+                <ul className="text-sm text-amber-800 space-y-2.5">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>Payments are processed weekly on Mondays</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>Minimum payout amount is £50</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>Tax forms may be required for payments over £600 annually</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>Payment method must be verified before first payout</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-600 font-bold mt-0.5">•</span>
+                    <span>All payment details are encrypted and securely stored</span>
+                  </li>
                 </ul>
               </div>
             </div>

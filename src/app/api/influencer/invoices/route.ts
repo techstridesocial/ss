@@ -39,10 +39,11 @@ export async function GET(_request: NextRequest) {
       SELECT 
         ii.*,
         c.name as campaign_name,
-        c.brand_name,
+        b.company_name as brand_name,
         c.status as campaign_status
       FROM influencer_invoices ii
       LEFT JOIN campaigns c ON ii.campaign_id = c.id
+      LEFT JOIN brands b ON c.brand_id = b.id
       WHERE ii.influencer_id = $1
       ORDER BY ii.created_at DESC
     `, [influencer_id])

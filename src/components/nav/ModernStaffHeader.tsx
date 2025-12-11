@@ -145,7 +145,12 @@ export default function ModernStaffHeader() {
     const greeting = getGreeting()
     
     // Check current route and return appropriate header content
-    if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
+    if (pathname === '/staff/submissions' || pathname.startsWith('/staff/submissions/')) {
+      return {
+        title: 'Submission Lists',
+        subtitle: 'Create and manage influencer lists to submit to brands'
+      }
+    } else if (pathname === '/staff/brands' || pathname.startsWith('/staff/brands/')) {
       return {
         title: 'Brand Management',
         subtitle: 'Manage brand clients, review shortlists, and generate reports'
