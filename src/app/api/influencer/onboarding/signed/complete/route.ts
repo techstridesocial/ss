@@ -71,6 +71,20 @@ export async function POST(_request: NextRequest) {
       console.log('👤 Using existing user ID:', user_id)
     }
 
+    // Define all required onboarding steps
+    const requiredSteps = [
+      'welcome_video',
+      'social_goals',
+      'brand_selection',
+      'previous_collaborations',
+      'payment_information',
+      'brand_inbound_setup',
+      'email_forwarding_video',
+      'instagram_bio_setup',
+      'uk_events_chat',
+      'expectations'
+    ]
+
     // Check if all steps are completed
     const progress = await getOnboardingProgress(user_id)
     
@@ -80,16 +94,52 @@ export async function POST(_request: NextRequest) {
       isComplete: progress.isComplete,
       steps: progress.steps.map(s => ({ stepKey: s.stepKey, completed: s.completed }))
     })
+
+    // Find missing steps (steps that don't exist in the database)
+    const existingStepKeys = progress.steps.map(s => s.stepKey)
+    const missingSteps = requiredSteps.filter(stepKey => !existingStepKeys.includes(stepKey))
     
-    if (!progress.isComplete) {
+    // Auto-create and mark missing steps as completed
+    if (missingSteps.length > 0) {
+      console.log('Auto-creating missing steps:', missingSteps)
+      await Promise.all(
+        missingSteps.map(stepKey =>
+          query(`
+            INSERT INTO talent_onboarding_steps (user_id, step_key, completed, data, completed_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            ON CONFLICT (user_id, step_key) DO NOTHING
+          `, [user_id, stepKey, true, JSON.stringify({})])
+        )
+      )
+    }
+
+    // Mark any incomplete steps as completed
+    const incompleteSteps = progress.steps.filter(s => !s.completed)
+    if (incompleteSteps.length > 0) {
+      console.log('Marking incomplete steps as completed:', incompleteSteps.map(s => s.stepKey))
+      await Promise.all(
+        incompleteSteps.map(step =>
+          query(`
+            UPDATE talent_onboarding_steps
+            SET completed = true, completed_at = NOW(), updated_at = NOW()
+            WHERE user_id = $1 AND step_key = $2
+          `, [user_id, step.stepKey])
+        )
+      )
+    }
+
+    // Re-check progress after auto-completing steps
+    const updatedProgress = await getOnboardingProgress(user_id)
+    
+    if (!updatedProgress.isComplete) {
       return NextResponse.json(
         { 
           success: false, 
           error: 'All onboarding steps must be completed first',
           details: {
-            completedSteps: progress.completedSteps,
-            totalSteps: progress.totalSteps,
-            missingSteps: progress.steps.filter(s => !s.completed).map(s => s.stepKey)
+            completedSteps: updatedProgress.completedSteps,
+            totalSteps: updatedProgress.totalSteps,
+            missingSteps: updatedProgress.steps.filter(s => !s.completed).map(s => s.stepKey)
           }
         },
         { status: 400 }

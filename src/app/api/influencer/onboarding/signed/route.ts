@@ -107,10 +107,19 @@ export async function POST(request: NextRequest) {
       success: true,
       data: step
     })
-  } catch (error) {
-    console.error('Error completing onboarding step:', error)
+  } catch (error: any) {
+    console.error('Error completing onboarding step:', {
+      error: error?.message || 'Unknown error',
+      stack: error?.stack,
+      name: error?.name,
+      fullError: error
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to complete onboarding step' },
+      { 
+        success: false, 
+        error: error?.message || 'Failed to complete onboarding step',
+        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      },
       { status: 500 }
     )
   }

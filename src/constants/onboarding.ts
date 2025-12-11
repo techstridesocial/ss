@@ -52,12 +52,12 @@ export type StepId = typeof STEP_IDS[keyof typeof STEP_IDS]
 
 // Onboarding video URLs
 export const ONBOARDING_VIDEOS = {
-  WELCOME_VIDEO: 'https://www.youtube.com/embed/your-welcome-video-id',
-  EMAIL_FORWARDING_VIDEO: 'https://www.youtube.com/embed/your-email-forwarding-video-id'
+  WELCOME_VIDEO: 'https://www.youtube.com/embed/JcD9mmfEx84',
+  EMAIL_FORWARDING_VIDEO: 'https://www.youtube.com/embed/oB_PTV5A1jw'
 } as const
 
 // UK Events WhatsApp link
-export const UK_EVENTS_WHATSAPP_LINK = 'https://wa.me/your-whatsapp-number'
+export const UK_EVENTS_WHATSAPP_LINK = 'https://chat.whatsapp.com/FGJTrGhovt6CiHBOMZyV6O'
 
 // Expectations content for influencer onboarding
 export const EXPECTATIONS_CONTENT = {

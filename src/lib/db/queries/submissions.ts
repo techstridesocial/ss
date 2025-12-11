@@ -284,6 +284,36 @@ export async function getBrandSubmissionLists(brandId: string): Promise<Submissi
 }
 
 /**
+ * Get all submission lists that contain a specific influencer
+ */
+export async function getSubmissionListsByInfluencer(influencerId: string): Promise<SubmissionList[]> {
+  try {
+    const result = await query(`
+      SELECT DISTINCT
+        sl.*,
+        b.company_name as brand_name,
+        u.email as created_by_email,
+        up.first_name || ' ' || up.last_name as created_by_name
+      FROM staff_submission_lists sl
+      JOIN staff_submission_list_influencers sli ON sl.id = sli.submission_list_id
+      LEFT JOIN brands b ON sl.brand_id = b.id
+      LEFT JOIN users u ON sl.created_by = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE sli.influencer_id = $1
+      ORDER BY sl.created_at DESC
+    `, [influencerId])
+
+    return Promise.all(result.map(async (row: any) => {
+      const fullList = await getSubmissionListById(row.id)
+      return fullList as SubmissionList
+    }))
+  } catch (error) {
+    console.error('Error getting submission lists by influencer:', error)
+    throw error
+  }
+}
+
+/**
  * Update submission list
  */
 export async function updateSubmissionList(

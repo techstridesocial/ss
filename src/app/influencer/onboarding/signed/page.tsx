@@ -34,7 +34,7 @@ interface SignedOnboardingData {
   social_goals: string
   
   // Step 3: Brand Selection
-  selected_brands: string[] // Array of brand IDs
+  preferred_brands: string // Text field for brands they'd like to work with
   
   // Step 4: Previous Collaborations
   collaborations: Array<{
@@ -69,7 +69,7 @@ interface SignedOnboardingData {
 const STEPS = [
   { id: 'welcome_video', title: 'Welcome to Stride Talent', type: 'video' },
   { id: 'social_goals', title: 'What are your social media goals?', type: 'textarea' },
-  { id: 'brand_selection', title: 'Brands you\'d like to work with', type: 'brand_selection' },
+  { id: 'brand_selection', title: 'Brands you\'d like to work with', type: 'brand_text' },
   { id: 'previous_collaborations', title: 'Previous brand collaborations', type: 'collaborations' },
   { id: 'payment_information', title: 'Previous payment information', type: 'payment' },
   { id: 'brand_inbound_setup', title: 'Brand inbound setup', type: 'email_setup' },
@@ -87,7 +87,6 @@ function SignedOnboardingPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [isLoadingProgress, setIsLoadingProgress] = useState(true)
-  const [brands, setBrands] = useState<any[]>([])
   const [origin, setOrigin] = useState('')
   
   useEffect(() => {
@@ -105,7 +104,7 @@ function SignedOnboardingPageContent() {
   const [formData, setFormData] = useState<SignedOnboardingData>({
     welcome_video_watched: false,
     social_goals: '',
-    selected_brands: [],
+    preferred_brands: '',
     collaborations: [],
     previous_payment_amount: '',
     currency: 'GBP',
@@ -121,7 +120,6 @@ function SignedOnboardingPageContent() {
   // Load onboarding progress on mount
   useEffect(() => {
     loadOnboardingProgress()
-    loadBrands()
   }, [])
 
   const loadOnboardingProgress = async () => {
@@ -162,19 +160,6 @@ function SignedOnboardingPageContent() {
     }
   }
 
-  const loadBrands = async () => {
-    try {
-      const response = await fetch('/api/influencer/onboarding/signed/brands')
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setBrands(result.data)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading brands:', error)
-    }
-  }
 
   const currentStepData = STEPS[currentStep]
   const progress = ((currentStep + 1) / STEPS.length) * 100
@@ -211,7 +196,7 @@ function SignedOnboardingPageContent() {
         stepData.social_goals = formData.social_goals
         break
       case 'brand_selection':
-        stepData.selected_brands = formData.selected_brands
+        stepData.preferred_brands = formData.preferred_brands
         break
       case 'previous_collaborations':
         stepData.collaborations = formData.collaborations
@@ -242,30 +227,77 @@ function SignedOnboardingPageContent() {
     }
 
     try {
-      console.log('Saving step to API:', { stepKey, stepData })
+      const requestBody = {
+        step_key: stepKey,
+        data: stepData
+      }
+      
+      console.log('Saving step to API:', { stepKey, stepData, requestBody })
+      
       const response = await fetch('/api/influencer/onboarding/signed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          step_key: stepKey,
-          data: stepData
-        })
+        body: JSON.stringify(requestBody)
       })
       
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Failed to save step:', {
+        let errorText = ''
+        let errorData: any = null
+        
+        try {
+          errorText = await response.text()
+          if (errorText) {
+            try {
+              errorData = JSON.parse(errorText)
+            } catch (parseError) {
+              // Not JSON, keep as text
+              errorData = { raw: errorText }
+            }
+          }
+        } catch (readError: any) {
+          errorText = `Failed to read response: ${readError?.message || 'Unknown error'}`
+          errorData = { readError: readError?.message || 'Unknown error' }
+        }
+        
+        const errorInfo = {
           stepKey,
           status: response.status,
-          error: errorText
+          statusText: response.statusText || 'No status text',
+          error: errorData || errorText || 'Unknown error',
+          responseBody: errorText || '(empty response)',
+          url: response.url,
+          headers: Object.fromEntries(response.headers.entries())
+        }
+        
+        console.error('Failed to save step:', errorInfo)
+        
+        // Show user-friendly error
+        toast({
+          title: 'Error saving step',
+          description: errorData?.error || errorText || `Failed to save step: ${response.status}`,
+          variant: 'destructive'
         })
+        
         return
       }
       
       const result = await response.json()
       console.log('Step save response:', { stepKey, success: result.success, data: result.data })
-    } catch (error) {
-      console.error('Error saving step:', error)
+    } catch (error: any) {
+      const errorInfo = {
+        stepKey,
+        error: error?.message || 'Unknown error',
+        errorType: error?.name || 'Error',
+        stack: error?.stack,
+        fullError: error
+      }
+      console.error('Error saving step (catch block):', errorInfo)
+      
+      toast({
+        title: 'Error saving step',
+        description: error?.message || 'An unexpected error occurred while saving',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -288,7 +320,7 @@ function SignedOnboardingPageContent() {
             stepData.social_goals = formData.social_goals
             break
           case 'brand_selection':
-            stepData.selected_brands = formData.selected_brands
+            stepData.preferred_brands = formData.preferred_brands
             break
           case 'previous_collaborations':
             stepData.collaborations = formData.collaborations
@@ -320,8 +352,8 @@ function SignedOnboardingPageContent() {
         return { stepKey, stepData }
       })
       
-      // Save all steps in parallel
-      await Promise.all(
+      // Save all steps and wait for them to complete successfully
+      const saveResults = await Promise.allSettled(
         stepsToSave.map(({ stepKey, stepData }) =>
           fetch('/api/influencer/onboarding/signed', {
             method: 'POST',
@@ -330,23 +362,23 @@ function SignedOnboardingPageContent() {
               step_key: stepKey,
               data: stepData
             })
-          }).catch(err => {
-            console.error(`Failed to save step ${stepKey}:`, err)
-            // Don't throw - continue saving other steps
+          }).then(async (response) => {
+            if (!response.ok) {
+              const errorText = await response.text().catch(() => 'Unknown error')
+              throw new Error(`Failed to save step ${stepKey}: ${response.status} - ${errorText}`)
+            }
+            return response.json()
           })
         )
       )
 
-      // Save brand preferences if selected
-      if (formData.selected_brands.length > 0) {
-        await fetch('/api/influencer/onboarding/signed/brands', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brand_ids: formData.selected_brands
-          })
-        })
+      // Log any failures but continue
+      const failures = saveResults.filter(r => r.status === 'rejected')
+      if (failures.length > 0) {
+        console.warn('Some steps failed to save:', failures.map(f => f.status === 'rejected' ? f.reason : null))
       }
+
+      // Brand preferences are now saved as text in step data, no separate API call needed
 
       // Save collaborations (already saved in step data, no need to save separately)
 
@@ -388,7 +420,7 @@ function SignedOnboardingPageContent() {
       case 'social_goals':
         return formData.social_goals.trim() !== ''
       case 'brand_selection':
-        return formData.selected_brands.length > 0
+        return formData.preferred_brands.trim() !== ''
       case 'previous_collaborations':
         return true // Optional step
       case 'payment_information':
@@ -499,62 +531,22 @@ function SignedOnboardingPageContent() {
           </motion.div>
         )
 
-      case 'brand_selection':
+      case 'brand_text':
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
-              {brands.map(brand => {
-                const isSelected = formData.selected_brands.includes(brand.id)
-                return (
-                  <motion.button
-                    key={brand.id}
-                    onClick={() => {
-                      if (isSelected) {
-                        setFormData(prev => ({
-                          ...prev,
-                          selected_brands: prev.selected_brands.filter(id => id !== brand.id)
-                        }))
-                      } else {
-                        setFormData(prev => ({
-                          ...prev,
-                          selected_brands: [...prev.selected_brands, brand.id]
-                        }))
-                      }
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`p-4 rounded-xl text-left transition-all duration-200 flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-white text-gray-800 shadow-lg'
-                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {isSelected && (
-                        <Check className="w-5 h-5" />
-                      )}
-                      <div>
-                        <span className={`font-medium ${isSelected ? 'text-gray-800' : 'text-white'}`}>
-                          {brand.company_name}
-                        </span>
-                        {brand.industry && (
-                          <p className={`text-sm mt-1 ${isSelected ? 'text-gray-600' : 'text-white'}`}>
-                            {brand.industry}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </motion.button>
-                )
-              })}
-            </div>
-            <p className="text-white text-sm text-center">
-              Selected: {formData.selected_brands.length} {formData.selected_brands.length === 1 ? 'brand' : 'brands'}
-            </p>
+            <textarea
+              value={formData.preferred_brands}
+              onChange={(e) => setFormData(prev => ({ ...prev, preferred_brands: e.target.value }))}
+              placeholder="Enter the names of brands you'd like to work with..."
+              className="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-2xl 
+                text-white placeholder-white/70 text-lg focus:outline-none focus:border-white/50 
+                focus:bg-white/20 transition-all duration-300 backdrop-blur-sm min-h-[200px]"
+              autoFocus
+            />
           </motion.div>
         )
 

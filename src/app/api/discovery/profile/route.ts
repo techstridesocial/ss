@@ -48,75 +48,75 @@ export async function POST(_request: Request) {
         
         try {
           // Clean username: remove @ and any whitespace
-          
-          // YouTube doesn't have /users endpoint, use /search instead
-          let searchResult: any
-          let users: any[] = []
-          
-          if (normalizedPlatform === 'youtube') {
-            // YouTube: Use search endpoint (POST)
-            const { searchDiscovery } = await import('../../../../lib/services/modash')
-            searchResult = await searchDiscovery('youtube', {
-              query: cleanUsername,
-              limit: 10
-            }) as any
-            // YouTube search returns different structure
-            users = searchResult?.results || searchResult?.data || searchResult?.directs || []
-          } else {
-            // Instagram & TikTok: Use /users endpoint (GET)
-            const { listUsers } = await import('../../../../lib/services/modash')
-            searchResult = await listUsers(normalizedPlatform as 'instagram' | 'tiktok', {
-              query: cleanUsername,
-              limit: 10 // Increase limit to find exact match in results
-            }) as any
-            users = searchResult?.users || searchResult?.data || []
-          }
-          
-          console.log(`🔍 Search results (${normalizedPlatform}):`, {
-            usersCount: users.length,
-            platform: normalizedPlatform,
-            firstUser: users[0] ? {
-              username: users[0].username,
-              userId: users[0].userId,
-              id: users[0].id,
-              handle: users[0].handle,
-              allKeys: Object.keys(users[0] || {})
-            } : null
-          })
-          
-          // Look for exact match (case-insensitive)
-          // YouTube might use 'handle' field instead of 'username'
-          const exactMatch = users.find((user: any) => {
-            const userIdentifier = user.username || user.handle || ''
-            return userIdentifier.toLowerCase() === cleanUsername.toLowerCase()
-          })
-          
-          // Try both userId and id fields (Modash API uses different field names)
-          // Also check for YouTube-specific field names
+        
+        // YouTube doesn't have /users endpoint, use /search instead
+        let searchResult: any
+        let users: any[] = []
+        
+        if (normalizedPlatform === 'youtube') {
+          // YouTube: Use search endpoint (POST)
+          const { searchDiscovery } = await import('../../../../lib/services/modash')
+          searchResult = await searchDiscovery('youtube', {
+            query: cleanUsername,
+            limit: 10
+          }) as any
+          // YouTube search returns different structure
+          users = searchResult?.results || searchResult?.data || searchResult?.directs || []
+        } else {
+          // Instagram & TikTok: Use /users endpoint (GET)
+        const { listUsers } = await import('../../../../lib/services/modash')
+          searchResult = await listUsers(normalizedPlatform as 'instagram' | 'tiktok', {
+            query: cleanUsername,
+            limit: 10 // Increase limit to find exact match in results
+        }) as any
+          users = searchResult?.users || searchResult?.data || []
+        }
+        
+        console.log(`🔍 Search results (${normalizedPlatform}):`, {
+          usersCount: users.length,
+          platform: normalizedPlatform,
+          firstUser: users[0] ? {
+            username: users[0].username,
+            userId: users[0].userId,
+            id: users[0].id,
+            handle: users[0].handle,
+            allKeys: Object.keys(users[0] || {})
+          } : null
+        })
+        
+        // Look for exact match (case-insensitive)
+        // YouTube might use 'handle' field instead of 'username'
+        const exactMatch = users.find((user: any) => {
+          const userIdentifier = user.username || user.handle || ''
+          return userIdentifier.toLowerCase() === cleanUsername.toLowerCase()
+        })
+        
+        // Try both userId and id fields (Modash API uses different field names)
+        // Also check for YouTube-specific field names
           const foundUserId = exactMatch?.userId || exactMatch?.id
           if (foundUserId) {
             actualUserId = foundUserId
-            const matchedIdentifier = exactMatch.username || exactMatch.handle || 'unknown'
-            console.log(`✅ Found exact match userId: ${actualUserId} for ${normalizedPlatform} username: ${matchedIdentifier}`)
-          } else if (users.length > 0) {
-            // If no exact match, use first result (might be close match)
-            const firstUserId = users[0].userId || users[0].id
-            if (firstUserId) {
-              actualUserId = firstUserId
-              const firstIdentifier = users[0].username || users[0].handle || 'unknown'
-              console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${normalizedPlatform} username: ${firstIdentifier}`)
-              console.log(`   Available identifiers: ${users.map((u: any) => u.username || u.handle || 'unknown').join(', ')}`)
-            } else {
-              throw new Error(`No userId found in ${normalizedPlatform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
-            }
+          const matchedIdentifier = exactMatch.username || exactMatch.handle || 'unknown'
+          console.log(`✅ Found exact match userId: ${actualUserId} for ${normalizedPlatform} username: ${matchedIdentifier}`)
+        } else if (users.length > 0) {
+          // If no exact match, use first result (might be close match)
+          const firstUserId = users[0].userId || users[0].id
+          if (firstUserId) {
+            actualUserId = firstUserId
+            const firstIdentifier = users[0].username || users[0].handle || 'unknown'
+            console.log(`⚠️ No exact match, using first result userId: ${actualUserId} for ${normalizedPlatform} username: ${firstIdentifier}`)
+            console.log(`   Available identifiers: ${users.map((u: any) => u.username || u.handle || 'unknown').join(', ')}`)
           } else {
-            throw new Error(`No user found with username: ${username} on ${normalizedPlatform}. Searched for: ${cleanUsername}`)
+            throw new Error(`No userId found in ${normalizedPlatform} search results. First user keys: ${Object.keys(users[0] || {}).join(', ')}`)
           }
-        } catch (searchError) {
-          console.error('❌ Error searching for userId:', searchError)
+        } else {
+          throw new Error(`No user found with username: ${username} on ${normalizedPlatform}. Searched for: ${cleanUsername}`)
+        }
+      } catch (searchError) {
+        console.error('❌ Error searching for userId:', searchError)
           const errorMsg = searchError instanceof Error ? searchError.message : 'Unknown error'
-          return NextResponse.json({
-            success: false,
+        return NextResponse.json({
+          success: false,
             error: `Could not find user with username: ${username}. ${errorMsg}`,
             errorCode: 'ACCOUNT_NOT_FOUND',
             details: {
@@ -124,7 +124,7 @@ export async function POST(_request: Request) {
               platform: normalizedPlatform,
               message: 'Both direct username lookup and search failed - account may not exist in Modash'
             }
-          }, { status: 404 })
+        }, { status: 404 })
         }
       }
     }
@@ -228,8 +228,8 @@ export async function POST(_request: Request) {
         isLikelyUsername: !/^\d+$/.test(actualUserId) && !actualUserId.startsWith('UC') // Likely username if not numeric and not YouTube channel ID
       })
       
-      try {
-        modashResponse = await getProfileReport(actualUserId.trim(), normalizedPlatform) as any
+    try {
+      modashResponse = await getProfileReport(actualUserId.trim(), normalizedPlatform) as any
         console.log('✅ Modash profile API call successful')
     } catch (modashError: any) {
       console.error('❌ Modash API call failed:', {
@@ -239,8 +239,8 @@ export async function POST(_request: Request) {
         platform: normalizedPlatform,
         stack: modashError?.stack
       })
-        // Re-throw to be caught by outer catch
-        throw modashError
+      // Re-throw to be caught by outer catch
+      throw modashError
       }
     }
     
@@ -563,7 +563,7 @@ export async function POST(_request: Request) {
       console.log('✅ Response includes performance data:', {
         reelsTotal: performanceData.reels?.total || 0,
         postsTotal: performanceData.posts?.total || 0
-      })
+    })
     }
     
     // Log response structure summary (not full data)
@@ -621,7 +621,7 @@ export async function POST(_request: Request) {
       }
     }
     
-    return NextResponse.json({
+        return NextResponse.json({
       success: false,
       error: errorMessage,
       errorCode,

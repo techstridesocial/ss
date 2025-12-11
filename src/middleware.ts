@@ -85,7 +85,7 @@ const SECURITY_HEADERS = {
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: https: blob: https://*.modash.io https://*.cdninstagram.com https://*.fna.fbcdn.net",
     "connect-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://api.clerk.dev https://clerk-telemetry.com https://api.modash.io https://www.google-analytics.com https://va.vercel-scripts.com https://vercel.live https://analytics.google.com https://challenges.cloudflare.com https://*.cloudflare.com",
-    "frame-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://challenges.cloudflare.com https://*.cloudflare.com",
+    "frame-src 'self' https://*.clerk.dev https://*.clerk.com https://*.clerk.services https://*.clerk.accounts.dev https://clerk.stride-suite.com https://challenges.cloudflare.com https://*.cloudflare.com https://www.youtube.com https://youtube.com https://*.youtube.com",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "object-src 'none'",
