@@ -10,7 +10,7 @@ import ErrorBoundary from '../../../components/debug/ErrorBoundary'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { StaffInfluencer, RosterFilters } from '../../../types/staff'
 import { ANALYTICS_CACHE_TTL_MS } from '@/constants/analytics'
-import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle, Search, X, FileText, Calendar, Building2 } from 'lucide-react'
+import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -103,6 +103,12 @@ const AssignInfluencerModal = dynamic(() => import('../../../components/modals/A
     <div className="text-white">Loading...</div>
   </div>
 })
+const CreateSubmissionListModal = dynamic(() => import('../../../components/staff/CreateSubmissionListModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
 const AddInfluencerPanel = dynamic(() => import('../../../components/influencer/AddInfluencerPanel'), {
   ssr: false,
   loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
@@ -168,45 +174,15 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<StaffInfluencer | null>(null)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
-  const [submissionsModalOpen, setSubmissionsModalOpen] = useState(false)
-  const [selectedInfluencerForSubmissions, setSelectedInfluencerForSubmissions] = useState<StaffInfluencer | null>(null)
-  const [submissionLists, setSubmissionLists] = useState<any[]>([])
-  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false)
+  const [createSubmissionModalOpen, setCreateSubmissionModalOpen] = useState(false)
+  const [selectedInfluencerForSubmission, setSelectedInfluencerForSubmission] = useState<StaffInfluencer | null>(null)
 
   // Filter and search state - MUST be declared before hooks that use them
   const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram')
 
-  const handleViewSubmissions = async (influencer: StaffInfluencer) => {
-    setSelectedInfluencerForSubmissions(influencer)
-    setSubmissionsModalOpen(true)
-    setIsLoadingSubmissions(true)
-    
-    try {
-      const response = await fetch(`/api/roster/${influencer.id}/submissions`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          setSubmissionLists(result.data || [])
-        } else {
-          toast({
-            title: 'Error',
-            description: result.error || 'Failed to load submission lists',
-            variant: 'destructive'
-          })
-        }
-      } else {
-        throw new Error('Failed to fetch submission lists')
-      }
-    } catch (error: any) {
-      console.error('Error loading submission lists:', error)
-      toast({
-        title: 'Error',
-        description: error?.message || 'Failed to load submission lists',
-        variant: 'destructive'
-      })
-    } finally {
-      setIsLoadingSubmissions(false)
-    }
+  const handleCreateSubmissionList = (influencer: StaffInfluencer) => {
+    setSelectedInfluencerForSubmission(influencer)
+    setCreateSubmissionModalOpen(true)
   }
 
   const handleAnalyticsNotesUpdate = useCallback((influencerId: string, newNotes: string) => {
@@ -1041,13 +1017,13 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          handleViewSubmissions(influencer)
+                          handleCreateSubmissionList(influencer)
                         }}
                         disabled={actionLoading}
                         variant="ghost"
                         size="icon"
                         className="text-green-600 hover:text-green-800 hover:bg-green-50"
-                        title="View Submission Lists"
+                        title="Create New Submission List"
                       >
                         <Plus size={16} />
                       </Button>
@@ -1127,141 +1103,21 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         />
       )}
 
-      {/* Submissions Modal */}
-      {submissionsModalOpen && selectedInfluencerForSubmissions && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 max-w-4xl w-full max-h-[90vh] flex flex-col"
-          >
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">
-                  Submission Lists
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {selectedInfluencerForSubmissions.display_name}
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setSubmissionsModalOpen(false)
-                  setSelectedInfluencerForSubmissions(null)
-                  setSubmissionLists([])
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {isLoadingSubmissions ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : submissionLists.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600">No submission lists found for this influencer</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {submissionLists.map((list) => (
-                    <motion.div
-                      key={list.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                            {list.name}
-                          </h3>
-                          {list.brandName && (
-                            <div className="flex items-center text-sm text-gray-600 mb-2">
-                              <Building2 size={14} className="mr-1" />
-                              {list.brandName}
-                            </div>
-                          )}
-                        </div>
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          list.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                          list.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                          list.status === 'UNDER_REVIEW' ? 'bg-yellow-100 text-yellow-800' :
-                          list.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {list.status.replace('_', ' ')}
-                        </span>
-                      </div>
-
-                      {list.notes && (
-                        <p className="text-sm text-gray-600 mb-3">{list.notes}</p>
-                      )}
-
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        {list.createdAt && (
-                          <div className="flex items-center">
-                            <Calendar size={12} className="mr-1" />
-                            Created: {new Date(list.createdAt).toLocaleDateString()}
-                          </div>
-                        )}
-                        {list.influencers && (
-                          <div className="flex items-center">
-                            <Users size={12} className="mr-1" />
-                            {list.influencers.length} influencer{list.influencers.length !== 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-
-                      {list.influencers && list.influencers.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-xs font-medium text-gray-700 mb-2">Influencers in this list:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {list.influencers.slice(0, 5).map((inf: any) => (
-                              <span
-                                key={inf.id}
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  inf.influencerId === selectedInfluencerForSubmissions.id
-                                    ? 'bg-blue-100 text-blue-800 font-semibold'
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}
-                              >
-                                {inf.influencerDisplayName || inf.influencerName || 'Unknown'}
-                              </span>
-                            ))}
-                            {list.influencers.length > 5 && (
-                              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
-                                +{list.influencers.length - 5} more
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setSubmissionsModalOpen(false)
-                  setSelectedInfluencerForSubmissions(null)
-                  setSubmissionLists([])
-                }}
-                className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
-              >
-                Close
-              </button>
-            </div>
-          </motion.div>
-        </div>
+      {/* Create Submission List Modal */}
+      {createSubmissionModalOpen && selectedInfluencerForSubmission && (
+        <CreateSubmissionListModal
+          isOpen={createSubmissionModalOpen}
+          onClose={() => {
+            setCreateSubmissionModalOpen(false)
+            setSelectedInfluencerForSubmission(null)
+          }}
+          initialInfluencer={{
+            id: selectedInfluencerForSubmission.id,
+            display_name: selectedInfluencerForSubmission.display_name,
+            total_followers: selectedInfluencerForSubmission.total_followers,
+            total_engagement_rate: selectedInfluencerForSubmission.total_engagement_rate
+          }}
+        />
       )}
 
       {/* Delete Confirmation Modal */}

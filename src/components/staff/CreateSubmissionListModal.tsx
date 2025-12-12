@@ -7,6 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface CreateSubmissionListModalProps {
   isOpen: boolean
   onClose: () => void
+  initialInfluencer?: {
+    id: string
+    display_name: string
+    total_followers?: number
+    total_engagement_rate?: number
+  }
 }
 
 interface Brand {
@@ -23,7 +29,8 @@ interface Influencer {
 
 export default function CreateSubmissionListModal({
   isOpen,
-  onClose
+  onClose,
+  initialInfluencer
 }: CreateSubmissionListModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -51,8 +58,17 @@ export default function CreateSubmissionListModal({
     if (isOpen) {
       loadBrands()
       loadInfluencers()
+      
+      // Pre-select initial influencer if provided
+      if (initialInfluencer) {
+        setSelectedInfluencers(new Map([
+          [initialInfluencer.id, { influencer: initialInfluencer }]
+        ]))
+      } else {
+        setSelectedInfluencers(new Map())
+      }
     }
-  }, [isOpen])
+  }, [isOpen, initialInfluencer])
 
   const loadBrands = async () => {
     try {
