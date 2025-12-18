@@ -26,3 +26,4 @@ export function BudgetStep({ value, onChange, error, options }: BudgetStepProps)
     </motion.div>
   )
 }
+

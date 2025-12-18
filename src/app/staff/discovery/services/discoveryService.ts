@@ -292,3 +292,4 @@ export const fetchExtendedAnalytics = async (
   const result = await response.json()
   return result.success ? result.data : null
 }
+

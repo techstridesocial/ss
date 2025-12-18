@@ -26,3 +26,4 @@ export function CompanySizeStep({ value, onChange, error, options }: CompanySize
     </motion.div>
   )
 }
+

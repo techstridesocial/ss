@@ -90,3 +90,4 @@ export const SHARES_SAVES_OPTIONS = [
 ]
 
 export const CREDITS_PER_RESULT = 0.01
+

@@ -241,3 +241,4 @@ export const getAccountOptions = (selectedPlatform: Platform): AccountOptions =>
       }
   }
 }
+

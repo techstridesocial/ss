@@ -99,3 +99,4 @@ export function LogoUploadStep({ value, onChange, onError }: LogoUploadStepProps
     </motion.div>
   )
 }
+

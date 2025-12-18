@@ -31,3 +31,4 @@ export function DescriptionStep({ value, onChange, error, maxLength = 300 }: Des
     </motion.div>
   )
 }
+

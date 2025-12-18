@@ -155,3 +155,4 @@ export function useBrandFilters(brands: Brand[], quotations: Quotation[], curren
     activeFilterCount
   }
 }
+

@@ -210,30 +210,36 @@ export async function POST(_request: NextRequest) {
     // Update aggregated stats in influencers table
     await updateInfluencerAggregatedStats(influencerResult.id)
 
-    // Cache Modash data for rich analytics
-    try {
-      console.log('🔄 Caching Modash data for new connection...')
-      const cacheResult = await cacheModashProfile(
-        newAccount.id,
-        profileData?.userId || handle, // Use Modash user ID if available, fallback to handle
-        normalizedPlatform
-      )
-      
-      if (cacheResult.success) {
-        console.log('✅ Modash data cached successfully')
-      } else {
-        console.warn('⚠️ Failed to cache Modash data:', cacheResult.error)
-      }
-    } catch (cacheError) {
-      console.warn('⚠️ Error caching Modash data:', cacheError)
-      // Don't fail the connection if caching fails
-    }
-
-    return NextResponse.json({
+    // Return immediately - cache in background
+    const response = NextResponse.json({
       success: true,
       data: newAccount,
-      message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} account connected successfully`
+      message: `${normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1).toLowerCase()} account connected successfully`,
+      syncing: true // Indicate background sync is happening
     })
+
+    // Cache Modash data in background (non-blocking)
+    // This happens after the response is sent
+    setImmediate(async () => {
+      try {
+        console.log('🔄 Background: Caching Modash data for new connection...')
+        const cacheResult = await cacheModashProfile(
+          newAccount.id,
+          profileData?.userId || handle,
+          normalizedPlatform
+        )
+        
+        if (cacheResult.success) {
+          console.log('✅ Background: Modash data cached successfully')
+        } else {
+          console.warn('⚠️ Background: Failed to cache Modash data:', cacheResult.error)
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Background: Error caching Modash data:', cacheError)
+      }
+    })
+
+    return response
 
   } catch (error) {
     console.error('Error connecting social account:', error)

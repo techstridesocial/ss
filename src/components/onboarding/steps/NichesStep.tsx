@@ -27,3 +27,4 @@ export function NichesStep({ value, onChange, error, options }: NichesStepProps)
     </motion.div>
   )
 }
+

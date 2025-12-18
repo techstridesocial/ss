@@ -33,10 +33,15 @@ interface SignedOnboardingData {
   // Step 2: Social Media Goals
   social_goals: string
   
-  // Step 3: Brand Selection
+  // Step 3: Social Media Handles (Optional)
+  instagram_handle: string
+  tiktok_handle: string
+  youtube_handle: string
+  
+  // Step 4: Brand Selection
   preferred_brands: string // Text field for brands they'd like to work with
   
-  // Step 4: Previous Collaborations
+  // Step 5: Previous Collaborations
   collaborations: Array<{
     brand_name: string
     collaboration_type: string
@@ -44,31 +49,32 @@ interface SignedOnboardingData {
     notes: string
   }>
   
-  // Step 5: Payment Information
+  // Step 6: Payment Information
   previous_payment_amount: string
   currency: string
   payment_method: string
   payment_notes: string
   
-  // Step 6: Brand Inbound Setup
+  // Step 7: Brand Inbound Setup
   email_setup_type: 'email_forwarding' | 'manager_email' | ''
   manager_email: string
   
-  // Step 7: Email Forwarding Video - no data needed, just watched
+  // Step 8: Email Forwarding Video - no data needed, just watched
   email_forwarding_video_watched: boolean
   
-  // Step 8: Instagram Bio Setup
+  // Step 9: Instagram Bio Setup
   instagram_bio_setup: 'done' | 'will_do' | ''
   
-  // Step 9: UK Events Chat - no data needed, just link clicked
+  // Step 10: UK Events Chat - no data needed, just link clicked
   uk_events_chat_joined: boolean
   
-  // Step 10: Expectations - read-only, no data needed
+  // Step 11: Expectations - read-only, no data needed
 }
 
 const STEPS = [
   { id: 'welcome_video', title: 'Welcome to Stride Talent', type: 'video' },
   { id: 'social_goals', title: 'What are your social media goals?', type: 'textarea' },
+  { id: 'social_handles', title: 'Your social media handles (Optional)', type: 'social_handles' },
   { id: 'brand_selection', title: 'Brands you\'d like to work with', type: 'brand_text' },
   { id: 'previous_collaborations', title: 'Previous brand collaborations', type: 'collaborations' },
   { id: 'payment_information', title: 'Previous payment information', type: 'payment' },
@@ -104,6 +110,9 @@ function SignedOnboardingPageContent() {
   const [formData, setFormData] = useState<SignedOnboardingData>({
     welcome_video_watched: false,
     social_goals: '',
+    instagram_handle: '',
+    tiktok_handle: '',
+    youtube_handle: '',
     preferred_brands: '',
     collaborations: [],
     previous_payment_amount: '',
@@ -528,6 +537,70 @@ function SignedOnboardingPageContent() {
                 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm min-h-[200px]"
               autoFocus
             />
+          </motion.div>
+        )
+
+      case 'social_handles':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <p className="text-white/80 text-base mb-6">
+              Enter your social media handles below. You can verify and connect them later from your stats page.
+              <span className="block mt-2 text-white/60 text-sm">All fields are optional - skip if you prefer to add them later.</span>
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white/90 text-sm mb-2 flex items-center gap-2">
+                  <Instagram className="w-4 h-4" />
+                  Instagram Handle
+                </label>
+                <input
+                  type="text"
+                  value={formData.instagram_handle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, instagram_handle: e.target.value }))}
+                  placeholder="yourusername (optional)"
+                  className="w-full px-4 py-3 bg-white/10 border-2 border-white/20 rounded-xl 
+                    text-white placeholder-white/50 text-base focus:outline-none focus:border-white/50 
+                    focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white/90 text-sm mb-2 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  TikTok Handle
+                </label>
+                <input
+                  type="text"
+                  value={formData.tiktok_handle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tiktok_handle: e.target.value }))}
+                  placeholder="yourusername (optional)"
+                  className="w-full px-4 py-3 bg-white/10 border-2 border-white/20 rounded-xl 
+                    text-white placeholder-white/50 text-base focus:outline-none focus:border-white/50 
+                    focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white/90 text-sm mb-2 flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  YouTube Handle
+                </label>
+                <input
+                  type="text"
+                  value={formData.youtube_handle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, youtube_handle: e.target.value }))}
+                  placeholder="yourusername (optional)"
+                  className="w-full px-4 py-3 bg-white/10 border-2 border-white/20 rounded-xl 
+                    text-white placeholder-white/50 text-base focus:outline-none focus:border-white/50 
+                    focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                />
+              </div>
+            </div>
           </motion.div>
         )
 

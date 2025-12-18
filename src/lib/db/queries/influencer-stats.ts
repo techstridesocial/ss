@@ -95,6 +95,7 @@ export async function getInfluencerStats(userId: string): Promise<DatabaseRespon
     // Get platform-specific metrics from database
     const platformsQuery = `
       SELECT 
+        id,
         platform,
         username,
         followers,

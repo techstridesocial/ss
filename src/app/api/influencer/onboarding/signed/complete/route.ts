@@ -75,6 +75,7 @@ export async function POST(_request: NextRequest) {
     const requiredSteps = [
       'welcome_video',
       'social_goals',
+      'social_handles',
       'brand_selection',
       'previous_collaborations',
       'payment_information',
@@ -289,6 +290,53 @@ export async function POST(_request: NextRequest) {
               updated_at = NOW()
           WHERE user_id = $1
         `, [user_id, displayName])
+      }
+      
+      // Get the influencer ID for platform creation
+      const influencerResult = await client.query(
+        'SELECT id FROM influencers WHERE user_id = $1',
+        [user_id]
+      )
+      const influencerId = influencerResult.rows[0]?.id
+      
+      // Create platform records from social_handles step (if provided)
+      const socialHandlesStep = progress.steps.find(s => s.stepKey === 'social_handles')
+      if (socialHandlesStep?.data && influencerId) {
+        const platformHandles = [
+          { platform: 'INSTAGRAM', handle: socialHandlesStep.data.instagram_handle },
+          { platform: 'TIKTOK', handle: socialHandlesStep.data.tiktok_handle },
+          { platform: 'YOUTUBE', handle: socialHandlesStep.data.youtube_handle }
+        ]
+
+        for (const { platform, handle } of platformHandles) {
+          if (handle && handle.trim() !== '') {
+            const platformLowerCase = platform.toLowerCase()
+            const profileUrl = platformLowerCase === 'instagram' 
+              ? `https://instagram.com/${handle}`
+              : platformLowerCase === 'tiktok'
+              ? `https://tiktok.com/@${handle}`
+              : platformLowerCase === 'youtube'
+              ? `https://youtube.com/@${handle}`
+              : ''
+
+            await client.query(`
+              INSERT INTO influencer_platforms (
+                influencer_id, platform, username, profile_url, is_connected
+              ) VALUES ($1, $2, $3, $4, $5)
+              ON CONFLICT (influencer_id, platform) 
+              DO UPDATE SET 
+                username = EXCLUDED.username,
+                profile_url = EXCLUDED.profile_url,
+                updated_at = NOW()
+            `, [
+              influencerId,
+              platform,
+              handle,
+              profileUrl,
+              false // Not connected via OAuth yet - they can verify later on stats page
+            ])
+          }
+        }
       }
     })
 

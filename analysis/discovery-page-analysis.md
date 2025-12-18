@@ -269,3 +269,4 @@ The discovery page is a **functionally complete but architecturally problematic*
 **Priority**: This file should be refactored as soon as possible to prevent technical debt from accumulating. The recommended file split should be the first step, followed by type safety improvements.
 
 **Estimated Refactoring Time**: 2-3 days for initial split, 1-2 weeks for full refactoring with types and optimizations.
+

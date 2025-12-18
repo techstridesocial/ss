@@ -30,3 +30,4 @@ export function ContactRoleStep({ value, onChange, error }: ContactRoleStepProps
     </motion.div>
   )
 }
+

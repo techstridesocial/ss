@@ -31,3 +31,4 @@ export function CompanyNameStep({ value, onChange, error }: CompanyNameStepProps
     </motion.div>
   )
 }
+

@@ -30,3 +30,4 @@ export function MetricCard({ title, value, icon, trend, trendUp }: MetricCardPro
     </div>
   )
 }
+

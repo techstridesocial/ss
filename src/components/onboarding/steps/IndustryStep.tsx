@@ -27,3 +27,4 @@ export function IndustryStep({ value, onChange, error, options }: IndustryStepPr
     </motion.div>
   )
 }
+

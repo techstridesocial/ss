@@ -117,3 +117,4 @@ export function getValidationError(field: string, value: any, isRequired: boolea
   
   return null
 }
+

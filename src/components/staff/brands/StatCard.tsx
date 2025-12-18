@@ -63,3 +63,4 @@ export function StatCard({ title, value, icon, color }: StatCardProps) {
     </motion.div>
   )
 }
+

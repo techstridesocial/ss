@@ -67,3 +67,4 @@ export const parseFollowerValue = (value: string | undefined): number | undefine
   
   return result
 }
+

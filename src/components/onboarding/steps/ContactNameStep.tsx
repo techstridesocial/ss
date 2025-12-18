@@ -30,3 +30,4 @@ export function ContactNameStep({ value, onChange, error }: ContactNameStepProps
     </motion.div>
   )
 }
+

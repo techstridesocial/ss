@@ -54,6 +54,8 @@ export default function EnhancedInfluencerStats() {
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [connectingProfileId, setConnectingProfileId] = useState<string | null>(null)
 
   useEffect(() => {
     loadStats()
@@ -146,6 +148,10 @@ export default function EnhancedInfluencerStats() {
 
   const connectProfile = async (profile: any) => {
     try {
+      // Set loading state
+      setIsConnecting(true)
+      setConnectingProfileId(profile.id)
+      
       console.log('🔗 Connecting profile:', profile)
       
       const response = await fetch('/api/influencer/social-accounts', {
@@ -171,33 +177,26 @@ export default function EnhancedInfluencerStats() {
         const data = await response.json()
         console.log('✅ Profile connected successfully:', data)
         
-        // Automatically refresh the profile to get detailed engagement/views data
-        try {
-          console.log('🔄 Refreshing profile data to get engagement/views...')
-          const refreshResponse = await fetch('/api/modash/refresh-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              influencerPlatformId: data.data.id,
-              platform: profile.platform
-            })
-          })
-          
-          if (refreshResponse.ok) {
-            console.log('✅ Profile data refreshed successfully')
-          } else {
-            console.log('⚠️ Profile refresh failed, but connection succeeded')
-          }
-        } catch (refreshError) {
-          console.log('⚠️ Profile refresh failed:', refreshError)
-        }
-        
+        // Immediately update UI
         await loadStats()
         setSearchResults([])
         setSearchQuery('')
         setShowPlatformModal(null) // Close the platform modal
-        setSuccessMessage(`✅ ${profile._platform.charAt(0).toUpperCase() + profile._platform.slice(1)} profile @${profile.username} connected successfully!`)
-        setTimeout(() => setSuccessMessage(''), 5000)
+        
+        if (data.syncing) {
+          setToastMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} connected! Syncing analytics...`)
+          
+          // Auto-refresh after 5 seconds to show synced data
+          setTimeout(async () => {
+            console.log('🔄 Auto-refreshing to show synced data...')
+            await loadStats()
+            setToastMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} analytics synced!`)
+            setTimeout(() => setToastMessage(''), 3000)
+          }, 5000)
+        } else {
+          setToastMessage(`✅ ${profile.platform.charAt(0).toUpperCase() + profile.platform.slice(1)} profile @${profile.username} connected successfully!`)
+          setTimeout(() => setToastMessage(''), 5000)
+        }
       } else {
         let errorData
         try {
@@ -220,11 +219,17 @@ export default function EnhancedInfluencerStats() {
         }
         
         // Show error message to user
-        setSuccessMessage(`❌ ${errorData.message || errorData.error || 'Failed to connect profile'}`)
-        setTimeout(() => setSuccessMessage(''), 5000)
+        setToastMessage(`❌ ${errorData.message || errorData.error || 'Failed to connect profile'}`)
+        setTimeout(() => setToastMessage(''), 5000)
       }
     } catch (error) {
       console.error('❌ Error connecting profile:', error)
+      setToastMessage(`❌ Failed to connect profile`)
+      setTimeout(() => setToastMessage(''), 5000)
+    } finally {
+      // Clear loading state
+      setIsConnecting(false)
+      setConnectingProfileId(null)
     }
   }
 
@@ -260,22 +265,20 @@ export default function EnhancedInfluencerStats() {
 
   const disconnectPlatform = async (_platform: string) => {
     try {
-      console.log('🗑️ Disconnecting platform:', _platform)
-
       // Find the platform data to get the influencer platform ID
       const platformData = statsData?.platforms?.find(p => p.platform === _platform)
-      console.log('🔍 Platform data for disconnect:', platformData)
-      console.log('🔍 All platforms data:', statsData?.platforms)
       
       if (!platformData || !platformData.is_connected) {
-        setSuccessMessage(`❌ Platform ${_platform} is not connected`)
-        setTimeout(() => setSuccessMessage(''), 5000)
+        setToastMessage(`❌ Platform ${_platform} is not connected`)
+        setTimeout(() => setToastMessage(''), 5000)
         return
       }
       
-      if (!(platformData as any).id) {
-        setSuccessMessage(`❌ Platform ID not found for ${_platform}`)
-        setTimeout(() => setSuccessMessage(''), 5000)
+      const accountId = (platformData as any).id
+      
+      if (!accountId) {
+        setToastMessage(`❌ Platform ID not found for ${_platform}`)
+        setTimeout(() => setToastMessage(''), 5000)
         return
       }
 
@@ -283,28 +286,26 @@ export default function EnhancedInfluencerStats() {
       if (!confirm(`Are you sure you want to disconnect your ${_platform} account? This will remove all analytics data.`)) {
         return
       }
-
+      
       const response = await fetch('/api/influencer/social-accounts', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId: (platformData as any).id
-        })
+        body: JSON.stringify({ accountId })
       })
 
       if (response.ok) {
         await loadStats()
-        setSuccessMessage(`✅ ${_platform.charAt(0).toUpperCase() + _platform.slice(1)} account disconnected successfully!`)
-        setTimeout(() => setSuccessMessage(''), 5000)
+        setToastMessage(`✅ ${_platform.charAt(0).toUpperCase() + _platform.slice(1)} account disconnected successfully!`)
+        setTimeout(() => setToastMessage(''), 5000)
       } else {
         const errorData = await response.json()
-        setSuccessMessage(`❌ Failed to disconnect: ${errorData.error || 'Unknown error'}`)
-        setTimeout(() => setSuccessMessage(''), 5000)
+        setToastMessage(`❌ Failed to disconnect: ${errorData.error || 'Unknown error'}`)
+        setTimeout(() => setToastMessage(''), 5000)
       }
     } catch (error) {
       console.error('❌ Error disconnecting platform:', error)
-      setSuccessMessage(`❌ Failed to disconnect: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      setTimeout(() => setSuccessMessage(''), 5000)
+      setToastMessage(`❌ Failed to disconnect: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setTimeout(() => setToastMessage(''), 5000)
     }
   }
 
@@ -472,21 +473,6 @@ export default function EnhancedInfluencerStats() {
             </div>
           )}
 
-          {/* Refresh Real Data Button */}
-          {getConnectedCount() > 0 && (
-            <div className="mb-8 text-center">
-              <button
-                onClick={refreshModashData}
-                disabled={isRefreshing}
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
-              >
-                {isRefreshing ? '🔄 Refreshing Real Data...' : '🔄 Refresh Real Modash Data'}
-              </button>
-              <p className="text-sm text-slate-500 mt-2">
-                Get the latest analytics from Modash for your connected accounts
-              </p>
-            </div>
-          )}
 
           {/* Platform Overview */}
           <div className="mb-12">
@@ -566,22 +552,6 @@ export default function EnhancedInfluencerStats() {
                               </p>
                               <p className="text-xs text-slate-600 font-medium">Engagement</p>
                             </div>
-                          </div>
-                          
-                          <div className="text-center p-3 bg-slate-50 rounded-xl">
-                            <p className="text-2xl font-bold text-slate-900">
-                              {formatNumber(
-                                platform === 'instagram' 
-                                  ? (platformData && (platformData as any).avg_likes || 0)
-                                  : platform === 'youtube'
-                                  ? (platformData && (platformData as any).avg_views || 0)
-                                  : (platformData && (platformData as any).avg_views || 0)
-                              )}
-                            </p>
-                            <p className="text-xs text-slate-600 font-medium">
-                              {platform === 'instagram' ? 'Avg. Likes' : 
-                               platform === 'youtube' ? 'Avg. Views' : 'Avg. Views'}
-                            </p>
                           </div>
                           
                           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
@@ -670,11 +640,17 @@ export default function EnhancedInfluencerStats() {
                       <div className="space-y-3">
                         <p className="text-sm font-semibold text-slate-900">Select your profile:</p>
                         <div className="space-y-2">
-                          {searchResults.map((profile, index) => (
+                          {searchResults.map((profile, index) => {
+                            const isThisProfileConnecting = isConnecting && connectingProfileId === profile.id
+                            return (
                             <div
                               key={index}
-                              className="flex items-center justify-between p-4 border border-slate-200 rounded-2xl hover:bg-slate-50 cursor-pointer transition-colors group"
-                              onClick={() => connectProfile(profile)}
+                              className={`flex items-center justify-between p-4 border border-slate-200 rounded-2xl transition-colors group ${
+                                isThisProfileConnecting 
+                                  ? 'bg-blue-50 border-blue-300 cursor-wait' 
+                                  : 'hover:bg-slate-50 cursor-pointer'
+                              }`}
+                              onClick={() => !isConnecting && connectProfile(profile)}
                             >
                               <div className="flex items-center space-x-4">
                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-200">
@@ -687,9 +663,17 @@ export default function EnhancedInfluencerStats() {
                                   </p>
                                 </div>
                               </div>
-                              <CheckCircle className="h-5 w-5 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              {isThisProfileConnecting ? (
+                                <div className="flex items-center space-x-2">
+                                  <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                                  <span className="text-sm text-blue-600 font-medium">Connecting...</span>
+                                </div>
+                              ) : (
+                                <CheckCircle className="h-5 w-5 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
                             </div>
-                          ))}
+                          )
+                          })}
                         </div>
                       </div>
                     )}

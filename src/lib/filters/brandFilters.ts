@@ -153,3 +153,4 @@ export function applyQuotationFilters(
     return matchesStatus && matchesBudgetRange && matchesInfluencerCount && matchesDuration && matchesBrand
   })
 }
+

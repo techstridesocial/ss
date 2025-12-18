@@ -86,3 +86,4 @@ export function convertInfluencerToDetailData(influencer: Influencer | null): In
     ...influencer
   } as InfluencerData
 }
+

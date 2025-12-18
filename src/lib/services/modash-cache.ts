@@ -54,11 +54,13 @@ export async function cacheModashProfile(
   platform: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log(`🔄 Caching Modash profile for ${platform} user ${modashUserId}`)
+    // Normalize platform to lowercase for Modash API
+    const normalizedPlatform = platform.toLowerCase()
+    console.log(`🔄 Caching Modash profile for ${normalizedPlatform} user ${modashUserId}`)
     
     // Fetch full profile data from Modash
-    console.log(`📡 Calling getProfileReport with:`, { modashUserId, platform })
-    const modashData = await getProfileReport(modashUserId, platform) as any
+    console.log(`📡 Calling getProfileReport with:`, { modashUserId, platform: normalizedPlatform })
+    const modashData = await getProfileReport(modashUserId, normalizedPlatform) as any
     console.log(`📊 Modash API response:`, modashData ? 'Data received' : 'No data')
     
     if (!(modashData as any)?.profile) {
@@ -76,7 +78,7 @@ export async function cacheModashProfile(
       // Delete existing cache for this platform (if any)
       await client.query(
         'DELETE FROM modash_profile_cache WHERE influencer_platform_id = $1 AND platform = $2',
-        [influencerPlatformId, platform.toUpperCase()]
+        [influencerPlatformId, normalizedPlatform.toUpperCase()]
       )
       
       // Insert new cache entry
@@ -99,7 +101,7 @@ export async function cacheModashProfile(
       `, [
         influencerPlatformId,
         modashUserId,
-        platform.toUpperCase(),
+        normalizedPlatform.toUpperCase(),
         profile.username,
         profile.fullname,
         profile.followers || 0,
@@ -174,7 +176,7 @@ export async function cacheModashProfile(
       `, [profileCacheId])
     })
     
-    console.log(`✅ Successfully cached Modash profile for ${platform} user ${modashUserId}`)
+    console.log(`✅ Successfully cached Modash profile for ${normalizedPlatform} user ${modashUserId}`)
     return { success: true }
     
   } catch (error) {

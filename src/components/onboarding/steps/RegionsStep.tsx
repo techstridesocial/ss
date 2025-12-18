@@ -26,3 +26,4 @@ export function RegionsStep({ value, onChange, error, options }: RegionsStepProp
     </motion.div>
   )
 }
+

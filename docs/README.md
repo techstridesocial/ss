@@ -94,3 +94,4 @@ When adding new documentation:
 2. Use clear, descriptive filenames
 3. Update this README if adding a new category
 4. Follow existing naming conventions
+
