@@ -651,16 +651,18 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
           dbPlatforms.forEach((dbPlatform: any) => {
             const platformKey = dbPlatform.platform?.toLowerCase()
             if (platformKey) {
+              // Type-safe access to modashPlatforms
+              const modashData = modashPlatforms[platformKey as keyof typeof modashPlatforms]
               mergedPlatforms[platformKey] = {
                 // Database identity (source of truth)
                 username: dbPlatform.username,
                 platform: dbPlatform.platform,
                 // Modash analytics (if available for this platform)
-                ...(modashPlatforms[platformKey] || {}),
+                ...(modashData || {}),
                 // Database metrics (if Modash doesn't have them)
-                followers: modashPlatforms[platformKey]?.followers ?? dbPlatform.followers ?? 0,
-                engagementRate: modashPlatforms[platformKey]?.engagementRate ?? dbPlatform.engagement_rate ?? 0,
-                avgViews: modashPlatforms[platformKey]?.avgViews ?? modashPlatforms[platformKey]?.averageViews ?? dbPlatform.avg_views ?? 0,
+                followers: modashData?.followers ?? dbPlatform.followers ?? 0,
+                engagementRate: modashData?.engagementRate ?? dbPlatform.engagement_rate ?? 0,
+                avgViews: modashData?.avgViews ?? modashData?.averageViews ?? dbPlatform.avg_views ?? 0,
               }
             }
           })
@@ -668,7 +670,7 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
           // Add any Modash platforms not in database (fallback)
           Object.keys(modashPlatforms).forEach((platformKey) => {
             if (!mergedPlatforms[platformKey]) {
-              mergedPlatforms[platformKey] = modashPlatforms[platformKey]
+              mergedPlatforms[platformKey] = modashPlatforms[platformKey as keyof typeof modashPlatforms]
             }
           })
           

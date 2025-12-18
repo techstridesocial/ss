@@ -222,6 +222,10 @@ export default function BrandShortlistsPage() {
     try {
       console.log('Creating campaign from shortlists:', campaignData)
       
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:221',message:'Starting campaign creation',data:{campaignName:campaignData.name,hasBrand:!!campaignData.brand,hasDescription:!!campaignData.description,selectedShortlists:campaignData.selectedShortlists?.length||0,selectedInfluencers:campaignData.selectedInfluencers?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
+      // #endregion
+      
       // In a real app, this would make an API call to create the campaign
       const response = await fetch('/api/campaigns', {
         method: 'POST',
@@ -231,7 +235,16 @@ export default function BrandShortlistsPage() {
         body: JSON.stringify(campaignData)
       })
       
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:234',message:'Campaign API response received',data:{status:response.status,ok:response.ok,statusText:response.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
+      // #endregion
+      
       if (response.ok) {
+        const result = await response.json()
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:239',message:'Campaign created successfully',data:{success:result.success,campaignId:result.campaign?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
+        // #endregion
+        
         toast({
           title: 'Success',
           description: `Campaign "${campaignData.name}" created successfully!`,
@@ -240,13 +253,32 @@ export default function BrandShortlistsPage() {
         setCreateCampaignModalOpen(false)
         setSelectedShortlistsForCampaign([])
       } else {
-        throw new Error('Failed to create campaign')
+        // Get error details from response
+        let errorMessage = 'Failed to create campaign'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorData.message || errorMessage
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:252',message:'Campaign creation failed',data:{status:response.status,error:errorMessage,errorData:errorData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
+          // #endregion
+        } catch (parseError) {
+          const errorText = await response.text()
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:257',message:'Failed to parse error response',data:{status:response.status,errorText:errorText.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
+          // #endregion
+          errorMessage = `Failed to create campaign (${response.status} ${response.statusText})`
+        }
+        throw new Error(errorMessage)
       }
     } catch (error) {
       console.error('Error creating campaign:', error)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:265',message:'Campaign creation error caught',data:{error:error instanceof Error ? error.message : String(error),stack:error instanceof Error ? error.stack : undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
+      // #endregion
+      
       toast({
         title: 'Error',
-        description: 'Failed to create campaign. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to create campaign. Please try again.',
         variant: 'destructive'
       })
     }

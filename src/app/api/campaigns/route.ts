@@ -121,10 +121,19 @@ export async function POST(request: NextRequest) {
       description: data.description,
       goals: data.goals || [],
       timeline: {
-        startDate: data.timeline?.startDate || new Date().toISOString(),
-        endDate: data.timeline?.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        applicationDeadline: data.timeline?.applicationDeadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        contentDeadline: data.timeline?.contentDeadline || new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
+        // Convert date strings (YYYY-MM-DD) to ISO format if needed
+        startDate: data.timeline?.startDate 
+          ? (data.timeline.startDate.includes('T') ? data.timeline.startDate : new Date(data.timeline.startDate).toISOString())
+          : new Date().toISOString(),
+        endDate: data.timeline?.endDate 
+          ? (data.timeline.endDate.includes('T') ? data.timeline.endDate : new Date(data.timeline.endDate).toISOString())
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        applicationDeadline: data.timeline?.applicationDeadline 
+          ? (data.timeline.applicationDeadline.includes('T') ? data.timeline.applicationDeadline : new Date(data.timeline.applicationDeadline).toISOString())
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        contentDeadline: data.timeline?.contentDeadline 
+          ? (data.timeline.contentDeadline.includes('T') ? data.timeline.contentDeadline : new Date(data.timeline.contentDeadline).toISOString())
+          : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
       },
       budget: {
         total: data.budget?.total || 0,
@@ -184,11 +193,21 @@ export async function POST(request: NextRequest) {
       campaign 
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating campaign:', error)
-    console.error('Error details:', {
+    console.error('❌ Error creating campaign:', error)
+    console.error('❌ Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace'
     })
+    
+    // #region agent log
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown'
+    }
+    fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/campaigns/route.ts:186',message:'Campaign creation error in API',data:errorDetails,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_API_ERROR'})}).catch(()=>{});
+    // #endregion
+    
     return NextResponse.json(
       { 
         success: false, 
