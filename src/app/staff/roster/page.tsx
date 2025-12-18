@@ -10,7 +10,7 @@ import ErrorBoundary from '../../../components/debug/ErrorBoundary'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { StaffInfluencer, RosterFilters } from '../../../types/staff'
 import { ANALYTICS_CACHE_TTL_MS } from '@/constants/analytics'
-import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle, Search } from 'lucide-react'
+import { FilterIcon, Plus, RefreshCw, ChevronDown, Eye, TrendingUp, Users, MapPin, BarChart3, User, Trash2, AlertTriangle, Search, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -173,6 +173,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [selectedInfluencerForAnalytics, setSelectedInfluencerForAnalytics] = useState<StaffInfluencer | null>(null)
   const [dashboardPanelOpen, setDashboardPanelOpen] = useState(false)
   const [selectedDashboardInfluencer, setSelectedDashboardInfluencer] = useState<StaffInfluencer | null>(null)
+  const [isLoadingDashboardData, setIsLoadingDashboardData] = useState(false)
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false)
   const [createSubmissionModalOpen, setCreateSubmissionModalOpen] = useState(false)
   const [selectedInfluencerForSubmission, setSelectedInfluencerForSubmission] = useState<StaffInfluencer | null>(null)
@@ -479,13 +480,36 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
     updateUrl()
   }
 
-  const handleViewDashboardInfo = (influencer: StaffInfluencer) => {
+  const handleViewDashboardInfo = async (influencer: StaffInfluencer) => {
     router.replace(pathname, { scroll: false })
     setDetailPanelOpen(false)
     setSelectedInfluencerForAnalytics(null)
-    setSelectedDashboardInfluencer(influencer)
     setDashboardPanelOpen(true)
     onPanelStateChange?.(true)
+    
+    // Fetch fresh data from API to ensure stats and last_login are up to date
+    setIsLoadingDashboardData(true)
+    try {
+      const response = await fetch(`/api/roster/${influencer.id}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setSelectedDashboardInfluencer(result.data)
+        } else {
+          // Fallback to table data if API fails
+          setSelectedDashboardInfluencer(influencer)
+        }
+      } else {
+        // Fallback to table data if API fails
+        setSelectedDashboardInfluencer(influencer)
+      }
+    } catch (error) {
+      console.error('Error fetching fresh influencer data:', error)
+      // Fallback to table data if API fails
+      setSelectedDashboardInfluencer(influencer)
+    } finally {
+      setIsLoadingDashboardData(false)
+    }
   }
 
   const handleClosePanels = () => {
@@ -818,6 +842,29 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 const analyticsProgress = getAnalyticsProgress(influencer)
                 const progressLabel = `${analyticsProgress.synced}/${analyticsProgress.total}`
                 const allSynced = analyticsProgress.total > 0 && analyticsProgress.synced >= analyticsProgress.total
+                
+                // Count platforms and extract platform strings
+                // Simple: just count how many platforms exist
+                const platformStrings: Platform[] = []
+                
+                if (Array.isArray(influencer.platforms)) {
+                  influencer.platforms.forEach((p: any) => {
+                    if (!p) return
+                    
+                    // Extract platform name (handle both object and string formats)
+                    const platformName = typeof p === 'object' && p !== null 
+                      ? (p.platform || p) 
+                      : p
+                    
+                    if (platformName) {
+                      platformStrings.push(platformName as Platform)
+                    }
+                  })
+                }
+                
+                // Simple count: just how many platforms exist
+                const platformCount = platformStrings.length
+                const connectionLabel = `${platformCount}/3`
 
                 return (
                 <tr key={influencer.id} className={`${(detailPanelOpen || dashboardPanelOpen) ? '' : 'hover:bg-blue-50/30 transition-colors'} ${
@@ -888,22 +935,20 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                   <td className="px-6 py-5 whitespace-nowrap min-w-[180px]">
                     <div className="flex items-center gap-3">
                       <div className="flex flex-wrap gap-2">
-                        {(Array.isArray(influencer.platforms) ? influencer.platforms : []).filter(Boolean).map((platform: Platform, index: number) => (
+                        {platformStrings.map((platform: Platform, index: number) => (
                           <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
                             <PlatformIcon platform={platform} size={24} />
                           </div>
                         ))}
                       </div>
-                      {analyticsProgress.total > 0 && (
-                        <div
-                          className={`w-9 h-9 rounded-full border text-xs font-semibold flex items-center justify-center ${
-                            allSynced ? 'border-green-500 text-green-600' : 'border-gray-300 text-gray-600'
-                          }`}
-                          title={`Analytics synced for ${progressLabel} connected platform${analyticsProgress.total === 1 ? '' : 's'}`}
-                        >
-                          {progressLabel}
-                        </div>
-                      )}
+                      <div
+                        className={`w-9 h-9 rounded-full border text-xs font-semibold flex items-center justify-center ${
+                          platformCount > 0 ? 'border-green-500 text-green-600' : 'border-gray-300 text-gray-600'
+                        }`}
+                        title={`${platformCount} out of 3 platforms`}
+                      >
+                        {connectionLabel}
+                      </div>
                     </div>
                   </td>
 
@@ -1231,11 +1276,22 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
         </div>
       )}
 
-      <DashboardInfoPanel
-        influencer={selectedDashboardInfluencer}
-        isOpen={dashboardPanelOpen}
-        onClose={handleClosePanels}
-      />
+      {isLoadingDashboardData ? (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl">
+            <div className="flex items-center space-x-3">
+              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              <span className="text-gray-700 font-medium">Loading dashboard data...</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <DashboardInfoPanel
+          influencer={selectedDashboardInfluencer}
+          isOpen={dashboardPanelOpen}
+          onClose={handleClosePanels}
+        />
+      )}
       
       <Toaster />
     </div>

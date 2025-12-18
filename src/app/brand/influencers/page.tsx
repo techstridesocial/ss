@@ -237,9 +237,15 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Generate detailed influencer data (mock function for the detailed view)
   const generateDetailedInfluencerData = (influencer: any): InfluencerDetailView => {
+    // Preserve platform_details with usernames from API
+    const platformDetails = Array.isArray(influencer.platforms) 
+      ? influencer.platforms.filter((p: any) => p && p.platform) 
+      : []
+    
     return {
       ...influencer,
-      platforms: influencer.platforms || ['INSTAGRAM'],
+      platforms: platformDetails.map((p: any) => p.platform).filter(Boolean) || ['INSTAGRAM'],
+      platform_details: platformDetails, // Preserve full platform data with usernames
       
       // Management fields are not accessible to brands (empty/null)
       assigned_to: null,
@@ -753,7 +759,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 <SortableHeader sortKey="niches" className="w-32">Niches</SortableHeader>
                 <SortableHeader sortKey="total_followers" className="w-24">Followers</SortableHeader>
                 <SortableHeader sortKey="total_engagement_rate" className="w-24">Engagement</SortableHeader>
-                <SortableHeader sortKey="total_avg_views" className="w-24">Avg Views</SortableHeader>
                 <SortableHeader sortKey="location_city" className="w-28">Location</SortableHeader>
                 <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Actions</th>
               </tr>
@@ -763,27 +768,12 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                 <tr key={influencer.id} className="hover:bg-white/70 transition-colors duration-150">
                   {/* Influencer Info */}
                   <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12">
-                        {influencer.avatar_url ? (
-                          <img 
-                            className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" 
-                            src={influencer.avatar_url} 
-                            alt={influencer.display_name}
-                          />
-                        ) : (
-                          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
-                            <Users size={20} className="text-gray-500" />
-                          </div>
-                        )}
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {influencer.display_name}
                       </div>
-                      <div className="ml-4 min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-gray-900 truncate">
-                          {influencer.display_name}
-                        </div>
-                        <div className="text-sm text-gray-500 truncate">
-                          {influencer.first_name} {influencer.last_name}
-                        </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        {influencer.first_name} {influencer.last_name}
                       </div>
                     </div>
                   </td>
@@ -804,39 +794,63 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
                   {/* Platforms */}
                   <td className="px-3 py-4">
-                    <div className="flex gap-1">
-                      {(influencer.platforms || []).filter(Boolean).slice(0, 3).map((platform: Platform, index: number) => (
-                        <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
-                          <PlatformIcon platform={platform} size={20} />
-                        </div>
-                      ))}
+                    <div className="flex gap-2">
+                      {(() => {
+                        // Handle platforms - can be array of strings or array of objects with platform property
+                        const platformArray = Array.isArray(influencer.platforms) ? influencer.platforms : []
+                        const platforms = platformArray
+                          .map((p: any) => typeof p === 'string' ? p : p?.platform)
+                          .filter(Boolean)
+                          .slice(0, 3)
+                        
+                        return platforms.map((platform: Platform, index: number) => (
+                          <div key={`${influencer.id}-${platform}-${index}`} className="flex items-center">
+                            <PlatformIcon platform={platform} size={24} />
+                          </div>
+                        ))
+                      })()}
                     </div>
                   </td>
 
                   {/* Niches */}
                   <td className="px-3 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {(influencer.niches || []).slice(0, 1).map((niche: string) => (
-                        <span
-                          key={niche}
-                          className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg truncate max-w-full"
-                        >
-                          {niche}
-                        </span>
-                      ))}
-                      {(influencer.niches || []).length > 1 && (
-                        <div className="relative group">
-                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg cursor-help">
-                            +{(influencer.niches || []).length - 1}
-                          </span>
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
-                            {(influencer.niches || []).slice(1).join(', ')}
-                            {/* Tooltip arrow */}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
-                          </div>
-                        </div>
-                      )}
+                      {(() => {
+                        // Handle niches - ensure it's an array and filter out null/empty values
+                        const nichesArray = Array.isArray(influencer.niches) 
+                          ? influencer.niches.filter((n: any) => n && typeof n === 'string' && n.trim())
+                          : []
+                        
+                        if (nichesArray.length === 0) {
+                          return null
+                        }
+                        
+                        return (
+                          <>
+                            {nichesArray.slice(0, 2).map((niche: string) => (
+                              <span
+                                key={niche}
+                                className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg truncate max-w-full"
+                              >
+                                {niche}
+                              </span>
+                            ))}
+                            {nichesArray.length > 2 && (
+                              <div className="relative group">
+                                <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100/80 text-gray-700 rounded-lg cursor-help">
+                                  +{nichesArray.length - 2}
+                                </span>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
+                                  {nichesArray.slice(2).join(', ')}
+                                  {/* Tooltip arrow */}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
                   </td>
 
@@ -855,14 +869,6 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
                       {influencer.total_engagement_rate && Number(influencer.total_engagement_rate) > 0 
                         ? (Number(influencer.total_engagement_rate) * 100).toFixed(1) 
                         : '0.0'}%
-                    </div>
-                  </td>
-
-                  {/* Average Views */}
-                  <td className="px-3 py-4">
-                    <div className="flex items-center text-sm font-semibold text-gray-900">
-                      <Eye size={14} className="mr-1 text-gray-400" />
-                      {formatNumber(influencer.total_avg_views)}
                     </div>
                   </td>
 
@@ -980,14 +986,22 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           influencer={{
             id: selectedInfluencerDetail.id,
             handle: selectedInfluencerDetail.display_name,
+            username: selectedInfluencerDetail.display_name, // Fallback (but won't be used if platform_details exists)
             followers: selectedInfluencerDetail.total_followers || 0,
             profilePicture: selectedInfluencerDetail.avatar_url || undefined,
             bio: selectedInfluencerDetail.bio || undefined,
             engagement_rate: selectedInfluencerDetail.total_engagement_rate || undefined,
             avgViews: selectedInfluencerDetail.total_avg_views || undefined,
+            // Pass platform_details so InfluencerDetailPanel can extract usernames
+            platform_details: selectedInfluencerDetail.platform_details || [],
+            // Also pass as contacts for compatibility
+            contacts: selectedInfluencerDetail.platform_details?.map((p: any) => ({
+              type: p.platform?.toLowerCase() || 'instagram',
+              value: p.username || ''
+            })).filter((c: any) => c.value) || []
           }}
-          selectedPlatform={selectedPlatform as 'instagram' | 'tiktok' | 'youtube'}
-          onPlatformSwitch={setSelectedPlatform as (platform: 'instagram' | 'tiktok' | 'youtube') => void}
+          selectedPlatform={selectedPlatform.toLowerCase() as 'instagram' | 'tiktok' | 'youtube'}
+          onPlatformSwitch={(platform) => setSelectedPlatform(platform.toUpperCase())}
           onClose={handleCloseDetailPanel}
           isOpen={detailPanelOpen}
         />
@@ -1018,23 +1032,19 @@ function InfluencerTable(props: InfluencerTableProps) {
 }
 
 export default function BrandInfluencersPage() {
-  const [isAnyPanelOpen, setIsAnyPanelOpen] = useState(false)
-
   return (
     <BrandProtectedRoute>
       <BrandOnboardingCheck>
         <div className="min-h-screen bg-gray-50">
           <ModernBrandHeader />
           
-          <div className={`transition-all duration-300 ${isAnyPanelOpen ? 'mr-[600px]' : ''}`}>
           <div className="px-4 lg:px-8 py-8">
             <InfluencerTable 
               searchParams={{}}
-              onPanelStateChange={setIsAnyPanelOpen}
+              onPanelStateChange={() => {}} // No-op since panel is fixed overlay
             />
           </div>
         </div>
-      </div>
       </BrandOnboardingCheck>
     </BrandProtectedRoute>
   )

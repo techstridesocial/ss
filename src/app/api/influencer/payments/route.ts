@@ -237,4 +237,76 @@ export async function POST(_request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// DELETE - Remove payment information
+export async function DELETE(_request: NextRequest) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get influencer ID from users table
+    const userResult = await query<{ id: string }>(
+      'SELECT id FROM users WHERE clerk_id = $1',
+      [userId]
+    )
+
+    if (userResult.length === 0) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    const user_id = userResult[0]?.id
+
+    // Get influencer ID
+    const influencerResult = await query<{ id: string }>(
+      'SELECT id FROM influencers WHERE user_id = $1',
+      [user_id]
+    )
+
+    if (influencerResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Influencer not found' },
+        { status: 404 }
+      )
+    }
+
+    const influencer_id = influencerResult[0]?.id
+
+    if (!influencer_id) {
+      return NextResponse.json(
+        { error: 'Influencer ID not found' },
+        { status: 404 }
+      )
+    }
+
+    // Delete payment information
+    const deleteResult = await query(
+      'DELETE FROM influencer_payments WHERE influencer_id = $1 RETURNING id',
+      [influencer_id]
+    )
+
+    if (deleteResult.length === 0) {
+      return NextResponse.json(
+        { error: 'No payment method found to delete' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Payment method deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Error deleting payment information:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete payment information' },
+      { status: 500 }
+    )
+  }
 } 

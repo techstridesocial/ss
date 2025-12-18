@@ -473,8 +473,49 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   // Get influencer ID - handle both roster and discovery influencers
   const influencerId = influencer?.rosterId || influencer?.id || influencer?.userId
   
-  // Get username for UUID fallback
-  const username = influencer?.handle || influencer?.username || influencer?.contacts?.[0]?.value
+  // Get username for UUID fallback - extract from platform_details based on selected platform
+  // CRITICAL: Recalculate when selectedPlatform changes to get correct username for that platform
+  // CRITICAL: platform_details takes PRIORITY over handle/username because handle might be display_name
+  const username = useMemo(() => {
+    let extractedUsername: string | undefined = undefined
+    
+    // PRIORITY 1: Get username from platform_details for the selected platform (MOST RELIABLE)
+    if (influencer?.platform_details && selectedPlatform) {
+      const platformDetail = influencer.platform_details.find((p: any) => 
+        p && p.platform && p.platform.toLowerCase() === selectedPlatform.toLowerCase()
+      )
+      if (platformDetail?.username) {
+        extractedUsername = platformDetail.username
+      }
+    }
+    
+    // PRIORITY 2: Fallback to any platform_details if selected platform not found
+    if (!extractedUsername && influencer?.platform_details) {
+      const firstPlatform = influencer.platform_details.find((p: any) => p?.username && p.username.trim())
+      if (firstPlatform?.username) {
+        extractedUsername = firstPlatform.username
+      }
+    }
+    
+    // PRIORITY 3: Get from contacts (if available)
+    if (!extractedUsername && influencer?.contacts && influencer.contacts.length > 0) {
+      const contact = influencer.contacts.find((c: any) => c.value && c.value.trim() && !c.value.includes(' '))
+      if (contact?.value) {
+        extractedUsername = contact.value
+      }
+    }
+    
+    // PRIORITY 4: Last resort - use handle/username (but only if it looks like a real username, not display_name)
+    // Check if handle/username doesn't contain spaces (display names often have spaces like "Signed Influencer")
+    if (!extractedUsername) {
+      const handleOrUsername = influencer?.username || influencer?.handle
+      if (handleOrUsername && typeof handleOrUsername === 'string' && !handleOrUsername.includes(' ')) {
+        extractedUsername = handleOrUsername
+      }
+    }
+    
+    return extractedUsername
+  }, [influencer?.platform_details, selectedPlatform, influencer?.contacts, influencer?.username, influencer?.handle])
   
   const { 
     data: apiData, 
@@ -484,11 +525,18 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
   } = useInfluencerAnalytics({
     influencerId: influencerId,
     platform: selectedPlatform || 'instagram',
-    username: username, // Pass username for UUID fallback
+    username: username, // Pass username for UUID fallback - updates when platform changes
     // CRITICAL: Disable when it's a roster influencer - we get data from parent component instead
     // Also disable if UUID detected but no username available yet (will auto-enable when username loads)
-    enabled: isOpen && !!influencer && !!influencerId && !influencer.isRosterInfluencer
+    enabled: isOpen && !!influencer && !!influencerId && !influencer.isRosterInfluencer && !!username
   })
+  
+  // Refetch analytics when platform changes (username should update from platform_details)
+  useEffect(() => {
+    if (isOpen && influencer && influencerId && !influencer.isRosterInfluencer && username && selectedPlatform) {
+      // React Query will automatically refetch when queryKey changes (username is in queryKey)
+    }
+  }, [selectedPlatform, username, isOpen, influencerId, influencer?.isRosterInfluencer])
 
   // Auto-retry when username becomes available (for UUID fallback case)
   useEffect(() => {
@@ -515,7 +563,20 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
+      
+      // Prevent body scroll without layout shift by preserving scrollbar space
+      // Calculate scrollbar width before hiding overflow
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      
+      // Store original padding-right to restore later
+      const originalPaddingRight = document.body.style.paddingRight || ''
+      const originalOverflow = document.body.style.overflow || ''
+      
+      // Hide overflow and add padding to compensate for scrollbar
       document.body.style.overflow = 'hidden'
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`
+      }
       
       // Focus management - focus first tab button for better accessibility
       setTimeout(() => {
@@ -524,11 +585,17 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
           firstTab.focus()
         }
       }, 100)
+      
+      // Cleanup function to restore original styles
+      return () => {
+        document.removeEventListener('keydown', handleEscape)
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight
+      }
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
     }
   }, [isOpen, onClose])
 
@@ -550,13 +617,63 @@ const InfluencerDetailPanel = memo(function InfluencerDetailPanel({
     }
     
     // For discovery influencers, merge with apiData
+    // CRITICAL: Database is KING for identity (username, handle, display_name, platform_details)
+    // Modash is KING for analytics (followers, engagement, posts, audience, etc.)
     if (apiData) {
+      // Get database username from platform_details for the selected platform
+      const dbPlatformDetail = influencer.platform_details?.find((p: any) => 
+        p && p.platform && selectedPlatform && 
+        p.platform.toLowerCase() === selectedPlatform.toLowerCase()
+      )
+      const dbUsername = dbPlatformDetail?.username || influencer.username || influencer.handle
+      
       return {
-        ...influencer,
-        ...apiData,
-        // Preserve metadata
+        ...apiData, // Modash analytics data first (followers, engagement, posts, etc.)
+        ...influencer, // Database data overwrites Modash identity data
+        // CRITICAL: Preserve database identity as source of truth
         id: influencer.id,
-        isRosterInfluencer: influencer.isRosterInfluencer
+        handle: dbUsername || influencer.handle, // Use database username, not Modash handle
+        username: dbUsername || influencer.username, // Use database username, not Modash username
+        display_name: influencer.display_name || apiData.displayName || apiData.name,
+        displayName: influencer.display_name || apiData.displayName || apiData.name,
+        isRosterInfluencer: influencer.isRosterInfluencer,
+        // Preserve platform_details from database
+        platform_details: influencer.platform_details,
+        // Merge platforms: database structure first, then enrich with Modash analytics
+        platforms: (() => {
+          const dbPlatforms = influencer.platform_details || []
+          const modashPlatforms = apiData.platforms || {}
+          
+          // Start with database platform structure
+          const mergedPlatforms: any = {}
+          
+          // For each database platform, create structure
+          dbPlatforms.forEach((dbPlatform: any) => {
+            const platformKey = dbPlatform.platform?.toLowerCase()
+            if (platformKey) {
+              mergedPlatforms[platformKey] = {
+                // Database identity (source of truth)
+                username: dbPlatform.username,
+                platform: dbPlatform.platform,
+                // Modash analytics (if available for this platform)
+                ...(modashPlatforms[platformKey] || {}),
+                // Database metrics (if Modash doesn't have them)
+                followers: modashPlatforms[platformKey]?.followers ?? dbPlatform.followers ?? 0,
+                engagementRate: modashPlatforms[platformKey]?.engagementRate ?? dbPlatform.engagement_rate ?? 0,
+                avgViews: modashPlatforms[platformKey]?.avgViews ?? modashPlatforms[platformKey]?.averageViews ?? dbPlatform.avg_views ?? 0,
+              }
+            }
+          })
+          
+          // Add any Modash platforms not in database (fallback)
+          Object.keys(modashPlatforms).forEach((platformKey) => {
+            if (!mergedPlatforms[platformKey]) {
+              mergedPlatforms[platformKey] = modashPlatforms[platformKey]
+            }
+          })
+          
+          return mergedPlatforms
+        })()
       }
     }
     

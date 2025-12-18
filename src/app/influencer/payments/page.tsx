@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
-import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save, Loader2, FileText, Eye, Download } from 'lucide-react'
+import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save, Loader2, FileText, Eye, Download, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import InvoiceSubmissionModal from '../../../components/influencer/InvoiceSubmissionModal'
 
@@ -291,14 +291,54 @@ export default function InfluencerPayments() {
     }
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     setIsEditing(true)
-    if (paymentMethod === 'paypal' && savedPaypalDetails) {
-      setPaypalDetails(savedPaypalDetails)
-      setShowPayPalForm(true)
-    } else if (paymentMethod === 'bank' && savedBankDetails) {
-      setBankDetails(savedBankDetails)
-      setShowBankForm(true)
+    setIsSaving(true) // Show loading while fetching
+    
+    try {
+      // Fetch unmasked payment details for editing
+      const response = await fetch('/api/influencer/payments/edit')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch payment details')
+      }
+      
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const { payment_method, payment_details } = result.data
+        
+        if (payment_method === 'PAYPAL') {
+          setPaypalDetails({
+            email: payment_details.email || '',
+            firstName: payment_details.firstName || '',
+            lastName: payment_details.lastName || ''
+          })
+          setShowPayPalForm(true)
+        } else if (payment_method === 'BANK_TRANSFER') {
+          setBankDetails({
+            accountType: payment_details.accountType || '',
+            accountHolderName: payment_details.accountHolderName || '',
+            accountNumber: payment_details.accountNumber || '',
+            routingNumber: payment_details.routingNumber || '',
+            abaCode: payment_details.abaCode || '',
+            bankName: payment_details.bankName || '',
+            swiftCode: payment_details.swiftCode || '',
+            iban: payment_details.iban || '',
+            address: payment_details.address || '',
+            city: payment_details.city || '',
+            country: payment_details.country || '',
+            currency: payment_details.currency || 'GBP',
+            vatRegistered: payment_details.vatRegistered || ''
+          })
+          setShowBankForm(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching payment details for editing:', error)
+      alert('Failed to load payment details for editing. Please try again.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -340,6 +380,39 @@ export default function InfluencerPayments() {
   const handleInvoiceCreated = () => {
     fetchInvoices()
     fetchPaymentData() // Refresh payment data
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete your payment method? You will need to add a new one to receive payments.')) {
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      
+      const response = await fetch('/api/influencer/payments', {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete payment method')
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        alert('Payment method deleted successfully!')
+        // Refresh payment data
+        await fetchPaymentData()
+      } else {
+        throw new Error(result.error || 'Failed to delete payment method')
+      }
+    } catch (error) {
+      console.error('Error deleting payment method:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete payment method')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -452,14 +525,25 @@ export default function InfluencerPayments() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">Payment Method</h3>
               </div>
-              {paymentMethod && !isEditing && (
-                <button 
-                  onClick={handleEdit}
-                  className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  <Edit3 className="h-4 w-4 mr-1" />
-                  Edit
-                </button>
+              {paymentInfo && !isEditing && (
+                <div className="flex items-center space-x-3">
+                  <button 
+                    onClick={handleEdit}
+                    disabled={isSaving}
+                    className="flex items-center text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Edit3 className="h-4 w-4 mr-1" />
+                    Edit
+                  </button>
+                  <button 
+                    onClick={handleDelete}
+                    disabled={isSaving}
+                    className="flex items-center text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </button>
+                </div>
               )}
             </div>
 

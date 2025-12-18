@@ -345,19 +345,24 @@ export default function DashboardInfoPanel({
     })
   }
 
-  const formatTimeAgo = (dateString: string) => {
-    if (!dateString) return 'Never'
-    const now = new Date()
-    const date = new Date(dateString)
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
-    
-    if (diffInDays === 0) return 'Today'
-    if (diffInDays === 1) return '1 day ago'
-    if (diffInDays < 7) return `${diffInDays} days ago`
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
-    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`
-    return `${Math.floor(diffInDays / 365)} years ago`
+  const formatTimeAgo = (dateString: string | null | undefined) => {
+    if (!dateString || dateString === null || dateString === undefined) return 'Never'
+    try {
+      const now = new Date()
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return 'Never'
+      const diffInMs = now.getTime() - date.getTime()
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+      
+      if (diffInDays === 0) return 'Today'
+      if (diffInDays === 1) return '1 day ago'
+      if (diffInDays < 7) return `${diffInDays} days ago`
+      if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+      if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`
+      return `${Math.floor(diffInDays / 365)} years ago`
+    } catch (error) {
+      return 'Never'
+    }
   }
 
   const panel = (
@@ -479,8 +484,12 @@ export default function DashboardInfoPanel({
                       },
                       {
                         label: 'Platform Connections',
-                        value: `${influencer.platforms?.filter((p: any) => p.is_connected).length || 0}/${influencer.platforms?.length || 0}`,
-                        quality: (influencer.platforms?.filter((p: any) => p.is_connected).length || 0) > 0 ? 'high' : 'low'
+                        value: `${(() => {
+                          // Simple: just count how many platforms exist
+                          if (!Array.isArray(influencer.platforms)) return 0
+                          return influencer.platforms.filter((p: any) => p !== null && p !== undefined).length
+                        })()}/3`,
+                        quality: (Array.isArray(influencer.platforms) && influencer.platforms.length > 0) ? 'high' : 'low'
                       }
                     ]}
                     columns={3}

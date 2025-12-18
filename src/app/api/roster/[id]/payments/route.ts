@@ -46,7 +46,7 @@ export async function GET(
       ORDER BY ip.created_at DESC
       LIMIT 1
     `, [influencerId])
-
+    
     let paymentInfo = null
     if (paymentInfoResult.rows.length > 0) {
       const payment = paymentInfoResult.rows[0]

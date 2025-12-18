@@ -49,8 +49,8 @@ export default function ModernBrandHeader() {
 
   // Navigation items for brands
   const navItems = [
-    { href: '/brand/campaigns', label: 'Campaigns' },
     { href: '/brand/influencers', label: 'Influencers' },
+    { href: '/brand/campaigns', label: 'Campaigns' },
     { href: '/brand/shortlists', label: 'Shortlists' },
     { href: '/brand/quotations', label: 'Quotations' },
     { href: '/brand/submissions', label: 'Submissions' }

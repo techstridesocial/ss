@@ -58,6 +58,18 @@ export interface InfluencerData {
   rosterId?: string
   // 🎯 Platform-specific data storage
   platforms?: PlatformsData
+  // Platform details from database (for username extraction)
+  platform_details?: Array<{
+    id?: string
+    platform?: string
+    username?: string
+    followers?: number
+    engagement_rate?: number
+    avg_views?: number
+    is_connected?: boolean
+    profile_url?: string
+    [key: string]: any
+  }>
   avgViews?: number
   avgLikes?: number
   avgComments?: number
