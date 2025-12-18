@@ -993,7 +993,17 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
             engagement_rate: selectedInfluencerDetail.total_engagement_rate || undefined,
             avgViews: selectedInfluencerDetail.total_avg_views || undefined,
             // Pass platform_details so InfluencerDetailPanel can extract usernames
-            platform_details: selectedInfluencerDetail.platform_details || [],
+            // Map InfluencerPlatform to match expected type (convert null values to undefined)
+            platform_details: (selectedInfluencerDetail.platform_details || []).map((p: any) => ({
+              id: p.id,
+              platform: p.platform,
+              username: p.username,
+              followers: p.followers,
+              engagement_rate: p.engagement_rate,
+              avg_views: p.avg_views,
+              is_connected: p.is_connected,
+              profile_url: p.profile_url ?? undefined // Convert null to undefined
+            })),
             // Also pass as contacts for compatibility
             contacts: selectedInfluencerDetail.platform_details?.map((p: any) => ({
               type: p.platform?.toLowerCase() || 'instagram',
