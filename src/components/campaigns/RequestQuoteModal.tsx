@@ -9,12 +9,16 @@ interface RequestQuoteModalProps {
   isOpen: boolean
   onClose: () => void
   selectedInfluencers?: any[]
+  shortlistId?: string
+  onSuccess?: () => void
 }
 
 export default function RequestQuoteModal({
   isOpen,
   onClose,
-  selectedInfluencers = []
+  selectedInfluencers = [],
+  shortlistId,
+  onSuccess
 }: RequestQuoteModalProps) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -153,17 +157,21 @@ export default function RequestQuoteModal({
           target_platforms: formData.target_platforms,
           influencer_count: selectedInfluencers.length,
           selected_influencers: selectedInfluencers.map(inf => inf.id || inf.influencerId),
-          assigned_staff_id: formData.assigned_staff_id || null
+          assigned_staff_id: formData.assigned_staff_id || null,
+          shortlist_id: shortlistId || null // Pass shortlist_id if provided
         })
       })
 
       if (response.ok) {
         toast({
           title: 'Success',
-          description: 'Quotation request submitted successfully! Our team will review and get back to you.',
+          description: 'Quotation request submitted successfully! Our team will review and get back to you. Check the Quotations page to view your request.',
           variant: 'default'
         })
         onClose()
+        if (onSuccess) {
+          onSuccess()
+        }
         // Reset form
         setFormData({
           campaign_name: '',

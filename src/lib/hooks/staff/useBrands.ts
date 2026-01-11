@@ -106,6 +106,34 @@ export function useStaffMembers() {
   return staffMembers
 }
 
+interface ApiQuotation {
+  id: string
+  brandName?: string
+  brand_name?: string
+  campaignDescription?: string
+  campaign_name?: string
+  description?: string
+  budget?: number
+  status?: string
+  submittedAt?: string
+  requested_at?: string
+  createdAt?: string
+  created_at?: string
+  notes?: string
+  influencers?: unknown[]
+  influencer_count?: number
+  budget_range?: string
+  timeline?: string
+  campaign_duration?: string
+  targetAudience?: string
+  target_demographics?: string
+  deliverables?: string[]
+  total_quote?: string
+  quoted_at?: string
+  approved_at?: string
+  brand_id?: string
+}
+
 export function useQuotations() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
 
@@ -116,7 +144,36 @@ export function useQuotations() {
         if (response.ok) {
           const result = await response.json()
           if (result.success && result.quotations) {
-            setQuotations(result.quotations)
+            // Transform API response to match StaffQuotation interface
+            const transformedQuotations: Quotation[] = result.quotations.map((q: ApiQuotation) => ({
+              id: q.id,
+              brand_id: q.brand_id || '',
+              brand_name: q.brandName || q.brand_name || 'Unknown Brand',
+              campaign_name: q.campaignDescription || q.campaign_name || q.description || 'Untitled Campaign',
+              description: q.campaignDescription || q.description || '',
+              influencer_count: q.influencers?.length || q.influencer_count || 0,
+              status: (q.status?.toLowerCase() || 'pending_review') as 'pending_review' | 'sent' | 'approved' | 'rejected',
+              requested_at: q.submittedAt || q.requested_at || q.createdAt || q.created_at || new Date().toISOString(),
+              quoted_at: q.quoted_at,
+              approved_at: q.approved_at,
+              total_quote: q.total_quote || (q.budget ? `$${q.budget.toLocaleString()}` : undefined),
+              budget_range: q.budget_range || (q.budget ? `$${q.budget.toLocaleString()}` : 'TBD'),
+              campaign_duration: q.campaign_duration || q.timeline || '',
+              deliverables: q.deliverables || [],
+              target_demographics: q.target_demographics || q.targetAudience || '',
+              notes: q.notes,
+              influencers: Array.isArray(q.influencers) ? q.influencers.map((inf: unknown) => {
+                const influencer = inf as Record<string, unknown>
+                return {
+                  name: String(influencer.name || influencer.influencerName || 'Unknown'),
+                  platform: String(influencer.platform || 'instagram'),
+                  followers: String(influencer.followers || '0'),
+                  engagement: String(influencer.engagement || influencer.engagementRate || '0%'),
+                  contact_status: (influencer.contact_status as 'pending' | 'confirmed' | 'declined') || 'pending'
+                }
+              }) : []
+            }))
+            setQuotations(transformedQuotations)
           }
         }
       } catch (error) {

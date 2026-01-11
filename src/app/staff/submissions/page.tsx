@@ -152,7 +152,8 @@ function SubmissionsPageContent() {
       <div className="min-h-screen bg-gray-50">
         <ModernStaffHeader />
         
-        <div className="px-4 lg:px-8 py-8">
+        <div className="p-4 lg:p-6">
+          <div className="py-8">
           {/* Header with Filters and Create Button */}
           <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
             {/* Filters */}
@@ -326,6 +327,7 @@ function SubmissionsPageContent() {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* Create Modal */}

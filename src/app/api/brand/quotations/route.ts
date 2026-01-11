@@ -134,7 +134,8 @@ export async function POST(_request: NextRequest) {
       deliverables: data.deliverables || [],
       target_demographics: data.target_demographics || '',
       selected_influencers: data.selected_influencers || [], // Array of influencer IDs
-      assigned_staff_id: assignedStaffId
+      assigned_staff_id: assignedStaffId,
+      shortlist_id: data.shortlist_id || null // Link to shortlist if provided
     }
 
     const quotation = await createQuotationRequest(quotationData)

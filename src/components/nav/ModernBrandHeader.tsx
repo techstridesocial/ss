@@ -122,6 +122,11 @@ export default function ModernBrandHeader() {
         title: 'Campaign Tracker',
         subtitle: 'Monitor your active campaigns and track influencer participation'
       }
+    } else if (pathname === '/brand/submissions' || pathname.startsWith('/brand/submissions/')) {
+      return {
+        title: 'Submission Lists',
+        subtitle: 'Review influencer lists submitted by Stride Social staff'
+      }
     } else {
       // Default fallback - show greeting format
       return {

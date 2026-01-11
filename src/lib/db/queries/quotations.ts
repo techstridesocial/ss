@@ -285,6 +285,42 @@ export async function updateQuotation(id: string, updates: Partial<Quotation>): 
   return getQuotationById(id);
 }
 
+// Get quotation by shortlist_id (if any)
+export async function getQuotationByShortlistId(shortlistId: string): Promise<Quotation | null> {
+  const result = await query(`
+    SELECT * FROM quotations 
+    WHERE shortlist_id = $1 
+    ORDER BY created_at DESC 
+    LIMIT 1
+  `, [shortlistId]);
+  
+  if (result.length === 0) return null;
+  
+  const row = result[0];
+  const influencers = await getQuotationInfluencers(row.id);
+  
+  return {
+    id: row.id,
+    brandName: row.brand_name || 'Unknown Brand',
+    brandEmail: '',
+    industry: '',
+    campaignDescription: row.description || row.campaign_name || '',
+    targetAudience: row.target_demographics || '',
+    budget: parseFloat(row.total_quote || '0'),
+    timeline: row.campaign_duration || '',
+    deliverables: safeJsonParse(row.deliverables, []),
+    platforms: [],
+    status: row.status || 'PENDING_REVIEW',
+    submittedAt: row.requested_at || row.created_at,
+    reviewedAt: row.quoted_at || row.approved_at || row.rejected_at,
+    reviewedBy: undefined,
+    notes: row.quote_notes || '',
+    influencers,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 // Get all quotations for a specific brand
 export async function getBrandQuotations(brandId: string): Promise<Quotation[]> {
   const result = await query(`
@@ -348,13 +384,14 @@ export async function createQuotationRequest(data: {
   target_demographics?: string;
   selected_influencers?: string[];
   assigned_staff_id?: string;
+  shortlist_id?: string;
 }): Promise<Quotation> {
   const result = await query(`
     INSERT INTO quotations (
       brand_id, brand_name, campaign_name, description, 
       influencer_count, budget_range, campaign_duration, 
-      deliverables, target_demographics, status, assigned_staff_id
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      deliverables, target_demographics, status, assigned_staff_id, shortlist_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING *
   `, [
     data.brand_id,
@@ -364,10 +401,11 @@ export async function createQuotationRequest(data: {
     data.influencer_count,
     data.budget_range || null,
     data.campaign_duration || null,
-    JSON.stringify(data.deliverables || []),
+    data.deliverables || [], // PostgreSQL TEXT[] array - pass directly, not JSON stringified
     data.target_demographics || null,
     'PENDING_REVIEW',
-    data.assigned_staff_id || null
+    data.assigned_staff_id || null,
+    data.shortlist_id || null
   ]);
 
   const quotation = result[0];

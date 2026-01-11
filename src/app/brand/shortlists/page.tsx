@@ -29,7 +29,6 @@ import {
   DuplicateShortlistModal, 
   DeleteShortlistModal 
 } from '../../../components/shortlists/ShortlistManagement'
-import CreateCampaignFromShortlistsModal from '../../../components/campaigns/CreateCampaignFromShortlistsModal'
 import RequestQuoteModal from '../../../components/campaigns/RequestQuoteModal'
 
 // Helper function to format numbers
@@ -71,7 +70,15 @@ const generateDetailedInfluencerData = (heartedInfluencer: any): InfluencerDetai
     labels: [],
     notes: null,
     email: null,
-    platforms: [heartedInfluencer.platform.toUpperCase() as Platform],
+    platforms: [(() => {
+      // Ensure platform is a valid string before converting to uppercase
+      const platform = heartedInfluencer.platform
+      if (!platform || typeof platform !== 'string') {
+        console.warn('Invalid platform value:', platform, 'defaulting to INSTAGRAM')
+        return 'INSTAGRAM' as Platform
+      }
+      return platform.toUpperCase() as Platform
+    })()],
     platform_count: 1,
     platform_details: [],
     recent_content: [],
@@ -130,9 +137,11 @@ export default function BrandShortlistsPage() {
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedShortlist, setSelectedShortlist] = useState<Shortlist | null>(null)
-  const [createCampaignModalOpen, setCreateCampaignModalOpen] = useState(false)
-  const [selectedShortlistsForCampaign, setSelectedShortlistsForCampaign] = useState<string[]>([])
   const [requestQuoteModalOpen, setRequestQuoteModalOpen] = useState(false)
+  const [activeShortlistForQuote, setActiveShortlistForQuote] = useState<Shortlist | null>(null)
+  
+  // Track quotation status for each shortlist
+  const [quotationStatuses, setQuotationStatuses] = useState<Record<string, { exists: boolean; status?: string }>>({})
   
   // Selected shortlist to view
   const [currentShortlistId, setCurrentShortlistId] = useState<string>('default')
@@ -142,20 +151,35 @@ export default function BrandShortlistsPage() {
 
   const { shortlists, isLoading, removeInfluencerFromShortlist } = useHeartedInfluencers()
 
-  // Debug: Check if shortlists are from localStorage
-  const hasLocalStorageShortlists = shortlists.some(s => 
-    s.id === 'default' || 
-    s.id.startsWith('shortlist_') || 
-    !s.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-  )
-
-  // Force clear localStorage and reload
-  const handleClearLocalStorage = () => {
-    if (confirm('This will clear browser cache and reload from database. Continue?')) {
-      localStorage.clear()
-      window.location.reload()
+  // Check quotation status for shortlists
+  React.useEffect(() => {
+    const checkQuotationStatuses = async () => {
+      const statuses: Record<string, { exists: boolean; status?: string }> = {}
+      
+      for (const shortlist of shortlists) {
+        try {
+          const response = await fetch(`/api/brand/quotations/check-shortlist?shortlistId=${shortlist.id}`)
+          if (response.ok) {
+            const result = await response.json()
+            if (result.success) {
+              statuses[shortlist.id] = {
+                exists: result.exists,
+                status: result.quotation?.status
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error checking quotation for shortlist ${shortlist.id}:`, error)
+        }
+      }
+      
+      setQuotationStatuses(statuses)
     }
-  }
+
+    if (shortlists.length > 0) {
+      checkQuotationStatuses()
+    }
+  }, [shortlists])
 
   // Get current shortlist
   const currentShortlist = shortlists.find(s => s.id === currentShortlistId) || shortlists[0]
@@ -214,74 +238,28 @@ export default function BrandShortlistsPage() {
   }
 
   const handleRequestQuote = (shortlist: Shortlist) => {
-    setSelectedShortlistsForCampaign([shortlist.id])
-    setCreateCampaignModalOpen(true)
-  }
-
-  const handleCreateCampaign = async (campaignData: any) => {
-    try {
-      console.log('Creating campaign from shortlists:', campaignData)
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:221',message:'Starting campaign creation',data:{campaignName:campaignData.name,hasBrand:!!campaignData.brand,hasDescription:!!campaignData.description,selectedShortlists:campaignData.selectedShortlists?.length||0,selectedInfluencers:campaignData.selectedInfluencers?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
-      // #endregion
-      
-      // In a real app, this would make an API call to create the campaign
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(campaignData)
-      })
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:234',message:'Campaign API response received',data:{status:response.status,ok:response.ok,statusText:response.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
-      // #endregion
-      
-      if (response.ok) {
-        const result = await response.json()
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:239',message:'Campaign created successfully',data:{success:result.success,campaignId:result.campaign?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
-        // #endregion
-        
-        toast({
-          title: 'Success',
-          description: `Campaign "${campaignData.name}" created successfully!`,
-          variant: 'default'
-        })
-        setCreateCampaignModalOpen(false)
-        setSelectedShortlistsForCampaign([])
-      } else {
-        // Get error details from response
-        let errorMessage = 'Failed to create campaign'
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorData.message || errorMessage
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:252',message:'Campaign creation failed',data:{status:response.status,error:errorMessage,errorData:errorData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
-          // #endregion
-        } catch (parseError) {
-          const errorText = await response.text()
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:257',message:'Failed to parse error response',data:{status:response.status,errorText:errorText.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
-          // #endregion
-          errorMessage = `Failed to create campaign (${response.status} ${response.statusText})`
-        }
-        throw new Error(errorMessage)
-      }
-    } catch (error) {
-      console.error('Error creating campaign:', error)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brand/shortlists/page.tsx:265',message:'Campaign creation error caught',data:{error:error instanceof Error ? error.message : String(error),stack:error instanceof Error ? error.stack : undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_CREATE'})}).catch(()=>{});
-      // #endregion
-      
+    // Check if quotation already exists
+    const quotationStatus = quotationStatuses[shortlist.id]
+    if (quotationStatus?.exists) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create campaign. Please try again.',
+        title: 'Quotation Already Requested',
+        description: `A quotation has already been requested for "${shortlist.name}" (Status: ${quotationStatus.status?.replace('_', ' ')}). Check your Quotations page.`,
+        variant: 'default'
+      })
+      return
+    }
+    
+    if (shortlist.influencers.length === 0) {
+      toast({
+        title: 'No Influencers',
+        description: 'Add influencers to this shortlist before requesting a quote.',
         variant: 'destructive'
       })
+      return
     }
+    
+    setActiveShortlistForQuote(shortlist)
+    setRequestQuoteModalOpen(true)
   }
 
   return (
@@ -289,7 +267,8 @@ export default function BrandShortlistsPage() {
       <div className="min-h-screen bg-gray-50">
         <ModernBrandHeader />
         
-        <div className="px-4 lg:px-8 py-8">
+        <div className="p-4 lg:p-6">
+          <div className="py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -298,29 +277,8 @@ export default function BrandShortlistsPage() {
                 <p className="text-gray-600">
                   {shortlists.length} shortlist{shortlists.length !== 1 ? 's' : ''} with {shortlists.reduce((total, s) => total + s.influencers.length, 0)} total influencers
                 </p>
-                {hasLocalStorageShortlists && (
-                  <div className="mt-2 flex items-center gap-2 text-sm">
-                    <div className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">
-                      ⚠️ Using browser cache - data not synced
-                    </div>
-                    <button
-                      onClick={handleClearLocalStorage}
-                      className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-                    >
-                      Switch to Database
-                    </button>
-                  </div>
-                )}
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setRequestQuoteModalOpen(true)}
-                  disabled={shortlists.length === 0 || shortlists.reduce((total, s) => total + s.influencers.length, 0) === 0}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send size={16} />
-                  Request Quote
-                </button>
                 <button
                   onClick={() => setCreateModalOpen(true)}
                   className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
@@ -376,11 +334,20 @@ export default function BrandShortlistsPage() {
                           </button>
                           <button
                             onClick={() => handleRequestQuote(shortlist)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                            disabled={shortlist.influencers.length === 0}
+                            className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${
+                              quotationStatuses[shortlist.id]?.exists || shortlist.influencers.length === 0
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                            disabled={quotationStatuses[shortlist.id]?.exists || shortlist.influencers.length === 0}
+                            title={quotationStatuses[shortlist.id]?.exists 
+                              ? `Quotation already ${quotationStatuses[shortlist.id]?.status === 'SENT' ? 'sent' : 'requested'}`
+                              : ''}
                           >
                             <Send size={14} />
-                            Request Quote
+                            {quotationStatuses[shortlist.id]?.exists 
+                              ? `Quote ${quotationStatuses[shortlist.id]?.status === 'SENT' ? 'Sent' : 'Requested'}`
+                              : 'Request Quote'}
                           </button>
                           <hr className="my-1" />
                           <button
@@ -424,7 +391,15 @@ export default function BrandShortlistsPage() {
                     {shortlist.influencers.length > 0 && (
                       <button
                         onClick={() => handleRequestQuote(shortlist)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                        className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                          quotationStatuses[shortlist.id]?.exists
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        disabled={quotationStatuses[shortlist.id]?.exists}
+                        title={quotationStatuses[shortlist.id]?.exists 
+                          ? `Quotation already ${quotationStatuses[shortlist.id]?.status === 'SENT' ? 'sent' : 'requested'}`
+                          : ''}
                       >
                         <Send size={16} />
                       </button>
@@ -546,6 +521,7 @@ export default function BrandShortlistsPage() {
             </div>
           )}
         </div>
+        </div>
 
         {/* Modals */}
         <CreateShortlistModal
@@ -633,22 +609,42 @@ export default function BrandShortlistsPage() {
           </div>
         )}
 
-        {/* Create Campaign Modal */}
-        <CreateCampaignFromShortlistsModal
-          isOpen={createCampaignModalOpen}
-          onClose={() => {
-            setCreateCampaignModalOpen(false)
-            setSelectedShortlistsForCampaign([])
-          }}
-          onSave={handleCreateCampaign}
-          preSelectedShortlists={selectedShortlistsForCampaign}
-        />
-
         {/* Request Quote Modal */}
         <RequestQuoteModal
           isOpen={requestQuoteModalOpen}
-          onClose={() => setRequestQuoteModalOpen(false)}
-          selectedInfluencers={shortlists.flatMap(s => s.influencers)}
+          onClose={() => {
+            setRequestQuoteModalOpen(false)
+            setActiveShortlistForQuote(null)
+          }}
+          selectedInfluencers={activeShortlistForQuote?.influencers || []}
+          shortlistId={activeShortlistForQuote?.id}
+          onSuccess={() => {
+            setRequestQuoteModalOpen(false)
+            setActiveShortlistForQuote(null)
+            // Refresh quotation statuses after successful submission
+            const checkStatuses = async () => {
+              for (const shortlist of shortlists) {
+                try {
+                  const response = await fetch(`/api/brand/quotations/check-shortlist?shortlistId=${shortlist.id}`)
+                  if (response.ok) {
+                    const result = await response.json()
+                    if (result.success) {
+                      setQuotationStatuses(prev => ({
+                        ...prev,
+                        [shortlist.id]: {
+                          exists: result.exists,
+                          status: result.quotation?.status
+                        }
+                      }))
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error refreshing quotation status for ${shortlist.id}:`, error)
+                }
+              }
+            }
+            checkStatuses()
+          }}
         />
       </div>
     </BrandProtectedRoute>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getAllCampaigns, createCampaign, addInfluencerToCampaign } from '@/lib/db/queries/campaigns'
+import { createQuotationRequest } from '@/lib/db/queries/quotations'
+import { getBrandIdFromUserId } from '@/lib/db/queries/brand-campaigns'
 import { cache } from '@/lib/cache/redis'
 import { cacheKeys } from '@/lib/cache/cache-keys'
 import { TTL } from '@/lib/cache/cache-middleware'
@@ -86,10 +88,17 @@ export async function POST(request: NextRequest) {
       selectedInfluencers: data.selectedInfluencers?.length || 0
     })
 
-    // Get user's database ID and details
+    // Get user's database ID and details (with profile data)
     const { query } = await import('@/lib/db/connection')
-    const userResult = await query<{ id: string; email: string; first_name: string; last_name: string }>(
-      'SELECT id, email, first_name, last_name FROM users WHERE clerk_id = $1',
+    const userResult = await query<{ id: string; email: string; first_name: string | null; last_name: string | null }>(
+      `SELECT 
+        u.id, 
+        u.email, 
+        up.first_name, 
+        up.last_name 
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE u.clerk_id = $1`,
       [userId]
     )
 
@@ -151,7 +160,13 @@ export async function POST(request: NextRequest) {
       createdBy: {
         id: user.id,
         email: user.email || 'unknown@email.com',
-        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User'
+        name: (() => {
+          const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim()
+          if (fullName) return fullName
+          // Fallback to email prefix if no name available
+          if (user.email) return user.email.split('@')[0]
+          return 'Unknown User'
+        })()
       }
     } as any
 
@@ -188,22 +203,83 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // If campaign is created from shortlists, also create a quotation for tracking
+    if (data.createdFromShortlists && data.selectedInfluencers && data.selectedInfluencers.length > 0) {
+      try {
+        console.log('📋 Creating quotation record for tracking...')
+        
+        // Get brand ID
+        let brandId: string
+        try {
+          brandId = await getBrandIdFromUserId(userId)
+        } catch (brandError) {
+          console.warn('⚠️ Could not get brand ID for quotation creation:', brandError)
+          // Continue without creating quotation if brand not found
+        }
+        
+        if (brandId) {
+          // Get brand name
+          const brandResult = await query<{ company_name: string }>(
+            'SELECT company_name FROM brands WHERE id = $1',
+            [brandId]
+          )
+          const brandName = brandResult[0]?.company_name || data.brand || 'Unknown Brand'
+          
+          // Create quotation with APPROVED status since campaign is created directly
+          const quotation = await createQuotationRequest({
+            brand_id: brandId,
+            brand_name: brandName,
+            campaign_name: campaign.name,
+            description: campaign.description || '',
+            influencer_count: data.selectedInfluencers.length,
+            budget_range: campaign.budget?.total ? `$${campaign.budget.total.toLocaleString()}` : undefined,
+            campaign_duration: campaign.timeline?.endDate 
+              ? `${Math.ceil((new Date(campaign.timeline.endDate).getTime() - new Date(campaign.timeline.startDate).getTime()) / (1000 * 60 * 60 * 24))} days`
+              : undefined,
+            deliverables: campaign.deliverables || [],
+            target_demographics: campaign.requirements?.demographics 
+              ? JSON.stringify(campaign.requirements.demographics)
+              : undefined,
+            selected_influencers: data.selectedInfluencers.map((inf: any) => 
+              typeof inf === 'string' ? inf : (inf.id || inf.influencerId)
+            ).filter(Boolean)
+          })
+          
+          // Update quotation status to APPROVED since it's created from a direct campaign
+          await query(
+            'UPDATE quotations SET status = $1, approved_at = NOW(), total_quote = $2 WHERE id = $3',
+            ['APPROVED', campaign.budget?.total || 0, quotation.id]
+          )
+          
+          console.log('✅ Quotation created and approved:', quotation.id)
+        }
+      } catch (quotationError) {
+        console.error('⚠️ Error creating quotation (non-blocking):', quotationError)
+        // Don't fail campaign creation if quotation creation fails
+      }
+    }
+    
     return NextResponse.json({ 
       success: true, 
       campaign 
     }, { status: 201 })
   } catch (error) {
     console.error('❌ Error creating campaign:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace'
+    
     console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace'
+      message: errorMessage,
+      stack: errorStack,
+      name: error instanceof Error ? error.name : 'Unknown'
     })
     
     // #region agent log
     const errorDetails = {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      name: error instanceof Error ? error.name : 'Unknown'
+      message: errorMessage,
+      stack: errorStack,
+      name: error instanceof Error ? error.name : 'Unknown',
+      type: error instanceof Error ? error.constructor.name : typeof error
     }
     fetch('http://127.0.0.1:7242/ingest/de3a372f-100d-40c3-826e-bd025afd226e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/campaigns/route.ts:186',message:'Campaign creation error in API',data:errorDetails,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H_CAMPAIGN_API_ERROR'})}).catch(()=>{});
     // #endregion
@@ -212,7 +288,8 @@ export async function POST(request: NextRequest) {
       { 
         success: false, 
         error: 'Failed to create campaign',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage,
+        message: errorMessage // Include both error and message for compatibility
       },
       { status: 500 }
     )

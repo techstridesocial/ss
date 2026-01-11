@@ -113,10 +113,9 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
           console.log('👤 User not found or no permission - setting empty shortlists')
           setShortlists([])
         } else {
-          // Handle server errors gracefully - could be brand not onboarded
-          console.log('Loading shortlists from localStorage due to server response:', response.status)
-          // Fallback to localStorage for backward compatibility
-          loadFromLocalStorage()
+          // Handle server errors gracefully - set empty state, never fallback to localStorage
+          console.error('Server error loading shortlists:', response.status)
+          setShortlists([])
         }
       }
     } catch (error) {
@@ -389,12 +388,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       }
     } catch (error) {
       console.error('Error updating shortlist:', error)
-      // Fallback to local update
-      setShortlists(prev => prev.map(shortlist => 
-        shortlist.id === id 
-          ? { ...shortlist, ...updates, updatedAt: new Date() }
-          : shortlist
-      ))
+      throw error
     }
   }
 
@@ -514,18 +508,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       }
     } catch (error) {
       console.error('Error duplicating shortlist:', error)
-      // Fallback to local duplication
-      const newId = `shortlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      const duplicatedShortlist: Shortlist = {
-        id: newId,
-        name: newName,
-        description: sourceShortlist.description,
-        influencers: [...sourceShortlist.influencers],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      setShortlists(prev => [...prev, duplicatedShortlist])
-      return newId
+      throw error
     }
   }
 
@@ -572,18 +555,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       }
     } catch (error) {
       console.error('Error adding influencer to shortlist:', error)
-      // Fallback to local addition
-      setShortlists(prev => prev.map(shortlist => 
-        shortlist.id === shortlistId
-          ? {
-              ...shortlist,
-              influencers: shortlist.influencers.some(inf => inf.id === influencer.id)
-                ? shortlist.influencers
-                : [...shortlist.influencers, influencer],
-              updatedAt: new Date()
-            }
-          : shortlist
-      ))
+      throw error
     }
   }
 
@@ -621,16 +593,7 @@ export function HeartedInfluencersProvider({ children }: { children: ReactNode }
       }
     } catch (error) {
       console.error('Error removing influencer from shortlist:', error)
-      // Fallback to local removal
-      setShortlists(prev => prev.map(shortlist => 
-        shortlist.id === shortlistId
-          ? {
-              ...shortlist,
-              influencers: shortlist.influencers.filter(inf => inf.id !== influencerId),
-              updatedAt: new Date()
-            }
-          : shortlist
-      ))
+      throw error
     }
   }
 

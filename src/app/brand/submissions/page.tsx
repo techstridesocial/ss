@@ -79,14 +79,7 @@ function BrandSubmissionsPageContent() {
       <div className="min-h-screen bg-gray-50">
         <ModernBrandHeader />
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Submission Lists</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Review influencer lists submitted by Stride Social staff
-            </p>
-          </div>
+        <div className="px-4 lg:px-8 py-8">
 
           {/* Filters */}
           <div className="mb-6 flex gap-2">
@@ -140,6 +133,11 @@ function BrandSubmissionsPageContent() {
                         </span>
                       </div>
                       
+                      {/* Submission Description */}
+                      {list.notes && (
+                        <p className="text-sm text-gray-700 mb-3">{list.notes}</p>
+                      )}
+                      
                       <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                         <div className="flex items-center gap-1">
                           <FileText className="w-4 h-4" />
@@ -158,10 +156,6 @@ function BrandSubmissionsPageContent() {
                           </div>
                         )}
                       </div>
-
-                      {list.notes && (
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{list.notes}</p>
-                      )}
 
                       <div className="text-xs text-gray-500">
                         Submitted {new Date(list.submittedAt || list.createdAt).toLocaleDateString()}

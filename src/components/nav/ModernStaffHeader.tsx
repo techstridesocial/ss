@@ -71,6 +71,7 @@ export default function ModernStaffHeader() {
     const baseItems = [
       { href: '/staff/roster', label: 'Roster' },
       { href: '/staff/brands', label: 'Brands' },
+      { href: '/staff/quotations', label: 'Quotations' },
       { href: '/staff/campaigns', label: 'Campaigns' },
       { href: '/staff/submissions', label: 'Submissions' },
       { href: '/staff/discovery', label: 'Discovery' },
@@ -159,6 +160,11 @@ export default function ModernStaffHeader() {
       return {
         title: 'Influencer Roster',
         subtitle: 'Manage and organize your influencer network with detailed analytics and performance metrics.'
+      }
+    } else if (pathname === '/staff/quotations' || pathname.startsWith('/staff/quotations/')) {
+      return {
+        title: 'Quotation Requests',
+        subtitle: 'Review and respond to brand quotation requests'
       }
     } else if (pathname === '/staff/campaigns' || pathname.startsWith('/staff/campaigns/')) {
       return {
