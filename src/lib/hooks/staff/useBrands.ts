@@ -136,54 +136,58 @@ interface ApiQuotation {
 
 export function useQuotations() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const loadQuotations = async () => {
-      try {
-        const response = await fetch('/api/quotations')
-        if (response.ok) {
-          const result = await response.json()
-          if (result.success && result.quotations) {
-            // Transform API response to match StaffQuotation interface
-            const transformedQuotations: Quotation[] = result.quotations.map((q: ApiQuotation) => ({
-              id: q.id,
-              brand_id: q.brand_id || '',
-              brand_name: q.brandName || q.brand_name || 'Unknown Brand',
-              campaign_name: q.campaignDescription || q.campaign_name || q.description || 'Untitled Campaign',
-              description: q.campaignDescription || q.description || '',
-              influencer_count: q.influencers?.length || q.influencer_count || 0,
-              status: (q.status?.toLowerCase() || 'pending_review') as 'pending_review' | 'sent' | 'approved' | 'rejected',
-              requested_at: q.submittedAt || q.requested_at || q.createdAt || q.created_at || new Date().toISOString(),
-              quoted_at: q.quoted_at,
-              approved_at: q.approved_at,
-              total_quote: q.total_quote || (q.budget ? `$${q.budget.toLocaleString()}` : undefined),
-              budget_range: q.budget_range || (q.budget ? `$${q.budget.toLocaleString()}` : 'TBD'),
-              campaign_duration: q.campaign_duration || q.timeline || '',
-              deliverables: q.deliverables || [],
-              target_demographics: q.target_demographics || q.targetAudience || '',
-              notes: q.notes,
-              influencers: Array.isArray(q.influencers) ? q.influencers.map((inf: unknown) => {
-                const influencer = inf as Record<string, unknown>
-                return {
-                  name: String(influencer.name || influencer.influencerName || 'Unknown'),
-                  platform: String(influencer.platform || 'instagram'),
-                  followers: String(influencer.followers || '0'),
-                  engagement: String(influencer.engagement || influencer.engagementRate || '0%'),
-                  contact_status: (influencer.contact_status as 'pending' | 'confirmed' | 'declined') || 'pending'
-                }
-              }) : []
-            }))
-            setQuotations(transformedQuotations)
-          }
+  const loadQuotations = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/quotations')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.quotations) {
+          // Transform API response to match StaffQuotation interface
+          const transformedQuotations: Quotation[] = result.quotations.map((q: ApiQuotation) => ({
+            id: q.id,
+            brand_id: q.brand_id || '',
+            brand_name: q.brandName || q.brand_name || 'Unknown Brand',
+            campaign_name: q.campaignDescription || q.campaign_name || q.description || 'Untitled Campaign',
+            description: q.campaignDescription || q.description || '',
+            influencer_count: q.influencers?.length || q.influencer_count || 0,
+            status: (q.status?.toLowerCase() || 'pending_review') as 'pending_review' | 'sent' | 'approved' | 'rejected',
+            requested_at: q.submittedAt || q.requested_at || q.createdAt || q.created_at || new Date().toISOString(),
+            quoted_at: q.quoted_at,
+            approved_at: q.approved_at,
+            total_quote: q.total_quote || (q.budget ? `$${q.budget.toLocaleString()}` : undefined),
+            budget_range: q.budget_range || (q.budget ? `$${q.budget.toLocaleString()}` : 'TBD'),
+            campaign_duration: q.campaign_duration || q.timeline || '',
+            deliverables: q.deliverables || [],
+            target_demographics: q.target_demographics || q.targetAudience || '',
+            notes: q.notes,
+            influencers: Array.isArray(q.influencers) ? q.influencers.map((inf: unknown) => {
+              const influencer = inf as Record<string, unknown>
+              return {
+                name: String(influencer.name || influencer.influencerName || 'Unknown'),
+                platform: String(influencer.platform || 'instagram'),
+                followers: String(influencer.followers || '0'),
+                engagement: String(influencer.engagement || influencer.engagementRate || '0%'),
+                contact_status: (influencer.contact_status as 'pending' | 'confirmed' | 'declined') || 'pending'
+              }
+            }) : []
+          }))
+          setQuotations(transformedQuotations)
         }
-      } catch (error) {
-        console.error('Error loading quotations:', error)
       }
+    } catch (error) {
+      console.error('Error loading quotations:', error)
+    } finally {
+      setIsLoading(false)
     }
-
-    loadQuotations()
   }, [])
 
-  return quotations
+  useEffect(() => {
+    loadQuotations()
+  }, [loadQuotations])
+
+  return { quotations, isLoading, reloadQuotations: loadQuotations }
 }
 

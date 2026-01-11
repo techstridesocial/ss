@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Search, Filter, ChevronDown } from 'lucide-react'
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Search, ChevronDown } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 // Types
@@ -36,7 +36,7 @@ function QuotationsPageClient() {
   const { toast } = useToast()
   
   // Data hooks
-  const quotations = useQuotations()
+  const { quotations, isLoading: quotationsLoading, reloadQuotations } = useQuotations()
   const [isLoading, setIsLoading] = useState(false)
   
   // UI state
@@ -53,12 +53,6 @@ function QuotationsPageClient() {
   const [showCreateCampaignModal, setShowCreateCampaignModal] = useState(false)
   const [campaignQuotation, setCampaignQuotation] = useState<Quotation | null>(null)
 
-  // Reload quotations
-  const reloadQuotations = useCallback(() => {
-    setIsLoading(true)
-    // Trigger a re-fetch by reloading the page (since useQuotations doesn't expose reload)
-    window.location.reload()
-  }, [])
 
   // Filter and sort quotations
   const filteredQuotations = useMemo(() => {
@@ -129,22 +123,117 @@ function QuotationsPageClient() {
     }
   }
 
-  const handleQuotationApproved = () => {
-    toast({
-      title: 'Quotation Approved',
-      description: 'The quotation has been approved and the brand has been notified.',
-    })
-    setQuotationDetailPanelOpen(false)
-    reloadQuotations()
+  // Send quote to brand - updates status to SENT
+  const handleSendQuote = async (pricing: string, notes: string) => {
+    if (!selectedQuotation) return
+    
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/quotations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quotationId: selectedQuotation.id,
+          status: 'SENT',
+          final_price: parseFloat(pricing),
+          notes: notes
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to send quote')
+      }
+      
+      toast({
+        title: 'Quote Sent Successfully',
+        description: `Quote for $${parseFloat(pricing).toLocaleString()} has been sent to the brand.`,
+      })
+      setQuotationDetailPanelOpen(false)
+      setSelectedQuotation(null)
+      reloadQuotations()
+    } catch (error) {
+      console.error('Error sending quote:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to send quote. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleQuotationRejected = () => {
-    toast({
-      title: 'Quotation Rejected',
-      description: 'The quotation has been rejected.',
-    })
-    setQuotationDetailPanelOpen(false)
-    reloadQuotations()
+  // Approve quotation - updates status to APPROVED
+  const handleApproveQuotation = async (quotationId: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/quotations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quotationId,
+          status: 'APPROVED'
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to approve quotation')
+      }
+      
+      toast({
+        title: 'Quotation Approved',
+        description: 'The quotation has been approved and the brand has been notified.',
+      })
+      setQuotationDetailPanelOpen(false)
+      setSelectedQuotation(null)
+      reloadQuotations()
+    } catch (error) {
+      console.error('Error approving quotation:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to approve quotation. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Reject quotation - updates status to REJECTED
+  const handleRejectQuotation = async (quotationId: string, reason?: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/quotations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quotationId,
+          status: 'REJECTED',
+          notes: reason || 'Quotation rejected by staff'
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to reject quotation')
+      }
+      
+      toast({
+        title: 'Quotation Rejected',
+        description: 'The quotation has been rejected.',
+      })
+      setQuotationDetailPanelOpen(false)
+      setSelectedQuotation(null)
+      reloadQuotations()
+    } catch (error) {
+      console.error('Error rejecting quotation:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to reject quotation. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleCreateCampaign = (quotation: Quotation) => {
@@ -295,11 +384,11 @@ function QuotationsPageClient() {
               {/* Refresh Button */}
               <button
                 onClick={reloadQuotations}
-                disabled={isLoading}
+                disabled={isLoading || quotationsLoading}
                 className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh quotations"
               >
-                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 ${(isLoading || quotationsLoading) ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -351,11 +440,7 @@ function QuotationsPageClient() {
             setQuotationDetailPanelOpen(false)
             setSelectedQuotation(null)
           }}
-          onSendQuoteAction={(pricing: string, notes: string) => {
-            // Handle sending quote - this updates the quotation status
-            console.log('Sending quote:', { pricing, notes })
-            handleQuotationApproved()
-          }}
+          onSendQuoteAction={handleSendQuote}
           onCreateCampaign={() => handleCreateCampaign(selectedQuotation)}
         />
       )}
