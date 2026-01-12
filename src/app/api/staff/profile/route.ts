@@ -48,11 +48,29 @@ export async function GET() {
     // Get full user profile
     const userWithProfile = await getUserById(dbUser.id)
     
+    // If profile doesn't exist, return user data with empty profile
+    // The profile will be created when user saves their settings
     if (!userWithProfile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' },
-        { status: 404 }
-      )
+      const clerkUser = await currentUser()
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: dbUser.id,
+          email: clerkUser?.emailAddresses[0]?.emailAddress || dbUser.email,
+          role: dbUser.role,
+          profile: {
+            first_name: '',
+            last_name: '',
+            phone: '',
+            avatar_url: clerkUser?.imageUrl || '',
+            bio: '',
+            location_country: '',
+            location_city: ''
+          },
+          notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES,
+          created_at: dbUser.created_at
+        }
+      })
     }
 
     // Get notification preferences (check if column exists and has data)
@@ -65,8 +83,9 @@ export async function GET() {
       if (prefResult?.notification_preferences) {
         notificationPreferences = prefResult.notification_preferences as typeof DEFAULT_NOTIFICATION_PREFERENCES
       }
-    } catch {
+    } catch (prefError) {
       // Column might not exist yet, use defaults
+      console.log('Notification preferences column not found, using defaults')
     }
 
     // Get Clerk user for email (email is managed by Clerk)
@@ -136,23 +155,57 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { profile, notification_preferences } = body
 
-    // Update profile fields
+    // Update profile fields (create if doesn't exist)
     if (profile) {
-      const result = await updateUserProfile(dbUser.id, {
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        phone: profile.phone,
-        avatar_url: profile.avatar_url,
-        bio: profile.bio,
-        location_country: profile.location_country,
-        location_city: profile.location_city
-      })
+      // First check if profile exists
+      const existingProfile = await queryOne<{ user_id: string }>(
+        `SELECT user_id FROM user_profiles WHERE user_id = $1`,
+        [dbUser.id]
+      )
 
-      if (!result.success) {
-        return NextResponse.json(
-          { success: false, error: result.error },
-          { status: 400 }
-        )
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        try {
+          await query(`
+            INSERT INTO user_profiles (
+              user_id, first_name, last_name, phone, avatar_url, bio,
+              location_country, location_city, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+          `, [
+            dbUser.id,
+            profile.first_name || null,
+            profile.last_name || null,
+            profile.phone || null,
+            profile.avatar_url || null,
+            profile.bio || null,
+            profile.location_country || null,
+            profile.location_city || null
+          ])
+        } catch (insertError) {
+          console.error('Error creating user profile:', insertError)
+          return NextResponse.json(
+            { success: false, error: 'Failed to create profile' },
+            { status: 500 }
+          )
+        }
+      } else {
+        // Update existing profile
+        const result = await updateUserProfile(dbUser.id, {
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          avatar_url: profile.avatar_url,
+          bio: profile.bio,
+          location_country: profile.location_country,
+          location_city: profile.location_city
+        })
+
+        if (!result.success) {
+          return NextResponse.json(
+            { success: false, error: result.error },
+            { status: 400 }
+          )
+        }
       }
     }
 
