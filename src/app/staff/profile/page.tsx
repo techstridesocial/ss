@@ -356,8 +356,8 @@ function StaffProfileContent() {
       <div className="min-h-screen" style={{ backgroundColor: '#EEF7FA' }}>
         <ModernStaffHeader />
         
-        <main className="px-4 lg:px-6 pb-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+        <main className="px-4 lg:px-8 pb-8">
+          <div className="space-y-6">
             {/* Personal Information */}
             <Section 
               title="Personal Information" 
