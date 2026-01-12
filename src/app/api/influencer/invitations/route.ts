@@ -43,16 +43,16 @@ export async function GET(_request: NextRequest) {
       brand_logo: string | null
       description: string | null
       budget: number | null
-      per_influencer_budget: number | null
-      deliverables: string | null
+      offered_amount: number | null
+      deliverables: string[] | null
       content_guidelines: string | null
       start_date: Date | null
       end_date: Date | null
-      content_deadline: Date | null
+      deadline: Date | null
       status: string
-      sent_at: Date
-      response_deadline: Date | null
-      message: string | null
+      invited_at: Date
+      expires_at: Date | null
+      invitation_message: string | null
     }>(`
       SELECT 
         ci.id,
@@ -62,23 +62,23 @@ export async function GET(_request: NextRequest) {
         b.logo_url as brand_logo,
         c.description,
         c.total_budget as budget,
-        c.per_influencer_budget,
-        c.deliverables,
+        ci.offered_amount,
+        ci.deliverables,
         c.content_guidelines,
         c.start_date,
         c.end_date,
-        c.content_deadline,
+        ci.deadline,
         ci.status,
-        ci.sent_at,
-        ci.response_deadline,
-        ci.message
+        ci.invited_at,
+        ci.expires_at,
+        ci.invitation_message
       FROM campaign_invitations ci
       INNER JOIN campaigns c ON ci.campaign_id = c.id
       LEFT JOIN brands b ON c.brand_id = b.id
       WHERE ci.influencer_id = $1
       ORDER BY 
-        CASE WHEN ci.status = 'sent' THEN 0 ELSE 1 END,
-        ci.sent_at DESC
+        CASE WHEN ci.status = 'INVITED' THEN 0 ELSE 1 END,
+        ci.invited_at DESC
     `, [influencer_id])
 
     // Format the invitations
@@ -89,23 +89,23 @@ export async function GET(_request: NextRequest) {
       brandName: inv.brand_name || 'Unknown Brand',
       brandLogo: inv.brand_logo,
       description: inv.description,
-      compensation: inv.per_influencer_budget || inv.budget,
-      deliverables: inv.deliverables ? safeParseJSON(inv.deliverables, []) : [],
+      compensation: inv.offered_amount || inv.budget,
+      deliverables: inv.deliverables || [],
       contentGuidelines: inv.content_guidelines,
       timeline: {
         startDate: inv.start_date,
         endDate: inv.end_date,
-        contentDeadline: inv.content_deadline
+        contentDeadline: inv.deadline
       },
       status: inv.status,
-      sentAt: inv.sent_at,
-      responseDeadline: inv.response_deadline,
-      message: inv.message
+      sentAt: inv.invited_at,
+      responseDeadline: inv.expires_at,
+      message: inv.invitation_message
     }))
 
-    // Separate pending and responded invitations
-    const pending = formattedInvitations.filter(inv => inv.status === 'sent')
-    const responded = formattedInvitations.filter(inv => inv.status !== 'sent')
+    // Separate pending and responded invitations (status is 'INVITED', 'ACCEPTED', 'DECLINED', 'EXPIRED')
+    const pending = formattedInvitations.filter(inv => inv.status === 'INVITED')
+    const responded = formattedInvitations.filter(inv => inv.status !== 'INVITED')
 
     return NextResponse.json({ 
       invitations: formattedInvitations,
@@ -114,8 +114,8 @@ export async function GET(_request: NextRequest) {
       counts: {
         total: formattedInvitations.length,
         pending: pending.length,
-        accepted: formattedInvitations.filter(inv => inv.status === 'accepted').length,
-        declined: formattedInvitations.filter(inv => inv.status === 'declined').length
+        accepted: formattedInvitations.filter(inv => inv.status === 'ACCEPTED').length,
+        declined: formattedInvitations.filter(inv => inv.status === 'DECLINED').length
       }
     })
   } catch (error) {
@@ -127,13 +127,3 @@ export async function GET(_request: NextRequest) {
   }
 }
 
-// Helper function to safely parse JSON
-function safeParseJSON(str: string | null, defaultValue: unknown[] | Record<string, unknown> = []) {
-  if (!str) return defaultValue
-  try {
-    const parsed = JSON.parse(str)
-    return parsed
-  } catch {
-    return defaultValue
-  }
-}

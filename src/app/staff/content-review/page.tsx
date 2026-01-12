@@ -27,7 +27,7 @@ import {
   Play,
   FileText
 } from 'lucide-react'
-import { useToast } from '../../../hooks/use-toast'
+import { useToast } from '../../../components/ui/use-toast'
 
 interface ContentSubmission {
   id: string
