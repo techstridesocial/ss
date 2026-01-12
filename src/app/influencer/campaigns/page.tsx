@@ -318,28 +318,73 @@ export default function InfluencerCampaigns() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50/80 to-gray-50/40 rounded-xl hover:from-gray-100/80 hover:to-gray-100/40 transition-all duration-300 border border-gray-100/50 shadow-sm"
+                        className={`p-4 rounded-xl border shadow-sm ${
+                          submission.status === 'REVISION_REQUESTED'
+                            ? 'bg-orange-50/80 border-orange-200'
+                            : submission.status === 'REJECTED'
+                            ? 'bg-red-50/80 border-red-200'
+                            : 'bg-gradient-to-r from-gray-50/80 to-gray-50/40 border-gray-100/50'
+                        }`}
                       >
-                        <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg shadow-md">
-                          <ExternalLink className="h-4 w-4 text-white" />
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg shadow-md ${
+                            submission.status === 'APPROVED'
+                              ? 'bg-gradient-to-br from-emerald-500 to-green-500'
+                              : submission.status === 'REJECTED'
+                              ? 'bg-gradient-to-br from-red-500 to-rose-500'
+                              : submission.status === 'REVISION_REQUESTED'
+                              ? 'bg-gradient-to-br from-orange-500 to-amber-500'
+                              : 'bg-gradient-to-br from-cyan-500 to-blue-500'
+                          }`}>
+                            <ExternalLink className="h-4 w-4 text-white" />
+                          </div>
+                          <a 
+                            href={submission.content_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-cyan-600 hover:text-cyan-700 font-semibold flex-1 transition-colors"
+                          >
+                            {submission.content_type} on {submission.platform}
+                          </a>
+                          <span className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
+                            submission.status === 'APPROVED' 
+                              ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30' 
+                              : submission.status === 'REJECTED' 
+                              ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30'
+                              : submission.status === 'REVISION_REQUESTED'
+                              ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30'
+                              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                          }`}>
+                            {submission.status === 'REVISION_REQUESTED' ? 'REVISION NEEDED' : submission.status}
+                          </span>
                         </div>
-                        <a 
-                          href={submission.content_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-cyan-600 hover:text-cyan-700 font-semibold flex-1 transition-colors"
-                        >
-                          {submission.content_type} on {submission.platform}
-                        </a>
-                        <span className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
-                          submission.status === 'APPROVED' 
-                            ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30' 
-                            : submission.status === 'REJECTED' 
-                            ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30' 
-                            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
-                        }`}>
-                          {submission.status}
-                        </span>
+                        
+                        {/* Staff Feedback */}
+                        {(submission.status === 'REJECTED' || submission.status === 'REVISION_REQUESTED') && submission.review_notes && (
+                          <div className={`mt-3 p-3 rounded-lg ${
+                            submission.status === 'REJECTED'
+                              ? 'bg-red-100/80 border border-red-200'
+                              : 'bg-orange-100/80 border border-orange-200'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
+                                submission.status === 'REJECTED' ? 'text-red-600' : 'text-orange-600'
+                              }`} />
+                              <div>
+                                <p className={`text-xs font-semibold mb-1 ${
+                                  submission.status === 'REJECTED' ? 'text-red-700' : 'text-orange-700'
+                                }`}>
+                                  {submission.status === 'REJECTED' ? 'Rejection Reason' : 'Revision Requested'}
+                                </p>
+                                <p className={`text-sm ${
+                                  submission.status === 'REJECTED' ? 'text-red-600' : 'text-orange-600'
+                                }`}>
+                                  {submission.review_notes}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </motion.div>
                     ))}
                   </div>

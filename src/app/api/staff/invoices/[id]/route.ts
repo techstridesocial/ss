@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { query, queryOne } from '@/lib/db/connection'
+import { 
+  getInvoiceById, 
+  updateInvoiceStatus, 
+  approveInvoice, 
+  rejectInvoice,
+  markInvoiceAsPaid,
+  delayInvoice,
+  InvoiceStatus 
+} from '@/lib/db/queries/invoices'
+import { query } from '@/lib/db/connection'
+import { sanitizeString } from '@/lib/security/sanitize'
 
-// GET - Get specific invoice details
+// GET - Get single invoice
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -16,71 +26,21 @@ export async function GET(
 
     const userRole = await getCurrentUserRole()
     if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return NextResponse.json(
-        { error: 'Only staff members can view invoice details' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Await params in Next.js 15
     const { id } = await params
-    const invoiceId = id
-
-    // Get invoice with all related data
-    const invoice = await queryOne(`
-      SELECT 
-        ii.*,
-        i.display_name as influencer_name,
-        up.first_name,
-        up.last_name,
-        c.name as campaign_name,
-        c.status as campaign_status,
-        cb.email as created_by_email,
-        vb.email as verified_by_email
-      FROM influencer_invoices ii
-      LEFT JOIN influencers i ON ii.influencer_id = i.id
-      LEFT JOIN users u ON i.user_id = u.id
-      LEFT JOIN user_profiles up ON u.id = up.user_id
-      LEFT JOIN campaigns c ON ii.campaign_id = c.id
-      LEFT JOIN users cb ON ii.created_by = cb.id
-      LEFT JOIN users vb ON ii.verified_by = vb.id
-      WHERE ii.id = $1
-    `, [invoiceId])
+    const invoice = await getInvoiceById(id)
 
     if (!invoice) {
-      return NextResponse.json(
-        { error: 'Invoice not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
-    // Get invoice line items
-    const lineItems = await query(`
-      SELECT * FROM invoice_line_items 
-      WHERE invoice_id = $1 
-      ORDER BY created_at ASC
-    `, [invoiceId])
-
-    // Get status history
-    const statusHistory = await query(`
-      SELECT 
-        ish.*,
-        u.email as changed_by_email
-      FROM invoice_status_history ish
-      LEFT JOIN users u ON ish.changed_by = u.id
-      WHERE ish.invoice_id = $1
-      ORDER BY ish.created_at DESC
-    `, [invoiceId])
-
-    return NextResponse.json({ 
-      invoice,
-      lineItems,
-      statusHistory 
-    })
+    return NextResponse.json({ success: true, invoice })
   } catch (error) {
-    console.error('Error fetching invoice details:', error)
+    console.error('Error fetching invoice:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch invoice details' },
+      { error: 'Failed to fetch invoice' },
       { status: 500 }
     )
   }
@@ -99,69 +59,79 @@ export async function PUT(
 
     const userRole = await getCurrentUserRole()
     if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return NextResponse.json(
-        { error: 'Only staff members can update invoice status' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { id: invoiceId } = await params
-    const { status, staff_notes } = await request.json()
+    const { id } = await params
+    const body = await request.json()
+    const { action, notes } = body
 
-    if (!status) {
-      return NextResponse.json(
-        { error: 'Status is required' },
-        { status: 400 }
-      )
-    }
-
-    if (!['SENT', 'VERIFIED', 'DELAYED', 'PAID', 'VOIDED'].includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      )
-    }
-
-    // Get user ID from Clerk ID
-    const userResult = await query<{ id: string }>(
+    // Get staff user ID for audit
+    const staffResult = await query<{ id: string }>(
       'SELECT id FROM users WHERE clerk_id = $1',
       [userId]
     )
+    const staffId = staffResult[0]?.id
 
-    if (userResult.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    // Sanitize notes
+    const sanitizedNotes = notes ? sanitizeString(notes) : undefined
+
+    let invoice
+    switch (action) {
+      case 'approve':
+        invoice = await approveInvoice(id, staffId, sanitizedNotes)
+        break
+      case 'reject':
+        if (!sanitizedNotes) {
+          return NextResponse.json(
+            { error: 'Rejection reason is required' },
+            { status: 400 }
+          )
+        }
+        invoice = await rejectInvoice(id, staffId, sanitizedNotes)
+        break
+      case 'pay':
+        invoice = await markInvoiceAsPaid(id, staffId, sanitizedNotes)
+        break
+      case 'delay':
+        if (!sanitizedNotes) {
+          return NextResponse.json(
+            { error: 'Delay reason is required' },
+            { status: 400 }
+          )
+        }
+        invoice = await delayInvoice(id, staffId, sanitizedNotes)
+        break
+      case 'update':
+        const status = body.status as InvoiceStatus
+        if (!status) {
+          return NextResponse.json(
+            { error: 'Status is required for update action' },
+            { status: 400 }
+          )
+        }
+        invoice = await updateInvoiceStatus(id, status, staffId, sanitizedNotes)
+        break
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        )
     }
 
-    const user_id = userResult[0]?.id
-
-    // Update invoice status
-    const updateResult = await queryOne(`
-      UPDATE influencer_invoices 
-      SET 
-        status = $2,
-        staff_notes = $3,
-        verified_by = $4,
-        verified_at = CASE WHEN $2 = 'VERIFIED' THEN NOW() ELSE verified_at END,
-        updated_at = NOW()
-      WHERE id = $1
-      RETURNING *
-    `, [invoiceId, status, staff_notes, user_id])
-
-    if (!updateResult) {
-      return NextResponse.json(
-        { error: 'Invoice not found' },
-        { status: 404 }
-      )
+    if (!invoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
     return NextResponse.json({ 
-      message: 'Invoice status updated successfully',
-      invoice: updateResult 
+      success: true, 
+      invoice,
+      message: `Invoice ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : action === 'pay' ? 'marked as paid' : 'updated'} successfully`
     })
   } catch (error) {
-    console.error('Error updating invoice status:', error)
+    console.error('Error updating invoice:', error)
     return NextResponse.json(
-      { error: 'Failed to update invoice status' },
+      { error: 'Failed to update invoice' },
       { status: 500 }
     )
   }

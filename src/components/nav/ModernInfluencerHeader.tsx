@@ -50,6 +50,7 @@ export default function ModernInfluencerHeader() {
 
   // Navigation items for influencers
   const navItems = [
+    { href: '/influencer/invitations', label: 'Invitations' },
     { href: '/influencer/campaigns', label: 'Campaigns' },
     { href: '/influencer/stats', label: 'Stats' },
     { href: '/influencer/payments', label: 'Payments' }
@@ -106,10 +107,15 @@ export default function ModernInfluencerHeader() {
     const greeting = getGreeting()
     
     // Check current route and return appropriate header content
-    if (pathname === '/influencer/campaigns' || pathname.startsWith('/influencer/campaigns/')) {
+    if (pathname === '/influencer/invitations' || pathname.startsWith('/influencer/invitations/')) {
+      return {
+        title: 'Campaign Invitations',
+        subtitle: 'Review and respond to brand collaboration opportunities'
+      }
+    } else if (pathname === '/influencer/campaigns' || pathname.startsWith('/influencer/campaigns/')) {
       return {
         title: 'My Campaigns',
-        subtitle: 'View and manage your campaign invitations and active collaborations'
+        subtitle: 'View and manage your active campaign collaborations'
       }
     } else if (pathname === '/influencer/stats' || pathname.startsWith('/influencer/stats/')) {
       return {

@@ -74,6 +74,8 @@ export default function ModernStaffHeader() {
       { href: '/staff/quotations', label: 'Quotations' },
       { href: '/staff/campaigns', label: 'Campaigns' },
       { href: '/staff/submissions', label: 'Submissions' },
+      { href: '/staff/invoices', label: 'Invoices' },
+      { href: '/staff/content-review', label: 'Content' },
       { href: '/staff/discovery', label: 'Discovery' },
       { href: '/staff/finances', label: 'Finances' }
     ]
@@ -176,10 +178,20 @@ export default function ModernStaffHeader() {
         title: 'Influencer Discovery',
         subtitle: 'Discover, analyze, and import new influencers'
       }
+    } else if (pathname === '/staff/invoices' || pathname.startsWith('/staff/invoices/')) {
+      return {
+        title: 'Invoice Management',
+        subtitle: 'Review and process influencer invoices'
+      }
     } else if (pathname === '/staff/finances' || pathname.startsWith('/staff/finances/')) {
       return {
         title: 'Finances Management',
         subtitle: 'Manage influencer invoices and payment processing'
+      }
+    } else if (pathname === '/staff/content-review' || pathname.startsWith('/staff/content-review/')) {
+      return {
+        title: 'Content Review',
+        subtitle: 'Review and approve influencer content submissions'
       }
     } else if (pathname === '/staff/profile' || pathname.startsWith('/staff/profile/')) {
       return {

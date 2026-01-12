@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
-import { query, queryOne } from '@/lib/db/connection'
+import { getAllInvoices, getInvoiceStats, InvoiceFilters } from '@/lib/db/queries/invoices'
 
-// GET - Get all invoices for staff management
+// GET - Get all invoices with filters
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -13,78 +13,48 @@ export async function GET(request: NextRequest) {
 
     const userRole = await getCurrentUserRole()
     if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return NextResponse.json(
-        { error: 'Only staff members can view invoices' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
+    // Parse filters from query params
+    const searchParams = request.nextUrl.searchParams
+    const filters: InvoiceFilters = {}
+
     const status = searchParams.get('status')
-    const influencerId = searchParams.get('influencer_id')
-    const campaignId = searchParams.get('campaign_id')
-
-    // Build query with filters
-    let whereClause = 'WHERE 1=1'
-    const queryParams: any[] = []
-    let paramCount = 0
-
     if (status) {
-      paramCount++
-      whereClause += ` AND ii.status = $${paramCount}`
-      queryParams.push(status)
+      if (status.includes(',')) {
+        filters.status = status.split(',') as InvoiceFilters['status']
+      } else {
+        filters.status = status as InvoiceFilters['status']
+      }
     }
 
-    if (influencerId) {
-      paramCount++
-      whereClause += ` AND ii.influencer_id = $${paramCount}`
-      queryParams.push(influencerId)
-    }
+    const influencerId = searchParams.get('influencerId')
+    if (influencerId) filters.influencerId = influencerId
 
-    if (campaignId) {
-      paramCount++
-      whereClause += ` AND ii.campaign_id = $${paramCount}`
-      queryParams.push(campaignId)
-    }
+    const campaignId = searchParams.get('campaignId')
+    if (campaignId) filters.campaignId = campaignId
 
-    // Get all invoices with related data
-    const invoices = await query(`
-      SELECT 
-        ii.*,
-        i.display_name as influencer_name,
-        up.first_name,
-        up.last_name,
-        c.name as campaign_name,
-        c.status as campaign_status,
-        cb.email as created_by_email,
-        vb.email as verified_by_email
-      FROM influencer_invoices ii
-      LEFT JOIN influencers i ON ii.influencer_id = i.id
-      LEFT JOIN users u ON i.user_id = u.id
-      LEFT JOIN user_profiles up ON u.id = up.user_id
-      LEFT JOIN campaigns c ON ii.campaign_id = c.id
-      LEFT JOIN users cb ON ii.created_by = cb.id
-      LEFT JOIN users vb ON ii.verified_by = vb.id
-      ${whereClause}
-      ORDER BY ii.created_at DESC
-    `, queryParams)
+    const search = searchParams.get('search')
+    if (search) filters.search = search
 
-    // Get summary statistics
-    const summary = await queryOne(`
-      SELECT 
-        COUNT(*) as total_invoices,
-        COUNT(CASE WHEN status = 'SENT' THEN 1 END) as sent_count,
-        COUNT(CASE WHEN status = 'VERIFIED' THEN 1 END) as verified_count,
-        COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid_count,
-        COUNT(CASE WHEN status = 'DELAYED' THEN 1 END) as delayed_count,
-        SUM(CASE WHEN status = 'PAID' THEN total_amount ELSE 0 END) as total_paid,
-        SUM(CASE WHEN status IN ('SENT', 'VERIFIED', 'DELAYED') THEN total_amount ELSE 0 END) as pending_amount
-      FROM influencer_invoices
-    `)
+    const dateFrom = searchParams.get('dateFrom')
+    if (dateFrom) filters.dateFrom = dateFrom
 
-    return NextResponse.json({ 
+    const dateTo = searchParams.get('dateTo')
+    if (dateTo) filters.dateTo = dateTo
+
+    // Get invoices and stats
+    const [invoices, stats] = await Promise.all([
+      getAllInvoices(filters),
+      getInvoiceStats()
+    ])
+
+    return NextResponse.json({
+      success: true,
       invoices,
-      summary 
+      stats,
+      total: invoices.length
     })
   } catch (error) {
     console.error('Error fetching invoices:', error)

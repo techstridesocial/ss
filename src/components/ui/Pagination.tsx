@@ -32,18 +32,19 @@ export function Pagination({
   const endIndex = Math.min(startIndex + pageSize, totalItems)
 
   return (
-    <div className="flex items-center justify-between mt-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-4">
-      <div className="flex items-center space-x-4">
-        <span className="text-sm font-medium text-gray-700">
-          Showing {startIndex + 1} to {endIndex} of {totalItems} {itemLabel}
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 mt-6">
+      {/* Info section */}
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+        <span className="text-sm font-medium text-gray-700 text-center sm:text-left">
+          {startIndex + 1}-{endIndex} of {totalItems} {itemLabel}
         </span>
         
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600">Rows per page:</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600 hidden sm:inline">Per page:</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="px-3 py-1 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 transition-all duration-300"
+            className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black/10 focus:border-black/30 transition-all duration-300"
           >
             {pageSizeOptions.map(size => (
               <option key={size} value={size}>{size}</option>
@@ -52,16 +53,19 @@ export function Pagination({
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      {/* Navigation section */}
+      <div className="flex items-center gap-1 sm:gap-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+          className="px-2 sm:px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
         >
-          Previous
+          <span className="hidden sm:inline">Previous</span>
+          <span className="sm:hidden">‹</span>
         </button>
         
-        <div className="flex space-x-1">
+        {/* Page numbers - show fewer on mobile */}
+        <div className="flex gap-1">
           {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
             let pageNum
             if (totalPages <= 5) {
@@ -74,11 +78,16 @@ export function Pagination({
               pageNum = currentPage - 2 + i
             }
             
+            // On mobile, only show current, prev, next
+            const showOnMobile = pageNum === currentPage || pageNum === currentPage - 1 || pageNum === currentPage + 1
+            
             return (
               <button
                 key={pageNum}
                 onClick={() => onPageChange(pageNum)}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                className={`px-2.5 sm:px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
+                  !showOnMobile ? 'hidden sm:block' : ''
+                } ${
                   currentPage === pageNum
                     ? 'bg-black text-white'
                     : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
@@ -93,9 +102,10 @@ export function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+          className="px-2 sm:px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
         >
-          Next
+          <span className="hidden sm:inline">Next</span>
+          <span className="sm:hidden">›</span>
         </button>
       </div>
     </div>
