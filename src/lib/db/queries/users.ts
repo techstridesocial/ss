@@ -161,7 +161,6 @@ export async function getUserById(userId: string): Promise<UserWithProfile | nul
       up.location_country,
       up.location_city,
       up.bio,
-      up.website_url,
       up.is_onboarded,
       up.created_at as profile_created_at,
       up.updated_at as profile_updated_at
@@ -180,7 +179,7 @@ export async function getUserById(userId: string): Promise<UserWithProfile | nul
     role: row.role,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    profile: row.first_name || row.last_name ? {
+    profile: row.first_name || row.last_name || row.avatar_url || row.phone || row.bio ? {
       user_id: row.id,
       first_name: row.first_name,
       last_name: row.last_name,
@@ -189,7 +188,6 @@ export async function getUserById(userId: string): Promise<UserWithProfile | nul
       location_country: row.location_country,
       location_city: row.location_city,
       bio: row.bio,
-      website_url: row.website_url,
       is_onboarded: row.is_onboarded,
       created_at: row.profile_created_at,
       updated_at: row.profile_updated_at
@@ -223,8 +221,8 @@ export async function createUser(
         const profileResult = await client.query(
           `INSERT INTO user_profiles (
             user_id, first_name, last_name, phone, 
-            location_country, location_city, bio, website_url
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            location_country, location_city, bio
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *`,
           [
             user.id,
@@ -233,8 +231,7 @@ export async function createUser(
             profileData.phone || null,
             profileData.location_country || null,
             profileData.location_city || null,
-            profileData.bio || null,
-            profileData.website_url || null
+            profileData.bio || null
           ]
         )
         profile = profileResult.rows[0]
@@ -310,7 +307,7 @@ export async function updateUserProfile(
     // Build dynamic SET clause
     const allowedFields = [
       'first_name', 'last_name', 'phone', 'location_country', 
-      'location_city', 'bio', 'website_url', 'avatar_url'
+      'location_city', 'bio', 'avatar_url'
     ]
 
     for (const field of allowedFields) {
