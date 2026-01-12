@@ -1,110 +1,68 @@
 #!/usr/bin/env node
 
 /**
- * Run Performance Indexes Migration
- * Adds composite indexes for faster query performance
+ * Performance Indexes Migration Script
+ * Adds missing database indexes for optimal query performance
  */
 
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg')
+const fs = require('fs')
+const path = require('path')
 
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 
-const DATABASE_URL = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL
 
-if (!DATABASE_URL) {
-  console.error('❌ DATABASE_URL is not set in environment variables');
-  process.exit(1);
+if (!connectionString) {
+  console.error('❌ DATABASE_URL not found in environment variables')
+  process.exit(1)
 }
 
 async function runMigration() {
-  const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
-
+  const pool = new Pool({ connectionString })
+  
   try {
-    console.log('🔗 Connecting to Neon database...');
+    console.log('🔄 Connecting to database...')
+    const client = await pool.connect()
     
-    // Read the SQL file
-    const sqlFile = path.join(__dirname, '..', 'src', 'lib', 'db', 'add-performance-indexes.sql');
-    const sql = fs.readFileSync(sqlFile, 'utf8');
+    console.log('✅ Connected to database')
+    console.log('📋 Reading performance indexes SQL file...')
     
-    console.log('📄 Running performance indexes migration...');
-    console.log('⏳ This may take a few minutes for large tables...\n');
+    const sqlPath = path.join(__dirname, '..', 'src', 'lib', 'db', 'performance-indexes.sql')
+    const sql = fs.readFileSync(sqlPath, 'utf8')
     
-    // Split by semicolons and execute each statement
-    const statements = sql
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
+    console.log('🚀 Running performance indexes migration...')
+    await client.query(sql)
     
-    let successCount = 0;
-    let skipCount = 0;
-    let errorCount = 0;
+    console.log('✅ Performance indexes created successfully!')
     
-    for (const statement of statements) {
-      try {
-        // Skip comments
-        if (statement.startsWith('--')) continue;
-        
-        // Extract index name for logging
-        const indexMatch = statement.match(/idx_[\w_]+/);
-        const indexName = indexMatch ? indexMatch[0] : 'unknown';
-        
-        if (statement.includes('CREATE INDEX')) {
-          process.stdout.write(`  Creating ${indexName}... `);
-          await pool.query(statement);
-          console.log('✅');
-          successCount++;
-        } else if (statement.includes('ANALYZE')) {
-          const tableMatch = statement.match(/ANALYZE (\w+)/);
-          const tableName = tableMatch ? tableMatch[1] : 'table';
-          process.stdout.write(`  Analyzing ${tableName}... `);
-          await pool.query(statement);
-          console.log('✅');
-          successCount++;
-        } else {
-          await pool.query(statement);
-          successCount++;
-        }
-      } catch (error) {
-        if (error.message.includes('already exists')) {
-          console.log('⏭️  (already exists)');
-          skipCount++;
-        } else {
-          console.log('❌');
-          console.error(`  Error: ${error.message}`);
-          errorCount++;
-        }
-      }
-    }
+    // Verify indexes were created
+    console.log('\n📊 Verifying indexes...')
+    const result = await client.query(`
+      SELECT schemaname, tablename, indexname 
+      FROM pg_indexes 
+      WHERE tablename IN ('quotations', 'shortlists', 'campaign_influencers', 'influencers', 'user_profiles', 'campaign_content_submissions')
+      AND indexname LIKE 'idx_%'
+      ORDER BY tablename, indexname
+    `)
     
-    console.log('\n📊 Migration Summary:');
-    console.log(`  ✅ Created: ${successCount}`);
-    console.log(`  ⏭️  Skipped: ${skipCount}`);
-    console.log(`  ❌ Errors: ${errorCount}`);
+    console.log(`\n✅ Found ${result.rows.length} indexes:`)
+    result.rows.forEach(row => {
+      console.log(`   - ${row.tablename}.${row.indexname}`)
+    })
     
-    if (errorCount === 0) {
-      console.log('\n🎉 Performance indexes migration completed successfully!');
-    } else {
-      console.log('\n⚠️  Migration completed with some errors.');
-    }
+    client.release()
+    await pool.end()
+    
+    console.log('\n✅ Migration completed successfully!')
+    process.exit(0)
     
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    process.exit(1);
-  } finally {
-    await pool.end();
+    console.error('❌ Migration failed:', error)
+    await pool.end()
+    process.exit(1)
   }
 }
 
-// Run the migration
-runMigration().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
-
-
+runMigration()

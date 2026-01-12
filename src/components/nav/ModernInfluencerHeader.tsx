@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { Menu, X, LogOut, User, Play, BarChart3, CreditCard } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useUserRole } from '../../lib/auth/hooks'
+import NotificationBell from '../notifications/NotificationBell'
 
 interface NavItemProps {
   href: string
@@ -174,8 +175,11 @@ export default function ModernInfluencerHeader() {
                 ))}
               </nav>
 
-              {/* Right side - Profile Avatar */}
-              <div className="flex items-center">
+              {/* Right side - Notifications & Profile */}
+              <div className="flex items-center space-x-2">
+                {/* Notification Bell */}
+                <NotificationBell />
+                
                 {/* Desktop Profile Avatar */}
                 <div className="hidden lg:block relative">
                   <button

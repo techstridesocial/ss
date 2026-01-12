@@ -21,10 +21,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Check if user is staff or admin
+    // Check if user has a valid role (all authenticated users can receive notifications)
     const userRole = await getCurrentUserRole()
-    if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return new Response(JSON.stringify({ error: 'Insufficient permissions' }), {
+    if (!userRole) {
+      return new Response(JSON.stringify({ error: 'User role not found' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' }
       })
