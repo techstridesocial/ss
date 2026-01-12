@@ -26,6 +26,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
   const [detailPanelOpen, setDetailPanelOpen] = useState(false)
   const [selectedInfluencerDetail, setSelectedInfluencerDetail] = useState<InfluencerDetailView | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingInfluencers, setIsLoadingInfluencers] = useState(true)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('INSTAGRAM')
   const [searchQuery, setSearchQuery] = useState('')
   
@@ -133,6 +134,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
 
   // Function to load influencers from the database
   const loadInfluencers = async () => {
+    setIsLoadingInfluencers(true)
     try {
       const response = await fetch('/api/influencers')
       if (response.ok) {
@@ -146,6 +148,8 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       console.warn('API failed, keeping current data')
     } catch (error) {
       console.error('Error loading influencers:', error)
+    } finally {
+      setIsLoadingInfluencers(false)
     }
   }
 
@@ -916,8 +920,19 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
           </table>
         </div>
 
+        {/* Loading State */}
+        {isLoadingInfluencers && (
+          <div className="px-6 py-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading influencers...</h3>
+            <p className="text-gray-500">
+              Please wait while we fetch the latest influencer data.
+            </p>
+          </div>
+        )}
+
         {/* Empty State */}
-        {paginatedInfluencers.length === 0 && (
+        {!isLoadingInfluencers && paginatedInfluencers.length === 0 && (
           <div className="px-6 py-12 text-center">
             <Users size={48} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No influencers found</h3>
