@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  X, Mail, User, Shield, Send, Loader2, CheckCircle, 
-  AlertCircle, UserPlus, Building2, Sparkles, Users, Crown,
-  Copy, Check, ExternalLink
-} from 'lucide-react'
+import { X, Loader2, CheckCircle, Send } from 'lucide-react'
 import { UserRole } from '@/types/database'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -17,56 +13,11 @@ interface InviteUserModalProps {
 }
 
 const roleOptions = [
-  { 
-    value: 'BRAND', 
-    label: 'Brand', 
-    description: 'Client access to browse influencers and manage campaigns',
-    icon: Building2,
-    color: 'from-blue-500 to-cyan-500',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-500',
-    iconBg: 'bg-blue-100'
-  },
-  { 
-    value: 'INFLUENCER_SIGNED', 
-    label: 'Signed Influencer', 
-    description: 'Formally signed creator with full platform access',
-    icon: Sparkles,
-    color: 'from-purple-500 to-pink-500',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-500',
-    iconBg: 'bg-purple-100'
-  },
-  { 
-    value: 'INFLUENCER_PARTNERED', 
-    label: 'Partnered Influencer', 
-    description: 'Invited creator with limited access',
-    icon: Users,
-    color: 'from-amber-500 to-orange-500',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-500',
-    iconBg: 'bg-amber-100'
-  },
-  { 
-    value: 'STAFF', 
-    label: 'Team Member', 
-    description: 'Internal team member with management access',
-    icon: Shield,
-    color: 'from-emerald-500 to-teal-500',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-500',
-    iconBg: 'bg-emerald-100'
-  },
-  { 
-    value: 'ADMIN', 
-    label: 'Admin', 
-    description: 'Full system control and user management',
-    icon: Crown,
-    color: 'from-rose-500 to-red-500',
-    bgColor: 'bg-rose-50',
-    borderColor: 'border-rose-500',
-    iconBg: 'bg-rose-100'
-  }
+  { value: 'BRAND', label: 'Brand', description: 'Client access to browse influencers and manage campaigns' },
+  { value: 'INFLUENCER_SIGNED', label: 'Signed Influencer', description: 'Formally signed creator with full platform access' },
+  { value: 'INFLUENCER_PARTNERED', label: 'Partnered Influencer', description: 'Invited creator with limited access' },
+  { value: 'STAFF', label: 'Team Member', description: 'Internal team member with management access' },
+  { value: 'ADMIN', label: 'Admin', description: 'Full system control and user management' }
 ]
 
 export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalProps) {
@@ -80,32 +31,19 @@ export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUs
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [inviteLink, setInviteLink] = useState('')
-  const [copied, setCopied] = useState(false)
 
-  // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        email: '',
-        firstName: '',
-        lastName: '',
-        role: 'BRAND'
-      })
+      setFormData({ email: '', firstName: '', lastName: '', role: 'BRAND' })
       setError('')
       setSuccess(false)
-      setInviteLink('')
-      setCopied(false)
     }
   }, [isOpen])
 
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
+  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!validateEmail(formData.email)) {
       setError('Please enter a valid email address')
       return
@@ -117,40 +55,22 @@ export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUs
     try {
       const response = await fetch('/api/staff/invitations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
       
       const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send invitation')
-      }
+      if (!response.ok) throw new Error(data.error || 'Failed to send invitation')
       
-      console.log('✅ Invitation created successfully:', data)
-      
-      // Set success state
       setSuccess(true)
-      if (data.invitation?.url) {
-        setInviteLink(data.invitation.url)
-      }
-      
-      // Show toast
       toast({
-        title: '🎉 Invitation Sent!',
-        description: `Successfully invited ${formData.email} as ${roleOptions.find(r => r.value === formData.role)?.label}`,
+        title: 'Invitation Sent',
+        description: `Successfully invited ${formData.email}`,
       })
-      
       onSuccess()
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
-      toast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to send invitation',
-        variant: 'destructive'
-      })
     } finally {
       setIsLoading(false)
     }
@@ -161,322 +81,209 @@ export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUs
     if (error) setError('')
   }
 
-  const copyInviteLink = async () => {
-    if (inviteLink) {
-      await navigator.clipboard.writeText(inviteLink)
-      setCopied(true)
-      toast({
-        title: 'Link Copied!',
-        description: 'Invitation link copied to clipboard',
-      })
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
-
   const handleClose = () => {
-    if (!isLoading) {
-      onClose()
-    }
+    if (!isLoading) onClose()
   }
-
-  const selectedRole = roleOptions.find(r => r.value === formData.role)
 
   if (!isOpen) return null
 
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           onClick={handleClose}
         />
 
-        {/* Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: "spring", duration: 0.5 }}
-          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto overflow-hidden"
+          transition={{ type: "spring", duration: 0.4 }}
+          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto overflow-hidden"
         >
-          {/* Gradient Header */}
-          <div className={`relative px-6 py-5 bg-gradient-to-r ${selectedRole?.color || 'from-cyan-500 to-blue-500'}`}>
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <UserPlus className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Invite User</h2>
-                  <p className="text-sm text-white/80">Send an invitation to join the platform</p>
-                </div>
-              </div>
-              <button
-                onClick={handleClose}
-                disabled={isLoading}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <X className="h-5 w-5 text-white" />
-              </button>
+          {/* Header */}
+          <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">Invite User</h2>
+              <p className="text-sm text-gray-500 mt-1">Send an invitation to join the platform</p>
             </div>
+            <button
+              onClick={handleClose}
+              disabled={isLoading}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-400" />
+            </button>
           </div>
 
-          {/* Content */}
           <AnimatePresence mode="wait">
             {success ? (
-              /* Success State */
               <motion.div
                 key="success"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="p-6"
+                className="p-8"
               >
-                <div className="text-center py-6">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", delay: 0.2 }}
-                    className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"
-                  >
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </motion.div>
-                  <motion.h3
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-xl font-semibold text-gray-900 mb-2"
-                  >
-                    Invitation Sent Successfully!
-                  </motion.h3>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-gray-600 mb-6"
-                  >
-                    An invitation email has been sent to <span className="font-medium text-gray-900">{formData.email}</span>
-                  </motion.p>
-                  
-                  {inviteLink && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="bg-gray-50 rounded-xl p-4 mb-6"
-                    >
-                      <p className="text-sm text-gray-500 mb-2">Or share this invitation link:</p>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={inviteLink}
-                          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 truncate"
-                        />
-                        <button
-                          onClick={copyInviteLink}
-                          className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          {copied ? (
-                            <Check className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Copy className="h-5 w-5 text-gray-500" />
-                          )}
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                  
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="flex gap-3"
-                  >
+                <div className="text-center py-8">
+                  <div className="mx-auto w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mb-5">
+                    <CheckCircle className="h-7 w-7 text-emerald-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Invitation Sent</h3>
+                  <p className="text-gray-500 mb-8">
+                    An email has been sent to <span className="font-medium text-gray-900">{formData.email}</span>
+                  </p>
+                  <div className="flex justify-center gap-3">
                     <button
                       onClick={() => {
                         setSuccess(false)
-                        setFormData({
-                          email: '',
-                          firstName: '',
-                          lastName: '',
-                          role: 'BRAND'
-                        })
+                        setFormData({ email: '', firstName: '', lastName: '', role: 'BRAND' })
                       }}
-                      className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                      className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                     >
                       Invite Another
                     </button>
                     <button
                       onClick={handleClose}
-                      className={`flex-1 px-4 py-2.5 text-white rounded-xl font-medium transition-colors bg-gradient-to-r ${selectedRole?.color || 'from-cyan-500 to-blue-500'} hover:opacity-90`}
+                      className="px-5 py-2.5 text-white bg-gray-900 rounded-lg font-medium hover:bg-gray-800 transition-colors"
                     >
                       Done
                     </button>
-                  </motion.div>
+                  </div>
                 </div>
               </motion.div>
             ) : (
-              /* Form State */
               <motion.form
                 key="form"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onSubmit={handleSubmit}
-                className="p-6 space-y-5"
+                className="p-8"
               >
-                {/* Email */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <Mail className="h-4 w-4" />
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-offset-0 transition-all ${
-                      error && !validateEmail(formData.email) && formData.email
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-200 focus:ring-cyan-500 focus:border-cyan-500'
-                    }`}
-                    placeholder="user@example.com"
-                  />
-                </div>
-
-                {/* Name Fields */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  {/* Email */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                      <User className="h-4 w-4" />
-                      First Name
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
                     </label>
                     <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                      placeholder="John"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
+                      placeholder="name@company.com"
                     />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                      placeholder="Doe"
-                    />
-                  </div>
-                </div>
 
-                {/* Role Selection */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-                    <Shield className="h-4 w-4" />
-                    Select Role <span className="text-red-500">*</span>
-                  </label>
-                  <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
-                    {roleOptions.map((option) => {
-                      const Icon = option.icon
-                      const isSelected = formData.role === option.value
-                      return (
-                        <motion.label
-                          key={option.value}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                            isSelected
-                              ? `${option.borderColor} ${option.bgColor}`
-                              : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="role"
-                            value={option.value}
-                            checked={isSelected}
-                            onChange={(e) => handleInputChange('role', e.target.value)}
-                            className="sr-only"
-                          />
-                          <div className={`p-2 rounded-lg ${isSelected ? option.iconBg : 'bg-gray-100'}`}>
-                            <Icon className={`h-4 w-4 ${isSelected ? 'text-gray-700' : 'text-gray-500'}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        First Name <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Last Name <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Role Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Role
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {roleOptions.map((option) => {
+                        const isSelected = formData.role === option.value
+                        return (
+                          <label
+                            key={option.value}
+                            className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-gray-900 bg-gray-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="role"
+                              value={option.value}
+                              checked={isSelected}
+                              onChange={(e) => handleInputChange('role', e.target.value)}
+                              className="sr-only"
+                            />
+                            <span className={`font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                               {option.label}
-                            </div>
-                            <div className="text-xs text-gray-500 truncate">{option.description}</div>
-                          </div>
-                          {isSelected && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className={`p-1 rounded-full bg-gradient-to-r ${option.color}`}
-                            >
-                              <Check className="h-3 w-3 text-white" />
-                            </motion.div>
-                          )}
-                        </motion.label>
-                      )
-                    })}
+                            </span>
+                            <span className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {option.description}
+                            </span>
+                            {isSelected && (
+                              <div className="absolute top-3 right-3 w-2 h-2 bg-gray-900 rounded-full" />
+                            )}
+                          </label>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
 
-                {/* Error Message */}
-                <AnimatePresence>
+                  {/* Error */}
                   {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl"
-                    >
-                      <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-lg">
                       <p className="text-sm text-red-600">{error}</p>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
+                </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={handleClose}
                     disabled={isLoading}
-                    className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    className="px-5 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
                   >
                     Cancel
                   </button>
-                  <motion.button
+                  <button
                     type="submit"
                     disabled={isLoading || !formData.email}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r ${selectedRole?.color || 'from-cyan-500 to-blue-500'} shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30`}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Sending...</span>
+                        Sending...
                       </>
                     ) : (
                       <>
                         <Send className="h-4 w-4" />
-                        <span>Send Invitation</span>
+                        Send Invitation
                       </>
                     )}
-                  </motion.button>
+                  </button>
                 </div>
               </motion.form>
             )}
