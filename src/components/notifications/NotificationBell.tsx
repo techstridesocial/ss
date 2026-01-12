@@ -1,36 +1,31 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Bell, Check, X } from 'lucide-react'
+import { Bell, X, Wifi, WifiOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
-
-interface Notification {
-  id: string
-  type: string
-  title: string
-  message?: string
-  is_read: boolean
-  created_at: string
-  related_data?: {
-    brand_name?: string
-    campaign_name?: string
-  }
-}
+import { useRealtimeNotifications } from '@/lib/hooks/useRealtimeNotifications'
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 })
+  const [isMarkingAll, setIsMarkingAll] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+
+  // Use real-time notifications hook
+  const {
+    notifications,
+    unreadCount,
+    isConnected,
+    isLoading,
+    markAsRead,
+    markAllAsRead
+  } = useRealtimeNotifications()
 
   // Handle client-side hydration
   useEffect(() => {
     setIsClient(true)
-    fetchNotifications()
   }, [])
 
   // Calculate dropdown position
@@ -44,61 +39,10 @@ export default function NotificationBell() {
     }
   }, [isOpen])
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications')
-      if (response.ok) {
-        const result = await response.json()
-        setNotifications(result.data || [])
-        setUnreadCount(result.unreadCount || 0)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    }
-  }
-
-  const markAsRead = async (notificationIds: string[]) => {
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationIds })
-      })
-
-      if (response.ok) {
-        // Update local state
-        setNotifications(prev => 
-          prev.map(n => 
-            notificationIds.includes(n.id) 
-              ? { ...n, is_read: true }
-              : n
-          )
-        )
-        setUnreadCount(prev => Math.max(0, prev - notificationIds.length))
-      }
-    } catch (error) {
-      console.error('Error marking notifications as read:', error)
-    }
-  }
-
-  const markAllAsRead = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markAllAsRead: true })
-      })
-
-      if (response.ok) {
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-        setUnreadCount(0)
-      }
-    } catch (error) {
-      console.error('Error marking all as read:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  const handleMarkAllAsRead = async () => {
+    setIsMarkingAll(true)
+    await markAllAsRead()
+    setIsMarkingAll(false)
   }
 
   const getNotificationIcon = (type: string) => {
@@ -146,6 +90,13 @@ export default function NotificationBell() {
               {unreadCount > 99 ? '99+' : unreadCount}
             </motion.div>
           )}
+          {/* Connection indicator */}
+          <div 
+            className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white transition-colors ${
+              isConnected ? 'bg-green-500' : 'bg-gray-400'
+            }`}
+            title={isConnected ? 'Real-time updates active' : 'Connecting...'}
+          />
         </button>
       </div>
 
@@ -164,15 +115,28 @@ export default function NotificationBell() {
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Notifications</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900">Notifications</h3>
+                {isConnected ? (
+                  <div className="flex items-center gap-1 text-xs text-green-600">
+                    <Wifi size={12} />
+                    <span>Live</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <WifiOff size={12} />
+                    <span>Connecting</span>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
                 {unreadCount > 0 && (
                   <button
-                    onClick={markAllAsRead}
-                    disabled={isLoading}
+                    onClick={handleMarkAllAsRead}
+                    disabled={isMarkingAll}
                     className="text-xs text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
                   >
-                    {isLoading ? 'Marking...' : 'Mark all read'}
+                    {isMarkingAll ? 'Marking...' : 'Mark all read'}
                   </button>
                 )}
                 <button

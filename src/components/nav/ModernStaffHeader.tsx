@@ -181,6 +181,11 @@ export default function ModernStaffHeader() {
         title: 'Finances Management',
         subtitle: 'Manage influencer invoices and payment processing'
       }
+    } else if (pathname === '/staff/profile' || pathname.startsWith('/staff/profile/')) {
+      return {
+        title: 'Profile Settings',
+        subtitle: 'Manage your personal information, notifications, and security settings'
+      }
     } else {
       // Default fallback - show greeting format
       return {

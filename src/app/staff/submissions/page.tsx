@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import ModernStaffHeader from '../../../components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '../../../components/auth/ProtectedRoute'
@@ -15,6 +15,8 @@ const CreateSubmissionListModal = dynamic(() => import('@/components/staff/Creat
     <div className="text-white">Loading...</div>
   </div>
 })
+
+import { Pagination } from '@/components/ui/Pagination'
 
 type SubmissionListStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED'
 
@@ -45,6 +47,10 @@ function SubmissionsPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   useEffect(() => {
     loadLists()
@@ -147,6 +153,28 @@ function SubmissionsPageContent() {
     ? lists 
     : lists.filter(list => list.status === selectedStatus)
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredLists.length / pageSize)
+  const paginatedLists = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    return filteredLists.slice(startIndex, startIndex + pageSize)
+  }, [filteredLists, currentPage, pageSize])
+
+  // Reset to first page when filter changes
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status)
+    setCurrentPage(1)
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size)
+    setCurrentPage(1)
+  }
+
   return (
     <StaffProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -161,7 +189,7 @@ function SubmissionsPageContent() {
               {['all', 'DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'].map(status => (
                 <motion.button
                   key={status}
-                  onClick={() => setSelectedStatus(status)}
+                  onClick={() => handleStatusChange(status)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
@@ -230,7 +258,7 @@ function SubmissionsPageContent() {
             </motion.div>
           ) : (
             <div className="grid gap-6">
-              {filteredLists.map((list, index) => (
+              {paginatedLists.map((list, index) => (
                 <motion.div
                   key={list.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -326,6 +354,20 @@ function SubmissionsPageContent() {
                 </motion.div>
               ))}
             </div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && filteredLists.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={filteredLists.length}
+              itemLabel="submission lists"
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={[10, 20, 50]}
+            />
           )}
           </div>
         </div>

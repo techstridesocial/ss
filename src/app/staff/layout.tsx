@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '../../lib/auth/roles'
 import { UserRole } from '../../lib/auth/types'
 import { StaffProtectedRoute } from '../../components/auth/ProtectedRoute'
+import { StaffShortcutsWrapper } from '../../components/staff/StaffShortcutsWrapper'
 
 export default async function StaffLayout({
   children,
@@ -25,7 +26,9 @@ export default async function StaffLayout({
 
   return (
     <StaffProtectedRoute>
-      {children}
+      <StaffShortcutsWrapper>
+        {children}
+      </StaffShortcutsWrapper>
     </StaffProtectedRoute>
   )
 }

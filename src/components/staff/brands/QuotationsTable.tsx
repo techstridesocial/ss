@@ -4,7 +4,7 @@
 
 'use client'
 
-import { Eye, Users, Calendar } from 'lucide-react'
+import { Eye, Users, Calendar, XCircle, CheckCircle } from 'lucide-react'
 import type { Quotation, SortConfig } from '@/types/brands'
 import { SortableHeader } from './SortableHeader'
 import { getQuotationStatusBadge } from '@/lib/utils/brandUtils'
@@ -14,13 +14,17 @@ interface QuotationsTableProps {
   sortConfig: SortConfig
   onSort: (key: string) => void
   onViewQuotation: (id: string) => void
+  onRejectQuotation?: (quotation: Quotation) => void
+  onApproveQuotation?: (quotation: Quotation) => void
 }
 
 export function QuotationsTable({
   quotations,
   sortConfig,
   onSort,
-  onViewQuotation
+  onViewQuotation,
+  onRejectQuotation,
+  onApproveQuotation
 }: QuotationsTableProps) {
   return (
     <>
@@ -100,13 +104,37 @@ export function QuotationsTable({
 
             {/* Actions */}
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <button
-                onClick={() => onViewQuotation(quotation.id)}
-                className="text-blue-600 hover:text-blue-800 transition-colors"
-                title="View Details"
-              >
-                <Eye size={16} />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => onViewQuotation(quotation.id)}
+                  className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                  title="View Details"
+                >
+                  <Eye size={16} />
+                </button>
+                {(quotation.status === 'pending_review' || quotation.status === 'sent') && (
+                  <>
+                    {onApproveQuotation && (
+                      <button
+                        onClick={() => onApproveQuotation(quotation)}
+                        className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
+                        title="Approve Quotation"
+                      >
+                        <CheckCircle size={16} />
+                      </button>
+                    )}
+                    {onRejectQuotation && (
+                      <button
+                        onClick={() => onRejectQuotation(quotation)}
+                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                        title="Reject Quotation"
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </td>
           </tr>
         ))}

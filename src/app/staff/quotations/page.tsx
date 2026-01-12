@@ -16,6 +16,7 @@ import { useQuotations } from '@/lib/hooks/staff/useBrands'
 
 // Components
 import { QuotationsTable } from '@/components/staff/brands/QuotationsTable'
+import { Pagination } from '@/components/ui/Pagination'
 
 // Lazy load the detail panel
 const QuotationDetailPanel = dynamic(() => import('@/components/brands/QuotationDetailPanel'), {
@@ -26,6 +27,13 @@ const QuotationDetailPanel = dynamic(() => import('@/components/brands/Quotation
 })
 
 const CreateCampaignFromQuotationModal = dynamic(() => import('@/components/campaigns/CreateCampaignFromQuotationModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="text-white">Loading...</div>
+  </div>
+})
+
+const RejectQuotationModal = dynamic(() => import('@/components/modals/RejectQuotationModal'), {
   ssr: false,
   loading: () => <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
     <div className="text-white">Loading...</div>
@@ -47,11 +55,19 @@ function QuotationsPageClient() {
     direction: 'desc'
   })
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  
   // Panel states
   const [quotationDetailPanelOpen, setQuotationDetailPanelOpen] = useState(false)
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [showCreateCampaignModal, setShowCreateCampaignModal] = useState(false)
   const [campaignQuotation, setCampaignQuotation] = useState<Quotation | null>(null)
+  
+  // Rejection modal state
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [quotationToReject, setQuotationToReject] = useState<Quotation | null>(null)
 
 
   // Filter and sort quotations
@@ -98,6 +114,13 @@ function QuotationsPageClient() {
     return filtered
   }, [quotations, searchQuery, statusFilter, sortConfig])
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredQuotations.length / pageSize)
+  const paginatedQuotations = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    return filteredQuotations.slice(startIndex, startIndex + pageSize)
+  }, [filteredQuotations, currentPage, pageSize])
+
   // Stats
   const stats = useMemo(() => ({
     total: quotations.length,
@@ -113,6 +136,26 @@ function QuotationsPageClient() {
       key,
       direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
     }))
+    setCurrentPage(1) // Reset to first page on sort
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1) // Reset to first page on search
+  }
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value)
+    setCurrentPage(1) // Reset to first page on filter change
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size)
+    setCurrentPage(1) // Reset to first page on page size change
   }
 
   const handleViewQuotation = (id: string) => {
@@ -164,14 +207,14 @@ function QuotationsPageClient() {
   }
 
   // Approve quotation - updates status to APPROVED
-  const handleApproveQuotation = async (quotationId: string) => {
+  const handleApproveQuotation = async (quotation: Quotation) => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/quotations', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          quotationId,
+          quotationId: quotation.id,
           status: 'APPROVED'
         })
       })
@@ -182,7 +225,7 @@ function QuotationsPageClient() {
       
       toast({
         title: 'Quotation Approved',
-        description: 'The quotation has been approved and the brand has been notified.',
+        description: `The quotation for "${quotation.brand_name}" has been approved.`,
       })
       setQuotationDetailPanelOpen(false)
       setSelectedQuotation(null)
@@ -199,17 +242,27 @@ function QuotationsPageClient() {
     }
   }
 
+  // Open rejection modal instead of directly rejecting
+  const handleOpenRejectModal = (quotation: Quotation) => {
+    setQuotationToReject(quotation)
+    setShowRejectModal(true)
+    setQuotationDetailPanelOpen(false)
+  }
+
   // Reject quotation - updates status to REJECTED
-  const handleRejectQuotation = async (quotationId: string, reason?: string) => {
+  const handleRejectQuotation = async (reason: string, notifyBrand: boolean) => {
+    if (!quotationToReject) return
+    
     setIsLoading(true)
     try {
       const response = await fetch('/api/quotations', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          quotationId,
+          quotationId: quotationToReject.id,
           status: 'REJECTED',
-          notes: reason || 'Quotation rejected by staff'
+          notes: reason,
+          notifyBrand
         })
       })
       
@@ -219,9 +272,10 @@ function QuotationsPageClient() {
       
       toast({
         title: 'Quotation Rejected',
-        description: 'The quotation has been rejected.',
+        description: 'The quotation has been rejected.' + (notifyBrand ? ' The brand has been notified.' : ''),
       })
-      setQuotationDetailPanelOpen(false)
+      setShowRejectModal(false)
+      setQuotationToReject(null)
       setSelectedQuotation(null)
       reloadQuotations()
     } catch (error) {
@@ -359,7 +413,7 @@ function QuotationsPageClient() {
                 type="text"
                 placeholder="Search quotations..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -369,7 +423,7 @@ function QuotationsPageClient() {
               <div className="relative">
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => handleStatusFilterChange(e.target.value)}
                   className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="all">All Status</option>
@@ -421,21 +475,30 @@ function QuotationsPageClient() {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <QuotationsTable
-                  quotations={filteredQuotations}
+                  quotations={paginatedQuotations}
                   sortConfig={sortConfig}
                   onSort={handleSort}
                   onViewQuotation={handleViewQuotation}
+                  onRejectQuotation={handleOpenRejectModal}
+                  onApproveQuotation={handleApproveQuotation}
                 />
               </table>
             </div>
           )}
         </motion.div>
 
-        {/* Results count */}
-        {!quotationsLoading && (
-          <div className="mt-4 text-sm text-gray-500 text-center">
-            Showing {filteredQuotations.length} of {quotations.length} quotation{quotations.length !== 1 ? 's' : ''}
-          </div>
+        {/* Pagination */}
+        {!quotationsLoading && filteredQuotations.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={filteredQuotations.length}
+            itemLabel="quotations"
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[10, 20, 50]}
+          />
         )}
       </main>
 
@@ -463,6 +526,23 @@ function QuotationsPageClient() {
           }}
           quotation={campaignQuotation}
           onSuccess={handleCampaignCreated}
+        />
+      )}
+
+      {/* Reject Quotation Modal */}
+      {quotationToReject && (
+        <RejectQuotationModal
+          isOpen={showRejectModal}
+          onClose={() => {
+            setShowRejectModal(false)
+            setQuotationToReject(null)
+          }}
+          onConfirm={handleRejectQuotation}
+          quotationDetails={{
+            brandName: quotationToReject.brand_name,
+            campaignName: quotationToReject.campaign_name
+          }}
+          isLoading={isLoading}
         />
       )}
 
