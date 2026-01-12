@@ -401,7 +401,13 @@ function QuotationsPageClient() {
           transition={{ delay: 0.3 }}
           className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
         >
-          {filteredQuotations.length === 0 ? (
+          {quotationsLoading ? (
+            <div className="text-center py-16">
+              <RefreshCw className="w-12 h-12 text-blue-600 mx-auto mb-4 animate-spin" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Quotations</h3>
+              <p className="text-gray-500">Please wait while we fetch your quotation requests...</p>
+            </div>
+          ) : filteredQuotations.length === 0 ? (
             <div className="text-center py-16">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Quotations Found</h3>
@@ -426,9 +432,11 @@ function QuotationsPageClient() {
         </motion.div>
 
         {/* Results count */}
-        <div className="mt-4 text-sm text-gray-500 text-center">
-          Showing {filteredQuotations.length} of {quotations.length} quotation{quotations.length !== 1 ? 's' : ''}
-        </div>
+        {!quotationsLoading && (
+          <div className="mt-4 text-sm text-gray-500 text-center">
+            Showing {filteredQuotations.length} of {quotations.length} quotation{quotations.length !== 1 ? 's' : ''}
+          </div>
+        )}
       </main>
 
       {/* Quotation Detail Panel */}
