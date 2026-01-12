@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
-import { getUserFromClerkId as _getUserFromClerkId } from '@/lib/db/queries/users'
 
 // GET - Fetch notifications for current user
 export async function GET(request: NextRequest) {
@@ -13,12 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff or admin
-    const userRole = await getCurrentUserRole()
-    if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
-
+    // All authenticated users can access their own notifications
     // Get user's database ID
     const userResult = await query(`
       SELECT id FROM users WHERE clerk_id = $1
@@ -91,12 +84,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff or admin
-    const userRole = await getCurrentUserRole()
-    if (!userRole || !['STAFF', 'ADMIN'].includes(userRole)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
-
+    // All authenticated users can mark their own notifications as read
     // Get user's database ID
     const userResult = await query(`
       SELECT id FROM users WHERE clerk_id = $1
