@@ -37,6 +37,16 @@ export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUs
       setFormData({ email: '', firstName: '', lastName: '', role: 'BRAND' })
       setError('')
       setSuccess(false)
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden'
+    } else {
+      // Restore body scroll when modal is closed
+      document.body.style.overflow = ''
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = ''
     }
   }, [isOpen])
 
@@ -89,7 +99,7 @@ export default function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUs
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 overflow-hidden">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
