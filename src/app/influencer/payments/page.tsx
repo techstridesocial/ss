@@ -1,11 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
 import { CreditCard, DollarSign, Clock, CheckCircle, AlertTriangle, Plus, Edit3, X, Save, Loader2, FileText, Eye, Download, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import InvoiceSubmissionModal from '../../../components/influencer/InvoiceSubmissionModal'
+import { useInfluencerPayments, useInfluencerInvoices, influencerQueryKeys } from '../../../hooks/useInfluencerData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface PayPalDetails {
   email: string
@@ -81,24 +83,36 @@ interface Invoice {
 }
 
 export default function InfluencerPayments() {
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
-  const [showPayPalForm, setShowPayPalForm] = useState(false)
-  const [showBankForm, setShowBankForm] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
+  // Use cached query hooks for instant page loads
+  const { data: paymentsData, isLoading: isLoadingPayments } = useInfluencerPayments()
+  const { data: invoicesData, isLoading: isLoadingInvoices } = useInfluencerInvoices()
+  const queryClient = useQueryClient()
   
-  // Payment data from API
-  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null)
-  const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
+  // Derive state from cached data
+  const paymentInfo = useMemo(() => paymentsData?.data?.payment_info || null, [paymentsData])
+  const paymentSummary = useMemo(() => paymentsData?.data?.payment_summary || {
     total_earned: 0,
     pending_amount: 0,
     paid_out: 0,
     this_month: 0
-  })
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([])
-  const [invoices, setInvoices] = useState<Invoice[]>([])
+  }, [paymentsData])
+  const paymentHistory = useMemo(() => paymentsData?.data?.payment_history || [], [paymentsData])
+  const invoices = useMemo(() => invoicesData?.invoices || [], [invoicesData])
+  const isLoading = isLoadingPayments || isLoadingInvoices
+  
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
+  const [showPayPalForm, setShowPayPalForm] = useState(false)
+  const [showBankForm, setShowBankForm] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
+  
+  // Sync payment method when data loads
+  useEffect(() => {
+    if (paymentInfo?.payment_method) {
+      setPaymentMethod(paymentInfo.payment_method.toLowerCase())
+    }
+  }, [paymentInfo])
   
   // PayPal form state
   const [paypalDetails, setPaypalDetails] = useState<PayPalDetails>({
@@ -128,38 +142,14 @@ export default function InfluencerPayments() {
   const [savedPaypalDetails, setSavedPaypalDetails] = useState<PayPalDetails | null>(null)
   const [savedBankDetails, setSavedBankDetails] = useState<BankDetails | null>(null)
 
-  // Fetch payment data on component mount
-  useEffect(() => {
-    fetchPaymentData()
-    fetchInvoices()
-  }, [])
-
-  const fetchPaymentData = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/influencer/payments')
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch payment data')
-      }
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        setPaymentInfo(result.data.payment_info)
-        setPaymentSummary(result.data.payment_summary)
-        setPaymentHistory(result.data.payment_history)
-        
-        // Set payment method based on saved info
-        if (result.data.payment_info) {
-          setPaymentMethod(result.data.payment_info.payment_method.toLowerCase())
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching payment data:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  // Refresh payment data (used after saving)
+  const fetchPaymentData = () => {
+    queryClient.invalidateQueries({ queryKey: influencerQueryKeys.payments })
+  }
+  
+  // Refresh invoices data
+  const fetchInvoices = () => {
+    queryClient.invalidateQueries({ queryKey: influencerQueryKeys.invoices })
   }
 
   const handlePayPalSubmit = async (e: React.FormEvent) => {
@@ -363,18 +353,6 @@ export default function InfluencerPayments() {
       currency: 'GBP',
       vatRegistered: ''
     })
-  }
-
-  const fetchInvoices = async () => {
-    try {
-      const response = await fetch('/api/influencer/invoices')
-      if (response.ok) {
-        const data = await response.json()
-        setInvoices(data.invoices || [])
-      }
-    } catch (error) {
-      console.error('Error fetching invoices:', error)
-    }
   }
 
   const handleInvoiceCreated = () => {
@@ -990,7 +968,7 @@ export default function InfluencerPayments() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {paymentHistory.map((payment) => (
+                    {paymentHistory.map((payment: PaymentHistoryItem) => (
                       <tr key={payment.id} className="hover:bg-blue-50/30 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -1086,7 +1064,7 @@ export default function InfluencerPayments() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {invoices.map((invoice) => (
+                    {invoices.map((invoice: Invoice) => (
                       <tr key={invoice.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
 import { 
@@ -19,6 +19,8 @@ import {
   Youtube,
   Music
 } from 'lucide-react'
+import { useInfluencerStats, influencerQueryKeys } from '../../../hooks/useInfluencerData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface SocialAccount {
   platform: string
@@ -42,8 +44,11 @@ interface StatsData {
 }
 
 export default function EnhancedInfluencerStats() {
-  const [statsData, setStatsData] = useState<StatsData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  // Use cached query hook for instant page loads
+  const { data: statsResponse, isLoading, refetch } = useInfluencerStats()
+  const queryClient = useQueryClient()
+  const statsData = statsResponse?.success ? statsResponse.data : null
+  
   const [showConnectionModal, setShowConnectionModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
@@ -57,28 +62,9 @@ export default function EnhancedInfluencerStats() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectingProfileId, setConnectingProfileId] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadStats()
-  }, [])
-
-  const loadStats = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/influencer/stats')
-      if (response.ok) {
-        const data = await response.json()
-        console.log('📊 Stats data received:', data)
-        if (data.success) {
-          setStatsData(data.data)
-          console.log('📊 Platform data:', data.data?.platforms)
-          
-        }
-      }
-    } catch (error) {
-      console.error('Error loading stats:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  // Refresh stats data
+  const loadStats = () => {
+    queryClient.invalidateQueries({ queryKey: influencerQueryKeys.stats })
   }
 
   const searchProfiles = async (query: string, platform: string) => {
@@ -266,7 +252,7 @@ export default function EnhancedInfluencerStats() {
   const disconnectPlatform = async (_platform: string) => {
     try {
       // Find the platform data to get the influencer platform ID
-      const platformData = statsData?.platforms?.find(p => p.platform === _platform)
+      const platformData = statsData?.platforms?.find((p: SocialAccount) => p.platform === _platform)
       
       if (!platformData || !platformData.is_connected) {
         setToastMessage(`❌ Platform ${_platform} is not connected`)
@@ -416,7 +402,7 @@ export default function EnhancedInfluencerStats() {
   }
 
   const getConnectedCount = () => {
-    return statsData?.platforms?.filter(p => p.is_connected).length || 0
+    return statsData?.platforms?.filter((p: SocialAccount) => p.is_connected).length || 0
   }
 
   const getTotalPlatforms = () => {
@@ -640,7 +626,7 @@ export default function EnhancedInfluencerStats() {
                       <div className="space-y-3">
                         <p className="text-sm font-semibold text-slate-900">Select your profile:</p>
                         <div className="space-y-2">
-                          {searchResults.map((profile, index) => {
+                          {searchResults.map((profile: any, index: number) => {
                             const isThisProfileConnecting = isConnecting && connectingProfileId === profile.id
                             return (
                             <div
@@ -741,7 +727,7 @@ export default function EnhancedInfluencerStats() {
                       <div className="space-y-3">
                         <p className="text-sm font-semibold text-slate-900">Select new profile:</p>
                         <div className="space-y-2">
-                          {searchResults.map((profile, index) => (
+                          {searchResults.map((profile: any, index: number) => (
                             <div
                               key={index}
                               className="flex items-center justify-between p-4 border border-slate-200 rounded-2xl hover:bg-slate-50 cursor-pointer transition-colors group"

@@ -26,6 +26,8 @@ import {
   TrendingUp,
   Eye
 } from 'lucide-react'
+import { useInfluencerProfile, influencerQueryKeys } from '../../../hooks/useInfluencerData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface ProfileFormData {
   firstName: string
@@ -67,6 +69,11 @@ const AVAILABLE_NICHES = [
 
 export default function InfluencerProfile() {
   const { user, isLoaded } = useUser()
+  const queryClient = useQueryClient()
+  
+  // Use cached query hook for instant page loads
+  const { data: profileResponse, isLoading: isLoadingProfile } = useInfluencerProfile()
+  
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [profileData, setProfileData] = useState<ProfileFormData>({
@@ -82,84 +89,38 @@ export default function InfluencerProfile() {
   })
 
   const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([])
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-
-  // Load user data when component mounts
+  
+  // Sync profile data when API data loads
   useEffect(() => {
-    const loadProfileData = async () => {
-      if (isLoaded && user) {
-        try {
-          setIsLoadingProfile(true)
-          
-          // Load profile data from API
-          const response = await fetch('/api/influencer/profile')
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.data) {
-              const _profile = data.data
-              
-              // Update profile form data
-              setProfileData({
-                firstName: _profile.first_name || '',
-                lastName: _profile.last_name || '',
-                displayName: _profile.display_name || '',
-                email: _profile.email || '',
-                phone: _profile.phone || '',
-                bio: _profile.bio || '',
-                website: '',
-                location: _profile.location_country || '',
-                niches: _profile.niches || []
-              })
-              
-              // Update connected accounts
-              if (_profile.connected_accounts) {
-                setConnectedAccounts(_profile.connected_accounts.map((acc: any) => ({
-                  platform: acc.platform,
-                  username: acc.username || '@your_handle',
-                  followers: acc.followers || 0,
-                  isConnected: acc.is_connected || false,
-                  lastSync: acc.last_sync,
-                  profileUrl: null
-                })))
-              }
-            }
-          } else {
-            console.error('Failed to load profile data')
-            // Fallback to Clerk user data
-            setProfileData({
-              firstName: user.firstName || '',
-              lastName: user.lastName || '',
-              displayName: user.fullName || '',
-              email: user.primaryEmailAddress?.emailAddress || '',
-              phone: user.phoneNumbers?.[0]?.phoneNumber || '',
-              bio: '',
-              website: '',
-              location: '',
-              niches: []
-            })
-          }
-        } catch (error) {
-          console.error('Error loading profile:', error)
-          // Fallback to Clerk user data
-          setProfileData({
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            displayName: user.fullName || '',
-            email: user.primaryEmailAddress?.emailAddress || '',
-            phone: user.phoneNumbers?.[0]?.phoneNumber || '',
-            bio: '',
-            website: '',
-            location: '',
-            niches: []
-          })
-        } finally {
-          setIsLoadingProfile(false)
-        }
+    if (profileResponse?.success && profileResponse.data) {
+      const _profile = profileResponse.data
+      
+      // Update profile form data
+      setProfileData({
+        firstName: _profile.first_name || '',
+        lastName: _profile.last_name || '',
+        displayName: _profile.display_name || '',
+        email: _profile.email || '',
+        phone: _profile.phone || '',
+        bio: _profile.bio || '',
+        website: '',
+        location: _profile.location_country || '',
+        niches: _profile.niches || []
+      })
+      
+      // Update connected accounts
+      if (_profile.connected_accounts) {
+        setConnectedAccounts(_profile.connected_accounts.map((acc: any) => ({
+          platform: acc.platform,
+          username: acc.username || '@your_handle',
+          followers: acc.followers || 0,
+          isConnected: acc.is_connected || false,
+          lastSync: acc.last_sync,
+          profileUrl: null
+        })))
       }
     }
-
-    loadProfileData()
-  }, [isLoaded, user])
+  }, [profileResponse])
 
   const handleSave = async () => {
     setIsLoading(true)

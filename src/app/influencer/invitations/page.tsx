@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
@@ -20,6 +20,8 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { useToast } from '../../../components/ui/use-toast'
+import { useInfluencerInvitations, influencerQueryKeys } from '../../../hooks/useInfluencerData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Invitation {
   id: string
@@ -43,40 +45,24 @@ interface Invitation {
 }
 
 export default function InfluencerInvitations() {
-  const [invitations, setInvitations] = useState<Invitation[]>([])
-  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([])
-  const [respondedInvitations, setRespondedInvitations] = useState<Invitation[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // Use cached query hook for instant page loads
+  const { data, isLoading, refetch } = useInfluencerInvitations()
+  const queryClient = useQueryClient()
+  
+  // Derive state from cached data
+  const invitations = useMemo(() => data?.invitations || [], [data])
+  const pendingInvitations = useMemo(() => data?.pending || [], [data])
+  const respondedInvitations = useMemo(() => data?.responded || [], [data])
+  
   const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null)
   const [responseMessage, setResponseMessage] = useState('')
   const [isResponding, setIsResponding] = useState(false)
   const { toast } = useToast()
 
-  const loadInvitations = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/influencer/invitations')
-      if (response.ok) {
-        const data = await response.json()
-        setInvitations(data.invitations || [])
-        setPendingInvitations(data.pending || [])
-        setRespondedInvitations(data.responded || [])
-      }
-    } catch (error) {
-      console.error('Error loading invitations:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load invitations',
-        variant: 'destructive'
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [toast])
-
-  useEffect(() => {
-    loadInvitations()
-  }, [loadInvitations])
+  // Refresh data after responding
+  const loadInvitations = () => {
+    queryClient.invalidateQueries({ queryKey: influencerQueryKeys.invitations })
+  }
 
   const handleResponse = async (invitationId: string, response: 'accepted' | 'declined') => {
     setIsResponding(true)
@@ -330,7 +316,7 @@ export default function InfluencerInvitations() {
                 <span className="text-sm font-medium text-gray-500">Accepted</span>
               </div>
               <p className="text-4xl font-bold text-gray-900">
-                {invitations.filter(i => i.status === 'accepted').length}
+                {invitations.filter((i: Invitation) => i.status === 'accepted').length}
               </p>
               <p className="text-sm text-gray-500 mt-1">Campaigns joined</p>
             </motion.div>
@@ -348,7 +334,7 @@ export default function InfluencerInvitations() {
                 <span className="text-sm font-medium text-gray-500">Declined</span>
               </div>
               <p className="text-4xl font-bold text-gray-900">
-                {invitations.filter(i => i.status === 'declined').length}
+                {invitations.filter((i: Invitation) => i.status === 'declined').length}
               </p>
               <p className="text-sm text-gray-500 mt-1">Opportunities passed</p>
             </motion.div>
@@ -368,7 +354,7 @@ export default function InfluencerInvitations() {
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {pendingInvitations.map((invitation, index) => (
+                {pendingInvitations.map((invitation: Invitation, index: number) => (
                   <motion.div
                     key={invitation.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -393,7 +379,7 @@ export default function InfluencerInvitations() {
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {respondedInvitations.map((invitation, index) => (
+                {respondedInvitations.map((invitation: Invitation, index: number) => (
                   <motion.div
                     key={invitation.id}
                     initial={{ opacity: 0, y: 20 }}

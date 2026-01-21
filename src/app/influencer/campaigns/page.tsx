@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { InfluencerProtectedRoute } from '../../../components/auth/ProtectedRoute'
 import ModernInfluencerHeader from '../../../components/nav/ModernInfluencerHeader'
 import { Calendar, Clock, CheckCircle, DollarSign, AlertCircle, Plus, X, ExternalLink, Upload, FileText, Link as LinkIcon, TrendingUp, Award, Sparkles } from 'lucide-react'
+import { useInfluencerCampaigns } from '../../../hooks/useInfluencerData'
 
 interface ContentSubmission {
   content_url: string
@@ -22,10 +23,11 @@ interface ContentSubmission {
 }
 
 export default function InfluencerCampaigns() {
-  // Campaigns will be loaded from API
-  const [campaigns, setCampaigns] = useState<any[]>([])
-  const [currency, setCurrency] = useState<string>('GBP')
-  const [isLoading, setIsLoading] = useState(true)
+  // Use cached query hook for instant page loads
+  const { data: campaignData, isLoading } = useInfluencerCampaigns()
+  const campaigns = campaignData?.campaigns || []
+  const currency = campaignData?.currency || 'GBP'
+  
   const [submissionModal, setSubmissionModal] = useState<string | null>(null)
   const [submissionForm, setSubmissionForm] = useState<ContentSubmission>({
     content_url: '',
@@ -86,30 +88,7 @@ export default function InfluencerCampaigns() {
     }).format(amount)
   }
 
-  // Load campaigns from API
-  useEffect(() => {
-    const loadCampaigns = async () => {
-      try {
-        setIsLoading(true)
-        const response = await fetch('/api/influencer/campaigns')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.campaigns) {
-            setCampaigns(data.campaigns || [])
-          }
-          if (data.currency) {
-            setCurrency(data.currency)
-          }
-        }
-      } catch (error) {
-        console.error('Error loading campaigns:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadCampaigns()
-  }, [])
+  // Campaigns are now loaded via React Query hook (cached for instant navigation)
 
   // Load submitted content for campaigns
   useEffect(() => {
@@ -509,7 +488,7 @@ export default function InfluencerCampaigns() {
                 <p className="text-gray-500 max-w-md mx-auto">You haven't been assigned to any campaigns yet. Check back soon!</p>
               </motion.div>
             ) : (
-              campaigns.map((campaign, index) => (
+              campaigns.map((campaign: any, index: number) => (
                 <motion.div
                   key={campaign.id}
                   initial={{ opacity: 0, y: 20 }}
