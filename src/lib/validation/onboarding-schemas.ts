@@ -10,7 +10,17 @@ export const WelcomeVideoSchema = z.object({
   welcome_video_watched: z.boolean()
 })
 
-// Step 2: Social Goals
+// Step 2: Personal Information
+export const PersonalInfoSchema = z.object({
+  first_name: z.string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name is too long'),
+  last_name: z.string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name is too long')
+})
+
+// Step 3: Social Goals
 export const SocialGoalsSchema = z.object({
   social_goals: z.string()
     .min(10, 'Please write at least 10 characters')
@@ -91,6 +101,7 @@ export const ExpectationsSchema = z.object({
 // Map of step keys to their validation schemas
 export const STEP_SCHEMAS = {
   welcome_video: WelcomeVideoSchema,
+  personal_info: PersonalInfoSchema,
   social_goals: SocialGoalsSchema,
   social_handles: SocialHandlesSchema,
   brand_selection: BrandSelectionSchema,

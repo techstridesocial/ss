@@ -7,6 +7,7 @@ import { SignedOnboardingData } from '@/types/onboarding'
 
 export const REQUIRED_STEPS = [
   'welcome_video',
+  'personal_info',
   'social_goals',
   'brand_selection',
   'brand_inbound_setup',
@@ -23,12 +24,14 @@ export const OPTIONAL_STEPS = [
 ] as const
 
 export const ALL_STEPS = [
-  ...REQUIRED_STEPS.slice(0, 2), // welcome_video, social_goals
+  REQUIRED_STEPS[0], // welcome_video
+  REQUIRED_STEPS[1], // personal_info
+  REQUIRED_STEPS[2], // social_goals
   OPTIONAL_STEPS[0], // social_handles
-  REQUIRED_STEPS[2], // brand_selection
+  REQUIRED_STEPS[3], // brand_selection
   OPTIONAL_STEPS[1], // previous_collaborations
   OPTIONAL_STEPS[2], // payment_information
-  ...REQUIRED_STEPS.slice(3) // brand_inbound_setup through expectations
+  ...REQUIRED_STEPS.slice(4) // brand_inbound_setup through expectations
 ] as const
 
 /**
@@ -39,6 +42,12 @@ export function extractStepData(stepKey: string, formData: Partial<SignedOnboard
   switch (stepKey) {
     case 'welcome_video':
       return { welcome_video_watched: formData.welcome_video_watched }
+    
+    case 'personal_info':
+      return {
+        first_name: formData.first_name,
+        last_name: formData.last_name
+      }
     
     case 'social_goals':
       return { social_goals: formData.social_goals }
@@ -94,6 +103,10 @@ export function canProceedToNextStep(stepKey: string, formData: Partial<SignedOn
   switch (stepKey) {
     case 'welcome_video':
       return formData.welcome_video_watched === true
+    
+    case 'personal_info':
+      return (formData.first_name?.trim().length || 0) >= 2 && 
+             (formData.last_name?.trim().length || 0) >= 2
     
     case 'social_goals':
       return (formData.social_goals?.trim().length || 0) >= 10

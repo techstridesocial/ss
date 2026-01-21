@@ -38,6 +38,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const STEPS = [
   { id: 'welcome_video', title: 'Welcome to Stride Talent', type: 'video' },
+  { id: 'personal_info', title: 'Tell us your name', type: 'personal_info' },
   { id: 'social_goals', title: 'What are your social media goals?', type: 'textarea' },
   { id: 'social_handles', title: 'Your social media handles (Optional)', type: 'social_handles' },
   { id: 'brand_selection', title: 'Brands you\'d like to work with', type: 'brand_text' },
@@ -74,6 +75,8 @@ function SignedOnboardingPageContent() {
 
   const [formData, setFormData] = useState<SignedOnboardingData>({
     welcome_video_watched: false,
+    first_name: '',
+    last_name: '',
     social_goals: '',
     instagram_handle: '',
     tiktok_handle: '',
@@ -185,6 +188,10 @@ function SignedOnboardingPageContent() {
     switch (stepKey) {
       case 'welcome_video':
         stepData.welcome_video_watched = formData.welcome_video_watched
+        break
+      case 'personal_info':
+        stepData.first_name = formData.first_name
+        stepData.last_name = formData.last_name
         break
       case 'social_goals':
         stepData.social_goals = formData.social_goals
@@ -431,6 +438,40 @@ function SignedOnboardingPageContent() {
             </motion.div>
           )
         }
+
+      case 'personal_info':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <input
+                  type="text"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                  placeholder="First Name"
+                  className="w-full px-6 py-6 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-white/60 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                  placeholder="Last Name"
+                  className="w-full px-6 py-6 bg-white/10 border-2 border-white/20 rounded-2xl text-white placeholder-white/60 text-lg focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                />
+              </div>
+            </div>
+            <p className="text-white text-sm text-center">
+              Please enter your full legal name as it should appear on contracts and payments
+            </p>
+          </motion.div>
+        )
 
       case 'textarea':
         return (

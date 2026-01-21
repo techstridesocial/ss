@@ -6,7 +6,11 @@ export interface SignedOnboardingData {
   // Step 1: Welcome Video
   welcome_video_watched: boolean
   
-  // Step 2: Social Media Goals
+  // Step 2: Personal Information
+  first_name: string
+  last_name: string
+  
+  // Step 3: Social Media Goals
   social_goals: string
   
   // Step 3: Social Media Handles (Optional)

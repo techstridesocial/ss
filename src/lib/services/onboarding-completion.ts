@@ -94,11 +94,12 @@ export async function completeSignedOnboarding(clerkUserId: string, userId: stri
       }
     }
     
-    // 8. Get Clerk user data
+    // 8. Get Clerk user data and extract name from onboarding
     const clientClerk = await clerkClient()
     const clerkUser = await clientClerk.users.getUser(clerkUserId)
-    const firstName = clerkUser.firstName || ''
-    const lastName = clerkUser.lastName || ''
+    const personalInfo = stepData.personal_info || {}
+    const firstName = personalInfo.first_name || clerkUser.firstName || ''
+    const lastName = personalInfo.last_name || clerkUser.lastName || ''
     const displayName = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || 'Signed Talent'
     
     // 9. Ensure user profile exists
