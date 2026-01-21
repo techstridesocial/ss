@@ -128,9 +128,11 @@ export function safeValidateStepData(stepKey: string, data: any) {
   if (result.success) {
     return { success: true, data: result.data }
   } else {
+    // TypeScript-safe error extraction
+    const firstError = result.error.issues[0]
     return {
       success: false,
-      error: result.error.errors[0]?.message || 'Validation failed'
+      error: firstError?.message || 'Validation failed'
     }
   }
 }
