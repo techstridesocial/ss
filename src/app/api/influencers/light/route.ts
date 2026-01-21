@@ -58,17 +58,19 @@ export async function GET(_request: NextRequest) {
         -- Only essential user fields (single join)
         u.email,
         u.status as user_status,
-        -- Get platform count (no aggregation, just count)
+        -- Get platform count (only connected platforms)
         (
           SELECT COUNT(*)::int 
           FROM influencer_platforms ip_count 
           WHERE ip_count.influencer_id = i.id
+            AND ip_count.is_connected = true
         ) as platform_count,
-        -- Get primary platforms as simple array (no JSON objects)
+        -- Get primary platforms as simple array (only connected platforms)
         (
           SELECT array_agg(DISTINCT ip_plat.platform ORDER BY ip_plat.platform)
           FROM influencer_platforms ip_plat
           WHERE ip_plat.influencer_id = i.id
+            AND ip_plat.is_connected = true
         ) as platforms
       FROM influencers i
       LEFT JOIN users u ON i.user_id = u.id
