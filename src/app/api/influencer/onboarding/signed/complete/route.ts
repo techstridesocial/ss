@@ -71,19 +71,38 @@ export async function POST(_request: NextRequest) {
       console.log('👤 Using existing user ID:', user_id)
     }
 
-    // Define all required onboarding steps
-    const requiredSteps = [
+    // Define all onboarding steps (required + optional)
+    const allSteps = [
       'welcome_video',
       'social_goals',
-      'social_handles',
+      'social_handles', // Optional
       'brand_selection',
-      'previous_collaborations',
-      'payment_information',
+      'previous_collaborations', // Optional
+      'payment_information', // Optional
       'brand_inbound_setup',
       'email_forwarding_video',
       'instagram_bio_setup',
       'uk_events_chat',
       'expectations'
+    ]
+    
+    // Define only required steps (exclude optional ones)
+    const requiredSteps = [
+      'welcome_video',
+      'social_goals',
+      'brand_selection',
+      'brand_inbound_setup',
+      'email_forwarding_video',
+      'instagram_bio_setup',
+      'uk_events_chat',
+      'expectations'
+    ]
+    
+    // Optional steps that can be skipped
+    const optionalSteps = [
+      'social_handles',
+      'previous_collaborations',
+      'payment_information'
     ]
 
     // Check if all steps are completed
@@ -96,15 +115,15 @@ export async function POST(_request: NextRequest) {
       steps: progress.steps.map(s => ({ stepKey: s.stepKey, completed: s.completed }))
     })
 
-    // Find missing steps (steps that don't exist in the database)
+    // Find missing required steps (steps that don't exist in the database)
     const existingStepKeys = progress.steps.map(s => s.stepKey)
-    const missingSteps = requiredSteps.filter(stepKey => !existingStepKeys.includes(stepKey))
+    const missingRequiredSteps = requiredSteps.filter(stepKey => !existingStepKeys.includes(stepKey))
     
-    // Auto-create and mark missing steps as completed
-    if (missingSteps.length > 0) {
-      console.log('Auto-creating missing steps:', missingSteps)
+    // Auto-create and mark missing REQUIRED steps as completed
+    if (missingRequiredSteps.length > 0) {
+      console.log('Auto-creating missing required steps:', missingRequiredSteps)
       await Promise.all(
-        missingSteps.map(stepKey =>
+        missingRequiredSteps.map(stepKey =>
           query(`
             INSERT INTO talent_onboarding_steps (user_id, step_key, completed, data, completed_at)
             VALUES ($1, $2, $3, $4, NOW())
@@ -114,12 +133,14 @@ export async function POST(_request: NextRequest) {
       )
     }
 
-    // Mark any incomplete steps as completed
-    const incompleteSteps = progress.steps.filter(s => !s.completed)
-    if (incompleteSteps.length > 0) {
-      console.log('Marking incomplete steps as completed:', incompleteSteps.map(s => s.stepKey))
+    // Mark any incomplete REQUIRED steps as completed
+    const incompleteRequiredSteps = progress.steps.filter(s => 
+      requiredSteps.includes(s.stepKey) && !s.completed
+    )
+    if (incompleteRequiredSteps.length > 0) {
+      console.log('Marking incomplete required steps as completed:', incompleteRequiredSteps.map(s => s.stepKey))
       await Promise.all(
-        incompleteSteps.map(step =>
+        incompleteRequiredSteps.map(step =>
           query(`
             UPDATE talent_onboarding_steps
             SET completed = true, completed_at = NOW(), updated_at = NOW()
@@ -129,18 +150,43 @@ export async function POST(_request: NextRequest) {
       )
     }
 
+    // Auto-complete optional steps if they're missing (so they don't block completion)
+    const missingOptionalSteps = optionalSteps.filter(stepKey => !existingStepKeys.includes(stepKey))
+    if (missingOptionalSteps.length > 0) {
+      console.log('Auto-completing missing optional steps:', missingOptionalSteps)
+      await Promise.all(
+        missingOptionalSteps.map(stepKey =>
+          query(`
+            INSERT INTO talent_onboarding_steps (user_id, step_key, completed, data, completed_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            ON CONFLICT (user_id, step_key) DO NOTHING
+          `, [user_id, stepKey, true, JSON.stringify({ skipped: true })])
+        )
+      )
+    }
+
     // Re-check progress after auto-completing steps
     const updatedProgress = await getOnboardingProgress(user_id)
     
-    if (!updatedProgress.isComplete) {
+    // Check if all REQUIRED steps are completed (not all steps)
+    const completedRequiredSteps = updatedProgress.steps.filter(s => 
+      requiredSteps.includes(s.stepKey) && s.completed
+    ).length
+    
+    if (completedRequiredSteps < requiredSteps.length) {
+      const missingRequired = requiredSteps.filter(stepKey => {
+        const step = updatedProgress.steps.find(s => s.stepKey === stepKey)
+        return !step || !step.completed
+      })
+      
       return NextResponse.json(
         { 
           success: false, 
-          error: 'All onboarding steps must be completed first',
+          error: 'All required onboarding steps must be completed first',
           details: {
-            completedSteps: updatedProgress.completedSteps,
-            totalSteps: updatedProgress.totalSteps,
-            missingSteps: updatedProgress.steps.filter(s => !s.completed).map(s => s.stepKey)
+            completedRequiredSteps,
+            totalRequiredSteps: requiredSteps.length,
+            missingRequiredSteps: missingRequired
           }
         },
         { status: 400 }

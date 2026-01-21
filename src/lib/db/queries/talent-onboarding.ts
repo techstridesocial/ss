@@ -52,9 +52,11 @@ export interface BrandCollaboration {
 export interface OnboardingProgress {
   userId: string
   steps: OnboardingStep[]
-  completedSteps: number
-  totalSteps: number
-  isComplete: boolean
+  completedSteps: number // All completed steps (for display)
+  totalSteps: number // All steps (for display)
+  completedRequiredSteps?: number // Required steps completed
+  totalRequiredSteps?: number // Total required steps (8)
+  isComplete: boolean // Based on required steps only
   brandPreferences: BrandPreference[]
   paymentHistory: PaymentHistory[]
   collaborations: BrandCollaboration[]
@@ -130,16 +132,36 @@ export async function getOnboardingProgress(userId: string): Promise<OnboardingP
       createdAt: row.created_at
     }))
 
+    // Define required steps (exclude optional: social_handles, previous_collaborations, payment_information)
+    const requiredStepKeys = [
+      'welcome_video',
+      'social_goals',
+      'brand_selection',
+      'brand_inbound_setup',
+      'email_forwarding_video',
+      'instagram_bio_setup',
+      'uk_events_chat',
+      'expectations'
+    ]
+    
+    const completedRequiredSteps = steps.filter(s => 
+      requiredStepKeys.includes(s.stepKey) && s.completed
+    ).length
+    const totalRequiredSteps = requiredStepKeys.length // 8 required steps
+    const isComplete = completedRequiredSteps >= totalRequiredSteps
+    
+    // Also count all completed steps for display purposes
     const completedSteps = steps.filter(s => s.completed).length
-    const totalSteps = 11 // Total number of onboarding steps: welcome_video, social_goals, social_handles, brand_selection, previous_collaborations, payment_information, brand_inbound_setup, email_forwarding_video, instagram_bio_setup, uk_events_chat, expectations
-    const isComplete = completedSteps >= totalSteps // Use >= to handle edge cases where more steps might exist
+    const totalSteps = steps.length // All steps (required + optional)
 
     return {
       userId,
       steps,
-      completedSteps,
-      totalSteps,
-      isComplete,
+      completedSteps, // All completed steps (for display)
+      totalSteps, // All steps (for display)
+      completedRequiredSteps, // Required steps completed
+      totalRequiredSteps, // Total required steps (8)
+      isComplete, // Based on required steps only
       brandPreferences,
       paymentHistory,
       collaborations
