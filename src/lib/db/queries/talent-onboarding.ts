@@ -159,9 +159,7 @@ export async function completeOnboardingStep(
   data: any
 ): Promise<OnboardingStep> {
   try {
-    console.log('completeOnboardingStep called:', { userId, stepKey, data })
-    
-    // Since we're always setting completed = true, we can simplify the query
+    // Optimized query - no blocking console logs
     const result = await query(`
       INSERT INTO talent_onboarding_steps (user_id, step_key, completed, data, completed_at)
       VALUES ($1, $2, $3, $4, NOW())
@@ -173,12 +171,6 @@ export async function completeOnboardingStep(
         updated_at = NOW()
       RETURNING *
     `, [userId, stepKey, true, JSON.stringify(data)])
-
-    console.log('Database query result:', {
-      rowsReturned: result.length,
-      stepKey: result[0]?.step_key,
-      completed: result[0]?.completed
-    })
 
     if (!result || result.length === 0) {
       throw new Error('No rows returned from database insert')

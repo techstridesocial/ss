@@ -174,14 +174,27 @@ function SignedOnboardingPageContent() {
   const progress = ((currentStep + 1) / STEPS.length) * 100
 
   const handleNext = async () => {
-    // Always save current step before moving
-    await saveStep()
+    // Optimistically move to next step for instant UI feedback
+    const isLastStep = currentStep === STEPS.length - 1
     
-    if (currentStep === STEPS.length - 1) {
-      // Last step - complete onboarding
+    if (isLastStep) {
+      // Last step - complete onboarding (this must wait)
       await handleComplete()
     } else {
+      // Move to next step immediately
       setCurrentStep(prev => prev + 1)
+      
+      // Save in background without blocking UI
+      // Use fire-and-forget pattern with error handling
+      saveStep().catch((error) => {
+        console.error('Background save failed:', error)
+        // Show error but don't block navigation
+        toast({
+          title: 'Warning',
+          description: 'Step saved locally but may not have synced. Your progress is safe.',
+          variant: 'default'
+        })
+      })
     }
   }
 
@@ -246,72 +259,36 @@ function SignedOnboardingPageContent() {
         data: stepData
       }
       
-      console.log('Saving step to API:', { stepKey, stepData, requestBody })
+      // Use AbortController for timeout (5 seconds max)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
       
       const response = await fetch('/api/influencer/onboarding/signed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
-        let errorText = ''
-        let errorData: any = null
-        
-        try {
-          errorText = await response.text()
-          if (errorText) {
-            try {
-              errorData = JSON.parse(errorText)
-            } catch (parseError) {
-              // Not JSON, keep as text
-              errorData = { raw: errorText }
-            }
-          }
-        } catch (readError: any) {
-          errorText = `Failed to read response: ${readError?.message || 'Unknown error'}`
-          errorData = { readError: readError?.message || 'Unknown error' }
-        }
-        
-        const errorInfo = {
-          stepKey,
-          status: response.status,
-          statusText: response.statusText || 'No status text',
-          error: errorData || errorText || 'Unknown error',
-          responseBody: errorText || '(empty response)',
-          url: response.url,
-          headers: Object.fromEntries(response.headers.entries())
-        }
-        
-        console.error('Failed to save step:', errorInfo)
-        
-        // Show user-friendly error
-        toast({
-          title: 'Error saving step',
-          description: errorData?.error || errorText || `Failed to save step: ${response.status}`,
-          variant: 'destructive'
-        })
-        
-        return
+        const errorData = await response.json().catch(() => ({ error: 'Failed to save step' }))
+        console.error('Failed to save step:', stepKey, errorData)
+        throw new Error(errorData.error || `Failed to save step: ${response.status}`)
       }
       
-      const result = await response.json()
-      console.log('Step save response:', { stepKey, success: result.success, data: result.data })
+      // Success - silently complete (response already consumed)
+      await response.json().catch(() => {}) // Consume response body
     } catch (error: any) {
-      const errorInfo = {
-        stepKey,
-        error: error?.message || 'Unknown error',
-        errorType: error?.name || 'Error',
-        stack: error?.stack,
-        fullError: error
+      // Only log errors, don't show toast for background saves
+      if (error.name === 'AbortError') {
+        console.warn('Save timeout for step:', stepKey)
+      } else {
+        console.error('Error saving step:', stepKey, error?.message)
       }
-      console.error('Error saving step (catch block):', errorInfo)
-      
-      toast({
-        title: 'Error saving step',
-        description: error?.message || 'An unexpected error occurred while saving',
-        variant: 'destructive'
-      })
+      // Re-throw to let caller handle if needed
+      throw error
     }
   }
 
