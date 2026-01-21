@@ -21,7 +21,7 @@ export const staffQueryKeys = {
 
 // Fetcher functions
 async function fetchRoster() {
-  const response = await fetch('/api/roster')
+  const response = await fetch('/api/influencers/light')
   if (!response.ok) throw new Error('Failed to fetch roster')
   return response.json()
 }
