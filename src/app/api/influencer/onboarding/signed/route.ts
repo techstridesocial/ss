@@ -1,11 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getCurrentUserRole } from '@/lib/auth/roles'
 import { query } from '@/lib/db/connection'
 import {
   getOnboardingProgress,
   completeOnboardingStep
 } from '@/lib/db/queries/talent-onboarding'
+
+/**
+ * Get or create user in database
+ * Returns user_id from users table, creating the user if it doesn't exist
+ */
+async function getOrCreateUser(clerkUserId: string): Promise<string> {
+  // Check if user exists
+  let userResult = await query<{ id: string }>(
+    'SELECT id FROM users WHERE clerk_id = $1',
+    [clerkUserId]
+  )
+
+  if (userResult.length > 0 && userResult[0]) {
+    return userResult[0].id
+  }
+
+  // User doesn't exist, create one automatically
+  console.log('User not found, creating new user record for clerk_id:', clerkUserId)
+  
+  try {
+    // Get user details from Clerk
+    const clientClerk = await clerkClient()
+    const clerkUser = await clientClerk.users.getUser(clerkUserId)
+    const userEmail = clerkUser.emailAddresses[0]?.emailAddress || `user_${clerkUserId}@example.com`
+    const userRole = (clerkUser.publicMetadata?.role as string) || 'INFLUENCER_SIGNED'
+    
+    console.log('Creating user with email:', userEmail, 'role:', userRole)
+    
+    const newUserResult = await query<{ id: string }>(
+      `INSERT INTO users (clerk_id, email, status, role) 
+       VALUES ($1, $2, $3, $4) 
+       RETURNING id`,
+      [clerkUserId, userEmail, 'ACTIVE', userRole]
+    )
+    
+    if (newUserResult.length === 0 || !newUserResult[0]) {
+      throw new Error('INSERT returned no results')
+    }
+    
+    const userId = newUserResult[0].id
+    console.log('✅ Created new user with ID:', userId)
+    return userId
+    
+  } catch (createUserError: any) {
+    console.error('Error creating user:', createUserError)
+    throw new Error('Database error: ' + (createUserError?.message || 'Could not create user record'))
+  }
+}
 
 // GET - Fetch onboarding progress
 export async function GET(_request: NextRequest) {
@@ -22,17 +70,8 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Signed influencer access required' }, { status: 403 })
     }
 
-    // Get user_id from users table
-    const userResult = await query<{ id: string }>(
-      'SELECT id FROM users WHERE clerk_id = $1',
-      [userId]
-    )
-
-    if (userResult.length === 0 || !userResult[0]) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const user_id = userResult[0].id
+    // Get or create user in database
+    const user_id = await getOrCreateUser(userId)
     const progress = await getOnboardingProgress(user_id)
 
     return NextResponse.json({
@@ -63,17 +102,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Signed influencer access required' }, { status: 403 })
     }
 
-    // Get user_id from users table
-    const userResult = await query<{ id: string }>(
-      'SELECT id FROM users WHERE clerk_id = $1',
-      [userId]
-    )
-
-    if (userResult.length === 0 || !userResult[0]) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const user_id = userResult[0].id
+    // Get or create user in database
+    const user_id = await getOrCreateUser(userId)
     const data = await request.json()
 
     // Validate required fields
@@ -140,17 +170,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Signed influencer access required' }, { status: 403 })
     }
 
-    // Get user_id from users table
-    const userResult = await query<{ id: string }>(
-      'SELECT id FROM users WHERE clerk_id = $1',
-      [userId]
-    )
-
-    if (userResult.length === 0 || !userResult[0]) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const user_id = userResult[0].id
+    // Get or create user in database
+    const user_id = await getOrCreateUser(userId)
     const data = await request.json()
 
     // Validate required fields
