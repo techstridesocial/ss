@@ -35,6 +35,8 @@ import { useCurrentUserId } from '@/lib/auth/current-user'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useStaffCampaigns, useStaffMembers, staffQueryKeys } from '@/hooks/useStaffData'
+import { useQueryClient } from '@tanstack/react-query'
 
 // Lazy load heavy modal and panel components
 const CampaignDetailPanel = dynamic(() => import('../../../components/campaigns/CampaignDetailPanel'), {
@@ -96,9 +98,16 @@ function StatCard({ title, value, icon, color, trend }: StatCardProps) {
 
 function CampaignsPageClient() {
   const currentUserId = useCurrentUserId()
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  
+  // Use cached query hooks for instant page loads
+  const { data: campaignsData, isLoading: loading, error: queryError } = useStaffCampaigns()
+  const { data: membersData } = useStaffMembers()
+  
+  const campaigns = campaignsData?.campaigns || []
+  const staffMembers = membersData?.data || []
+  const error = queryError ? (queryError as Error).message : null
+  
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [showDetailPanel, setShowDetailPanel] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -143,7 +152,6 @@ function CampaignsPageClient() {
   })
   
   // Assignment state
-  const [staffMembers, setStaffMembers] = useState<any[]>([])
   const [assignmentLoading, setAssignmentLoading] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -292,41 +300,9 @@ function CampaignsPageClient() {
   const endIndex = startIndex + pageSize
   const paginatedCampaigns = sortedCampaigns.slice(startIndex, endIndex)
 
-  // Fetch campaigns from API
-  useEffect(() => {
-    fetchCampaigns()
-    loadStaffMembers()
-  }, [])
-
-  const fetchCampaigns = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/campaigns')
-      if (!response.ok) {
-        throw new Error('Failed to fetch campaigns')
-      }
-      const data = await response.json()
-      if (data.success) {
-        setCampaigns(data.campaigns)
-      } else {
-        throw new Error(data.error || 'Failed to fetch campaigns')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch campaigns')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadStaffMembers = async () => {
-    try {
-      const response = await fetch('/api/staff/members')
-      if (response.ok) {
-        const result = await response.json()
-        setStaffMembers(result.data || [])
-      }
-    } catch (error) {
-    }
+  // Refresh campaigns data (used after mutations)
+  const fetchCampaigns = () => {
+    queryClient.invalidateQueries({ queryKey: staffQueryKeys.campaigns })
   }
 
   // Handle campaign assignment
@@ -347,16 +323,8 @@ function CampaignsPageClient() {
 
       const result = await response.json()
       
-      // Update local state
-      setCampaigns(prev => prev.map(campaign => {
-        if (campaign.id === campaignId) {
-          return {
-            ...campaign,
-            assignedStaff: result.data.assignedStaff
-          }
-        }
-        return campaign
-      }))
+      // Refresh campaigns to show updated assignment
+      fetchCampaigns()
       
       showNotificationModal(
         'Assignment Updated',
@@ -566,9 +534,9 @@ function CampaignsPageClient() {
 
   // Calculate dashboard stats
   const totalCampaignsCount = campaigns.length
-  const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length
-  const totalBudget = campaigns.reduce((sum, c) => sum + c.budget.total, 0)
-  const totalInfluencers = campaigns.reduce((sum, c) => sum + c.totalInfluencers, 0)
+  const activeCampaigns = campaigns.filter((c: Campaign) => c.status === 'ACTIVE').length
+  const totalBudget = campaigns.reduce((sum: number, c: Campaign) => sum + c.budget.total, 0)
+  const totalInfluencers = campaigns.reduce((sum: number, c: Campaign) => sum + c.totalInfluencers, 0)
 
   if (loading) {
     return (
@@ -1133,13 +1101,13 @@ function CampaignsPageClient() {
                         onChange={(e) => handleAssignCampaign(campaign.id, e.target.value)}
                         disabled={assignmentLoading === campaign.id}
                         className="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
-                      >
-                        <option value="">Unassigned</option>
-                        {staffMembers.map(staff => (
-                          <option key={staff.id} value={staff.id}>
-                            {staff.fullName}
-                          </option>
-                        ))}
+                        >
+                          <option value="">Unassigned</option>
+                          {staffMembers.map((staff: any) => (
+                            <option key={staff.id} value={staff.id}>
+                              {staff.fullName}
+                            </option>
+                          ))}
                       </select>
                       {assignmentLoading === campaign.id && (
                         <div className="mt-1 flex items-center text-xs text-gray-500">
@@ -1312,7 +1280,7 @@ function CampaignsPageClient() {
         {showEditModal && editingCampaignId && (
           <EditCampaignModal
             isOpen={showEditModal}
-            campaign={campaigns.find(c => c.id === editingCampaignId) || {}}
+            campaign={campaigns.find((c: Campaign) => c.id === editingCampaignId) || {} as Campaign}
             onClose={() => {
               setShowEditModal(false)
               setEditingCampaignId(null)
