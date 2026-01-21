@@ -131,8 +131,8 @@ export async function getOnboardingProgress(userId: string): Promise<OnboardingP
     }))
 
     const completedSteps = steps.filter(s => s.completed).length
-    const totalSteps = 10 // Total number of onboarding steps
-    const isComplete = completedSteps === totalSteps
+    const totalSteps = 11 // Total number of onboarding steps: welcome_video, social_goals, social_handles, brand_selection, previous_collaborations, payment_information, brand_inbound_setup, email_forwarding_video, instagram_bio_setup, uk_events_chat, expectations
+    const isComplete = completedSteps >= totalSteps // Use >= to handle edge cases where more steps might exist
 
     return {
       userId,
