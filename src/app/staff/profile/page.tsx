@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import { useStaffProfile, staffQueryKeys } from '@/hooks/useStaffData'
+import { useQueryClient } from '@tanstack/react-query'
 import ModernStaffHeader from '@/components/nav/ModernStaffHeader'
 import { StaffProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { 
@@ -169,11 +171,14 @@ const PasswordStrengthIndicator = ({ password }: { password: string }) => {
 
 function StaffProfileContent() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
+  
+  // Use cached query hook for instant page loads
+  const { data: profileData, isLoading } = useStaffProfile()
   
   // State
-  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [userData, setUserData] = useState<UserData | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(profileData?.data || null)
   
   // Form states
   const [profile, setProfile] = useState<ProfileData>({
@@ -204,35 +209,14 @@ function StaffProfileContent() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   
-  // Load profile data
+  // Update local state when profile data loads
   useEffect(() => {
-    fetchProfile()
-  }, [])
-  
-  const fetchProfile = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/staff/profile')
-      const result = await response.json()
-      
-      if (result.success) {
-        setUserData(result.data)
-        setProfile(result.data.profile)
-        setNotifications(result.data.notification_preferences)
-      } else {
-        throw new Error(result.error)
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load profile. Please refresh the page.',
-        variant: 'destructive'
-      })
-    } finally {
-      setIsLoading(false)
+    if (profileData?.success && profileData?.data) {
+      setUserData(profileData.data)
+      setProfile(profileData.data.profile)
+      setNotifications(profileData.data.notification_preferences)
     }
-  }
+  }, [profileData])
   
   const handleSaveProfile = async () => {
     try {
@@ -249,6 +233,8 @@ function StaffProfileContent() {
       const result = await response.json()
       
       if (result.success) {
+        // Refresh cached profile data
+        queryClient.invalidateQueries({ queryKey: staffQueryKeys.profile })
         toast({
           title: 'Profile Updated',
           description: 'Your profile settings have been saved successfully.'

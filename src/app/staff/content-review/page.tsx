@@ -28,6 +28,8 @@ import {
   FileText
 } from 'lucide-react'
 import { useToast } from '../../../components/ui/use-toast'
+import { useStaffContentReview, staffQueryKeys } from '@/hooks/useStaffData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface ContentSubmission {
   id: string
@@ -75,11 +77,14 @@ interface Stats {
 }
 
 export default function StaffContentReviewPage() {
-  const [submissions, setSubmissions] = useState<ContentSubmission[]>([])
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('pending')
+  
+  // Use cached query hook for instant page loads
+  const { data: contentData, isLoading } = useStaffContentReview(statusFilter)
+  const submissions = contentData?.submissions || []
+  const stats = contentData?.stats || null
   const [platformFilter, setPlatformFilter] = useState('all')
   const [selectedSubmission, setSelectedSubmission] = useState<ContentSubmission | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
@@ -88,42 +93,9 @@ export default function StaffContentReviewPage() {
   const [pageSize, setPageSize] = useState(12)
   const { toast } = useToast()
 
-  const loadSubmissions = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const params = new URLSearchParams()
-      
-      if (statusFilter && statusFilter !== 'all') {
-        params.append('status', statusFilter)
-      }
-      if (platformFilter && platformFilter !== 'all') {
-        params.append('platform', platformFilter)
-      }
-      if (searchQuery) {
-        params.append('search', searchQuery)
-      }
-
-      const response = await fetch(`/api/staff/content-submissions?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setSubmissions(data.submissions || [])
-        setStats(data.stats || null)
-      }
-    } catch (error) {
-      console.error('Error loading submissions:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load content submissions',
-        variant: 'destructive'
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [statusFilter, platformFilter, searchQuery, toast])
-
-  useEffect(() => {
-    loadSubmissions()
-  }, [loadSubmissions])
+  const loadSubmissions = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: staffQueryKeys.contentReview(statusFilter) })
+  }, [statusFilter, queryClient])
 
   const handleReview = async (action: 'approve' | 'reject' | 'revision') => {
     if (!selectedSubmission) return
@@ -368,7 +340,7 @@ export default function StaffContentReviewPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {paginatedSubmissions.map((submission, index) => (
+              {paginatedSubmissions.map((submission: ContentSubmission, index: number) => (
                 <motion.div
                   key={submission.id}
                   initial={{ opacity: 0, y: 20 }}

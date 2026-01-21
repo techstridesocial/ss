@@ -24,6 +24,8 @@ import {
   Building2
 } from 'lucide-react'
 import { useToast } from '../../../components/ui/use-toast'
+import { useStaffInvoices, staffQueryKeys } from '@/hooks/useStaffData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Invoice {
   id: string
@@ -68,11 +70,14 @@ interface Stats {
 }
 
 export default function StaffInvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  
+  // Use cached query hook for instant page loads
+  const { data: invoicesData, isLoading } = useStaffInvoices(statusFilter)
+  const invoices = invoicesData?.invoices || []
+  const stats = invoicesData?.stats || null
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [actionNotes, setActionNotes] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -80,39 +85,9 @@ export default function StaffInvoicesPage() {
   const [pageSize, setPageSize] = useState(10)
   const { toast } = useToast()
 
-  const loadInvoices = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const params = new URLSearchParams()
-      
-      if (statusFilter && statusFilter !== 'all') {
-        params.append('status', statusFilter)
-      }
-      if (searchQuery) {
-        params.append('search', searchQuery)
-      }
-
-      const response = await fetch(`/api/staff/invoices?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setInvoices(data.invoices || [])
-        setStats(data.stats || null)
-      }
-    } catch (error) {
-      console.error('Error loading invoices:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load invoices',
-        variant: 'destructive'
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [statusFilter, searchQuery, toast])
-
-  useEffect(() => {
-    loadInvoices()
-  }, [loadInvoices])
+  const loadInvoices = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: staffQueryKeys.invoices(statusFilter) })
+  }, [statusFilter, queryClient])
 
   const handleAction = async (action: string) => {
     if (!selectedInvoice) return
@@ -350,7 +325,7 @@ export default function StaffInvoicesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {paginatedInvoices.map((invoice, index) => (
+                    {paginatedInvoices.map((invoice: Invoice, index: number) => (
                       <motion.tr
                         key={invoice.id}
                         initial={{ opacity: 0, y: 10 }}

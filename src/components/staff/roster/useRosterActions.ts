@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { StaffInfluencer } from '@/types/staff'
 
 interface UseRosterActionsProps {
-  onRefresh: () => Promise<void>
+  onRefresh: () => void | Promise<void>
   onInfluencersUpdate: (updater: (prev: StaffInfluencer[]) => StaffInfluencer[]) => void
 }
 

@@ -1,70 +1,35 @@
 /**
  * useRosterData Hook
- * Manages roster data loading and state
+ * Manages roster data loading and state with React Query caching
  */
 
-import { useState, useEffect } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { useState } from 'react'
+import { useStaffRoster, staffQueryKeys } from '@/hooks/useStaffData'
+import { useQueryClient } from '@tanstack/react-query'
 import { StaffInfluencer } from '@/types/staff'
 
 export function useRosterData() {
-  const { getToken } = useAuth()
+  // Use cached React Query hook for instant page loads
+  const { data: rosterData, isLoading: isInitialLoading, error: queryError } = useStaffRoster()
+  const queryClient = useQueryClient()
+  
+  // Local state for optimistic updates
   const [influencers, setInfluencers] = useState<StaffInfluencer[]>([])
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  
+  // Use server data as source of truth, fall back to local state
+  const serverInfluencers = rosterData?.data || []
+  const displayInfluencers = serverInfluencers.length > 0 ? serverInfluencers : influencers
+  
+  const loadError = queryError ? (queryError as Error).message : null
 
-  const loadInfluencers = async () => {
-    try {
-      setLoadError(null)
-      const token = await getToken()
-      if (!token) {
-        setLoadError('Authentication required. Please sign in.')
-        setInfluencers([])
-        setIsInitialLoading(false)
-        return
-      }
-
-      const response = await fetch('/api/influencers/light', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setInfluencers(result.data)
-          setLoadError(null)
-          setIsInitialLoading(false)
-          return result.data
-        } else {
-          setLoadError(result.error || 'Failed to load influencers')
-          setInfluencers([])
-          setIsInitialLoading(false)
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to load influencers' }))
-        setLoadError(errorData.error || `Error ${response.status}: ${response.statusText}`)
-        setInfluencers([])
-        setIsInitialLoading(false)
-      }
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Network error. Please check your connection.')
-      setInfluencers([])
-      setIsInitialLoading(false)
-    }
+  const loadInfluencers = () => {
+    queryClient.invalidateQueries({ queryKey: staffQueryKeys.roster })
   }
-
-  // Load on mount
-  useEffect(() => {
-    loadInfluencers()
-  }, [])
 
   const refreshInfluencers = () => loadInfluencers()
 
   return {
-    influencers,
+    influencers: displayInfluencers,
     setInfluencers,
     isInitialLoading,
     loadError,

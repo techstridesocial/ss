@@ -26,6 +26,9 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/components/ui/use-toast'
+import { useStaffFinances, staffQueryKeys } from '@/hooks/useStaffData'
+import { useQueryClient } from '@tanstack/react-query'
 
 // Lazy load heavy modal components
 const InvoiceDetailModal = dynamic(() => import('../../../components/staff/InvoiceDetailModal'), {
@@ -67,11 +70,14 @@ interface InvoiceSummary {
 }
 
 export default function StaffFinancePage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [summary, setSummary] = useState<InvoiceSummary | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  
+  // Use cached query hook for instant page loads
+  const { data: financesData, isLoading } = useStaffFinances()
+  const invoices = financesData?.invoices || []
+  const summary = financesData?.summary || null
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   
@@ -88,26 +94,8 @@ export default function StaffFinancePage() {
   const [amountRange, setAmountRange] = useState({ min: '', max: '' })
   const [brandFilter, setBrandFilter] = useState('')
 
-  useEffect(() => {
-    fetchInvoices()
-  }, [])
-
-  const fetchInvoices = async () => {
-    try {
-      setIsLoading(true)
-      const params = new URLSearchParams()
-      if (statusFilter && statusFilter !== 'ALL') params.append('status', statusFilter)
-      
-      const response = await fetch(`/api/staff/invoices?${params.toString()}`)
-      if (response.ok) {
-        const data = await response.json()
-        setInvoices(data.invoices || [])
-        setSummary(data.summary)
-      }
-    } catch {
-    } finally {
-      setIsLoading(false)
-    }
+  const fetchInvoices = () => {
+    queryClient.invalidateQueries({ queryKey: staffQueryKeys.finances })
   }
 
   const handleStatusUpdate = async (invoiceId: string, newStatus: string, notes?: string) => {
@@ -147,7 +135,7 @@ export default function StaffFinancePage() {
     if (selectedInvoices.size === filteredInvoices.length) {
       setSelectedInvoices(new Set())
     } else {
-      setSelectedInvoices(new Set(filteredInvoices.map(invoice => invoice.id)))
+      setSelectedInvoices(new Set(filteredInvoices.map((invoice: Invoice) => invoice.id)))
     }
   }
 
@@ -203,7 +191,7 @@ export default function StaffFinancePage() {
     }
   }
 
-  const filteredInvoices = invoices.filter(invoice => {
+  const filteredInvoices = invoices.filter((invoice: Invoice) => {
     const matchesSearch = invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          invoice.creator_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          invoice.brand_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -531,7 +519,7 @@ export default function StaffFinancePage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {filteredInvoices.map((invoice) => (
+                      {filteredInvoices.map((invoice: Invoice) => (
                         <tr key={invoice.id} className="hover:bg-blue-50/30 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <input

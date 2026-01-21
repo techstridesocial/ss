@@ -357,7 +357,7 @@ function InfluencerTableClient({ searchParams, onPanelStateChange }: InfluencerT
       MY_CREATORS: 0
     }
 
-    influencers.forEach(influencer => {
+    influencers.forEach((influencer: StaffInfluencer) => {
       let matchesFilters = true
       
       // Apply search and filters for counting
