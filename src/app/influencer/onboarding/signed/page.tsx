@@ -204,6 +204,11 @@ function SignedOnboardingPageContent() {
       case 'social_goals':
         stepData.social_goals = formData.social_goals
         break
+      case 'social_handles':
+        stepData.instagram_handle = formData.instagram_handle
+        stepData.tiktok_handle = formData.tiktok_handle
+        stepData.youtube_handle = formData.youtube_handle
+        break
       case 'brand_selection':
         stepData.preferred_brands = formData.preferred_brands
         break
@@ -328,6 +333,11 @@ function SignedOnboardingPageContent() {
           case 'social_goals':
             stepData.social_goals = formData.social_goals
             break
+          case 'social_handles':
+            stepData.instagram_handle = formData.instagram_handle
+            stepData.tiktok_handle = formData.tiktok_handle
+            stepData.youtube_handle = formData.youtube_handle
+            break
           case 'brand_selection':
             stepData.preferred_brands = formData.preferred_brands
             break
@@ -428,6 +438,8 @@ function SignedOnboardingPageContent() {
         return formData.welcome_video_watched
       case 'social_goals':
         return formData.social_goals.trim() !== ''
+      case 'social_handles':
+        return true // Optional step - can proceed with or without handles
       case 'brand_selection':
         return formData.preferred_brands.trim() !== ''
       case 'previous_collaborations':
