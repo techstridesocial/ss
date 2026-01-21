@@ -6,6 +6,8 @@ import {
   getOnboardingProgress,
   completeOnboardingStep
 } from '@/lib/db/queries/talent-onboarding'
+import { safeValidateStepData } from '@/lib/validation/onboarding-schemas'
+import { rateLimit } from '@/lib/middleware/rate-limit'
 
 /**
  * Get or create user in database
@@ -96,6 +98,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Rate limiting: 60 requests per minute per user
+    const allowed = rateLimit(`onboarding:${userId}`, {
+      windowMs: 60000,
+      maxRequests: 60
+    })
+
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests. Please slow down.' },
+        { status: 429 }
+      )
+    }
+
     // Verify user is a signed influencer
     const userRole = await getCurrentUserRole()
     if (!userRole || userRole !== 'INFLUENCER_SIGNED') {
@@ -114,11 +129,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Complete the step (optimized - no blocking logs)
+    // Validate step data with Zod schema
+    const validation = safeValidateStepData(data.step_key, data.data || {})
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      )
+    }
+
+    // Complete the step with validated data
     const step = await completeOnboardingStep(
       user_id,
       data.step_key,
-      data.data || {}
+      validation.data
     )
 
     return NextResponse.json({

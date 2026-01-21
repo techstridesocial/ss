@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
@@ -22,54 +22,19 @@ import {
   Check,
   X,
   Plus,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react'
 import { ONBOARDING_VIDEOS, UK_EVENTS_WHATSAPP_LINK, EXPECTATIONS_CONTENT } from '@/constants/onboarding'
-
-interface SignedOnboardingData {
-  // Step 1: Welcome Video - no data needed, just watched
-  welcome_video_watched: boolean
-  
-  // Step 2: Social Media Goals
-  social_goals: string
-  
-  // Step 3: Social Media Handles (Optional)
-  instagram_handle: string
-  tiktok_handle: string
-  youtube_handle: string
-  
-  // Step 4: Brand Selection
-  preferred_brands: string // Text field for brands they'd like to work with
-  
-  // Step 5: Previous Collaborations
-  collaborations: Array<{
-    brand_name: string
-    collaboration_type: string
-    date_range: string
-    notes: string
-  }>
-  
-  // Step 6: Payment Information
-  previous_payment_amount: string
-  currency: string
-  payment_method: string
-  payment_notes: string
-  
-  // Step 7: Brand Inbound Setup
-  email_setup_type: 'email_forwarding' | 'manager_email' | ''
-  manager_email: string
-  
-  // Step 8: Email Forwarding Video - no data needed, just watched
-  email_forwarding_video_watched: boolean
-  
-  // Step 9: Instagram Bio Setup
-  instagram_bio_setup: 'done' | 'will_do' | ''
-  
-  // Step 10: UK Events Chat - no data needed, just link clicked
-  uk_events_chat_joined: boolean
-  
-  // Step 11: Expectations - read-only, no data needed
-}
+import { SignedOnboardingData } from '@/types/onboarding'
+import { 
+  extractStepData, 
+  canProceedToNextStep, 
+  saveProgressBackup, 
+  loadProgressBackup,
+  clearProgressBackup
+} from '@/lib/utils/onboarding-helpers'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const STEPS = [
   { id: 'welcome_video', title: 'Welcome to Stride Talent', type: 'video' },
@@ -134,25 +99,31 @@ function SignedOnboardingPageContent() {
   const loadOnboardingProgress = async () => {
     try {
       setIsLoadingProgress(true)
+      
+      // Try loading from localStorage first (instant)
+      const backup = loadProgressBackup()
+      if (backup) {
+        setFormData(prev => ({ ...prev, ...backup.formData }))
+        setCurrentStep(backup.currentStep)
+      }
+      
+      // Then load from server (authoritative)
       const response = await fetch('/api/influencer/onboarding/signed')
       if (response.ok) {
         const result = await response.json()
         if (result.success && result.data) {
-          // Restore form data from saved progress
           const progress = result.data
+          
+          // Batch all form updates into a single state update (performance fix)
           if (progress.steps) {
-            progress.steps.forEach((step: any) => {
+            const allStepData = progress.steps.reduce((acc: any, step: any) => {
               if (step.data) {
-                Object.keys(step.data).forEach(key => {
-                  if (key in formData) {
-                    setFormData(prev => ({
-                      ...prev,
-                      [key]: step.data[key]
-                    }))
-                  }
-                })
+                return { ...acc, ...step.data }
               }
-            })
+              return acc
+            }, {})
+            
+            setFormData(prev => ({ ...prev, ...allStepData }))
           }
           
           // Find the first incomplete step
@@ -164,6 +135,12 @@ function SignedOnboardingPageContent() {
       }
     } catch (error) {
       console.error('Error loading onboarding progress:', error)
+      // If server fails, localStorage backup keeps the user's work safe
+      toast({
+        title: 'Connection Issue',
+        description: 'Using local backup. Your progress is safe.',
+        variant: 'default'
+      })
     } finally {
       setIsLoadingProgress(false)
     }
@@ -174,26 +151,21 @@ function SignedOnboardingPageContent() {
   const progress = ((currentStep + 1) / STEPS.length) * 100
 
   const handleNext = async () => {
-    // Optimistically move to next step for instant UI feedback
+    // Save current step to localStorage first
+    saveProgressBackup(formData, currentStep)
+    
     const isLastStep = currentStep === STEPS.length - 1
     
     if (isLastStep) {
       // Last step - complete onboarding (this must wait)
       await handleComplete()
     } else {
-      // Move to next step immediately
+      // Move to next step immediately (optimistic UI)
       setCurrentStep(prev => prev + 1)
       
-      // Save in background without blocking UI
-      // Use fire-and-forget pattern with error handling
-      saveStep().catch((error) => {
-        console.error('Background save failed:', error)
-        // Show error but don't block navigation
-        toast({
-          title: 'Warning',
-          description: 'Step saved locally but may not have synced. Your progress is safe.',
-          variant: 'default'
-        })
+      // Save in background with retry
+      saveStepWithRetry().catch(() => {
+        // Error already handled by saveStepWithRetry
       })
     }
   }
@@ -253,6 +225,9 @@ function SignedOnboardingPageContent() {
         break
     }
 
+    // Save to localStorage immediately (instant backup)
+    saveProgressBackup(formData, currentStep)
+    
     try {
       const requestBody = {
         step_key: stepKey,
@@ -278,127 +253,101 @@ function SignedOnboardingPageContent() {
         throw new Error(errorData.error || `Failed to save step: ${response.status}`)
       }
       
-      // Success - silently complete (response already consumed)
-      await response.json().catch(() => {}) // Consume response body
+      // Success - silently complete
+      await response.json().catch(() => {})
     } catch (error: any) {
-      // Only log errors, don't show toast for background saves
+      // Log errors but don't show toast for background saves
       if (error.name === 'AbortError') {
         console.warn('Save timeout for step:', stepKey)
       } else {
         console.error('Error saving step:', stepKey, error?.message)
       }
-      // Re-throw to let caller handle if needed
       throw error
     }
+  }
+  
+  // Retry mechanism with exponential backoff
+  const saveStepWithRetry = async (maxRetries = 3) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await saveStep()
+        return true // Success
+      } catch (error) {
+        if (attempt === maxRetries) {
+          // Last attempt failed
+          toast({
+            title: 'Save Failed',
+            description: 'Your progress is backed up locally. Try again when online.',
+            variant: 'destructive',
+            action: {
+              label: 'Retry',
+              onClick: () => saveStepWithRetry(1)
+            }
+          } as any)
+          return false
+        }
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+      }
+    }
+    return false
   }
 
   const handleComplete = async () => {
     setIsLoading(true)
     
     try {
-      // Save ALL steps that haven't been saved yet
-      // This ensures all steps are in the database even if some weren't saved during navigation
-      const stepsToSave = STEPS.map(step => {
-        const stepKey = step.id
-        let stepData: any = {}
-        
-        // Collect data for each step
-        switch (stepKey) {
-          case 'welcome_video':
-            stepData.welcome_video_watched = formData.welcome_video_watched
-            break
-          case 'social_goals':
-            stepData.social_goals = formData.social_goals
-            break
-          case 'social_handles':
-            stepData.instagram_handle = formData.instagram_handle
-            stepData.tiktok_handle = formData.tiktok_handle
-            stepData.youtube_handle = formData.youtube_handle
-            break
-          case 'brand_selection':
-            stepData.preferred_brands = formData.preferred_brands
-            break
-          case 'previous_collaborations':
-            stepData.collaborations = formData.collaborations
-            break
-          case 'payment_information':
-            stepData.previous_payment_amount = formData.previous_payment_amount
-            stepData.currency = formData.currency
-            stepData.payment_method = formData.payment_method
-            stepData.payment_notes = formData.payment_notes
-            break
-          case 'brand_inbound_setup':
-            stepData.email_setup_type = formData.email_setup_type
-            stepData.manager_email = formData.manager_email
-            break
-          case 'email_forwarding_video':
-            stepData.email_forwarding_video_watched = formData.email_forwarding_video_watched
-            break
-          case 'instagram_bio_setup':
-            stepData.instagram_bio_setup = formData.instagram_bio_setup
-            break
-          case 'uk_events_chat':
-            stepData.uk_events_chat_joined = formData.uk_events_chat_joined
-            break
-          case 'expectations':
-            stepData.viewed = true
-            break
-        }
-        
-        return { stepKey, stepData }
-      })
+      // Save ALL steps using shared helper (no duplication!)
+      const stepsToSave = STEPS.map(step => ({
+        stepKey: step.id,
+        stepData: extractStepData(step.id, formData)
+      }))
       
-      // Save all steps and wait for them to complete successfully
+      // Save all steps
       const saveResults = await Promise.allSettled(
         stepsToSave.map(({ stepKey, stepData }) =>
           fetch('/api/influencer/onboarding/signed', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              step_key: stepKey,
-              data: stepData
-            })
+            body: JSON.stringify({ step_key: stepKey, data: stepData })
           }).then(async (response) => {
             if (!response.ok) {
               const errorText = await response.text().catch(() => 'Unknown error')
-              throw new Error(`Failed to save step ${stepKey}: ${response.status} - ${errorText}`)
+              throw new Error(`Step ${stepKey}: ${response.status}`)
             }
             return response.json()
           })
         )
       )
 
-      // Log any failures but continue
+      // Check for failures
       const failures = saveResults.filter(r => r.status === 'rejected')
       if (failures.length > 0) {
-        console.warn('Some steps failed to save:', failures.map(f => f.status === 'rejected' ? f.reason : null))
+        console.warn('Some steps had issues:', failures.length)
+        // Continue anyway - server will auto-complete missing steps
       }
 
-      // Brand preferences are now saved as text in step data, no separate API call needed
-
-      // Save collaborations (already saved in step data, no need to save separately)
-
-      // Mark onboarding as complete
+      // Mark onboarding as complete (server handles all data in transaction)
       const response = await fetch('/api/influencer/onboarding/signed/complete', {
         method: 'POST'
       })
 
       if (response.ok) {
+        // Clear localStorage backup on successful completion
+        clearProgressBackup()
         setIsCompleted(true)
         setTimeout(() => {
           router.push('/influencer/campaigns')
-        }, 3000)
+        }, 2000)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Onboarding completion error:', errorData)
-        throw new Error(errorData.error || `Failed to complete onboarding: ${response.status}`)
+        throw new Error(errorData.error || 'Completion failed')
       }
     } catch (error: any) {
       console.error('Error completing onboarding:', error)
-      const errorMessage = error.message || 'Failed to complete onboarding. Please try again.'
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: error.message || 'Failed to complete. Please try again.',
         variant: 'destructive'
       })
     } finally {
@@ -406,37 +355,10 @@ function SignedOnboardingPageContent() {
     }
   }
 
+  // Use shared helper for validation (no duplication!)
   const canProceed = () => {
     if (!currentStepData) return false
-    const stepKey = currentStepData.id
-    
-    switch (stepKey) {
-      case 'welcome_video':
-        return formData.welcome_video_watched
-      case 'social_goals':
-        return formData.social_goals.trim() !== ''
-      case 'social_handles':
-        return true // Optional step - can proceed with or without handles
-      case 'brand_selection':
-        return formData.preferred_brands.trim() !== ''
-      case 'previous_collaborations':
-        return true // Optional step
-      case 'payment_information':
-        return true // Optional step
-      case 'brand_inbound_setup':
-        return formData.email_setup_type !== '' && 
-               (formData.email_setup_type === 'email_forwarding' || formData.manager_email.trim() !== '')
-      case 'email_forwarding_video':
-        return formData.email_forwarding_video_watched || formData.email_setup_type === 'manager_email'
-      case 'instagram_bio_setup':
-        return formData.instagram_bio_setup !== ''
-      case 'uk_events_chat':
-        return formData.uk_events_chat_joined
-      case 'expectations':
-        return true // Read-only step
-      default:
-        return false
-    }
+    return canProceedToNextStep(currentStepData.id, formData)
   }
 
   const renderStepContent = () => {
@@ -1070,9 +992,11 @@ function SignedOnboardingPageContent() {
 
 export default function SignedOnboardingPage() {
   return (
-    <InfluencerProtectedRoute>
-      <SignedOnboardingPageContent />
-    </InfluencerProtectedRoute>
+    <ErrorBoundary>
+      <InfluencerProtectedRoute>
+        <SignedOnboardingPageContent />
+      </InfluencerProtectedRoute>
+    </ErrorBoundary>
   )
 }
 

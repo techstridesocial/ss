@@ -1,76 +1,72 @@
 'use client'
 
-import { Component, ReactNode } from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { AlertTriangle, RefreshCcw } from 'lucide-react'
 
-interface ErrorBoundaryProps {
+interface Props {
   children: ReactNode
   fallback?: ReactNode
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean
   error: Error | null
 }
 
-/**
- * Reusable Error Boundary component for wrapping specific sections
- * 
- * Usage:
- * <ErrorBoundary fallback={<CustomErrorUI />}>
- *   <YourComponent />
- * </ErrorBoundary>
- */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props)
     this.state = { hasError: false, error: null }
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
-    this.props.onError?.(error, errorInfo)
   }
 
-  handleReset = (): void => {
+  handleReset = () => {
     this.setState({ hasError: false, error: null })
   }
 
-  render(): ReactNode {
+  render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback
       }
 
       return (
-        <div className="p-6 bg-red-50 border border-red-200 rounded-xl">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-red-800 mb-1">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Something went wrong
-              </h3>
-              <p className="text-sm text-red-600 mb-3">
-                This section encountered an error. The rest of the page should still work.
+              </h1>
+              
+              <p className="text-gray-600 mb-6">
+                We're sorry for the inconvenience. Your progress has been saved.
               </p>
+              
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <pre className="text-xs bg-red-100 p-2 rounded mb-3 overflow-auto max-h-32 text-red-700">
-                  {this.state.error.message}
-                </pre>
+                <div className="w-full bg-gray-100 rounded-lg p-4 mb-4 text-left">
+                  <p className="text-sm font-mono text-gray-800 break-words">
+                    {this.state.error.message}
+                  </p>
+                </div>
               )}
+              
               <button
-                onClick={this.handleReset}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-red-700 hover:text-red-800"
+                onClick={() => window.location.reload()}
+                className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all duration-300"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Try again
+                <RefreshCcw className="w-5 h-5 mr-2" />
+                Reload Page
               </button>
             </div>
           </div>
@@ -81,63 +77,3 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return this.props.children
   }
 }
-
-/**
- * Inline Error Fallback - A simpler fallback for non-critical sections
- */
-export function InlineErrorFallback({ 
-  message = 'Failed to load this section',
-  onRetry 
-}: { 
-  message?: string
-  onRetry?: () => void 
-}) {
-  return (
-    <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg text-sm text-gray-600">
-      <AlertTriangle className="w-4 h-4 text-gray-400" />
-      <span>{message}</span>
-      {onRetry && (
-        <button
-          onClick={onRetry}
-          className="ml-auto text-blue-600 hover:text-blue-700 font-medium"
-        >
-          Retry
-        </button>
-      )}
-    </div>
-  )
-}
-
-/**
- * Card Error Fallback - For card/panel components
- */
-export function CardErrorFallback({ 
-  title = 'Error Loading Content',
-  onRetry 
-}: { 
-  title?: string
-  onRetry?: () => void 
-}) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
-      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-        <AlertTriangle className="w-6 h-6 text-gray-400" />
-      </div>
-      <h4 className="font-medium text-gray-900 mb-1">{title}</h4>
-      <p className="text-sm text-gray-500 mb-4">
-        We couldn&apos;t load this content. Please try again.
-      </p>
-      {onRetry && (
-        <button
-          onClick={onRetry}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Retry
-        </button>
-      )}
-    </div>
-  )
-}
-
-export default ErrorBoundary
