@@ -7,6 +7,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { HeartedInfluencersProvider } from '../lib/context/HeartedInfluencersContext';
 import { QueryProvider } from '../components/providers/QueryProvider';
 import { ErrorTrackingProvider } from '../components/providers/ErrorTrackingProvider';
+import { SessionTimeoutProvider } from '../components/providers/SessionTimeoutProvider';
 
 export const metadata: Metadata = {
   title: "Stride Social Dashboard",
@@ -34,7 +35,9 @@ export default function RootLayout({
           <ErrorTrackingProvider>
             <QueryProvider>
               <HeartedInfluencersProvider>
-                {children}
+                <SessionTimeoutProvider>
+                  {children}
+                </SessionTimeoutProvider>
               </HeartedInfluencersProvider>
             </QueryProvider>
           </ErrorTrackingProvider>

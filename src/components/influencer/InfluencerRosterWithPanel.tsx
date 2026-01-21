@@ -6,6 +6,7 @@ import { Eye, Users, TrendingUp, MapPin } from 'lucide-react'
 import { InfluencerWithProfile, InfluencerDetailView } from '@/types/database'
 import InfluencerDetailPanel from './InfluencerDetailPanel'
 import { fetchInfluencerDetails } from '@/lib/api/influencers'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface InfluencerRosterWithPanelProps {
   influencers: InfluencerWithProfile[]
@@ -153,10 +154,10 @@ export default function InfluencerRosterWithPanel({ influencers }: InfluencerRos
           >
             {/* Influencer Info */}
             <div className="col-span-3 flex items-center space-x-3">
-              <img
-                src={influencer.avatar_url || '/default-avatar.svg'}
-                alt={influencer.display_name}
-                className="w-10 h-10 rounded-full object-cover"
+              <Avatar
+                src={influencer.avatar_url}
+                alt={influencer.display_name || 'Influencer'}
+                size="md"
               />
               <div>
                 <div className="font-medium text-gray-900">{influencer.display_name}</div>

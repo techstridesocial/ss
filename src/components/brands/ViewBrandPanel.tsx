@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { X, Building2, Mail, Globe, User, MapPin, Phone, Tag, CheckCircle, AlertCircle, Calendar, DollarSign, Target, TrendingUp, FileText, Star, ExternalLink, Edit } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface ViewBrandPanelProps {
   isOpen: boolean
@@ -1020,17 +1021,12 @@ export default function ViewBrandPanel({
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
                                   <div className="flex-shrink-0">
-                                    {member.avatar_url ? (
-                                      <img 
-                                        className="w-12 h-12 rounded-2xl object-cover border-2 border-gray-200" 
-                                        src={member.avatar_url} 
-                                        alt={member.name}
-                                      />
-                                    ) : (
-                                      <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center border-2 border-blue-200">
-                                        <User size={20} className="text-blue-600" />
-                                      </div>
-                                    )}
+                                    <Avatar
+                                      src={member.avatar_url}
+                                      alt={member.name}
+                                      size="lg"
+                                      className="border-2 border-gray-200"
+                                    />
                                   </div>
                                   <div className="flex-1">
                                     <div className="flex items-center space-x-3 mb-1">

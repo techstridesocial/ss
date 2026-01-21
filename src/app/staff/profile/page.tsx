@@ -151,17 +151,17 @@ const PasswordStrengthIndicator = ({ password }: { password: string }) => {
           <div
             key={i}
             className={`h-1 flex-1 rounded-full transition-colors ${
-              i <= strength.level ? strength.color : 'bg-gray-200'
+              strength && i <= strength.level ? strength.color : 'bg-gray-200'
             }`}
           />
         ))}
       </div>
       <div className={`text-xs font-medium ${
-        strength.level <= 1 ? 'text-red-600' :
-        strength.level === 2 ? 'text-orange-600' :
-        strength.level === 3 ? 'text-yellow-600' : 'text-green-600'
+        strength && strength.level <= 1 ? 'text-red-600' :
+        strength && strength.level === 2 ? 'text-orange-600' :
+        strength && strength.level === 3 ? 'text-yellow-600' : 'text-green-600'
       }`}>
-        {strength.label}
+        {strength?.label || 'Weak'}
       </div>
     </div>
   )

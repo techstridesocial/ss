@@ -17,6 +17,7 @@ import { useQuotations } from '@/lib/hooks/staff/useBrands'
 // Components
 import { QuotationsTable } from '@/components/staff/brands/QuotationsTable'
 import { Pagination } from '@/components/ui/Pagination'
+import { ResponsiveTable } from '@/components/ui/ResponsiveTable'
 
 // Lazy load the detail panel
 const QuotationDetailPanel = dynamic(() => import('@/components/brands/QuotationDetailPanel'), {
@@ -127,7 +128,7 @@ function QuotationsPageClient() {
     pending: quotations.filter(q => q.status === 'pending_review').length,
     approved: quotations.filter(q => q.status === 'approved').length,
     rejected: quotations.filter(q => q.status === 'rejected').length,
-    inProgress: quotations.filter(q => q.status === 'in_progress').length
+    inProgress: quotations.filter(q => q.status === 'pending_review' || q.status === 'sent').length
   }), [quotations])
 
   // Handlers
@@ -472,7 +473,7 @@ function QuotationsPageClient() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <ResponsiveTable>
               <table className="min-w-full">
                 <QuotationsTable
                   quotations={paginatedQuotations}
@@ -483,7 +484,7 @@ function QuotationsPageClient() {
                   onApproveQuotation={handleApproveQuotation}
                 />
               </table>
-            </div>
+            </ResponsiveTable>
           )}
         </motion.div>
 
@@ -525,7 +526,7 @@ function QuotationsPageClient() {
             setCampaignQuotation(null)
           }}
           quotation={campaignQuotation}
-          onSuccess={handleCampaignCreated}
+          onSave={handleCampaignCreated}
         />
       )}
 

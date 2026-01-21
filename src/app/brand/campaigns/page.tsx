@@ -31,6 +31,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 // Production-ready: ALL data comes from database via API
 
@@ -517,31 +518,33 @@ function CampaignsPageClient() {
 
         {/* Empty State */}
         {paginatedCampaigns.length === 0 && (
-          <div className="px-6 py-12 text-center">
-            <Target size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchQuery || activeTab !== 'ALL' 
+          <EmptyState
+            icon={<Target size={48} className="text-gray-400" />}
+            title="No campaigns found"
+            description={
+              searchQuery || activeTab !== 'ALL' 
                 ? 'Try adjusting your search or filter criteria.'
                 : 'Create your first campaign to start collaborating with influencers.'
-              }
-            </p>
-            {!searchQuery && activeTab === 'ALL' && (
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                Create Campaign
-              </button>
-            )}
-            {(searchQuery || activeTab !== 'ALL') && (
-              <button
-                onClick={clearFilters}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                Clear Filters
-              </button>
-            )}
+            }
+            variant={searchQuery || activeTab !== 'ALL' ? 'search' : 'default'}
+            action={
+              !searchQuery && activeTab === 'ALL' 
+                ? {
+                    label: 'Create Campaign',
+                    onClick: () => setIsCreateModalOpen(true)
+                  }
+                : undefined
+            }
+          />
+        )}
+        {paginatedCampaigns.length === 0 && (searchQuery || activeTab !== 'ALL') && (
+          <div className="text-center mt-4">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Clear Filters
+            </button>
           </div>
         )}
       </div>

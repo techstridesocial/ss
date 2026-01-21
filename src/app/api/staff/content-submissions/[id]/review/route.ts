@@ -64,6 +64,13 @@ export async function POST(
     const status = statusMap[action]
     const sanitizedNotes = notes ? sanitizeString(notes) : undefined
 
+    if (!status) {
+      return NextResponse.json(
+        { error: 'Invalid action. Must be approve, reject, or revision' },
+        { status: 400 }
+      )
+    }
+
     // Update the submission
     const updatedSubmission = await updateContentSubmissionStatus(
       id,

@@ -61,6 +61,29 @@ CREATE INDEX IF NOT EXISTS idx_influencers_engagement_followers ON influencers(t
 -- Index for brand viewing their submissions
 CREATE INDEX IF NOT EXISTS idx_campaign_content_brand_status ON campaign_content_submissions(campaign_influencer_id, status);
 
+-- Composite index for content lookups by campaign and influencer
+-- Note: campaign_influencer_id references campaign_influencers which has both campaign_id and influencer_id
+-- This index helps with queries filtering by status and looking up submissions
+CREATE INDEX IF NOT EXISTS idx_campaign_content_submissions_lookup ON campaign_content_submissions(campaign_influencer_id, status, submitted_at DESC);
+
+-- ========================================
+-- NOTIFICATIONS PERFORMANCE
+-- ========================================
+
+-- Composite index for unread notification counts (if not already exists from notifications-table.sql)
+-- This helps with queries like: SELECT COUNT(*) FROM notifications WHERE recipient_id = ? AND is_read = false
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_read ON notifications(recipient_id, is_read);
+
+-- ========================================
+-- INVOICES PERFORMANCE
+-- ========================================
+
+-- Composite index for invoice queries by influencer and status
+CREATE INDEX IF NOT EXISTS idx_influencer_invoices_influencer_status ON influencer_invoices(influencer_id, status);
+
+-- Index for invoice queries by campaign and status
+CREATE INDEX IF NOT EXISTS idx_influencer_invoices_campaign_status ON influencer_invoices(campaign_id, status);
+
 -- ========================================
 -- VERIFICATION
 -- ========================================

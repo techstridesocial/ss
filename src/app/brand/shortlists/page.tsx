@@ -22,6 +22,7 @@ import {
   Send,
   ExternalLink
 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { Platform, InfluencerDetailView } from '../../../types/database'
 import { 
   CreateShortlistModal, 
@@ -436,20 +437,15 @@ export default function BrandShortlistsPage() {
 
               {/* Influencers Grid */}
               {currentShortlist.influencers.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Heart size={64} className="mx-auto text-gray-400 mb-6" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">No influencers in this shortlist yet</h3>
-                  <p className="text-gray-600 mb-6">
-                    Start adding influencers by browsing the influencer directory and clicking the heart icon.
-                  </p>
-                  <a
-                    href="/brand/influencers"
-                    className="inline-flex items-center px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors gap-2"
-                  >
-                    <ExternalLink size={16} />
-                    Browse Influencers
-                  </a>
-                </div>
+                <EmptyState
+                  icon={<Heart size={64} className="text-gray-400" />}
+                  title="No influencers in this shortlist yet"
+                  description="Start adding influencers by browsing the influencer directory and clicking the heart icon."
+                  action={{
+                    label: 'Browse Influencers',
+                    onClick: () => window.location.href = '/brand/influencers'
+                  }}
+                />
               ) : (
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

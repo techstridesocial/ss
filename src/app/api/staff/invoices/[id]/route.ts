@@ -73,6 +73,10 @@ export async function PUT(
     )
     const staffId = staffResult[0]?.id
 
+    if (!staffId) {
+      return NextResponse.json({ error: 'Staff user not found' }, { status: 404 })
+    }
+
     // Sanitize notes
     const sanitizedNotes = notes ? sanitizeString(notes) : undefined
 

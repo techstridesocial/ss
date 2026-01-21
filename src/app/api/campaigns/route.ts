@@ -209,12 +209,13 @@ export async function POST(request: NextRequest) {
         console.log('📋 Creating quotation record for tracking...')
         
         // Get brand ID
-        let brandId: string
+        let brandId: string | undefined
         try {
           brandId = await getBrandIdFromUserId(userId)
         } catch (brandError) {
           console.warn('⚠️ Could not get brand ID for quotation creation:', brandError)
           // Continue without creating quotation if brand not found
+          brandId = undefined
         }
         
         if (brandId) {

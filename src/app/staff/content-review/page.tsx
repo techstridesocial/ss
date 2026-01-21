@@ -198,6 +198,7 @@ export default function StaffContentReviewPage() {
       REVISION_REQUESTED: { bg: 'bg-orange-100', text: 'text-orange-700', icon: <RefreshCw className="w-3 h-3" /> }
     }
     const config = configs[status] || configs.PENDING
+    if (!config) return null
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
         {config.icon}

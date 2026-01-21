@@ -242,14 +242,17 @@ export function CommandPalette() {
 
   // Group commands by category
   const groupedCommands = useMemo(() => {
-    const groups: { [key: string]: Command[] } = {
+    const groups: { navigation: Command[]; actions: Command[]; recent: Command[] } = {
       navigation: [],
       actions: [],
       recent: []
     }
     
     filteredCommands.forEach(cmd => {
-      groups[cmd.category].push(cmd)
+      const category = groups[cmd.category as keyof typeof groups]
+      if (category) {
+        category.push(cmd)
+      }
     })
     
     return groups

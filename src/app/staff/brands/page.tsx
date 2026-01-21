@@ -63,7 +63,7 @@ function BrandsPageClient() {
   // Data hooks
   const { brands, isLoading, loadError, reloadBrands } = useBrands()
   const staffMembers = useStaffMembers()
-  const quotations = useQuotations()
+  const { quotations, isLoading: quotationsLoading, reloadQuotations } = useQuotations()
   
   // Filter hook
   const {

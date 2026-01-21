@@ -161,6 +161,7 @@ export async function getUserById(userId: string): Promise<UserWithProfile | nul
       up.location_country,
       up.location_city,
       up.bio,
+      up.website_url,
       up.is_onboarded,
       up.created_at as profile_created_at,
       up.updated_at as profile_updated_at
@@ -188,6 +189,7 @@ export async function getUserById(userId: string): Promise<UserWithProfile | nul
       location_country: row.location_country,
       location_city: row.location_city,
       bio: row.bio,
+      website_url: row.website_url,
       is_onboarded: row.is_onboarded,
       created_at: row.profile_created_at,
       updated_at: row.profile_updated_at

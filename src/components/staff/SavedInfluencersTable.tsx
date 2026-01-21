@@ -16,6 +16,8 @@ import {
 import { useStaffSavedInfluencers, StaffSavedInfluencer } from '../../lib/hooks/useStaffSavedInfluencers'
 import { formatNumber } from '../../components/influencer/detail-panel/utils'
 import { useToast } from '@/components/ui/use-toast'
+import { Avatar } from '@/components/ui/Avatar'
+import { ResponsiveTable } from '@/components/ui/ResponsiveTable'
 
 interface SavedInfluencersTableProps {
   selectedPlatform: 'instagram' | 'tiktok' | 'youtube'
@@ -181,7 +183,7 @@ function SavedInfluencersTable({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <ResponsiveTable>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -216,17 +218,11 @@ function SavedInfluencersTable({
                 {/* Influencer Info */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 w-10 h-10">
-                      <img 
-                        className="w-10 h-10 rounded-full object-cover bg-gray-100" 
-                        src={influencer.profile_picture || '/default-avatar.svg'} 
-                        alt={influencer.display_name}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/default-avatar.svg';
-                        }}
-                      />
-                    </div>
+                    <Avatar
+                      src={influencer.profile_picture}
+                      alt={influencer.display_name || influencer.username}
+                      size="md"
+                    />
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
                         {influencer.display_name || influencer.username}
@@ -453,7 +449,7 @@ function SavedInfluencersTable({
             ))}
           </tbody>
         </table>
-      </div>
+      </ResponsiveTable>
     </div>
   )
 }
