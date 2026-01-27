@@ -140,8 +140,8 @@ export async function PATCH(
     })
 
     // Invalidate cache after update
-    await cache.delete(`submission:brand:${id}:${brandId}`)
-    await cache.deletePattern(`submission:*:${id}*`)
+    await cache.del(`submission:brand:${id}:${brandId}`)
+    await cache.delPattern(`submission:*:${id}*`)
 
     return NextResponse.json({
       success: true,

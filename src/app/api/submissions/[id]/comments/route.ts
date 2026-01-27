@@ -146,7 +146,7 @@ export async function POST(
     const comment = await addComment(id, user_id, data.comment.trim())
 
     // Invalidate cache after adding comment
-    await cache.deletePattern(`submission:*:${id}*`)
+    await cache.delPattern(`submission:*:${id}*`)
 
     return NextResponse.json({
       success: true,
