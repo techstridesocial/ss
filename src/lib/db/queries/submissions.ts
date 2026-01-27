@@ -134,28 +134,28 @@ export async function getSubmissionListById(id: string): Promise<SubmissionList 
     const [result, influencersResult, commentsResult] = await Promise.all([
       // Query 1: Main submission list
       query(`
-        SELECT 
-          sl.*,
-          b.company_name as brand_name,
-          u.email as created_by_email,
-          up.first_name || ' ' || up.last_name as created_by_name
-        FROM staff_submission_lists sl
-        LEFT JOIN brands b ON sl.brand_id = b.id
-        LEFT JOIN users u ON sl.created_by = u.id
-        LEFT JOIN user_profiles up ON u.id = up.user_id
-        WHERE sl.id = $1
+      SELECT 
+        sl.*,
+        b.company_name as brand_name,
+        u.email as created_by_email,
+        up.first_name || ' ' || up.last_name as created_by_name
+      FROM staff_submission_lists sl
+      LEFT JOIN brands b ON sl.brand_id = b.id
+      LEFT JOIN users u ON sl.created_by = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE sl.id = $1
       `, [id]),
       // Query 2: Influencers (parallel)
       query(`
-        SELECT 
-          sli.*,
-          i.display_name as influencer_display_name,
-          i.total_followers as influencer_followers,
-          i.total_engagement_rate as influencer_engagement
-        FROM staff_submission_list_influencers sli
-        LEFT JOIN influencers i ON sli.influencer_id = i.id
-        WHERE sli.submission_list_id = $1
-        ORDER BY sli.created_at ASC
+      SELECT 
+        sli.*,
+        i.display_name as influencer_display_name,
+        i.total_followers as influencer_followers,
+        i.total_engagement_rate as influencer_engagement
+      FROM staff_submission_list_influencers sli
+      LEFT JOIN influencers i ON sli.influencer_id = i.id
+      WHERE sli.submission_list_id = $1
+      ORDER BY sli.created_at ASC
       `, [id]),
       // Query 3: Comments (parallel)
       query(`
@@ -169,7 +169,7 @@ export async function getSubmissionListById(id: string): Promise<SubmissionList 
         LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE c.submission_list_id = $1
         ORDER BY c.created_at ASC
-      `, [id])
+    `, [id])
     ])
 
     if (result.length === 0) return null

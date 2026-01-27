@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import ModernBrandHeader from '../../../../components/nav/ModernBrandHeader'
 import { BrandProtectedRoute } from '../../../../components/auth/ProtectedRoute'
 import { useToast } from '@/components/ui/use-toast'
-import { ArrowLeft, MessageSquare, CheckCircle, XCircle, AlertCircle, Clock, Search, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, MessageSquare, CheckCircle, XCircle, AlertCircle, Clock, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
 type SubmissionListStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED'
@@ -70,7 +70,7 @@ function BrandSubmissionDetailPageContent() {
     try {
       // Only set loading on initial load, not on subsequent calls to prevent flashing
       if (!list) {
-        setIsLoading(true)
+      setIsLoading(true)
       }
       setError(null)
       const response = await fetch(`/api/brand/submissions/${id}`)
@@ -318,9 +318,9 @@ function BrandSubmissionDetailPageContent() {
           </div>
 
           {/* Main Content - Full width grid matching header */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6 w-full">
+            <div className="lg:col-span-2 space-y-6 min-w-0">
               {/* Action Buttons */}
               {canApprove && (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -366,8 +366,8 @@ function BrandSubmissionDetailPageContent() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Influencers ({list.influencers?.length || 0})
-                  </h2>
+                  Influencers ({list.influencers?.length || 0})
+                </h2>
                   
                   {/* Search */}
                   {list.influencers && list.influencers.length > 0 && (
@@ -393,31 +393,25 @@ function BrandSubmissionDetailPageContent() {
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-3">
+                <div className="space-y-3">
                       {paginatedInfluencers.map(inf => (
                         <div key={inf.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => router.push(`/brand/influencers?influencer=${inf.influencerId}`)}
-                                className="font-medium text-gray-900 hover:text-cyan-600 transition-colors flex items-center gap-1"
-                              >
-                                {inf.influencerName || 'Unknown'}
-                                <ExternalLink className="w-3 h-3" />
-                              </button>
-                            </div>
+                            <p className="font-medium text-gray-900">
+                              {inf.influencerName || 'Unknown'}
+                            </p>
                             {inf.notes && (
                               <p className="text-sm text-gray-600 mt-1">{inf.notes}</p>
                             )}
                           </div>
-                          {inf.initialPrice && (
+                      {inf.initialPrice && (
                             <div className="text-right ml-4">
-                              <p className="font-semibold text-gray-900">£{inf.initialPrice.toLocaleString()}</p>
-                            </div>
-                          )}
+                          <p className="font-semibold text-gray-900">£{inf.initialPrice.toLocaleString()}</p>
                         </div>
-                      ))}
+                      )}
                     </div>
+                  ))}
+                </div>
 
                     {/* Pagination */}
                     {totalPages > 1 && (
@@ -452,7 +446,7 @@ function BrandSubmissionDetailPageContent() {
             </div>
 
             {/* Comments Sidebar */}
-            <div className="lg:col-span-1 w-full">
+            <div className="lg:col-span-1 min-w-0">
               <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5" />
@@ -465,9 +459,9 @@ function BrandSubmissionDetailPageContent() {
                     <div key={comment.id} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900">
-                            {comment.userName || 'Unknown'}
-                          </p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {comment.userName || 'Unknown'}
+                        </p>
                           {comment.userRole && (
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(comment.userRole)}`}>
                               {comment.userRole}

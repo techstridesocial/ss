@@ -392,9 +392,9 @@ function SubmissionDetailPageContent() {
         <div className="min-h-screen bg-gray-50">
           <ModernStaffHeader />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
-              <p className="mt-4 text-gray-600">Loading submission list...</p>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+                <p className="mt-4 text-gray-600">Loading submission list...</p>
             </div>
           </div>
         </div>
@@ -408,8 +408,8 @@ function SubmissionDetailPageContent() {
         <div className="min-h-screen bg-gray-50">
           <ModernStaffHeader />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-              {error || 'Submission list not found'}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                {error || 'Submission list not found'}
             </div>
           </div>
         </div>
@@ -490,7 +490,7 @@ function SubmissionDetailPageContent() {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Notes - Editable for staff */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-lg font-semibold text-gray-900">Notes</h2>
                   {canEdit && !isEditingNotes && (
@@ -542,8 +542,8 @@ function SubmissionDetailPageContent() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Influencers ({list.influencers?.length || 0})
-                  </h2>
+                  Influencers ({list.influencers?.length || 0})
+                </h2>
                   
                   {/* Search */}
                   {list.influencers && list.influencers.length > 0 && (
@@ -574,7 +574,7 @@ function SubmissionDetailPageContent() {
                         <div key={inf.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           {editingInfluencerId === inf.influencerId ? (
                             // Edit Mode
-                            <div className="space-y-3">
+                <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <button
                                   onClick={() => router.push(`/staff/roster/${inf.influencerId}`)}
@@ -596,7 +596,7 @@ function SubmissionDetailPageContent() {
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
                                   />
                                 </div>
-                                <div>
+                      <div>
                                   <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
                                   <textarea
                                     value={editingInfluencerNotes}
@@ -638,14 +638,14 @@ function SubmissionDetailPageContent() {
                                     <ExternalLink className="w-3 h-3" />
                                   </button>
                                 </div>
-                                {inf.notes && (
-                                  <p className="text-sm text-gray-600 mt-1">{inf.notes}</p>
-                                )}
-                              </div>
+                        {inf.notes && (
+                          <p className="text-sm text-gray-600 mt-1">{inf.notes}</p>
+                        )}
+                      </div>
                               <div className="flex items-center gap-2">
-                                {inf.initialPrice && (
+                      {inf.initialPrice && (
                                   <div className="text-right mr-4">
-                                    <p className="font-semibold text-gray-900">£{inf.initialPrice.toLocaleString()}</p>
+                          <p className="font-semibold text-gray-900">£{inf.initialPrice.toLocaleString()}</p>
                                   </div>
                                 )}
                                 {canEdit && (
@@ -672,11 +672,11 @@ function SubmissionDetailPageContent() {
                                   </>
                                 )}
                               </div>
-                            </div>
-                          )}
                         </div>
-                      ))}
+                      )}
                     </div>
+                  ))}
+                </div>
 
                     {/* Pagination */}
                     {totalPages > 1 && (
@@ -724,9 +724,9 @@ function SubmissionDetailPageContent() {
                     <div key={comment.id} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900">
-                            {comment.userName || 'Unknown'}
-                          </p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {comment.userName || 'Unknown'}
+                        </p>
                           {comment.userRole && (
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(comment.userRole)}`}>
                               {comment.userRole}
@@ -764,8 +764,8 @@ function SubmissionDetailPageContent() {
                     {isSubmittingComment ? 'Posting...' : 'Post Comment'}
                   </button>
                 </form>
-              </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
