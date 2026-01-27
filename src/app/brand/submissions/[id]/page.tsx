@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import ModernBrandHeader from '../../../../components/nav/ModernBrandHeader'
 import { BrandProtectedRoute } from '../../../../components/auth/ProtectedRoute'
@@ -50,29 +50,54 @@ function BrandSubmissionDetailPageContent() {
   const [newComment, setNewComment] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false) // For background refresh indicator
   
   // Influencer list features
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const influencersPerPage = 10
 
-  // Real-time polling
+  // Smart polling - only when page is visible and user is active
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
+  const [isPageVisible, setIsPageVisible] = useState(true)
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
+
+  // Track page visibility for smart polling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden)
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   useEffect(() => {
     if (id) {
       loadList()
-      // Start polling every 10 seconds for real-time updates
-      const interval = setInterval(() => {
-        loadList()
-      }, 10000)
-      setPollingInterval(interval)
+      
+      // Smart polling: only when page is visible, much less aggressive
+      const startPolling = () => {
+        const interval = setInterval(() => {
+          // Only poll if page is visible and not already loading
+          if (document.visibilityState === 'visible' && !isLoading && !isRefreshing && list) {
+            const timeSinceLastUpdate = Date.now() - lastUpdateTime
+            // Poll much less frequently: every 60 seconds, and only if data is more than 45 seconds old
+            if (timeSinceLastUpdate > 45000) {
+              loadList(true) // Pass true to indicate background refresh
+            }
+          }
+        }, 60000) // Check every 60 seconds instead of 10
+        setPollingInterval(interval)
+        return interval
+      }
+      
+      const interval = startPolling()
       
       return () => {
         if (interval) clearInterval(interval)
       }
     }
-  }, [id])
+  }, [id, lastUpdateTime, isLoading, isRefreshing, list])
 
   useEffect(() => {
     return () => {
@@ -82,9 +107,14 @@ function BrandSubmissionDetailPageContent() {
     }
   }, [pollingInterval])
 
-  const loadList = async () => {
+  const loadList = async (isBackgroundRefresh = false) => {
     try {
-      setIsLoading(true)
+      // Only show full loading on initial load, subtle indicator for background refresh
+      if (isBackgroundRefresh) {
+        setIsRefreshing(true)
+      } else {
+        setIsLoading(true)
+      }
       setError(null)
       const response = await fetch(`/api/brand/submissions/${id}`)
       if (!response.ok) throw new Error('Failed to load submission list')
@@ -92,14 +122,19 @@ function BrandSubmissionDetailPageContent() {
       const result = await response.json()
       if (result.success) {
         setList(result.data)
+        setLastUpdateTime(Date.now())
       } else {
         throw new Error(result.error || 'Failed to load list')
       }
     } catch (err) {
       console.error('Error loading list:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load submission list')
+      // Don't show error on background refresh, only on initial load
+      if (!isBackgroundRefresh) {
+        setError(err instanceof Error ? err.message : 'Failed to load submission list')
+      }
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -278,7 +313,14 @@ function BrandSubmissionDetailPageContent() {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-6">
+          <div className="mb-6 relative">
+            {/* Subtle refresh indicator - positioned absolutely to not affect layout */}
+            {isRefreshing && (
+              <div className="absolute top-0 right-0 flex items-center gap-2 text-xs text-gray-400 bg-white px-2 py-1 rounded-md shadow-sm">
+                <div className="inline-block animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-cyan-600"></div>
+                <span>Refreshing...</span>
+              </div>
+            )}
             <button
               onClick={() => router.push('/brand/submissions')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
@@ -330,7 +372,7 @@ function BrandSubmissionDetailPageContent() {
             </div>
           </div>
 
-          {/* Main Content - Grid matches header width */}
+          {/* Main Content - Grid matches header width exactly */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">

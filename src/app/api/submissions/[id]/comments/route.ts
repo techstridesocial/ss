@@ -8,6 +8,7 @@ import {
   getListComments,
   addComment
 } from '@/lib/db/queries/submissions'
+import { cache } from '@/lib/cache/redis'
 
 // GET - Get all comments for a list
 export async function GET(
@@ -143,6 +144,9 @@ export async function POST(
 
     // Add comment
     const comment = await addComment(id, user_id, data.comment.trim())
+
+    // Invalidate cache after adding comment
+    await cache.deletePattern(`submission:*:${id}*`)
 
     return NextResponse.json({
       success: true,

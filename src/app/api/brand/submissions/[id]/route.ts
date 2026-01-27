@@ -6,6 +6,9 @@ import {
   getSubmissionListById,
   updateSubmissionList
 } from '@/lib/db/queries/submissions'
+import { withCache } from '@/lib/cache/cache-middleware'
+import { TTL } from '@/lib/cache/cache-middleware'
+import { cache } from '@/lib/cache/redis'
 
 // GET - Get submission list details
 export async function GET(
@@ -35,7 +38,19 @@ export async function GET(
       return NextResponse.json({ error: 'Brand profile not found' }, { status: 404 })
     }
 
-    const list = await getSubmissionListById(id)
+    // Use cached query for performance (5 minute TTL)
+    const list = await withCache(
+      `submission:brand:${id}:${brandId}`,
+      TTL.MEDIUM, // 5 minutes
+      async () => {
+        const data = await getSubmissionListById(id)
+        // Verify ownership before caching
+        if (data && data.brandId !== brandId) {
+          throw new Error('Forbidden - This list does not belong to your brand')
+        }
+        return data
+      }
+    )
 
     if (!list) {
       return NextResponse.json({ error: 'Submission list not found' }, { status: 404 })
@@ -49,6 +64,10 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: list
+    }, {
+      headers: {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=600'
+      }
     })
   } catch (error) {
     console.error('Error fetching submission list:', error)
@@ -119,6 +138,10 @@ export async function PATCH(
     const updated = await updateSubmissionList(id, {
       status: data.status
     })
+
+    // Invalidate cache after update
+    await cache.delete(`submission:brand:${id}:${brandId}`)
+    await cache.deletePattern(`submission:*:${id}*`)
 
     return NextResponse.json({
       success: true,

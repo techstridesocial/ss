@@ -7,6 +7,8 @@ import {
   updateSubmissionList,
   deleteSubmissionList
 } from '@/lib/db/queries/submissions'
+import { withCache } from '@/lib/cache/cache-middleware'
+import { TTL } from '@/lib/cache/cache-middleware'
 
 // GET - Get submission list details
 export async function GET(
@@ -27,7 +29,13 @@ export async function GET(
     }
 
     const { id } = await params
-    const list = await getSubmissionListById(id)
+    
+    // Use cached query for performance (5 minute TTL)
+    const list = await withCache(
+      `submission:staff:${id}`,
+      TTL.MEDIUM, // 5 minutes
+      () => getSubmissionListById(id)
+    )
 
     if (!list) {
       return NextResponse.json({ error: 'Submission list not found' }, { status: 404 })
@@ -36,6 +44,10 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: list
+    }, {
+      headers: {
+        'Cache-Control': 'private, max-age=300, stale-while-revalidate=600'
+      }
     })
   } catch (error) {
     console.error('Error fetching submission list:', error)

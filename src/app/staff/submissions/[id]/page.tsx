@@ -64,23 +64,37 @@ function SubmissionDetailPageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const influencersPerPage = 10
 
-  // Real-time polling
+  // Smart polling - only when page is visible and user is active
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0)
+
+  // Track page visibility for smart polling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Only poll when page is visible
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   useEffect(() => {
     if (id) {
       loadList()
-      // Start polling every 10 seconds for real-time updates
+      
+      // Smart polling: only when page is visible
       const interval = setInterval(() => {
-        loadList()
-      }, 10000)
+        // Only poll if page is visible
+        if (document.visibilityState === 'visible') {
+          loadList()
+        }
+      }, 10000) // Check every 10 seconds, but only poll when visible
       setPollingInterval(interval)
       
       return () => {
         if (interval) clearInterval(interval)
       }
     }
-  }, [id])
+  }, [id, lastUpdateTime])
 
   useEffect(() => {
     return () => {
@@ -101,6 +115,7 @@ function SubmissionDetailPageContent() {
       if (result.success) {
         setList(result.data)
         setEditedNotes(result.data.notes || '')
+        setLastUpdateTime(Date.now())
       } else {
         throw new Error(result.error || 'Failed to load list')
       }
