@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import ModernBrandHeader from '../../../../components/nav/ModernBrandHeader'
 import { BrandProtectedRoute } from '../../../../components/auth/ProtectedRoute'
 import { useToast } from '@/components/ui/use-toast'
-import { ArrowLeft, MessageSquare, Plus, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react'
+import { ArrowLeft, MessageSquare, CheckCircle, XCircle, AlertCircle, Clock, Search, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 type SubmissionListStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED'
 
@@ -16,6 +17,10 @@ interface SubmissionList {
   brandName?: string
   status: SubmissionListStatus
   notes: string | null
+  submittedAt: Date | null
+  reviewedAt: Date | null
+  approvedAt: Date | null
+  rejectedAt: Date | null
   influencers: Array<{
     id: string
     influencerId: string
@@ -45,12 +50,37 @@ function BrandSubmissionDetailPageContent() {
   const [newComment, setNewComment] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  
+  // Influencer list features
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const influencersPerPage = 10
+
+  // Real-time polling
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (id) {
       loadList()
+      // Start polling every 10 seconds for real-time updates
+      const interval = setInterval(() => {
+        loadList()
+      }, 10000)
+      setPollingInterval(interval)
+      
+      return () => {
+        if (interval) clearInterval(interval)
+      }
     }
   }, [id])
+
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
+  }, [pollingInterval])
 
   const loadList = async () => {
     try {
@@ -150,6 +180,62 @@ function BrandSubmissionDetailPageContent() {
     }
   }
 
+  const getRoleBadgeColor = (role?: string) => {
+    switch (role) {
+      case 'STAFF': return 'bg-purple-100 text-purple-800'
+      case 'BRAND': return 'bg-cyan-100 text-cyan-800'
+      case 'INFLUENCER': return 'bg-pink-100 text-pink-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const formatDateTime = (date: Date | string | null) => {
+    if (!date) return 'N/A'
+    const d = new Date(date)
+    return d.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const formatDate = (date: Date | string | null) => {
+    if (!date) return 'N/A'
+    const d = new Date(date)
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  // Filter and paginate influencers
+  const filteredInfluencers = useMemo(() => {
+    if (!list?.influencers) return []
+    if (!searchQuery.trim()) return list.influencers
+    
+    const query = searchQuery.toLowerCase()
+    return list.influencers.filter(inf => 
+      inf.influencerName?.toLowerCase().includes(query) ||
+      inf.notes?.toLowerCase().includes(query)
+    )
+  }, [list?.influencers, searchQuery])
+
+  const totalPages = Math.ceil(filteredInfluencers.length / influencersPerPage)
+  const paginatedInfluencers = useMemo(() => {
+    const start = (currentPage - 1) * influencersPerPage
+    const end = start + influencersPerPage
+    return filteredInfluencers.slice(start, end)
+  }, [filteredInfluencers, currentPage])
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1)
+    }
+  }, [totalPages, currentPage])
+
   const canApprove = list?.status === 'SUBMITTED' || list?.status === 'UNDER_REVIEW'
   const canReject = list?.status === 'SUBMITTED' || list?.status === 'UNDER_REVIEW'
   const canRequestRevision = list?.status === 'SUBMITTED' || list?.status === 'UNDER_REVIEW'
@@ -207,6 +293,34 @@ function BrandSubmissionDetailPageContent() {
                 <p className="mt-2 text-sm text-gray-600">
                   Submitted by Stride Social Staff
                 </p>
+                
+                {/* Submission Dates */}
+                <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
+                  {list.submittedAt && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Submitted: {formatDateTime(list.submittedAt)}</span>
+                    </div>
+                  )}
+                  {list.reviewedAt && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Reviewed: {formatDateTime(list.reviewedAt)}</span>
+                    </div>
+                  )}
+                  {list.approvedAt && (
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Approved: {formatDateTime(list.approvedAt)}</span>
+                    </div>
+                  )}
+                  {list.rejectedAt && (
+                    <div className="flex items-center gap-1">
+                      <XCircle className="w-3 h-3" />
+                      <span>Rejected: {formatDateTime(list.rejectedAt)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(list.status)}`}>
@@ -216,6 +330,7 @@ function BrandSubmissionDetailPageContent() {
             </div>
           </div>
 
+          {/* Main Content - Grid matches header width */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
@@ -262,26 +377,90 @@ function BrandSubmissionDetailPageContent() {
 
               {/* Influencers */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Influencers ({list.influencers?.length || 0})
-                </h2>
-                <div className="space-y-3">
-                  {list.influencers?.map(inf => (
-                    <div key={inf.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{inf.influencerName || 'Unknown'}</p>
-                        {inf.notes && (
-                          <p className="text-sm text-gray-600 mt-1">{inf.notes}</p>
-                        )}
-                      </div>
-                      {inf.initialPrice && (
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-900">£{inf.initialPrice.toLocaleString()}</p>
-                        </div>
-                      )}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Influencers ({list.influencers?.length || 0})
+                  </h2>
+                  
+                  {/* Search */}
+                  {list.influencers && list.influencers.length > 0 && (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search influencers..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value)
+                          setCurrentPage(1)
+                        }}
+                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                      />
                     </div>
-                  ))}
+                  )}
                 </div>
+
+                {filteredInfluencers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery ? 'No influencers match your search' : 'No influencers in this list'}
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {paginatedInfluencers.map(inf => (
+                        <div key={inf.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => router.push(`/brand/influencers?influencer=${inf.influencerId}`)}
+                                className="font-medium text-gray-900 hover:text-cyan-600 transition-colors flex items-center gap-1"
+                              >
+                                {inf.influencerName || 'Unknown'}
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                            </div>
+                            {inf.notes && (
+                              <p className="text-sm text-gray-600 mt-1">{inf.notes}</p>
+                            )}
+                          </div>
+                          {inf.initialPrice && (
+                            <div className="text-right ml-4">
+                              <p className="font-semibold text-gray-900">£{inf.initialPrice.toLocaleString()}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                        <div className="text-sm text-gray-600">
+                          Showing {(currentPage - 1) * influencersPerPage + 1} to {Math.min(currentPage * influencersPerPage, filteredInfluencers.length)} of {filteredInfluencers.length}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <span className="text-sm text-gray-600">
+                            Page {currentPage} of {totalPages}
+                          </span>
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -297,15 +476,24 @@ function BrandSubmissionDetailPageContent() {
                 <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
                   {list.comments?.map(comment => (
                     <div key={comment.id} className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {comment.userName || 'Unknown'}
-                        </p>
-                        <span className="text-xs text-gray-500">
-                          {new Date(comment.createdAt).toLocaleDateString()}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {comment.userName || 'Unknown'}
+                          </p>
+                          {comment.userRole && (
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(comment.userRole)}`}>
+                              {comment.userRole}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500" title={formatDateTime(comment.createdAt)}>
+                          {formatDateTime(comment.createdAt)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">{comment.comment}</p>
+                      <div className="text-sm text-gray-600 prose prose-sm max-w-none">
+                        <ReactMarkdown>{comment.comment}</ReactMarkdown>
+                      </div>
                     </div>
                   ))}
                   {(!list.comments || list.comments.length === 0) && (
@@ -318,7 +506,7 @@ function BrandSubmissionDetailPageContent() {
                   <textarea
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
+                    placeholder="Add a comment... (Markdown supported)"
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
                   />
@@ -342,4 +530,3 @@ function BrandSubmissionDetailPageContent() {
 export default function BrandSubmissionDetailPage() {
   return <BrandSubmissionDetailPageContent />
 }
-

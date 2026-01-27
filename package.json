@@ -62,6 +62,7 @@
     "query-string": "^9.2.2",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.1.2",
     "svix": "^1.76.1",
     "tailwind-merge": "^2.6.0",
